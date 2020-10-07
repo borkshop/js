@@ -95,10 +95,9 @@ All of this exists in a separate world attached to each minded entity:
 
 ## WIP
 
-- seed with [parceljs](https://parceljs.org/getting_started.html)
-
 ## Done
 
+- setup parcel and a sample html with minimal stylesheet
 - added a readme, posted to github
 - NOTE: current plan is to code from the bottom-up or outside-in, while
   continuing to ruminate on and expand design thoughts here in markdown land.
@@ -215,3 +214,4 @@ I'd wanted to take this further to include such things as:
 - AI
   - <https://www.craft.ai/blog/bt-101-behavior-trees-grammar-basics/> instead
     of prolog? or is there some useful synthesis of the two?
+  - <https://arxiv.org/pdf/1709.00084.pdf> more on behavior trees
