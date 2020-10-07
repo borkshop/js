@@ -7,6 +7,10 @@
   "author": "Joshua T Corbin <jcorbin@wunjo.org>",
   "license": "BSD-3-Clause",
   "private": true,
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "parcel build index.html"
+  },
   "devDependencies": {
     "parcel-bundler": "^1.12.4"
   }
