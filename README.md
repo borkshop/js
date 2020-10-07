@@ -6,4 +6,4 @@ loosely as a successor to [a prior
 experiment](https://github.com/jcorbin/execs/blob/twentyone) in building a
 terminal game and an ECS.
 
-Status: early rumination, pre-code; see [stream.md] for the development log.
+Status: early rumination, pre-code; see [stream.md](stream.md) for the development log.

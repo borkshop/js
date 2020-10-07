@@ -1,6 +1,6 @@
 # Design
 
-See [Prior] section below for more.
+See [Prior](#prior) section below for notes on jspit's predecessor.
 
 ## 3 Categories
 
@@ -111,7 +111,7 @@ The realm of AI, IA, and intent/input synthesis.
   Notes taken in-situ:
   - TODO: what means "evergreen entities"? seems to be a singleton per-world?
   - NOTE: `entity.getComponents('Q')` better than `entity.types['Q']` since
-    it can te constructor functions
+    it can take constructor functions like `entity.getComponents(Q)`
   - NOTE: copyTypes for world -> world creation
   - NOTE: system subscription works
     - by `this.subscribe(T)` in init
@@ -170,12 +170,13 @@ I'd wanted to take this further to include such things as:
 
 # Resources
 
-<https://www.albertford.com/shadowcasting>
-<http://www.roguebasin.com/index.php?title=The_Incredible_Power_of_Dijkstra_Maps>
-
-Things to unfold from <https://roguelike.club/event2020.html>:
-- DLA and other things from map procgen talk
-- parallel async schedules from Tyriq's talk on multiplayer
+- <https://www.albertford.com/shadowcasting> use this to control information
+  transfer between the objective world and subjective worlds
+- <http://www.roguebasin.com/index.php?title=The_Incredible_Power_of_Dijkstra_Maps>
+  use for things like "where may a spirit form a rift?"
+- Things to unfold from <https://roguelike.club/event2020.html>:
+  - DLA and other things from map procgen talk
+  - parallel async schedules from Tyriq's talk on multiplayer
 
 ## Prog Lore
 
