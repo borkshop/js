@@ -5,7 +5,7 @@
   "main": "index.js",
   "repository": "github.com/jcorbin/jspit",
   "author": "Joshua T Corbin <jcorbin@wunjo.org>",
-  "license": "UNLICENSED",
+  "license": "BSD-3-Clause",
   "private": true,
   "devDependencies": {
     "parcel-bundler": "^1.12.4"
