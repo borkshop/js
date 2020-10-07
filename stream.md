@@ -1,8 +1,84 @@
-# 2020-10-05
+# Design
+
+See [Prior] section below for more.
+
+## 3 Categories
+
+### Physical
+
+The realm of what can be seen, felt, done, heard, smelt, tasted, etc.
+
+Organized into planes within each world:
+- typically one plane at a time is rendered ; could do a (pseudo)-3d stacked god view
+- collision is local to a plane
+- TBD whether need cross-planar entities or go with linked shadow/proxy/avatars
+- cross-planar action needs to be possible, if uncommon
+
+Will probably go with a finite set of plane represented as ECS tags; probably
+don't need dynamic plane space?
+
+Energy ideas: heat, steam, prana, qi, psi, electricity, light, force...
+
+### Thought
+
+The realm of AI, IA, and intent/input synthesis.
+
+- IA: a tuple/fact database to record input/action/goal/plans
+- AI: a rules engine, ala prolog ... vs behavior trees?
+
+### Accounting
+
+- soul is a log/ledger
+- accumulated stats/balances
+
+## The Pits
+
+- each pit is its own isolated world
+- starts out as a wall rectangle defined in its void, with a default filling
+  rule for ...wall/tile?
+
+- each has a super(visor) that exists in its control plane, and is in charge of
+  the pit's basic and spirit plane
+  - TBD is the super integrated with the pit / directly in control? or must it
+    indirectly do things through other entities in the control plane?
+  - responsible for all souls in their pit
+  - create a new spawn pod by DLA from the super point
+  - pick a soul, spawn a body, generate new mind, attach soul
+
+## Spirits
+
+- are attracted by a sufficiently aligned entity
+- creates rifts in out of the way places ( e.g. from DLA pocketing )
+- tries to lead entity through its entrance rift back to its realm
+- archetypes: messenger / collector for a higher spirt ; hermit spirt took note
+
+# Resources
+
+<https://www.albertford.com/shadowcasting>
+<http://www.roguebasin.com/index.php?title=The_Incredible_Power_of_Dijkstra_Maps>
+
+Things to unfold from <https://roguelike.club/event2020.html>:
+- DLA and other things from map procgen talk
+- parallel async schedules from Tyriq's talk on multiplayer
+
+## Prog Lore
+
+- ECS
+  <https://csherratt.github.io/blog/posts/specs-and-legion/>
+  <https://github.com/kvark/froggy/wiki/Component-Graph-System>
+  <https://github.com/Ralith/hecs#why-ecs>
+  <https://arewegameyet.rs/ecosystem/ecs/>
+  <https://skypjack.github.io/2019-02-14-ecs-baf-part-1/>
+- AI
+  <https://www.craft.ai/blog/bt-101-behavior-trees-grammar-basics/>
+- General game prog
+  <http://gameprogrammingpatterns.com/>
+
+# 2020-10-06
 
 ## TODO
 
-- elaborate on design after importing ios notes
+- mind research: prolog-like systems
 - input controller
   - event/intent sources:
     - local dom events
@@ -11,13 +87,40 @@
   - transmute events into intent
   - ingest external intent
   - harvest intents into actions for next tick
+- seed with [parceljs](https://parceljs.org/getting_started.html)
 
 ## WIP
 
-- orienting on ape-ecs
+## Done
+
+- more ecs and other lore research
+  - NOTE ape-ecs seems designed around a mono world... `world.registerCopmonet`
+    smashes `klass.prototype` <https://github.com/fritzy/ape-ecs/issues/33>
+  - NOTE reserved component names... because not using a Map?
+- imported design from ios notes, edited quite a lot
+- starting collecting resources at top
+- digested thoughts on ape-ecs below
+
+# 2020-10-05
+
+- wrote down some scant design notes into ios note app
+
+- read much of ape-ecs's docs. On balance I think it'll do find and allow jspit
+  to not be "an ECS project". My main concerns are that it's not really setup
+  for great performance with millions of entities. Everything seems to be slung
+  off "for entity in query for component on it" form, rather than allowing for
+  native vectorized batch operations over component data.
+
+  In summary, my initial impression is:
+  - it's got decent performance vs an typical OOP-tangle
+  - but it's more aligned with being a convenient / powerful / flexible domain
+    modeling tool than it is about "high performance"
+  - on balance, I think that's the right trade-off for jspit
+
+  Notes taken in-situ:
+  - TODO: what means "evergreen entities"? seems to be a singleton per-world?
   - NOTE: `entity.getComponents('Q')` better than `entity.types['Q']` since
     it can te constructor functions
-  - TODO: what means "evergreen entities"? seems to be a singleton per-world?
   - NOTE: copyTypes for world -> world creation
   - NOTE: system subscription works
     - by `this.subscribe(T)` in init
@@ -27,8 +130,8 @@
     - change if using update and component opted in to tracking
   - NOTE: `spinup` to `World.registerCompenent` is a capacity hint, ala
     `pool.targetSize`; pool then reclaims after `2*targetSize`
-  - NOTE: system update doing a `for each entity, process and consume/remove
-    (one of) its qualifiying components seems inefficient; ideally could be
+  - NOTE: system update doing a "for each entity, process and consume/remove
+    (one of) its qualifiying components" seems inefficient; ideally could be
     more like:
 
     ```javascript
@@ -40,6 +143,36 @@
     subjects.removeComponent('Q'); // XXX would rather, can?
     ```
 
-## Done
+# Prior
 
-- wrote down some scant design notes into ios note app
+My first [exploration into ECS](https://github.com/jcorbin/execs) ended up with
+[a prototype](https://github.com/jcorbin/execs/blob/twentyone) that I lovingly
+called "deathroom":
+
+- having punted on procgen, it was a single (square? rectangular?) room
+- where entities would spawn, starting with the first player controlled one
+- the artificial minds
+  - started out just picking random wall points to walk up to and boop
+  - if that led them to accidentally bump into another entity, damage was done
+  - damage accumulated hate, which then caused them to prioritize revenge over
+    random wall boops
+- their artificial bodies
+  - had internal sub-graph structure, each part having an hp, damage, and armor
+    rating
+  - entity interaction, like combat, were modeled on this sub-graph structure
+  - death occurred when an entity's head was severed or destroyed
+  - assemblies of severed body parts remained and could be scavenged by other
+    entities to augment themselves
+- there was a latent energy system within the movement system
+  - each turn all minded-entities accumulated a movement point (N)
+  - movement was possible, and scaled with, their body's legs
+  - moving spends N, any additional accumulated N could be used to charge
+    forward 2 spaces, and could serve a damage bonus
+- disembodied entities continued to exist, but were no longer subject to
+  collision
+
+I'd wanted to take this further to include such things as:
+- spirit entities able to influence / possess / or re-incarnate in some way
+- further things to do with accumulated energy points
+- further things to do when "not moving"
+- (meta) progression through an additional soul component of some kind
