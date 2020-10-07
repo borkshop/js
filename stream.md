@@ -48,37 +48,18 @@ The realm of AI, IA, and intent/input synthesis.
 ## Spirits
 
 - are attracted by a sufficiently aligned entity
-- creates rifts in out of the way places ( e.g. from DLA pocketing )
+- creates rifts in out-of-the-way places ( e.g. from DLA pocketing )
 - tries to lead entity through its entrance rift back to its realm
 - archetypes: messenger / collector for a higher spirt ; hermit spirt took note
 
-# Resources
-
-<https://www.albertford.com/shadowcasting>
-<http://www.roguebasin.com/index.php?title=The_Incredible_Power_of_Dijkstra_Maps>
-
-Things to unfold from <https://roguelike.club/event2020.html>:
-- DLA and other things from map procgen talk
-- parallel async schedules from Tyriq's talk on multiplayer
-
-## Prog Lore
-
-- ECS
-  <https://csherratt.github.io/blog/posts/specs-and-legion/>
-  <https://github.com/kvark/froggy/wiki/Component-Graph-System>
-  <https://github.com/Ralith/hecs#why-ecs>
-  <https://arewegameyet.rs/ecosystem/ecs/>
-  <https://skypjack.github.io/2019-02-14-ecs-baf-part-1/>
-- AI
-  <https://www.craft.ai/blog/bt-101-behavior-trees-grammar-basics/>
-- General game prog
-  <http://gameprogrammingpatterns.com/>
-
-# 2020-10-06
+# 2020-10-07
 
 ## TODO
 
+- soul prototype
 - mind research: prolog-like systems
+- grid rendering
+- dialog display and response
 - input controller
   - event/intent sources:
     - local dom events
@@ -87,11 +68,21 @@ Things to unfold from <https://roguelike.club/event2020.html>:
   - transmute events into intent
   - ingest external intent
   - harvest intents into actions for next tick
-- seed with [parceljs](https://parceljs.org/getting_started.html)
 
 ## WIP
 
+- seed with [parceljs](https://parceljs.org/getting_started.html)
+
 ## Done
+
+- added a readme, posted to github
+- NOTE: current plan is to code from the bottom-up or outside-in, while
+  continuing to ruminate on and expand design thoughts here in markdown land.
+  This will allow putting off entity implementation as long as possible, since
+  I'm still going back and forth between "use ape-ecs" or "build a froggy-like
+  component-graph-system"...
+
+# 2020-10-06
 
 - more ecs and other lore research
   - NOTE ape-ecs seems designed around a mono world... `world.registerCopmonet`
@@ -176,3 +167,26 @@ I'd wanted to take this further to include such things as:
 - further things to do with accumulated energy points
 - further things to do when "not moving"
 - (meta) progression through an additional soul component of some kind
+
+# Resources
+
+<https://www.albertford.com/shadowcasting>
+<http://www.roguebasin.com/index.php?title=The_Incredible_Power_of_Dijkstra_Maps>
+
+Things to unfold from <https://roguelike.club/event2020.html>:
+- DLA and other things from map procgen talk
+- parallel async schedules from Tyriq's talk on multiplayer
+
+## Prog Lore
+
+- ECS
+  - from the rust side of things
+    - <https://csherratt.github.io/blog/posts/specs-and-legion/>
+    - <https://github.com/kvark/froggy/wiki/Component-Graph-System>
+    - <https://github.com/Ralith/hecs#why-ecs>
+    - <https://arewegameyet.rs/ecosystem/ecs/>
+  - <https://skypjack.github.io/2019-02-14-ecs-baf-part-1/> from the EnTT author
+  - <http://gameprogrammingpatterns.com/component.html> a section from Nystrom
+- AI
+  - <https://www.craft.ai/blog/bt-101-behavior-trees-grammar-basics/> instead
+    of prolog? or is there some useful synthesis of the two?
