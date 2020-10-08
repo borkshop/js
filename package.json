@@ -12,7 +12,9 @@
     "build": "parcel build index.html"
   },
   "devDependencies": {
+    "core-js": "^3.6.5",
     "parcel-bundler": "^1.12.4",
+    "regenerator-runtime": "^0.13.7",
     "typescript": "^4.0.3"
   }
 }

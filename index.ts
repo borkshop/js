@@ -1,3 +1,6 @@
+import "core-js/stable";
+import "regenerator-runtime/runtime";
+
 const nextFrame = () => new Promise<number>(resolve => requestAnimationFrame(resolve));
 
 const once = (target:EventTarget, name:string) => new Promise<Event>(resolve => {
