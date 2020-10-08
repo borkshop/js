@@ -85,25 +85,28 @@ All of this exists in a separate world attached to each minded entity:
 - grid rendering
 - dialog display and response
 - input controller
-  - event/intent sources:
-    - local dom events
-    - local storage updates, e.g. to make an event bus with other local
-      windows? ai workers? network sockets?
-  - transmute events into intent
+  - local storage updates, e.g. to make an event bus with other local
+    windows? ai workers? network sockets?
   - ingest external intent
   - harvest intents into actions for next tick
+- viewport correction on resize
 
 ## WIP
 
 ## Done
 
-- setup parcel and a sample html with minimal stylesheet
-- added a readme, posted to github
 - NOTE: current plan is to code from the bottom-up or outside-in, while
   continuing to ruminate on and expand design thoughts here in markdown land.
   This will allow putting off entity implementation as long as possible, since
   I'm still going back and forth between "use ape-ecs" or "build a froggy-like
   component-graph-system"...
+- added a readme, posted to github
+- setup parcel and a sample html with minimal stylesheet
+- started building input control, starting with key events marshalled from
+  up/down events harvested at a fixed rate every several frames
+- after inspiration from
+  <https://eager.io/blog/communicating-between-javascript-and-css-with-css-variables/>
+  via @kris, built a minimal infinite-scrolling CSS tile grid
 
 # 2020-10-06
 

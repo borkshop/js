@@ -107,26 +107,47 @@ async function main() {
   keys.filter = (event:KeyboardEvent) => !event.altKey && !event.ctrlKey && !event.metaKey;
   keys.register(document.body);
 
+  interface Point {x: number, y:number};
+
+  const viewXlate = () => ({
+    x: parseFloat(main.style.getPropertyValue('--xlate-x')) || 0,
+    y: parseFloat(main.style.getPropertyValue('--xlate-y')) || 0,
+  });
+
+  const moveViewBy = (dx:number, dy:number) => {
+    const {x, y} = viewXlate();
+    main.style.setProperty('--xlate-x', (x + dx).toString());
+    main.style.setProperty('--xlate-y', (y + dy).toString());
+  };
+  const viewSize = (tileSize:Point) => ({
+    x: main.clientWidth  / tileSize.x,
+    y: main.clientHeight / tileSize.y,
+  });
+  const viewGrid = (tileSize:Point) => {
+    const {x, y} = viewXlate();
+    const {x: w, y: h} = viewSize(tileSize);
+    return {x, y, w, h};
+  };
+
+  // proportion to scroll viewport by when at goes outside
+  const scrollP = 0.2;
+
   const at = document.createElement('div');
   at.className = 'tile';
   main.appendChild(at)
   at.innerText = '@';
 
-  // TODO viewport management for tiles on board
-  // const tileSize = {x: at.clientWidth, y: at.clientHeight};
-  // const boardSize = {
-  //   x: main.clientWidth / tileSize.x,
-  //   y: main.clientHeight / tileSize.y,
-  // };
-  // console.log('tileSize', tileSize, boardSize);
-
-  // // TODO use main --xlate-x and --xlate-y
-  // const xlate = {
-  //   x: parseFloat(at.style.getPropertyValue('--xlate-x')) || 0,
-  //   y: parseFloat(at.style.getPropertyValue('--xlate-y')) || 0,
-  // };
+  const updateFooter = () => {
+    const tileSize = {x: at.clientHeight, y: at.clientHeight};
+    const {x: w, y: h} = tileSize;
+    const x = parseFloat(at.style.getPropertyValue('--x')) || 0;
+    const y = parseFloat(at.style.getPropertyValue('--y')) || 0;
+    const {x: vx, y: vy, w: vw, h: vh} = viewGrid(tileSize);
+    foot.innerText = `player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}`;
+  }
 
   let last = await nextFrame();
+  updateFooter();
   let dt = 0;
 
   // coalesce and process key input every t frames
@@ -137,16 +158,25 @@ async function main() {
 
     if ((input += dt / inputRate) >= 1) {
       const {have, move} = coalesceKeys(keys.consumePresses());
+      let moved = false;
       if (have) {
-
-        // TODO bottom/right bounds
-        // TODO move viewport rather than clip
-        const x = Math.max(0, (parseFloat(at.style.getPropertyValue('--x')) || 0) + move.x);
-        const y = Math.max(0, (parseFloat(at.style.getPropertyValue('--y')) || 0) + move.y);
-        at.style.setProperty('--x', x.toString());
-        at.style.setProperty('--y', y.toString());
-
+        const tileSize = {x: at.clientHeight, y: at.clientHeight};
+        const {x: vx, y: vy, w, h} = viewGrid(tileSize);
+        const ax = (parseFloat(at.style.getPropertyValue('--x')) || 0) + move.x;
+        const ay = (parseFloat(at.style.getPropertyValue('--y')) || 0) + move.y;
+        const dx = ax < vx ? -1 : ax > vx + w ? 1 : 0;
+        const dy = ay < vy ? -1 : ay > vy + h ? 1 : 0;
+        if      (dx < 0) moveViewBy(-Math.floor(w * scrollP), 0);
+        else if (dx > 0) moveViewBy( Math.floor(w * scrollP), 0);
+        else if (dy < 0) moveViewBy(0, -Math.floor(h * scrollP));
+        else if (dy > 0) moveViewBy(0,  Math.floor(h * scrollP));
+        at.style.setProperty('--x', (ax).toString());
+        at.style.setProperty('--y', (ay).toString());
+        moved = true;
       }
+
+      if (moved) updateFooter();
+
       input = input % 1;
     }
 

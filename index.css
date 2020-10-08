@@ -72,7 +72,7 @@ a:active  { color: var(--acting-color); }
 a:visited { color: var(--acted-color); }
 
 header { font-size: 2em; }
-footer { font-size: 0.5em; }
+footer { font-size: 1em; }
 
 main, section {
   background-color: var(--content-bg);
@@ -96,8 +96,8 @@ main {
   --x: 0;
   --y: 0;
   position: absolute;
-  left: calc((var(--xlate-x) + var(--x)) * 1em);
-  top:  calc((var(--xlate-y) + var(--y)) * 1em);
+  left: calc((var(--x) - var(--xlate-x)) * 1em);
+  top:  calc((var(--y) - var(--xlate-y)) * 1em);
 }
 
 p {
