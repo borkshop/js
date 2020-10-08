@@ -9,7 +9,8 @@
   "private": true,
   "scripts": {
     "start": "parcel index.html",
-    "build": "parcel build index.html"
+    "build": "parcel build index.html --public-url /jspit/",
+    "dist": "desc=$(git describe --always) && cd dist && git add -A && git commit -m \"build $desc\""
   },
   "devDependencies": {
     "core-js": "^3.6.5",
