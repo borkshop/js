@@ -93,10 +93,9 @@ All of this exists in a separate world attached to each minded entity:
 
 ## WIP
 
-- color boop demo
-
 ## Done
 
+- implemented basic color boop collider
 - factored out TileGrid to reify the grid sketched yesterday
 - sorted out details for building and pushing to github pages
 

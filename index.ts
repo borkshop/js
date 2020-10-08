@@ -7,7 +7,6 @@ interface Point {
 }
 
 interface TileSpec {
-  id: string
   text?: string
   pos?: Point
   tag?: string|string[]
@@ -36,12 +35,12 @@ class TileGrid {
     return `${this.el.id}${this.el.id ? '-': ''}tile-${id}`;
   }
 
-  createTile(spec:TileSpec):HTMLElement {
-    let tile = this.getTile(spec.id);
+  createTile(id: string, spec:TileSpec):HTMLElement {
+    let tile = this.getTile(id);
     if (!tile) {
       tile = document.createElement('div');
       this.el.appendChild(tile)
-      tile.id = this.tileID(spec.id)
+      tile.id = this.tileID(id)
     }
     return this.updateTile(tile, spec) as HTMLElement;
   }
@@ -49,20 +48,21 @@ class TileGrid {
   updateTile(elOrID:HTMLElement|string, spec:TileSpec) {
     const tile = this.getTile(elOrID);
     if (!tile) return null;
-    const colorOrVar = (c:string|null) => !c ? '' : c.startsWith('--') ? `var(${c})` : c;
-    tile.innerText = spec.text || ' ';
-    tile.style.color = colorOrVar(spec.fg || null);
-    tile.style.backgroundColor = colorOrVar(spec.bg || null);
-    tile.className = 'tile';
-    if (typeof spec.tag === 'string') tile.classList.add(spec.tag);
-    else if (Array.isArray(spec.tag)) for (const tag of spec.tag) tile.classList.add(tag);
+    if (spec.text) tile.innerText = spec.text;
+    if (spec.fg) tile.style.color = spec.fg;
+    if (spec.bg) tile.style.backgroundColor = spec.bg;
+    if (spec.tag) {
+      tile.className = 'tile';
+      if (typeof spec.tag === 'string') tile.classList.add(spec.tag);
+      else if (Array.isArray(spec.tag)) for (const tag of spec.tag) tile.classList.add(tag);
+    } else if (!tile.className) tile.className = 'tile';
     if (spec.pos) this.moveTileTo(tile, spec.pos);
     return tile;
   }
 
   getTile(elOrID:HTMLElement|string):HTMLElement|null {
     if (typeof elOrID === 'string') {
-      return this.el.querySelector(this.tileID(elOrID));
+      return this.el.querySelector('#' + this.tileID(elOrID));
     }
     return elOrID;
   }
@@ -89,6 +89,17 @@ class TileGrid {
     let {x, y} = this.getTilePosition(tile);
     x += dx, y += dy;
     return this.moveTileTo(tile, {x, y});
+  }
+
+  tilesAt(at:Point, selector?:string) {
+    const res : HTMLElement[] = [];
+    // TODO :shrug: spatial index
+    for (const other of this.el.querySelectorAll(`.tile${selector || ''}`)) {
+      const el = other as HTMLElement;
+      const pos = this.getTilePosition(el);
+      if (pos.x === at.x && pos.y === at.y) res.push(el);
+    }
+    return res
   }
 
   get viewOffset() {
@@ -246,11 +257,48 @@ async function main() {
     grid.nudgeViewTo({x, y}, nudge);
   };
 
-  grid.createTile({
-    id: 'at',
+  grid.createTile('at', {
     text: '@',
+    tag: ['solid', 'mind'],
     pos: {x: 10, y: 10},
   });
+
+  [ 'black',
+    'darker-grey',
+    'dark-grey',
+    'grey',
+    'light-grey',
+    'lighter-grey',
+    'white',
+    'dark-white',
+    'blue',
+    'bright-purple',
+    'cyan',
+    'dark-orange',
+    'dark-sea-green',
+    'green',
+    'light-cyan',
+    'magenta',
+    'orange',
+    'purple',
+    'red',
+    'red-orange',
+    'yellow',
+    'yellow-orange',
+  ].forEach((color, i) => {
+    grid.createTile(`fg-swatch-${color}`, {
+      fg: `var(--${color})`,
+      tag: ['solid', 'swatch', 'fg'],
+      text: '$',
+      pos: {x: 5, y: i},
+    });
+    grid.createTile(`bg-swatch-${color}`, {
+      bg: `var(--${color})`,
+      tag: ['solid', 'swatch', 'bg'],
+      text: '$',
+      pos: {x: 15, y: i},
+    });
+  })
 
   const updateFooter = () => {
     const {x, y} = grid.getTilePosition('at');
@@ -272,8 +320,29 @@ async function main() {
     if ((input += dt / inputRate) >= 1) {
       const {have, move} = coalesceKeys(keys.consumePresses());
       if (have) {
-        nudgeViewTo(grid.moveTileBy('at', move));
-        updateFooter();
+        const tile = grid.getTile('at');
+        if (!tile) throw new Error('player gone!');
+        let may = true;
+        let pos = grid.getTilePosition(tile);
+        pos.x += move.x;
+        pos.y += move.y;
+
+        if (tile.classList.contains('solid')) {
+          const hits = grid.tilesAt(pos, '.solid');
+          if (!(may = !hits.length)) for (const hit of hits)
+            if (hit.classList.contains('swatch')) {
+              const spec : TileSpec = {};
+              if      (hit.classList.contains('fg')) spec.fg = hit.style.color;
+              else if (hit.classList.contains('bg')) spec.bg = hit.style.backgroundColor;
+              grid.updateTile(tile, spec)
+            }
+        }
+
+        if (may) {
+          grid.moveTileTo(tile, pos);
+          nudgeViewTo(pos);
+          updateFooter();
+        }
       }
       input = input % 1;
     }
