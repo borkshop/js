@@ -81,6 +81,25 @@ main, section {
   padding: 0.3em 0.5em;
 }
 
+main {
+  height: 90%;
+  font-family: monospace;
+  position: relative;
+  overflow: clip;
+  font-size: 18pt;
+  line-height: 1.0;
+  --xlate-x: 0;
+  --xlate-y: 0;
+}
+
+.tile {
+  --x: 0;
+  --y: 0;
+  position: absolute;
+  left: calc((var(--xlate-x) + var(--x)) * 1em);
+  top:  calc((var(--xlate-y) + var(--y)) * 1em);
+}
+
 p {
   margin: 0.3em 0.5em;
   padding: 0;
