@@ -98,6 +98,8 @@ main {
   position: absolute;
   left: calc((var(--x) - var(--xlate-x)) * 1em);
   top:  calc((var(--y) - var(--xlate-y)) * 1em);
+  width: 1em;
+  text-align: center;
 }
 
 p {

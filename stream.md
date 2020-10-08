@@ -76,7 +76,7 @@ All of this exists in a separate world attached to each minded entity:
   e.g. things like accumulated hate and such, but there may be some call for it
   here rather than always requiring ledger traversals
 
-# 2020-10-07
+# 2020-10-08
 
 ## TODO
 
@@ -93,7 +93,14 @@ All of this exists in a separate world attached to each minded entity:
 
 ## WIP
 
+- color boop demo
+
 ## Done
+
+- factored out TileGrid to reify the grid sketched yesterday
+- sorted out details for building and pushing to github pages
+
+# 2020-10-07
 
 - NOTE: current plan is to code from the bottom-up or outside-in, while
   continuing to ruminate on and expand design thoughts here in markdown land.

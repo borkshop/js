@@ -1,16 +1,145 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
 
+interface Point {
+  x: number,
+  y: number,
+}
+
+interface TileSpec {
+  id: string
+  text?: string
+  pos?: Point
+  tag?: string|string[]
+  fg?: string
+  bg?: string
+}
+
+class TileGrid {
+  el : HTMLElement
+
+  constructor(el:HTMLElement) {
+    this.el = el;
+    // TODO handle resize events
+  }
+
+  get tileSize(): Point {
+    // TODO use an invisible ghost tile? cache?
+    for (const tile of this.el.querySelectorAll('.tile')) {
+      const h = tile.clientHeight;
+      return {x: h, y: h};
+    }
+    return {x: 0, y: 0};
+  }
+
+  tileID(id:string) {
+    return `${this.el.id}${this.el.id ? '-': ''}tile-${id}`;
+  }
+
+  createTile(spec:TileSpec):HTMLElement {
+    let tile = this.getTile(spec.id);
+    if (!tile) {
+      tile = document.createElement('div');
+      this.el.appendChild(tile)
+      tile.id = this.tileID(spec.id)
+    }
+    return this.updateTile(tile, spec) as HTMLElement;
+  }
+
+  updateTile(elOrID:HTMLElement|string, spec:TileSpec) {
+    const tile = this.getTile(elOrID);
+    if (!tile) return null;
+    const colorOrVar = (c:string|null) => !c ? '' : c.startsWith('--') ? `var(${c})` : c;
+    tile.innerText = spec.text || ' ';
+    tile.style.color = colorOrVar(spec.fg || null);
+    tile.style.backgroundColor = colorOrVar(spec.bg || null);
+    tile.className = 'tile';
+    if (typeof spec.tag === 'string') tile.classList.add(spec.tag);
+    else if (Array.isArray(spec.tag)) for (const tag of spec.tag) tile.classList.add(tag);
+    if (spec.pos) this.moveTileTo(tile, spec.pos);
+    return tile;
+  }
+
+  getTile(elOrID:HTMLElement|string):HTMLElement|null {
+    if (typeof elOrID === 'string') {
+      return this.el.querySelector(this.tileID(elOrID));
+    }
+    return elOrID;
+  }
+
+  getTilePosition(elOrID:HTMLElement|string) {
+    const tile = this.getTile(elOrID);
+    if (!tile) return {x: NaN, y: NaN};
+    const x = parseFloat(tile.style.getPropertyValue('--x')) || 0;
+    const y = parseFloat(tile.style.getPropertyValue('--y')) || 0;
+    return {x, y};
+  }
+
+  moveTileTo(elOrID:HTMLElement|string, {x, y}:Point) {
+    const tile = this.getTile(elOrID);
+    if (!tile) return {x: NaN, y: NaN};
+    tile.style.setProperty('--x', x.toString());
+    tile.style.setProperty('--y', y.toString());
+    return {x, y};
+  }
+
+  moveTileBy(elOrID:HTMLElement|string, {x: dx, y: dy}:Point) {
+    const tile = this.getTile(elOrID);
+    if (!tile) return {x: NaN, y: NaN};
+    let {x, y} = this.getTilePosition(tile);
+    x += dx, y += dy;
+    return this.moveTileTo(tile, {x, y});
+  }
+
+  get viewOffset() {
+    const x = parseFloat(this.el.style.getPropertyValue('--xlate-x')) || 0;
+    const y = parseFloat(this.el.style.getPropertyValue('--xlate-y')) || 0;
+    return {x, y};
+  }
+
+  get viewport() {
+    const
+      tileSize = this.tileSize,
+      {x, y} = this.viewOffset,
+      width = this.el.clientWidth  / tileSize.x,
+      height = this.el.clientHeight / tileSize.y;
+    return {x, y, width, height};
+  }
+
+  moveViewTo({x, y}:Point) {
+    this.el.style.setProperty('--xlate-x', x.toString());
+    this.el.style.setProperty('--xlate-y', y.toString());
+    return {x, y};
+  }
+
+  moveViewBy({x: dx, y: dy}:Point) {
+    const {x, y} = this.viewOffset;
+    return this.moveViewTo({x: x + dx, y: y + dy});
+  }
+
+  nudgeViewTo({x, y}:Point, {x: nx, y: ny}:Point) {
+    let {x: vx, y: vy, width, height} = this.viewport;
+    while (true) {
+      const dx = x < vx ? -1 : x > vx + width ? 1 : 0;
+      const dy = y < vy ? -1 : y > vy + height ? 1 : 0;
+      if      (dx < 0) vx -= nx;
+      else if (dx > 0) vx += nx;
+      else if (dy < 0) vy -= ny;
+      else if (dy > 0) vy += ny;
+      else             return this.moveViewTo({x: vx, y: vy});
+    }
+  }
+}
+
 const nextFrame = () => new Promise<number>(resolve => requestAnimationFrame(resolve));
 
 const once = (target:EventTarget, name:string) => new Promise<Event>(resolve => {
-    const handler = (event:Event) => {
-      target.removeEventListener(name, handler);
-      resolve(event);
-    };
-    target.addEventListener(name, handler);
-  }
-);
+  const handler = (event:Event) => {
+    target.removeEventListener(name, handler);
+    resolve(event);
+  };
+  target.addEventListener(name, handler);
+});
 
 class KeyMap extends Map<string, number> {
   countKey({altKey, ctrlKey, metaKey, shiftKey, key}:KeyboardEvent) {
@@ -63,7 +192,7 @@ interface Move {
   y: number,
 }
 
-function parseKey(key:string, _count:number): null | Move {
+function parseMoveKey(key:string, _count:number): Move|null {
   switch (key) {
     // arrow keys + stay
     case 'ArrowUp':    return {x:  0, y: -1};
@@ -77,7 +206,7 @@ function parseKey(key:string, _count:number): null | Move {
 
 function coalesceKeys(presses:Array<[string, number]>) {
   return presses
-    .map(([key, count]) => parseKey(key, count))
+    .map(([key, count]) => parseMoveKey(key, count))
     .reduce((acc, move) => {
       if (move) {
         acc.move.x += move.x;
@@ -107,42 +236,26 @@ async function main() {
   keys.filter = (event:KeyboardEvent) => !event.altKey && !event.ctrlKey && !event.metaKey;
   keys.register(document.body);
 
-  interface Point {x: number, y:number};
-
-  const viewXlate = () => ({
-    x: parseFloat(main.style.getPropertyValue('--xlate-x')) || 0,
-    y: parseFloat(main.style.getPropertyValue('--xlate-y')) || 0,
-  });
-
-  const moveViewBy = (dx:number, dy:number) => {
-    const {x, y} = viewXlate();
-    main.style.setProperty('--xlate-x', (x + dx).toString());
-    main.style.setProperty('--xlate-y', (y + dy).toString());
-  };
-  const viewSize = (tileSize:Point) => ({
-    x: main.clientWidth  / tileSize.x,
-    y: main.clientHeight / tileSize.y,
-  });
-  const viewGrid = (tileSize:Point) => {
-    const {x, y} = viewXlate();
-    const {x: w, y: h} = viewSize(tileSize);
-    return {x, y, w, h};
-  };
+  const grid = new TileGrid(main);
 
   // proportion to scroll viewport by when at goes outside
-  const scrollP = 0.2;
+  const nudgeBy = 0.2;
+  const nudgeViewTo = ({x, y}:Point) => {
+    const {width, height} = grid.viewport;
+    const nudge = {x: Math.floor(width * nudgeBy), y: Math.floor(height * nudgeBy)};
+    grid.nudgeViewTo({x, y}, nudge);
+  };
 
-  const at = document.createElement('div');
-  at.className = 'tile';
-  main.appendChild(at)
-  at.innerText = '@';
+  grid.createTile({
+    id: 'at',
+    text: '@',
+    pos: {x: 10, y: 10},
+  });
 
   const updateFooter = () => {
-    const tileSize = {x: at.clientHeight, y: at.clientHeight};
-    const {x: w, y: h} = tileSize;
-    const x = parseFloat(at.style.getPropertyValue('--x')) || 0;
-    const y = parseFloat(at.style.getPropertyValue('--y')) || 0;
-    const {x: vx, y: vy, w: vw, h: vh} = viewGrid(tileSize);
+    const {x, y} = grid.getTilePosition('at');
+    const {x: w, y: h} = grid.tileSize;
+    const {x: vx, y: vy, width: vw, height: vh} = grid.viewport;
     foot.innerText = `player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}`;
   }
 
@@ -158,25 +271,10 @@ async function main() {
 
     if ((input += dt / inputRate) >= 1) {
       const {have, move} = coalesceKeys(keys.consumePresses());
-      let moved = false;
       if (have) {
-        const tileSize = {x: at.clientHeight, y: at.clientHeight};
-        const {x: vx, y: vy, w, h} = viewGrid(tileSize);
-        const ax = (parseFloat(at.style.getPropertyValue('--x')) || 0) + move.x;
-        const ay = (parseFloat(at.style.getPropertyValue('--y')) || 0) + move.y;
-        const dx = ax < vx ? -1 : ax > vx + w ? 1 : 0;
-        const dy = ay < vy ? -1 : ay > vy + h ? 1 : 0;
-        if      (dx < 0) moveViewBy(-Math.floor(w * scrollP), 0);
-        else if (dx > 0) moveViewBy( Math.floor(w * scrollP), 0);
-        else if (dy < 0) moveViewBy(0, -Math.floor(h * scrollP));
-        else if (dy > 0) moveViewBy(0,  Math.floor(h * scrollP));
-        at.style.setProperty('--x', (ax).toString());
-        at.style.setProperty('--y', (ay).toString());
-        moved = true;
+        nudgeViewTo(grid.moveTileBy('at', move));
+        updateFooter();
       }
-
-      if (moved) updateFooter();
-
       input = input % 1;
     }
 
