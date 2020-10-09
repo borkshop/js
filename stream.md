@@ -76,7 +76,7 @@ All of this exists in a separate world attached to each minded entity:
   e.g. things like accumulated hate and such, but there may be some call for it
   here rather than always requiring ledger traversals
 
-# 2020-10-08
+# 2020-10-09
 
 ## TODO
 
@@ -84,14 +84,23 @@ All of this exists in a separate world attached to each minded entity:
 - mind research: prolog-like systems
 - TileGrid
   - animations like boop and particles
-  - spatial index for `tilesAt`
   - viewport correction on resize
   - masking?
   - custom shader funcs, or at least some affordance for stepped css classes
 
 ## WIP
 
+- DLA
+  - persist parameters in location hash
+  - indirect color variables, add color settings
+  - player drop
+  - controlled RNG with seed setting
+- TileGrid
+  - spatial index for `tilesAt`
+
 ## Done
+
+# 2020-10-08
 
 - wrote a DLA demo, which was a great way to furher experiment with modal UI,
   and also quickly hit the limits of the current brute force spatial query (guess)
