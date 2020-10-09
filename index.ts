@@ -103,15 +103,15 @@ class TileGrid {
     return this.moveTileTo(tile, {x, y});
   }
 
-  tilesAt(at:Point, selector?:string) {
-    const res : HTMLElement[] = [];
+  tilesAt(at:Point, ...tag:string[]):HTMLElement[] {
+    const tiles : HTMLElement[] = [];
     // TODO :shrug: spatial index
-    for (const other of this.el.querySelectorAll(`.tile${selector || ''}`)) {
+    for (const other of this.el.querySelectorAll(`.tile${tag.map(t => `.${t}`).join('')}`)) {
       const el = other as HTMLElement;
       const pos = this.getTilePosition(el);
-      if (pos.x === at.x && pos.y === at.y) res.push(el);
+      if (pos.x === at.x && pos.y === at.y) tiles.push(el);
     }
-    return res
+    return tiles;
   }
 
   get viewOffset() {
@@ -478,7 +478,7 @@ class ColorBoop {
 
   act(ctx:Context, action:SimAction): SimAction {
     if (!action.actor.classList.contains('solid')) return action;
-    const hits = ctx.grid.tilesAt(action.targ, '.solid');
+    const hits = ctx.grid.tilesAt(action.targ, 'solid');
     if (!(action.ok = !hits.length)) for (const hit of hits)
       if (hit.classList.contains('swatch')) {
         const spec : TileSpec = {};
@@ -616,7 +616,7 @@ class DLA {
         else pos.x++;
       }
 
-      if (!ctx.grid.tilesAt(pos, '.particle').length) {
+      if (!ctx.grid.tilesAt(pos, 'particle').length) {
         delete p.dataset.heading;
         ctx.grid.updateTile(p, {
           tag: ['particle'],
