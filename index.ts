@@ -517,6 +517,8 @@ class DLA {
 
         Inspired by
         <a href="//web.archive.org/web/20151003181050/http://codepen.io/DonKarlssonSan/full/BopXpq/">2015-10 codepen by DonKarlssonSan</a>
+        <br>
+        <br>
 
         Other resources:
         <ul>
@@ -544,15 +546,15 @@ class DLA {
 
   rate = 5
   turnDenom = 8;
+  stepLimit = 50;
 
   elapsed = 0
 
   update?(ctx:Context, dt:number): void {
     this.elapsed += dt
-    const n = Math.floor(this.elapsed / this.rate)
+    const n = Math.min(this.stepLimit, Math.floor(this.elapsed / this.rate));
     if (!n) return;
-    this.elapsed %= this.rate
-
+    this.elapsed -= n * this.rate;
     for (let i = 0; i < n; ++i) {
 
       const p = ctx.grid.getTile(`particle-${this.particleID}`);
