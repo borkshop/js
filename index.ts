@@ -1,5 +1,6 @@
-import "core-js/stable";
-import "regenerator-runtime/runtime";
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
+import {html, render, TemplateResult} from 'lit-html';
 
 interface Point {
   x: number,
@@ -65,6 +66,17 @@ class TileGrid {
       return this.el.querySelector('#' + this.tileID(elOrID));
     }
     return elOrID;
+  }
+
+  queryTiles(selector?:string) {
+    const res : HTMLElement[] = [];
+    for (const el of this.el.querySelectorAll(`.tile${selector || ''}`))
+      res.push(el as HTMLElement);
+    return res;
+  }
+
+  clear() {
+    while (this.el.firstChild) this.el.removeChild(this.el.firstChild);
   }
 
   getTilePosition(elOrID:HTMLElement|string) {
@@ -231,122 +243,277 @@ function coalesceKeys(presses:Array<[string, number]>) {
     });
 }
 
+interface SimAction {
+  actor: HTMLElement,
+  pos: Point,
+  targ: Point,
+  ok: boolean,
+}
+
+interface Context {
+  showModal(tmpl:TemplateResult|null):void
+  grid : TileGrid
+}
+
+interface Scenario {
+  setup(ctx:Context): void
+  status?(ctx:Context): string
+  act?(ctx:Context, action:SimAction): SimAction
+}
+
+interface ScenarioCons {
+  new(): Scenario
+}
+
+class Sim {
+  scen : Scenario | null = null
+  modal : HTMLElement
+  grid : TileGrid
+  keys : KeyMap
+  foot? : HTMLElement
+  cont? : HTMLElement
+
+  constructor(
+    modal : HTMLElement,
+    view : HTMLElement,
+    foot? : HTMLElement,
+    cont? : HTMLElement,
+  ) {
+    this.modal = modal;
+    this.grid = new TileGrid(view);
+    this.keys = new KeyMap();
+    this.foot = foot;
+    this.cont = cont;
+    this.keys.filter = this.filterKeys.bind(this);
+    this.keys.register(this.cont || this.grid.el);
+  }
+
+  filterKeys(event:KeyboardEvent) {
+    if (this.modal.style.display !== 'none') return false;
+    return !event.altKey && !event.ctrlKey && !event.metaKey;
+  }
+ 
+  showModal(tmpl:TemplateResult|null) {
+    render(tmpl, this.modal);
+    this.modal.style.display = tmpl ? '' : 'none';
+  }
+
+  change(scen:Scenario|null) {
+    this.grid.clear();
+    this.scen = scen;
+    if (this.scen) this.scen.setup(this);
+    this.updateFooter();
+  }
+
+  updateFooter() {
+    if (this.foot) this.foot.innerText =
+      (this.scen && this.scen.status && this.foot)
+      ? this.scen.status(this) : '';
+  }
+
+  inputRate = 100 // rate at which to coalesce and process movement input
+  nudgeBy = 0.2   // proportion to scroll viewport by when at goes outside
+
+  lastInput = 0
+  update(dt:number):void {
+    if ((this.lastInput += dt / this.inputRate) >= 1) {
+      this.consumeInput();
+      this.lastInput = this.lastInput % 1;
+    }
+  }
+
+  consumeInput() {
+    const presses = this.keys.consumePresses();
+    if (!this.scen) return;
+
+    const movers = this.grid.queryTiles('.keyMove');
+    if (!movers.length) return;
+    if (movers.length > 1) throw new Error(`ambiguous ${movers.length}-mover situation`);
+    const actor = movers[0];
+
+    let {have, move} = coalesceKeys(presses);
+    if (!have) return;
+
+    const pos = this.grid.getTilePosition(actor);
+    const targ = {x: pos.x + move.x, y: pos.y + move.y};
+    let action = {actor, pos, targ, ok: true};
+
+    if (this.scen.act) action = this.scen.act(this, action);
+
+    if (action.ok) {
+      this.grid.moveTileTo(action.actor, action.targ);
+      const {width, height} = this.grid.viewport;
+      const nudge = {x: Math.floor(width * this.nudgeBy), y: Math.floor(height * this.nudgeBy)};
+      this.grid.nudgeViewTo(action.targ, nudge);
+    }
+
+    this.updateFooter();
+  }
+}
+
+class Hello {
+  setup(ctx:Context) {
+    ctx.showModal(html`
+      <section>
+        <p>
+          Welcome to the Pits of JavaScript, where we experiment our way towards
+          a "game", spinning demos and other pieces of interest as the spirit
+          moves...
+        </p>
+
+        <p>
+          To get started, just pick a demo from the header dropdown.
+        </p>
+      </section>
+
+      <section align="center">
+        <a href="//github.com/jcorbin/jspit">Github</a>
+        |
+        <a href="//github.com/jcorbin/jspit/blob/main/stream.md">Dev log</a>
+      </section>
+    `);
+  }
+}
+
+class ColorBoop {
+  setup(ctx:Context) {
+    ctx.showModal(html`
+      <section>
+        <h1 align="center">Welcome traveler</h1>
+        <p>
+          Boop a color, get a color!
+        </p>
+        <p>
+          This is the first and simplest example of jspit's <code>TileGrid</code>.
+        </p>
+        <p>
+          <button @click=${() => ctx.showModal(null)}>Ok!</button>
+        </p>
+      </section>
+    `);
+
+    ctx.grid.createTile('at', {
+      text: '@',
+      tag: ['solid', 'mind', 'keyMove'],
+      pos: {x: 10, y: 10},
+    });
+    [ 'black',
+      'darker-grey',
+      'dark-grey',
+      'grey',
+      'light-grey',
+      'lighter-grey',
+      'white',
+      'dark-white',
+      'blue',
+      'bright-purple',
+      'cyan',
+      'dark-orange',
+      'dark-sea-green',
+      'green',
+      'light-cyan',
+      'magenta',
+      'orange',
+      'purple',
+      'red',
+      'red-orange',
+      'yellow',
+      'yellow-orange',
+    ].forEach((color, i) => {
+      ctx.grid.createTile(`fg-swatch-${color}`, {
+        fg: `var(--${color})`,
+        tag: ['solid', 'swatch', 'fg'],
+        text: '$',
+        pos: {x: 5, y: i},
+      });
+      ctx.grid.createTile(`bg-swatch-${color}`, {
+        bg: `var(--${color})`,
+        tag: ['solid', 'swatch', 'bg'],
+        text: '$',
+        pos: {x: 15, y: i},
+      });
+    })
+  }
+
+  act(ctx:Context, action:SimAction): SimAction {
+    if (!action.actor.classList.contains('solid')) return action;
+    const hits = ctx.grid.tilesAt(action.targ, '.solid');
+    if (!(action.ok = !hits.length)) for (const hit of hits)
+      if (hit.classList.contains('swatch')) {
+        const spec : TileSpec = {};
+        if      (hit.classList.contains('fg')) spec.fg = hit.style.color;
+        else if (hit.classList.contains('bg')) spec.bg = hit.style.backgroundColor;
+        ctx.grid.updateTile(action.actor, spec)
+      }
+    return action;
+  }
+
+  status(ctx:Context) {
+    const {x, y} = ctx.grid.getTilePosition('at');
+    const {x: w, y: h} = ctx.grid.tileSize;
+    const {x: vx, y: vy, width: vw, height: vh} = ctx.grid.viewport;
+    return `player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}`;
+  }
+}
+
+const demos:ScenarioCons[] = [
+  Hello,
+  ColorBoop,
+];
+
+function setupDemoSelector(sel:HTMLSelectElement, change:(scen:Scenario|null)=>void) {
+  for (const demo of demos) {
+    const opt = document.createElement('option');
+    opt.value = demo.name;
+    opt.innerText = demo.name; // TODO description?
+    sel.appendChild(opt);
+  }
+  const changed = () => {
+    let demo = null;
+    for (const d of demos) if (d.name === sel.value) {
+      demo = new d();
+      break;
+    }
+    if (!demo) sel.value = 'hello';
+    change(demo || new Hello());
+    sel.blur();
+  };
+  sel.addEventListener('change', changed);
+  changed();
+}
+
 async function main() {
   await once(window, 'DOMContentLoaded');
 
   const main = document.querySelector('main');
   if (!main) throw new Error('no <main> element');
 
-  const head = document.querySelector('header');
-  if (!head) throw new Error('no <header> element');
+  const modal = main.querySelector('.modal');
+  if (!modal) throw new Error('no <main> .modal')
+
+  const demoSel = document.querySelector('select#demo');
+  if (!demoSel) throw new Error('no <select#demo> element');
+
+  const mainGrid = main.querySelector('.grid');
+  if (!mainGrid) throw new Error('no <main> .grid element');
 
   const foot = document.querySelector('footer');
   if (!foot) throw new Error('no <footer> element');
 
-  const keys = new KeyMap();
-  keys.filter = (event:KeyboardEvent) => !event.altKey && !event.ctrlKey && !event.metaKey;
-  keys.register(document.body);
+  const sim = new Sim(
+    modal as HTMLElement,
+    mainGrid as HTMLElement,
+    foot,
+    document.body,
+  );
 
-  const grid = new TileGrid(main);
-
-  // proportion to scroll viewport by when at goes outside
-  const nudgeBy = 0.2;
-  const nudgeViewTo = ({x, y}:Point) => {
-    const {width, height} = grid.viewport;
-    const nudge = {x: Math.floor(width * nudgeBy), y: Math.floor(height * nudgeBy)};
-    grid.nudgeViewTo({x, y}, nudge);
-  };
-
-  grid.createTile('at', {
-    text: '@',
-    tag: ['solid', 'mind'],
-    pos: {x: 10, y: 10},
-  });
-
-  [ 'black',
-    'darker-grey',
-    'dark-grey',
-    'grey',
-    'light-grey',
-    'lighter-grey',
-    'white',
-    'dark-white',
-    'blue',
-    'bright-purple',
-    'cyan',
-    'dark-orange',
-    'dark-sea-green',
-    'green',
-    'light-cyan',
-    'magenta',
-    'orange',
-    'purple',
-    'red',
-    'red-orange',
-    'yellow',
-    'yellow-orange',
-  ].forEach((color, i) => {
-    grid.createTile(`fg-swatch-${color}`, {
-      fg: `var(--${color})`,
-      tag: ['solid', 'swatch', 'fg'],
-      text: '$',
-      pos: {x: 5, y: i},
-    });
-    grid.createTile(`bg-swatch-${color}`, {
-      bg: `var(--${color})`,
-      tag: ['solid', 'swatch', 'bg'],
-      text: '$',
-      pos: {x: 15, y: i},
-    });
-  })
-
-  const updateFooter = () => {
-    const {x, y} = grid.getTilePosition('at');
-    const {x: w, y: h} = grid.tileSize;
-    const {x: vx, y: vy, width: vw, height: vh} = grid.viewport;
-    foot.innerText = `player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}`;
-  }
+  setupDemoSelector(demoSel as HTMLSelectElement, sim.change.bind(sim));
 
   let last = await nextFrame();
-  updateFooter();
+
   let dt = 0;
-
-  // coalesce and process key input every t frames
-  let input = 0;
-  const inputRate = 100;
-
   while (true) {
-
-    if ((input += dt / inputRate) >= 1) {
-      const {have, move} = coalesceKeys(keys.consumePresses());
-      if (have) {
-        const tile = grid.getTile('at');
-        if (!tile) throw new Error('player gone!');
-        let may = true;
-        let pos = grid.getTilePosition(tile);
-        pos.x += move.x;
-        pos.y += move.y;
-
-        if (tile.classList.contains('solid')) {
-          const hits = grid.tilesAt(pos, '.solid');
-          if (!(may = !hits.length)) for (const hit of hits)
-            if (hit.classList.contains('swatch')) {
-              const spec : TileSpec = {};
-              if      (hit.classList.contains('fg')) spec.fg = hit.style.color;
-              else if (hit.classList.contains('bg')) spec.bg = hit.style.backgroundColor;
-              grid.updateTile(tile, spec)
-            }
-        }
-
-        if (may) {
-          grid.moveTileTo(tile, pos);
-          nudgeViewTo(pos);
-          updateFooter();
-        }
-      }
-      input = input % 1;
-    }
-
+    sim.update(dt);
     const next = await nextFrame();
     dt = next - last, last = next;
   }

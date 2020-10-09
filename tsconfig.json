@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "es6",
     "strict": true,
+    "moduleResolution": "node",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,

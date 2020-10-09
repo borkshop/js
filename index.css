@@ -51,12 +51,14 @@ html {
   margin: 0;
   padding: 0;
   height: 100%;
+  overflow: hidden;
 }
 
 body {
   margin: 0;
   padding: 0.3em 0.5em;
   height: 100%;
+  overflow: hidden;
 }
 
 html, body {
@@ -68,27 +70,69 @@ a         { color: var(--action-color); text-decoration: none; }
 a:hover,
 a:focus   { color: var(--action-focus-color); text-decoration: underline }
 a:active  { color: var(--acting-color); }
-a:visited { color: var(--acted-color); }
 
-header { font-size: 2em; }
-footer { font-size: 1em; }
-
-main, section {
+header, footer {
+  position: absolute;
+  height: 1.5em;
+  left: 0;
+  right: 0;
   background-color: var(--content-bg);
   color: var(--content-fg);
-  border-radius: 0.3em;
-  padding: 0.3em 0.5em;
+  padding: 0 0.5em;
+}
+
+header { top: 0; }
+footer { bottom: 0; }
+
+main {
+  position: absolute;
+  top: 1.5em;
+  bottom: 1.5em;
 }
 
 main {
-  height: 90%;
+  left: 0;
+  right: 0;
+}
+
+aside.modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+}
+
+aside.modal section {
+  margin: 0 20%;
+  margin-top: 1em;
+}
+
+section {
+  background-color: var(--content-bg);
+  color: var(--content-fg);
+  margin-top: 1em;
+  padding: 0.3em 0.5em;
+  border-radius: 0.3em;
+}
+
+main {
   font-family: monospace;
+}
+
+main .grid {
   position: relative;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
-  font-size: 18pt;
+
   line-height: 1.0;
   --xlate-x: 0;
   --xlate-y: 0;
+  cursor: none;
+  font-size: 18pt;
 }
 
 .tile {
@@ -99,13 +143,14 @@ main {
   top:  calc((var(--y) - var(--xlate-y)) * 1em);
   width: 1em;
   text-align: center;
+  vertical-align: middle;
 }
 
 .tile.solid { z-index: 1; }
 .tile.mind  { z-index: 2; }
 
 p {
-  margin: 0.3em 0.5em;
+  margin: 1em 0.5em;
   padding: 0;
 }
 
@@ -113,18 +158,21 @@ input, textarea {
   background-color: var(--ui-bg);
   color: var(--ui-fg);
   border: 0.1em solid var(--ui-accent);
+  border-radius: 0.3em;
 }
 
-input:hover, textarea:hover,
-input:focus, textarea:focus {
+input:hover, textarea:hover, select:hover,
+input:focus, textarea:focus, select:focus {
   color: var(--action-focus-color);
   border-color: var(--action-focus-color);
 }
 
-button {
+select, button {
   background-color: var(--ui-bg);
   color: var(--action-color);
+  border: 0.1em solid var(--ui-accent);
   border-color: var(--ui-accent);
+  border-radius: 0.3em;
 }
 
 button:hover, button:focus { color: var(--action-focus-color); border-color: var(--action-focus-color); }

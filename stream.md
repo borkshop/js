@@ -95,6 +95,7 @@ All of this exists in a separate world attached to each minded entity:
 
 ## Done
 
+- reworked the super structure to support multiple demos / scenarios
 - implemented basic color boop collider
 - factored out TileGrid to reify the grid sketched yesterday
 - sorted out details for building and pushing to github pages
