@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "start": "parcel index.html",
-    "build": "parcel build index.html --public-url /jspit/",
+    "build": "parcel build index.html --no-cache --no-minify --public-url /jspit/",
     "dist": "rm -fv dist/*; npm run build && desc=$(git describe --always) && cd dist && git add -A && git commit -m \"build $desc\""
   },
   "devDependencies": {
