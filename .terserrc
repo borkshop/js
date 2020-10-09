@@ -1,4 +1,6 @@
 {
+  "mangle": false,
   "keep_classnames": true,
+  "keep_fnames": true,
   "ecma": 6
 }
