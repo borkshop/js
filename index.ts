@@ -262,6 +262,7 @@ interface SimAction {
 }
 
 interface Context {
+  addCtl(tmpl:TemplateResult|null):HTMLElement|null
   showModal(tmpl:TemplateResult|null):void
   setStatus(tmpl:TemplateResult|null):void
   grid : TileGrid
@@ -282,23 +283,29 @@ class Sim {
   modal : HTMLElement
   grid : TileGrid
   keys : KeyMap
+  head? : HTMLElement
   foot? : HTMLElement
   cont? : HTMLElement
 
   constructor(
     modal : HTMLElement,
     view : HTMLElement,
+    head? : HTMLElement,
     foot? : HTMLElement,
     cont? : HTMLElement,
   ) {
     this.modal = modal;
     this.grid = new TileGrid(view);
     this.keys = new KeyMap();
+    this.head = head;
     this.foot = foot;
     this.cont = cont;
     this.keys.filter = this.filterKeys.bind(this);
     this.keys.register(this.cont || this.grid.el);
+    this.#origGridClassname = this.grid.el.className;
   }
+
+  #origGridClassname:string
 
   filterKeys(event:KeyboardEvent) {
     if (this.modal.style.display !== 'none') return false;
@@ -309,8 +316,26 @@ class Sim {
     this.grid.clear();
     this.scen = scen;
     this.setStatus(null);
+    this.grid.el.className = this.#origGridClassname;
+    this.clearCtls();
     this.modal.style.display = 'none';
     if (this.scen) this.scen.setup(this);
+  }
+
+  clearCtls() {
+    if (!this.head) return;
+    for (const el of this.head.querySelectorAll('.ctl.scen'))
+      if (el.parentNode) el.parentNode.removeChild(el);
+  }
+
+  addCtl(tmpl:TemplateResult|null):HTMLElement|null {
+    if (!this.head) return null;
+    const ctl = document.createElement('div');
+    ctl.classList.add('ctl');
+    ctl.classList.add('scen');
+    this.head.appendChild(ctl);
+    render(tmpl, ctl);
+    return ctl;
   }
 
   showModal(tmpl:TemplateResult|null) {
@@ -659,6 +684,10 @@ async function main() {
 
   const mainGrid = main.querySelector('.grid');
   if (!mainGrid) throw new Error('no <main> .grid element');
+
+  const head = document.querySelector('header');
+  if (!head) throw new Error('no <header> element');
+
   const foot = document.querySelector('footer');
   if (!foot) throw new Error('no <footer> element');
 
@@ -667,6 +696,7 @@ async function main() {
   const sim = new Sim(
     modal as HTMLElement,
     mainGrid as HTMLElement,
+    head,
     foot,
     document.body,
   );
