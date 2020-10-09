@@ -272,6 +272,7 @@ interface Scenario {
   setup(ctx:Context): void
   update?(ctx:Context, dt:number): void
   act?(ctx:Context, action:SimAction): SimAction
+  inspect?(ctx:Context, pos:Point, tiles:HTMLElement[]):void
 }
 
 interface ScenarioCons {
@@ -319,7 +320,34 @@ class Sim {
     this.grid.el.className = this.#origGridClassname;
     this.clearCtls();
     this.modal.style.display = 'none';
-    if (this.scen) this.scen.setup(this);
+    if (this.#boundMouseMoved) this.grid.el.removeEventListener('mousemove', this.#boundMouseMoved);
+    if (this.scen) {
+      this.scen.setup(this);
+      if (this.scen.inspect) {
+        if (!this.#boundMouseMoved) this.#boundMouseMoved = this.mouseMoved.bind(this)
+        this.grid.el.addEventListener('mousemove', this.#boundMouseMoved);
+        this.grid.el.classList.add('inspectable');
+      }
+    }
+  }
+
+  #boundMouseMoved?:any
+  #inspectingIDs?:string
+  mouseMoved(ev:MouseEvent) {
+    const tiles = document
+      .elementsFromPoint(ev.clientX, ev.clientY)
+      .filter(el => el.classList.contains('tile')) as HTMLElement[];
+    if (!this.scen || !this.scen.inspect) return;
+
+    const ids = tiles.map(({id}) => id).join(';');
+    if (this.#inspectingIDs === ids) return;
+    this.#inspectingIDs = ids;
+    // if (!tiles.length) return;
+
+    // TODO would be nice to be able to just translate event coordinates into
+    // tile space
+    const pos = this.grid.getTilePosition(tiles[0]);
+    this.scen.inspect(this, pos, tiles);
   }
 
   clearCtls() {
@@ -412,7 +440,7 @@ class Hello {
 }
 
 class ColorBoop {
-  static colors = [
+  colors = [
     'black',
     'darker-grey',
     'dark-grey',
@@ -437,7 +465,19 @@ class ColorBoop {
     'yellow-orange',
   ]
 
+  #viewer?:HTMLElement|null
+
+  inspect?(_ctx:Context, pos:Point, tiles:HTMLElement[]):void {
+    if (this.#viewer) render(tiles.length
+      ? html`@${pos.x},${pos.y} ${tiles.map(({id}) => id)}`
+      : html`// mouse-over a tile to inspect it`,
+      this.#viewer
+    )
+  }
+
   setup(ctx:Context) {
+    this.#viewer = ctx.addCtl(html`// mouse-over a tile to inspect it`);
+
     ctx.showModal(html`
       <section>
         <h1 align="center">Welcome traveler</h1>
@@ -458,7 +498,7 @@ class ColorBoop {
       tag: ['solid', 'mind', 'keyMove'],
       pos: {x: 10, y: 10},
     });
-    ColorBoop.colors.forEach((color, i) => {
+    this.colors.forEach((color, i) => {
       ctx.grid.createTile(`fg-swatch-${color}`, {
         fg: `var(--${color})`,
         tag: ['solid', 'swatch', 'fg'],

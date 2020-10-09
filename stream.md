@@ -95,10 +95,11 @@ All of this exists in a separate world attached to each minded entity:
   - indirect color variables, add color settings
   - player drop
   - controlled RNG with seed setting
-- TileGrid
-  - spatial index for `tilesAt`
+- use `document.elementsFromPoint` to accelerate `TileGrid.tilesAt`
 
 ## Done
+
+- added tile inspection support to Sim/Scenario, example use in ColorBoop
 
 # 2020-10-08
 
