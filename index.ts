@@ -130,6 +130,8 @@ class TileGrid {
   }
 
   moveViewTo({x, y}:Point) {
+    x = Math.floor(x);
+    y = Math.floor(y);
     this.el.style.setProperty('--xlate-x', x.toString());
     this.el.style.setProperty('--xlate-y', y.toString());
     return {x, y};
@@ -140,8 +142,17 @@ class TileGrid {
     return this.moveViewTo({x: x + dx, y: y + dy});
   }
 
-  nudgeViewTo({x, y}:Point, {x: nx, y: ny}:Point) {
+  centerViewOn({x, y}:Point) {
+    const {width, height} = this.viewport;
+    x -= width / 2, y -= height / 2;
+    return this.moveViewTo({x, y});
+  }
+
+  nudgeViewTo({x, y}:Point, nudge:Point|number) {
     let {x: vx, y: vy, width, height} = this.viewport;
+    let nx = width, ny = height;
+    if (typeof nudge === 'number') nx *= nudge,   ny *= nudge;
+    else                           nx  = nudge.x, ny  = nudge.y;
     while (true) {
       const dx = x < vx ? -1 : x > vx + width ? 1 : 0;
       const dy = y < vy ? -1 : y > vy + height ? 1 : 0;
@@ -252,12 +263,13 @@ interface SimAction {
 
 interface Context {
   showModal(tmpl:TemplateResult|null):void
+  setStatus(tmpl:TemplateResult|null):void
   grid : TileGrid
 }
 
 interface Scenario {
   setup(ctx:Context): void
-  status?(ctx:Context): string
+  update?(ctx:Context, dt:number): void
   act?(ctx:Context, action:SimAction): SimAction
 }
 
@@ -292,23 +304,22 @@ class Sim {
     if (this.modal.style.display !== 'none') return false;
     return !event.altKey && !event.ctrlKey && !event.metaKey;
   }
- 
+
+  change(scen:Scenario|null) {
+    this.grid.clear();
+    this.scen = scen;
+    this.setStatus(null);
+    this.modal.style.display = 'none';
+    if (this.scen) this.scen.setup(this);
+  }
+
   showModal(tmpl:TemplateResult|null) {
     render(tmpl, this.modal);
     this.modal.style.display = tmpl ? '' : 'none';
   }
 
-  change(scen:Scenario|null) {
-    this.grid.clear();
-    this.scen = scen;
-    if (this.scen) this.scen.setup(this);
-    this.updateFooter();
-  }
-
-  updateFooter() {
-    if (this.foot) this.foot.innerText =
-      (this.scen && this.scen.status && this.foot)
-      ? this.scen.status(this) : '';
+  setStatus(tmpl:TemplateResult|null) {
+    if (this.foot) render(tmpl, this.foot);
   }
 
   inputRate = 100 // rate at which to coalesce and process movement input
@@ -320,6 +331,10 @@ class Sim {
       this.consumeInput();
       this.lastInput = this.lastInput % 1;
     }
+
+    if (this.scen && this.scen.update &&
+      this.modal.style.display === 'none')
+      this.scen.update(this, dt);
   }
 
   consumeInput() {
@@ -342,12 +357,8 @@ class Sim {
 
     if (action.ok) {
       this.grid.moveTileTo(action.actor, action.targ);
-      const {width, height} = this.grid.viewport;
-      const nudge = {x: Math.floor(width * this.nudgeBy), y: Math.floor(height * this.nudgeBy)};
-      this.grid.nudgeViewTo(action.targ, nudge);
+      this.grid.nudgeViewTo(action.targ, this.nudgeBy);
     }
-
-    this.updateFooter();
   }
 }
 
@@ -376,6 +387,31 @@ class Hello {
 }
 
 class ColorBoop {
+  static colors = [
+    'black',
+    'darker-grey',
+    'dark-grey',
+    'grey',
+    'light-grey',
+    'lighter-grey',
+    'white',
+    'dark-white',
+    'blue',
+    'bright-purple',
+    'cyan',
+    'dark-orange',
+    'dark-sea-green',
+    'green',
+    'light-cyan',
+    'magenta',
+    'orange',
+    'purple',
+    'red',
+    'red-orange',
+    'yellow',
+    'yellow-orange',
+  ]
+
   setup(ctx:Context) {
     ctx.showModal(html`
       <section>
@@ -397,29 +433,7 @@ class ColorBoop {
       tag: ['solid', 'mind', 'keyMove'],
       pos: {x: 10, y: 10},
     });
-    [ 'black',
-      'darker-grey',
-      'dark-grey',
-      'grey',
-      'light-grey',
-      'lighter-grey',
-      'white',
-      'dark-white',
-      'blue',
-      'bright-purple',
-      'cyan',
-      'dark-orange',
-      'dark-sea-green',
-      'green',
-      'light-cyan',
-      'magenta',
-      'orange',
-      'purple',
-      'red',
-      'red-orange',
-      'yellow',
-      'yellow-orange',
-    ].forEach((color, i) => {
+    ColorBoop.colors.forEach((color, i) => {
       ctx.grid.createTile(`fg-swatch-${color}`, {
         fg: `var(--${color})`,
         tag: ['solid', 'swatch', 'fg'],
@@ -432,7 +446,9 @@ class ColorBoop {
         text: '$',
         pos: {x: 15, y: i},
       });
-    })
+    });
+      
+    ctx.grid.centerViewOn({x: 10, y: 10});
   }
 
   act(ctx:Context, action:SimAction): SimAction {
@@ -448,26 +464,166 @@ class ColorBoop {
     return action;
   }
 
-  status(ctx:Context) {
+  update(ctx:Context, _dt:number) {
     const {x, y} = ctx.grid.getTilePosition('at');
     const {x: w, y: h} = ctx.grid.tileSize;
     const {x: vx, y: vy, width: vw, height: vh} = ctx.grid.viewport;
-    return `player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}`;
+    ctx.setStatus(html`player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}`);
+  }
+}
+
+class DLA {
+  particleID = 0
+
+  setup(ctx:Context):void {
+    ctx.grid.createTile(`particle-${++this.particleID}`, {
+      tag: ['particle', 'init'],
+      bg: 'var(--black)',
+      fg: 'var(--dark-grey)',
+      text: '.',
+    });
+    ctx.grid.centerViewOn({x: 0, y: 0});
+    this.updateCtl(ctx);
+  }
+
+  updateCtl(ctx:Context):void {
+    ctx.showModal(html`
+      <section>
+        <h1>Diffusion Limited Aggregation</h1>
+
+        <p>
+          This implementation fires particles from the origin with random
+          initial radial heading. Each move proceeds by randomly perturbing the
+          heading up to the turning radius set below, and advancing forward
+          orthogonally along the greatest projected axis.
+        </p>
+
+        <fieldset>
+          <legend>Settings</legend>
+
+          <input id="dla-turnDenom" type="range" min="1" max="100" value="${this.turnDenom}" @change=${this.turnDenomChanged.bind(this, ctx)}>
+          <label for="dla-turnDenom">Turning Radius: Math.PI/${this.turnDenom}</label>
+          <br>
+
+          <input id="dla-rate" type="range" min="1" max="100" value="${this.rate}" @change=${this.rateChanged.bind(this, ctx)}>
+          <label for="dla-rate">Particle Move Rate: every ${this.rate}ms</label>
+          <br>
+
+          <button @click=${() => ctx.showModal(null)}>Run</button>
+        </fieldset>
+      </section>
+
+      <section>
+
+        Inspired by
+        <a href="//web.archive.org/web/20151003181050/http://codepen.io/DonKarlssonSan/full/BopXpq/">2015-10 codepen by DonKarlssonSan</a>
+
+        Other resources:
+        <ul>
+          <li><a href"https://roguelike.club/event2020.html">Roguecel 2020 talk by Herbert Wolverson</a> demonstrated DLA among other techniques</li>
+          <li><a href="//www.roguebasin.com/index.php?title=Diffusion-limited_aggregation">Roguebasin DLA article</a></li>
+          <li><a href="//en.wikipedia.org/wiki/Diffusion-limited_aggregation">WikiPedia on the wider topic</a></li>
+          <li><a href="//paulbourke.net/fractals/dla/">Paul Boruke, reference from DonKarlssonSan</a></li>
+        </ul>
+
+      </section>
+    `);
+  }
+
+  turnDenomChanged(ctx:Context, ev:Event) {
+    const {value} = ev.target as HTMLInputElement;
+    this.turnDenom = parseFloat(value);
+    this.updateCtl(ctx);
+  }
+
+  rateChanged(ctx:Context, ev:Event) {
+    const {value} = ev.target as HTMLInputElement;
+    this.rate = parseFloat(value);
+    this.updateCtl(ctx);
+  }
+
+  rate = 5
+  turnDenom = 8;
+
+  elapsed = 0
+
+  update?(ctx:Context, dt:number): void {
+    this.elapsed += dt
+    const n = Math.floor(this.elapsed / this.rate)
+    if (!n) return;
+    this.elapsed %= this.rate
+
+    for (let i = 0; i < n; ++i) {
+
+      const p = ctx.grid.getTile(`particle-${this.particleID}`);
+      if (!p || !p.classList.contains('live')) {
+        ctx.grid.createTile(`particle-${++this.particleID}`, {
+          tag: ['particle', 'live'],
+          fg: 'var(--green)',
+          text: '*',
+        });
+        ctx.setStatus(html`
+          <label for="particleID">Particels:</label>
+          <span id="particleID">${this.particleID}</span>
+        `);
+        continue;
+      }
+
+      let heading = (p.dataset.heading && parseFloat(p.dataset.heading));
+      if (!heading) {
+        heading = Math.random() * 2 * Math.PI;
+      } else {
+        heading += Math.random() * Math.PI / this.turnDenom;
+        heading %= 2 * Math.PI;
+      }
+      p.dataset.heading = heading.toString();
+
+      const dx = Math.cos(heading);
+      const dy = Math.sin(heading);
+      const pos = ctx.grid.getTilePosition(p);
+      if (Math.abs(dy) > Math.abs(dx)) {
+        if (dy < 0) pos.y--;
+        else pos.y++;
+      } else {
+        if (dx < 0) pos.x--;
+        else pos.x++;
+      }
+
+      if (!ctx.grid.tilesAt(pos, '.particle').length) {
+        delete p.dataset.heading;
+        ctx.grid.updateTile(p, {
+          tag: ['particle'],
+          bg: 'var(--black)',
+          fg: 'var(--grey)',
+          text: '.',
+          pos,
+        });
+        continue;
+      }
+
+      ctx.grid.moveTileTo(p, pos);
+      ctx.grid.nudgeViewTo(pos, 0.2);
+    }
   }
 }
 
 const demos:ScenarioCons[] = [
   Hello,
   ColorBoop,
+  DLA,
 ];
 
-function setupDemoSelector(sel:HTMLSelectElement, change:(scen:Scenario|null)=>void) {
+function setupDemoSelector(
+  boot:HTMLButtonElement,
+  sel:HTMLSelectElement,
+  change:(scen:Scenario|null)=>void) {
   for (const demo of demos) {
     const opt = document.createElement('option');
     opt.value = demo.name;
     opt.innerText = demo.name; // TODO description?
     sel.appendChild(opt);
   }
+  if (window.location.hash) sel.value = window.location.hash.slice(1);
   const changed = () => {
     let demo = null;
     for (const d of demos) if (d.name === sel.value) {
@@ -475,10 +631,12 @@ function setupDemoSelector(sel:HTMLSelectElement, change:(scen:Scenario|null)=>v
       break;
     }
     if (!demo) sel.value = 'hello';
+    window.location.hash = `#${sel.value}`;
     change(demo || new Hello());
     sel.blur();
   };
   sel.addEventListener('change', changed);
+  boot.addEventListener('click', changed);
   changed();
 }
 
@@ -494,11 +652,15 @@ async function main() {
   const demoSel = document.querySelector('select#demo');
   if (!demoSel) throw new Error('no <select#demo> element');
 
+  const demoBoot = document.querySelector('#reboot');
+  if (!demoBoot) throw new Error('no #reboot element');
+
   const mainGrid = main.querySelector('.grid');
   if (!mainGrid) throw new Error('no <main> .grid element');
-
   const foot = document.querySelector('footer');
   if (!foot) throw new Error('no <footer> element');
+
+  let running = true;
 
   const sim = new Sim(
     modal as HTMLElement,
@@ -507,12 +669,16 @@ async function main() {
     document.body,
   );
 
-  setupDemoSelector(demoSel as HTMLSelectElement, sim.change.bind(sim));
+  setupDemoSelector(
+    demoBoot as HTMLButtonElement,
+    demoSel as HTMLSelectElement,
+    sim.change.bind(sim),
+  );
 
   let last = await nextFrame();
 
   let dt = 0;
-  while (true) {
+  while (running) {
     sim.update(dt);
     const next = await nextFrame();
     dt = next - last, last = next;

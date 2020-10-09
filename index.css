@@ -29,12 +29,12 @@ html {
   --main-bg:    var(--darker-grey);
   --main-fg:    var(--light-grey);
   --content-bg: var(--dark-grey);
-  --content-fg: var(--lighter-grey);
+  --content-fg: var(--dark-white);
 
-  --ui-bg:           var(--grey);
+  --ui-bg:           var(--dark-grey);
   --ui-fg:           var(--lighter-grey);
-  --ui-accent:       var(--light-grey);
-  --ui-accent-focus: var(--lighter-grey);
+  --ui-accent:       var(--grey);
+  --ui-accent-focus: var(--light-grey);
 
   --action-color:       var(--blue);
   --action-focus-color: var(--cyan);
@@ -171,7 +171,6 @@ select, button {
   background-color: var(--ui-bg);
   color: var(--action-color);
   border: 0.1em solid var(--ui-accent);
-  border-color: var(--ui-accent);
   border-radius: 0.3em;
 }
 
@@ -183,7 +182,7 @@ fieldset {
   background-color: var(--content-bg);
   color: var(--content-fg);
   border-radius: 0.3em;
-  border-color: var(--ui-accent);
+  border: 0.1em solid var(--ui-accent);
   padding: 0.3em 0.5em;
 }
 

@@ -82,20 +82,23 @@ All of this exists in a separate world attached to each minded entity:
 
 - soul prototype
 - mind research: prolog-like systems
-- grid rendering
-- dialog display and response
-- input controller
-  - local storage updates, e.g. to make an event bus with other local
-    windows? ai workers? network sockets?
-  - ingest external intent
-  - harvest intents into actions for next tick
-- viewport correction on resize
+- TileGrid
+  - animations like boop and particles
+  - spatial index for `tilesAt`
+  - viewport correction on resize
+  - masking?
+  - custom shader funcs, or at least some affordance for stepped css classes
 
 ## WIP
 
 ## Done
 
-- reworked the super structure to support multiple demos / scenarios
+- wrote a DLA demo, which was a great way to furher experiment with modal UI,
+  and also quickly hit the limits of the current brute force spatial query (guess)
+- refactored to support multiple demos / scenarios:
+  - the main animation loop is tiny again
+  - it pumps a `Sim` object
+  - that has a `change()`able `Scenario` object
 - implemented basic color boop collider
 - factored out TileGrid to reify the grid sketched yesterday
 - sorted out details for building and pushing to github pages
