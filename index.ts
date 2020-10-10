@@ -810,7 +810,7 @@ class DLA {
       }
 
       ctx.grid.moveTileTo(p, pos);
-      ctx.grid.nudgeViewTo(pos, 0.2);
+      if (!ctx.grid.queryTiles('keyMove').length) ctx.grid.nudgeViewTo(pos, 0.2);
     }
   }
 
