@@ -1,81 +1,3 @@
-# Design
-
-See [Prior](#prior) section below for notes on jspit's predecessor.
-
-## The Pits
-
-- each pit is its own isolated (objective) world
-- starts out as a wall rectangle defined in its void, with a default filling
-  rule for ...wall/tile?
-
-- each has a super(visor) that exists in its spirit plane, and has special
-  privileges to control the pit's basic plane
-  - TBD is the super integrated with the pit / directly in control? or must it
-    indirectly do things through other entities in the control plane? i.e. is
-    there potential for other spirits to co-opt the controls?
-  - responsible for all souls in their pit
-  - create a new spawn pod by DLA from the super point
-  - pick a soul, spawn a body, generate new mind, attach soul
-
-## Spirits
-
-- are attracted by a sufficiently aligned entity
-- creates rifts in out-of-the-way places ( e.g. from DLA pocketing )
-- tries to lead entity through its entrance rift back to its realm
-- archetypes: messenger / collector for a higher spirt ; hermit spirt took note
-
-## 3 Categories of Phenomena
-
-### Physical: entity bodies
-
-The objective world, realm of what can be seen, felt, done, heard, smelt,
-tasted, or otherwise sensed and interacted with. Only singular in the
-"universe" sense, in that it binds together many entities subjectively
-interacting with it. There will still be many of these multiversally.
-
-Organized into planes within each world:
-- typically one plane at a time is rendered ; could do a (pseudo)-3d stacked god view
-- collision is local to a plane
-- TBD whether need cross-planar entities or go with linked shadow/proxy/avatars
-- cross-planar action needs to be possible, if uncommon
-
-Will probably go with a finite set of plane represented as ECS tags; probably
-don't need dynamic plane space?
-
-Energy ideas: heat, steam, prana, qi, psi, electricity, light, force...
-
-All of this exists in a singular world with tightly controlled access to
-implement physical restrictions and the like.
-
-### Thought: entity minds
-
-Many subjective worlds, realm of AI and IA:
-- IA: support for intelligences, artifical (NPCs) or natural (Player)
-  - a tuple/fact database to record input/action/goal/plans e.g.
-    - an atomic action like "move North"
-    - a goal like "move to X,Y" that can generate atomic actions
-    - known facts, like current HP / max, how long it's been since we last took
-      damage, etc
-    - memory of prior received damage with attribution
-- AI: maybe a rules engine ala prolog and/or maybe behavior trees?
-
-All of this exists in a separate world attached to each minded entity:
-- updated by sensing from the objective world
-- player's view is rendered only from their subjective world
-- likewise ai only sees its subjective world
-
-### Accounting: entity souls
-
-- a fundamental log/ledger that is more-or-less immutable
-  - it's at least normatively immutable, may of course need to do some sort of
-    compaction / archival eventually
-  - and of course a rare power to hack/change a soul irrevocably is too
-    enticing of a game mechanic to not at least consider
-
-- accumulated stats/balances: these seem more like the realm of the mind above,
-  e.g. things like accumulated hate and such, but there may be some call for it
-  here rather than always requiring ledger traversals
-
 # 2020-10-09
 
 ## TODO
@@ -182,6 +104,85 @@ All of this exists in a separate world attached to each minded entity:
     }
     subjects.removeComponent('Q'); // XXX would rather, can?
     ```
+
+# Design
+
+Musings on an eventual game design, see [Prior](#prior) section below for notes
+on jspit's predecessor.
+
+## The Pits
+
+- each pit is its own isolated (objective) world
+- starts out as a wall rectangle defined in its void, with a default filling
+  rule for ...wall/tile?
+
+- each has a super(visor) that exists in its spirit plane, and has special
+  privileges to control the pit's basic plane
+  - TBD is the super integrated with the pit / directly in control? or must it
+    indirectly do things through other entities in the control plane? i.e. is
+    there potential for other spirits to co-opt the controls?
+  - responsible for all souls in their pit
+  - create a new spawn pod by DLA from the super point
+  - pick a soul, spawn a body, generate new mind, attach soul
+
+## Spirits
+
+- are attracted by a sufficiently aligned entity
+- creates rifts in out-of-the-way places ( e.g. from DLA pocketing )
+- tries to lead entity through its entrance rift back to its realm
+- archetypes: messenger / collector for a higher spirt ; hermit spirt took note
+
+## 3 Categories of Phenomena
+
+### Physical: entity bodies
+
+The objective world, realm of what can be seen, felt, done, heard, smelt,
+tasted, or otherwise sensed and interacted with. Only singular in the
+"universe" sense, in that it binds together many entities subjectively
+interacting with it. There will still be many of these multiversally.
+
+Organized into planes within each world:
+- typically one plane at a time is rendered ; could do a (pseudo)-3d stacked god view
+- collision is local to a plane
+- TBD whether need cross-planar entities or go with linked shadow/proxy/avatars
+- cross-planar action needs to be possible, if uncommon
+
+Will probably go with a finite set of plane represented as ECS tags; probably
+don't need dynamic plane space?
+
+Energy ideas: heat, steam, prana, qi, psi, electricity, light, force...
+
+All of this exists in a singular world with tightly controlled access to
+implement physical restrictions and the like.
+
+### Thought: entity minds
+
+Many subjective worlds, realm of AI and IA:
+- IA: support for intelligences, artifical (NPCs) or natural (Player)
+  - a tuple/fact database to record input/action/goal/plans e.g.
+    - an atomic action like "move North"
+    - a goal like "move to X,Y" that can generate atomic actions
+    - known facts, like current HP / max, how long it's been since we last took
+      damage, etc
+    - memory of prior received damage with attribution
+- AI: maybe a rules engine ala prolog and/or maybe behavior trees?
+
+All of this exists in a separate world attached to each minded entity:
+- updated by sensing from the objective world
+- player's view is rendered only from their subjective world
+- likewise ai only sees its subjective world
+
+### Accounting: entity souls
+
+- a fundamental log/ledger that is more-or-less immutable
+  - it's at least normatively immutable, may of course need to do some sort of
+    compaction / archival eventually
+  - and of course a rare power to hack/change a soul irrevocably is too
+    enticing of a game mechanic to not at least consider
+
+- accumulated stats/balances: these seem more like the realm of the mind above,
+  e.g. things like accumulated hate and such, but there may be some call for it
+  here rather than always requiring ledger traversals
 
 # Prior
 
