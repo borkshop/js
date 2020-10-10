@@ -333,6 +333,7 @@ interface ScenarioCons {
 }
 
 class Sim {
+  cons : ScenarioCons | null = null
   scen : Scenario | null = null
   modal : HTMLElement
   grid : TileGrid
@@ -357,22 +358,36 @@ class Sim {
     this.keys.filter = this.filterKeys.bind(this);
     this.keys.register(this.cont || this.grid.el);
     this.#origGridClassname = this.grid.el.className;
+
+    this.addCtl(html`
+      <button @click=${() => this.reboot()} title="Reboot Scenario <Escape>">Reboot</button>
+    `)?.classList.remove('scen');
   }
 
   #origGridClassname:string
 
   filterKeys(event:KeyboardEvent) {
+    if (event.key === 'Escape') {
+      this.reboot();
+      return false;
+    }
     if (this.modal.style.display !== 'none') return false;
     return !event.altKey && !event.ctrlKey && !event.metaKey;
   }
 
-  change(scen:Scenario|null) {
+  change(cons:ScenarioCons|null) {
+    this.cons = cons;
+    this.reboot();
+  }
+
+  reboot() {
     this.grid.clear();
-    this.scen = scen;
-    this.setStatus(null);
     this.grid.el.className = this.#origGridClassname;
     this.clearCtls();
+    this.setStatus(null);
     this.modal.style.display = 'none';
+
+    this.scen = this.cons && new this.cons();
     if (this.#boundMouseMoved) this.grid.el.removeEventListener('mousemove', this.#boundMouseMoved);
     if (this.scen) {
       this.scen.setup(this);
@@ -734,9 +749,8 @@ const demos:ScenarioCons[] = [
 ];
 
 function setupDemoSelector(
-  boot:HTMLButtonElement,
   sel:HTMLSelectElement,
-  change:(scen:Scenario|null)=>void) {
+  change:(scen:ScenarioCons|null)=>void) {
   for (const demo of demos) {
     const opt = document.createElement('option');
     opt.value = demo.name;
@@ -745,18 +759,17 @@ function setupDemoSelector(
   }
   if (window.location.hash) sel.value = window.location.hash.slice(1);
   const changed = () => {
-    let demo = null;
+    let cons = null;
     for (const d of demos) if (d.name === sel.value) {
-      demo = new d();
+      cons = d;
       break;
     }
-    if (!demo) sel.value = 'hello';
+    if (!cons) sel.value = 'hello';
     window.location.hash = `#${sel.value}`;
-    change(demo || new Hello());
+    change(cons || Hello);
     sel.blur();
   };
   sel.addEventListener('change', changed);
-  boot.addEventListener('click', changed);
   changed();
 }
 
@@ -771,9 +784,6 @@ async function main() {
 
   const demoSel = document.querySelector('select#demo');
   if (!demoSel) throw new Error('no <select#demo> element');
-
-  const demoBoot = document.querySelector('#reboot');
-  if (!demoBoot) throw new Error('no #reboot element');
 
   const mainGrid = main.querySelector('.grid');
   if (!mainGrid) throw new Error('no <main> .grid element');
@@ -795,7 +805,6 @@ async function main() {
   );
 
   setupDemoSelector(
-    demoBoot as HTMLButtonElement,
     demoSel as HTMLSelectElement,
     sim.change.bind(sim),
   );
