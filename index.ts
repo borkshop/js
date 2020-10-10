@@ -140,9 +140,9 @@ class TileGrid {
     return elOrID;
   }
 
-  queryTiles(selector?:string) {
+  queryTiles(...tag:string[]) {
     const res : HTMLElement[] = [];
-    for (const el of this.el.querySelectorAll(`.tile${selector || ''}`))
+    for (const el of this.el.querySelectorAll(`.tile${tag.map(t => `.${t}`).join('')}`))
       res.push(el as HTMLElement);
     return res;
   }
@@ -487,7 +487,7 @@ class Sim {
     const presses = this.keys.consumePresses();
     if (!this.scen) return;
 
-    const movers = this.grid.queryTiles('.keyMove');
+    const movers = this.grid.queryTiles('keyMove');
     if (!movers.length) return;
     if (movers.length > 1) throw new Error(`ambiguous ${movers.length}-mover situation`);
     const actor = movers[0];
@@ -641,10 +641,10 @@ class DLA {
       text: '.',
     });
     ctx.grid.centerViewOn({x: 0, y: 0});
-    this.updateCtl(ctx);
+    this.doSettings(ctx);
   }
 
-  updateCtl(ctx:Context):void {
+  doSettings(ctx:Context):void {
     ctx.showModal(html`
       <section>
         <h1>Diffusion Limited Aggregation</h1>
@@ -662,7 +662,7 @@ class DLA {
           <input id="dla-turnLeft" type="range" min="0" max="1" step="0.01" value="${this.turnLeft}" @change=${(ev:Event) => {
             const {value} = ev.target as HTMLInputElement;
             this.turnLeft = parseFloat(value);
-            this.updateCtl(ctx);
+            this.doSettings(ctx);
           }}>
           <label for="dla-turnLeft">Left Turning Arc: upto Math.PI/${this.turnLeft}</label>
           <br>
@@ -670,7 +670,7 @@ class DLA {
           <input id="dla-turnRight" type="range" min="0" max="1" step="0.01" value="${this.turnRight}" @change=${(ev:Event) => {
             const {value} = ev.target as HTMLInputElement;
             this.turnRight = parseFloat(value);
-            this.updateCtl(ctx);
+            this.doSettings(ctx);
           }}>
           <label for="dla-turnRight">Right Turning Radius: upto Math.PI/${this.turnRight}</label>
           <br>
@@ -678,12 +678,35 @@ class DLA {
           <input id="dla-rate" type="range" min="1" max="100" value="${this.rate}" @change=${(ev:Event) => {
             const {value} = ev.target as HTMLInputElement;
             this.rate = parseFloat(value);
-            this.updateCtl(ctx);
+            this.doSettings(ctx);
           }}>
           <label for="dla-rate">Particle Move Rate: every ${this.rate}ms</label>
           <br>
 
-          <button @click=${() => ctx.showModal(null)}>Run</button>
+          <button @click=${() => {
+            ctx.showModal(null);
+            const drop = ctx.addCtl(html`
+              <button @click=${() => {
+                drop?.parentNode?.removeChild(drop);
+                this.dropPlayer(ctx);
+                this.rate = 100;
+                doRate();
+              }}>Drop Player</button>
+            `);
+            const rate = ctx.addCtl(html``);
+            const doRate = () => {
+              if (!rate) return;
+              render(html`
+                <input id="dla-rate" type="range" min="1" max="100" value="${this.rate}" @change=${(ev:Event) => {
+                  const {value} = ev.target as HTMLInputElement;
+                  this.rate = parseFloat(value);
+                  doRate();
+                }}>
+                <label for="dla-rate">Particle Move Rate: every ${this.rate}ms</label>
+              `, rate);
+            };
+            doRate();
+          }}>Run</button>
         </fieldset>
       </section>
 
@@ -712,25 +735,44 @@ class DLA {
   stepLimit = 50;
 
   elapsed = 0
+  pi = 0
 
-  update?(ctx:Context, dt:number): void {
+  dropPlayer(ctx:Context) {
+    ctx.grid.createTile('at', {
+      text: '@',
+      tag: ['solid', 'mind', 'keyMove'],
+      pos: {x: 0, y: 0},
+    });
+  }
+
+  update(ctx:Context, dt:number): void {
     this.elapsed += dt
     const n = Math.min(this.stepLimit, Math.floor(this.elapsed / this.rate));
     if (!n) return;
     this.elapsed -= n * this.rate;
-    for (let i = 0; i < n; ++i) {
+    const ps = ctx.grid.queryTiles('particle', 'live');
+    const spawn = () => {
+      const p = ctx.grid.createTile(`particle-${++this.particleID}`, {
+        tag: ['particle', 'live'],
+        fg: 'var(--green)',
+        text: '*',
+      });
+      ctx.setStatus(html`
+        <label for="particleID">Particels:</label>
+        <span id="particleID">${this.particleID}</span>
+      `);
+      ps.push(p);
+    };
+    for (let i = 0; i < n; ++i, ++this.pi) {
+      if (!ps.length) {
+        spawn();
+        continue;
+      }
 
-      const p = ctx.grid.getTile(`particle-${this.particleID}`);
-      if (!p || !p.classList.contains('live')) {
-        ctx.grid.createTile(`particle-${++this.particleID}`, {
-          tag: ['particle', 'live'],
-          fg: 'var(--green)',
-          text: '*',
-        });
-        ctx.setStatus(html`
-          <label for="particleID">Particels:</label>
-          <span id="particleID">${this.particleID}</span>
-        `);
+      this.pi %= ps.length;
+      const p = ps[this.pi];
+      if (!p.classList.contains('live')) {
+        ps.splice(this.pi, 1);
         continue;
       }
 
@@ -763,12 +805,37 @@ class DLA {
           text: '.',
           pos,
         });
+        ps.splice(this.pi, 1);
         continue;
       }
 
       ctx.grid.moveTileTo(p, pos);
       ctx.grid.nudgeViewTo(pos, 0.2);
     }
+  }
+
+  digSeq = new Map<string, number>()
+  act(ctx:Context, action:SimAction): SimAction {
+    if (!action.actor.classList.contains('solid')) return action;
+
+    const hits = ctx.grid.tilesAt(action.targ);
+
+    if (!hits.length) {
+      const aid = action.actor.id;
+      const did = (this.digSeq.get(aid) || 0) + 1;
+      this.digSeq.set(aid, did);
+      ctx.grid.createTile(`particle-placed-${aid}-${did}`, {
+        tag: ['particle'],
+        bg: 'var(--black)',
+        fg: 'var(--orange)',
+        text: '.',
+        pos: action.targ,
+      });
+    } else if (!hits.some((h) => h.classList.contains('particle'))) {
+      action.ok = false;
+    }
+
+    return action;
   }
 }
 

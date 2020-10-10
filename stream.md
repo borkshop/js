@@ -95,10 +95,10 @@ All of this exists in a separate world attached to each minded entity:
   - persist parameters in location hash
   - indirect color variables, add color settings
   - controlled RNG with seed setting
-  - player drop
 
 ## Done
 
+- added player drop and dig to DLA demo
 - improved DLA turning arc: dual ended control
 - subsumed Sim reboot button, and bound to Escape key
 - added a morton-curve spatial index to TileGrid
