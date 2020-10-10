@@ -15,6 +15,52 @@ interface TileSpec {
   bg?: string
 }
 
+// mortonSpread inserts a 0 bit after each of 26 the low bits of x, masking
+// away any higher bits; this is the best we can do in JavaScript since integer
+// precision maxes out at 53 bits.
+function mortonSpread1(x:number):number {
+  x =  x             & 0x00000002ffffff; // x = ---- ----  ---- ----  ---- ----  ---- --98  7654 3210  fedc ba98  7654 3210
+  x = (x ^ (x << 8)) & 0x0200ff00ff00ff; // x = ---- --98  ---- ----  7654 3210  ---- ----  fedc ba98  ---- ----  7654 3210
+  x = (x ^ (x << 4)) & 0x020f0f0f0f0f0f; // x = ---- ----  ---- 7654  ---- 3210  ---- fedc  ---- ba98  ---- 7654  ---- 3210
+  x = (x ^ (x << 2)) & 0x02333333333333; // x = ---- --98  --76 --54  --32 --10  --fe --dc  --ba --98  --76 --54  --32 --10
+  x = (x ^ (x << 1)) & 0x05555555555555; // x = ---- -9-8  -6-6 -5-4  -3-2 -1-0  -f-e -d-c  -b-a -9-8  -7-6 -5-4  -3-2 -1-0
+  return x;
+}
+
+// mortonKey returns the Z-order curve index for a Point, aka its "Morton code"
+// https://en.wikipedia.org/wiki/Z-order_curve
+function mortonKey({x, y}:Point):number {
+  return mortonSpread1(x) | mortonSpread1(y)<<1;
+}
+
+interface TileSpatialIndex {
+  update(ids:string[], pos:Point[]):void
+  tilesAt(at:Point):Set<string>|undefined
+  // TODO range query
+}
+
+class TileMortonIndex {
+  #fore = new Map<number, Set<string>>();
+  #back = new Map<string, number>();
+
+  update(ids:string[], pos:Point[]) {
+    for (const [i, id] of ids.entries()) {
+      const pt = pos[i];
+      const key = mortonKey(pt);
+      const prior = this.#back.get(id);
+      if (prior !== undefined) this.#fore.get(prior)?.delete(id);
+      const at = this.#fore.get(key);
+      if (at) at.add(id);
+      else this.#fore.set(key, new Set([id]));
+      this.#back.set(id, key);
+    }
+  }
+
+  tilesAt(at:Point) {
+    return this.#fore.get(mortonKey(at));
+  }
+}
+
 class TileGrid {
   el : HTMLElement
 
@@ -93,6 +139,8 @@ class TileGrid {
     if (!tile) return {x: NaN, y: NaN};
     tile.style.setProperty('--x', pt.x.toString());
     tile.style.setProperty('--y', pt.y.toString());
+    // TODO decouple/batch these with a mutation observer?
+    this.spatialIndex.update([tile.id], [pt]);
     return pt;
   }
 
@@ -104,14 +152,18 @@ class TileGrid {
     return this.moveTileTo(tile, {x, y});
   }
 
+  spatialIndex:TileSpatialIndex = new TileMortonIndex()
+
   tilesAt(at:Point, ...tag:string[]):HTMLElement[] {
     let tiles : HTMLElement[] = [];
-    // TODO :shrug: spatial index
-    for (const other of this.el.querySelectorAll(`.tile${tag.map(t => `.${t}`).join('')}`)) {
-      const el = other as HTMLElement;
-      const pos = this.getTilePosition(el);
-      if (pos.x === at.x && pos.y === at.y) tiles.push(el);
+    const ids = this.spatialIndex.tilesAt(at);
+    if (!ids) return tiles;
+    for (const id of ids) {
+      const el = this.el.querySelector(`#${id}`);
+      if (el) tiles.push(el as HTMLElement);
     }
+    if (tag.length) tiles = tiles
+      .filter(el => tag.every(t => el.classList.contains(t)));
     return tiles;
   }
 
