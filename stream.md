@@ -87,18 +87,21 @@ All of this exists in a separate world attached to each minded entity:
   - viewport correction on resize
   - masking?
   - custom shader funcs, or at least some affordance for stepped css classes
+  - nudge needs to take whole tile into account, nudge if any part of the given point is out
 
 ## WIP
 
 - DLA
   - persist parameters in location hash
   - indirect color variables, add color settings
-  - player drop
   - controlled RNG with seed setting
-- use `document.elementsFromPoint` to accelerate `TileGrid.tilesAt`
+  - player drop
 
 ## Done
 
+- improved DLA turning arc: dual ended control
+- subsumed Sim reboot button, and bound to Escape key
+- added a morton-curve spatial index to TileGrid
 - added tile inspection support to Sim/Scenario, example use in ColorBoop
 
 # 2020-10-08

@@ -659,11 +659,27 @@ class DLA {
         <fieldset>
           <legend>Settings</legend>
 
-          <input id="dla-turnDenom" type="range" min="1" max="100" value="${this.turnDenom}" @change=${this.turnDenomChanged.bind(this, ctx)}>
-          <label for="dla-turnDenom">Turning Radius: Math.PI/${this.turnDenom}</label>
+          <input id="dla-turnLeft" type="range" min="0" max="1" step="0.01" value="${this.turnLeft}" @change=${(ev:Event) => {
+            const {value} = ev.target as HTMLInputElement;
+            this.turnLeft = parseFloat(value);
+            this.updateCtl(ctx);
+          }}>
+          <label for="dla-turnLeft">Left Turning Arc: upto Math.PI/${this.turnLeft}</label>
           <br>
 
-          <input id="dla-rate" type="range" min="1" max="100" value="${this.rate}" @change=${this.rateChanged.bind(this, ctx)}>
+          <input id="dla-turnRight" type="range" min="0" max="1" step="0.01" value="${this.turnRight}" @change=${(ev:Event) => {
+            const {value} = ev.target as HTMLInputElement;
+            this.turnRight = parseFloat(value);
+            this.updateCtl(ctx);
+          }}>
+          <label for="dla-turnRight">Right Turning Radius: upto Math.PI/${this.turnRight}</label>
+          <br>
+
+          <input id="dla-rate" type="range" min="1" max="100" value="${this.rate}" @change=${(ev:Event) => {
+            const {value} = ev.target as HTMLInputElement;
+            this.rate = parseFloat(value);
+            this.updateCtl(ctx);
+          }}>
           <label for="dla-rate">Particle Move Rate: every ${this.rate}ms</label>
           <br>
 
@@ -690,20 +706,9 @@ class DLA {
     `);
   }
 
-  turnDenomChanged(ctx:Context, ev:Event) {
-    const {value} = ev.target as HTMLInputElement;
-    this.turnDenom = parseFloat(value);
-    this.updateCtl(ctx);
-  }
-
-  rateChanged(ctx:Context, ev:Event) {
-    const {value} = ev.target as HTMLInputElement;
-    this.rate = parseFloat(value);
-    this.updateCtl(ctx);
-  }
-
   rate = 5
-  turnDenom = 8;
+  turnLeft = 0.5;
+  turnRight = 0.5;
   stepLimit = 50;
 
   elapsed = 0
@@ -733,7 +738,7 @@ class DLA {
       if (!heading) {
         heading = Math.random() * 2 * Math.PI;
       } else {
-        heading += Math.random() * Math.PI / this.turnDenom;
+        heading += Math.PI * Math.random() * (this.turnLeft + this.turnRight) - this.turnLeft;
         heading %= 2 * Math.PI;
       }
       p.dataset.heading = heading.toString();
