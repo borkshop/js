@@ -26,8 +26,9 @@ class TileGrid {
   get tileSize(): Point {
     // TODO use an invisible ghost tile? cache?
     for (const tile of this.el.querySelectorAll('.tile')) {
-      const h = tile.clientHeight;
-      return {x: h, y: h};
+      const x = tile.clientWidth;
+      const y = tile.clientHeight;
+      return {x, y};
     }
     return {x: 0, y: 0};
   }
@@ -87,12 +88,12 @@ class TileGrid {
     return {x, y};
   }
 
-  moveTileTo(elOrID:HTMLElement|string, {x, y}:Point) {
+  moveTileTo(elOrID:HTMLElement|string, pt:Point):Point {
     const tile = this.getTile(elOrID);
     if (!tile) return {x: NaN, y: NaN};
-    tile.style.setProperty('--x', x.toString());
-    tile.style.setProperty('--y', y.toString());
-    return {x, y};
+    tile.style.setProperty('--x', pt.x.toString());
+    tile.style.setProperty('--y', pt.y.toString());
+    return pt;
   }
 
   moveTileBy(elOrID:HTMLElement|string, {x: dx, y: dy}:Point) {
@@ -104,7 +105,7 @@ class TileGrid {
   }
 
   tilesAt(at:Point, ...tag:string[]):HTMLElement[] {
-    const tiles : HTMLElement[] = [];
+    let tiles : HTMLElement[] = [];
     // TODO :shrug: spatial index
     for (const other of this.el.querySelectorAll(`.tile${tag.map(t => `.${t}`).join('')}`)) {
       const el = other as HTMLElement;

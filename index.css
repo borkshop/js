@@ -1,4 +1,3 @@
-
 html {
 
   /* darkula color definition to start from, because lazy
@@ -43,11 +42,10 @@ html {
   --acting-color:       var(--magenta);
   --acted-color:        var(--bright-purple);
 
+  font-family: sans;
 }
 
-* {
-  font-family: monospace;
-}
+html, * { box-sizing: border-box; }
 
 html {
   margin: 0;
@@ -125,40 +123,46 @@ section {
   border-radius: 0.3em;
 }
 
-main {
-  font-family: monospace;
-}
-
-main .grid {
+.grid {
   position: relative;
   height: 100%;
   width: 100%;
   overflow: hidden;
 
   line-height: 1.0;
-  --xlate-x: 0;
-  --xlate-y: 0;
   cursor: none;
   font-size: 18pt;
+  user-select: none;
+
+  --tile-width:  1em;
+  --tile-height: 1em;
+
+  --xlate-x: 0;
+  --xlate-y: 0;
+
+  font-family: monospace;
 }
 
-main .grid.inspectable { cursor: crosshair; }
-main .grid.inspectable .tile       { padding: 0.1em; }
-main .grid.inspectable .tile:hover { padding: 0; border: 0.1em solid var(--magenta); }
-
-.tile {
+.grid .tile {
   --x: 0;
   --y: 0;
   position: absolute;
-  left: calc((var(--x) - var(--xlate-x)) * 1em);
-  top:  calc((var(--y) - var(--xlate-y)) * 1em);
-  width: 1em;
+  left: calc((var(--x) - var(--xlate-x)) * var(--tile-width));
+  top:  calc((var(--y) - var(--xlate-y)) * var(--tile-height));
+  width: var(--tile-width);
+  height: var(--tile-height);
+
   text-align: center;
   vertical-align: middle;
+  user-select: none;
 }
 
-.tile.solid { z-index: 1; }
-.tile.mind  { z-index: 2; }
+.grid .tile.solid { z-index: 1; }
+.grid .tile.mind  { z-index: 2; }
+
+.grid.inspectable { cursor: crosshair; }
+.grid.inspectable .tile       { padding: 0.1em; }
+.grid.inspectable .tile:hover { padding: 0; border: 0.1em solid var(--magenta); }
 
 p {
   margin: 1em 0.5em;
