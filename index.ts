@@ -61,6 +61,31 @@ class TileMortonIndex {
   }
 }
 
+// NOTE DOM-based spatial index is possible for visible elements:
+// const off = {x: 0, y: 0};
+// for (let el = this.el as Node|null; el; el = el.parentNode) {
+//   if (el.nodeType !== el.ELEMENT_NODE) break;
+//   const {offsetLeft, offsetTop, scrollLeft, scrollTop} = el as HTMLElement;
+//   off.x += offsetLeft, off.y += offsetTop;
+//   off.x -= scrollLeft, off.y -= scrollTop;
+// }
+// const view = this.viewOffset;
+// const pt = {
+//   x: at.x - view.x,
+//   y: at.y - view.y,
+// };
+// const tileSize = this.tileSize;
+// const vp = {
+//   x: (pt.x + 0.5) * tileSize.x + off.x,
+//   y: (pt.y + 0.5) * tileSize.y + off.y,
+// };
+// let tiles = document
+//   .elementsFromPoint(vp.x, vp.y)
+//   .filter(el => el.classList.contains('tile')) as HTMLElement[];
+// if (tag.length) tiles = tiles
+//   .filter(el => tag.every(t => el.classList.contains(t)));
+// return tiles;
+
 class TileGrid {
   el : HTMLElement
 
