@@ -1,4 +1,4 @@
-# 2020-10-09
+# 2020-10-12
 
 ## TODO
 
@@ -10,15 +10,21 @@
   - masking?
   - custom shader funcs, or at least some affordance for stepped css classes
   - nudge needs to take whole tile into account, nudge if any part of the given point is out
-
-## WIP
-
 - DLA
   - persist parameters in location hash
   - indirect color variables, add color settings
   - controlled RNG with seed setting
 
+## WIP
+
+- get github-pages deploy cooking again
+- switch to snowpack
+
 ## Done
+
+- moved into brave new borkshop monorepo
+
+# 2020-10-09
 
 - added player drop and dig to DLA demo
 - improved DLA turning arc: dual ended control
