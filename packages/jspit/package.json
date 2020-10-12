@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "description": "JS Pit",
   "main": "index.js",
-  "repository": "github.com/jcorbin/jspit",
   "author": "Joshua T Corbin <jcorbin@wunjo.org>",
   "license": "BSD-3-Clause",
   "private": true,
