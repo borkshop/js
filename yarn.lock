@@ -1024,6 +1024,14 @@
     execa "^4.0.3"
     npm-run-path "^4.0.1"
 
+"@snowpack/plugin-typescript@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@snowpack/plugin-typescript/-/plugin-typescript-1.0.1.tgz#53fdeb073c6542c5c9cf9feb5dabd9d4f92a9d0d"
+  integrity sha512-J2dgiDQ4jBRjEoQH+xHc0zsY1uH8QtaK62sca7RbAWebPgITugujWytIzy/MWUZGXGK3vgZwz5aDcnKGx7Ng2w==
+  dependencies:
+    execa "^4.0.3"
+    npm-run-path "^4.0.1"
+
 "@types/estree@*":
   version "0.0.45"
   resolved "https://registry.yarnpkg.com/@types/estree/-/estree-0.0.45.tgz#e9387572998e5ecdac221950dab3e8c3b16af884"
@@ -1055,6 +1063,11 @@
   integrity sha512-yy7HuzQhj0dhGpD8RLXSZWEkLsV9ibvxvi6EiJ3bkqLAO1RGo0WbkWQiwpRlSFymTJRz0d3k5LM3kkx8ArDbLw==
   dependencies:
     "@types/node" "*"
+
+"@types/snowpack-env@^2.3.0":
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/@types/snowpack-env/-/snowpack-env-2.3.0.tgz#a5cb4aeef86700df0245ad1a9c830ebe8cc8f752"
+  integrity sha512-wC/zq9A0IhlNyO469UPCOr3XZNTOXeGWiOJig9yWUZ0DkUOVNJinfFqC3vRzmlid6+CSiPw8GLvW/03F2/1vyg==
 
 abab@^2.0.0:
   version "2.0.5"
