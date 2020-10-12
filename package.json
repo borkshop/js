@@ -1,4 +1,9 @@
 {
   "private": true,
-  "workspaces": ["packages/*"]
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "typescript": "^4.0.3"
+  }
 }
