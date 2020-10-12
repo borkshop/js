@@ -1,0 +1,22 @@
+{
+  "name": "jspit",
+  "version": "0.1.0",
+  "description": "JS Pit",
+  "main": "index.js",
+  "repository": "github.com/jcorbin/jspit",
+  "author": "Joshua T Corbin <jcorbin@wunjo.org>",
+  "license": "BSD-3-Clause",
+  "private": true,
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "parcel build index.html --no-cache --no-minify --public-url /jspit/",
+    "dist": "rm -fv dist/*; npm run build && desc=$(git describe --always) && cd dist && git add -A && git commit -m \"build $desc\""
+  },
+  "devDependencies": {
+    "core-js": "^3.6.5",
+    "lit-html": "^1.3.0",
+    "parcel-bundler": "^1.12.4",
+    "regenerator-runtime": "^0.13.7",
+    "typescript": "^4.0.3"
+  }
+}
