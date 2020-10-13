@@ -6,9 +6,9 @@
   "license": "BSD-3-Clause",
   "private": true,
   "scripts": {
-    "start": "parcel index.html",
-    "build": "parcel build index.html --no-cache --no-minify --public-url /jspit/",
-    "dist": "rm -fv dist/*; npm run build && desc=$(git describe --always) && cd dist && git add -A && git commit -m \"build $desc\""
+    "start": "snowpack dev",
+    "build": "snowpack build",
+    "dist": "rm -fv build/*; npm run build && desc=$(git describe --always) && cd build && git add -A && git commit -m \"build $desc\""
   },
   "devDependencies": {
     "core-js": "^3.6.5",
