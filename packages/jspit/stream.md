@@ -2,6 +2,7 @@
 
 ## TODO
 
+- maybe use a bundled build with compat transpilers
 - soul prototype
 - mind research: prolog-like systems
 - TileGrid
@@ -18,11 +19,11 @@
 
 ## WIP
 
-- get github-pages deploy cooking again
-- switch to snowpack
-
 ## Done
 
+- emptied out old jcorbin rep with a notice, stil publishing built game to
+  jcorbin github pages
+- switched fully to snowpack and ESNext standards
 - moved into brave new borkshop monorepo
 
 # 2020-10-09
