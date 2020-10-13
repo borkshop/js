@@ -361,15 +361,14 @@ class Sim {
   modal : HTMLElement
   grid : TileGrid
   keys : KeyMap
-  head? : HTMLElement
-  foot? : HTMLElement
-  cont? : HTMLElement
+  head : HTMLElement
+  foot : HTMLElement
 
   constructor(
     modal : HTMLElement,
     view : HTMLElement,
-    head? : HTMLElement,
-    foot? : HTMLElement,
+    head : HTMLElement,
+    foot : HTMLElement,
     cont? : HTMLElement,
   ) {
     this.modal = modal;
@@ -377,9 +376,8 @@ class Sim {
     this.keys = new KeyMap();
     this.head = head;
     this.foot = foot;
-    this.cont = cont;
     this.keys.filter = this.filterKeys.bind(this);
-    this.keys.register(this.cont || this.grid.el);
+    this.keys.register(cont || this.grid.el);
     this.#origGridClassname = this.grid.el.className;
 
     this.addCtl(html`
@@ -442,13 +440,11 @@ class Sim {
   }
 
   clearCtls() {
-    if (!this.head) return;
     for (const el of this.head.querySelectorAll('.ctl.scen'))
       if (el.parentNode) el.parentNode.removeChild(el);
   }
 
   addCtl(tmpl:TemplateResult|null):HTMLElement|null {
-    if (!this.head) return null;
     const ctl = document.createElement('div');
     ctl.classList.add('ctl');
     ctl.classList.add('scen');
@@ -463,7 +459,7 @@ class Sim {
   }
 
   setStatus(tmpl:TemplateResult|null) {
-    if (this.foot) render(tmpl, this.foot);
+    render(tmpl, this.foot);
   }
 
   inputRate = 100 // rate at which to coalesce and process movement input
