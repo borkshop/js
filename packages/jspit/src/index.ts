@@ -353,6 +353,7 @@ interface Scenario {
 
 interface ScenarioCons {
   demoName : string
+  demoTitle : string
 
   new(): Scenario
 }
@@ -385,8 +386,8 @@ class Sim {
     this.keys.register(cont || this.grid.el);
     this.#origGridClassname = this.grid.el.className;
 
-    const demoOption = ({demoName}:ScenarioCons) => html`
-      <option value="${demoName}">${demoName}</option>`;
+    const demoOption = ({demoName, demoTitle}:ScenarioCons) => html`
+      <option value="${demoName}" title="${demoTitle}">${demoName}</option>`;
 
     this.addCtl(html`
       <select id="demo" title="Simulation Scenario" @change=${(ev:InputEvent) => {
@@ -528,6 +529,7 @@ class Sim {
 
 class Hello {
   static demoName = 'Hello'
+  static demoTitle = 'Welcome screen'
 
   setup(ctx:Context) {
     ctx.showModal(html`
@@ -554,6 +556,7 @@ class Hello {
 
 class ColorBoop {
   static demoName = 'ColorBoop'
+  static demoTitle = 'Boop a color, get a color'
 
   colors = [
     'black',
@@ -654,6 +657,7 @@ class ColorBoop {
 
 class DLA {
   static demoName = 'DLA'
+  static demoTitle = 'Diffusion Limited Aggregation'
 
   particleID = 0
 
