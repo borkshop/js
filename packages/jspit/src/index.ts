@@ -352,10 +352,13 @@ interface Scenario {
 }
 
 interface ScenarioCons {
+  name : string
+
   new(): Scenario
 }
 
 class Sim {
+  demos : ScenarioCons[]
   cons : ScenarioCons | null = null
   scen : Scenario | null = null
   modal : HTMLElement
@@ -365,12 +368,14 @@ class Sim {
   foot : HTMLElement
 
   constructor(
+    demos : ScenarioCons[],
     modal : HTMLElement,
     view : HTMLElement,
     head : HTMLElement,
     foot : HTMLElement,
     cont? : HTMLElement,
   ) {
+    this.demos = demos
     this.modal = modal;
     this.grid = new TileGrid(view);
     this.keys = new KeyMap();
@@ -380,9 +385,19 @@ class Sim {
     this.keys.register(cont || this.grid.el);
     this.#origGridClassname = this.grid.el.className;
 
+    const demoOption = ({name}:ScenarioCons) => html`
+      <option value="${demo.name}">${demo.name}</option>`;
+
     this.addCtl(html`
+      <select id="demo" title="Simulation Scenario" @change=${(ev:InputEvent) => {
+        const sel = ev.target as HTMLSelectElement;
+        this.change(sel.value);
+        sel.blur();
+      }}>${this.demos.map(demoOption)}</select>
       <button @click=${() => this.reboot()} title="Reboot Scenario <Escape>">Reboot</button>
     `)?.classList.remove('scen');
+
+    this.change(window.location.hash ? window.location.hash.slice(1) : '');
   }
 
   #origGridClassname:string
@@ -396,7 +411,16 @@ class Sim {
     return !event.altKey && !event.ctrlKey && !event.metaKey;
   }
 
-  change(cons:ScenarioCons|null) {
+  change(name:string) {
+    let cons = null;
+    for (const d of this.demos) if (d.name === name) {
+      cons = d;
+      break;
+    }
+    if (!cons) cons = this.demos[0];
+    const sel = document.getElementById('demo') as HTMLSelectElement;
+    sel.value = cons.name;
+    window.location.hash = `#${cons.name}`;
     this.cons = cons;
     this.reboot();
   }
@@ -833,37 +857,6 @@ class DLA {
   }
 }
 
-const demos:ScenarioCons[] = [
-  Hello,
-  ColorBoop,
-  DLA,
-];
-
-function setupDemoSelector(
-  sel:HTMLSelectElement,
-  change:(scen:ScenarioCons|null)=>void) {
-  for (const demo of demos) {
-    const opt = document.createElement('option');
-    opt.value = demo.name;
-    opt.innerText = demo.name; // TODO description?
-    sel.appendChild(opt);
-  }
-  if (window.location.hash) sel.value = window.location.hash.slice(1);
-  const changed = () => {
-    let cons = null;
-    for (const d of demos) if (d.name === sel.value) {
-      cons = d;
-      break;
-    }
-    if (!cons) sel.value = 'hello';
-    window.location.hash = `#${sel.value}`;
-    change(cons || Hello);
-    sel.blur();
-  };
-  sel.addEventListener('change', changed);
-  changed();
-}
-
 async function main() {
   await once(window, 'DOMContentLoaded');
 
@@ -872,9 +865,6 @@ async function main() {
 
   const modal = main.querySelector('.modal');
   if (!modal) throw new Error('no <main> .modal')
-
-  const demoSel = document.querySelector('select#demo');
-  if (!demoSel) throw new Error('no <select#demo> element');
 
   const mainGrid = main.querySelector('.grid');
   if (!mainGrid) throw new Error('no <main> .grid element');
@@ -887,17 +877,16 @@ async function main() {
 
   let running = true;
 
-  const sim = new Sim(
+  const sim = new Sim([
+      Hello,
+      ColorBoop,
+      DLA,
+    ],
     modal as HTMLElement,
     mainGrid as HTMLElement,
     head,
     foot,
     document.body,
-  );
-
-  setupDemoSelector(
-    demoSel as HTMLSelectElement,
-    sim.change.bind(sim),
   );
 
   let last = await nextFrame();
