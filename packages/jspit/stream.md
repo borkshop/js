@@ -14,6 +14,7 @@
   - persist parameters in location hash
   - indirect color variables, add color settings
   - controlled RNG with seed setting
+  - FIX typo in range slide docs: `Math.Pi * range` not `/ range`
 
 ## WIP
 
