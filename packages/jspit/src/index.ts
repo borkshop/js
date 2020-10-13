@@ -546,9 +546,9 @@ class Hello {
       </section>
 
       <section align="center">
-        <a href="//github.com/jcorbin/jspit">Github</a>
+        <a href="//github.com/borkshop/js/tree/main/packages/jspit">Github</a>
         |
-        <a href="//github.com/jcorbin/jspit/blob/main/stream.md">Dev log</a>
+        <a href="//github.com/borkshop/js/blob/main/packages/jspit/stream.md">Dev log</a>
       </section>
     `);
   }
