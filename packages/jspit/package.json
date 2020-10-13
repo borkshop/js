@@ -9,10 +9,5 @@
     "start": "snowpack dev",
     "build": "snowpack build",
     "dist": "rm -fv build/*; npm run build && desc=$(git describe --always) && cd build && git add -A && git commit -m \"build $desc\""
-  },
-  "devDependencies": {
-    "core-js": "^3.6.5",
-    "parcel-bundler": "^1.12.4",
-    "regenerator-runtime": "^0.13.7"
   }
 }

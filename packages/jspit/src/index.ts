@@ -1,5 +1,3 @@
-import 'core-js/stable';
-import 'regenerator-runtime/runtime';
 import {html, render, TemplateResult} from 'lit-html';
 
 interface Point {
