@@ -763,7 +763,6 @@ class DLA {
   }
 
   elapsed = 0
-  pi = 0
 
   dropPlayer(ctx:Context) {
     ctx.grid.createTile('at', {
@@ -778,7 +777,7 @@ class DLA {
     const n = Math.min(this.stepLimit, Math.floor(this.elapsed / this.rate));
     if (!n) return;
     this.elapsed -= n * this.rate;
-    const ps = ctx.grid.queryTiles('particle', 'live');
+    let ps = ctx.grid.queryTiles('particle', 'live');
     const spawn = () => {
       const p = ctx.grid.createTile(`particle-${++this.particleID}`, {
         tag: ['particle', 'live'],
@@ -791,54 +790,48 @@ class DLA {
       `);
       ps.push(p);
     };
-    for (let i = 0; i < n; ++i, ++this.pi) {
+    for (let i = 0; i < n; ++i) {
+      ps = ps.filter(p => p.classList.contains('live'));
       if (!ps.length) {
         spawn();
         continue;
       }
 
-      this.pi %= ps.length;
-      const p = ps[this.pi];
-      if (!p.classList.contains('live')) {
-        ps.splice(this.pi, 1);
-        continue;
-      }
+      for (const p of ps) {
+        let heading = (p.dataset.heading && parseFloat(p.dataset.heading));
+        if (!heading) {
+          heading = Math.random() * 2 * Math.PI;
+        } else {
+          heading += Math.PI * Math.random() * (this.turnLeft + this.turnRight) - this.turnLeft;
+          heading %= 2 * Math.PI;
+        }
+        p.dataset.heading = heading.toString();
 
-      let heading = (p.dataset.heading && parseFloat(p.dataset.heading));
-      if (!heading) {
-        heading = Math.random() * 2 * Math.PI;
-      } else {
-        heading += Math.PI * Math.random() * (this.turnLeft + this.turnRight) - this.turnLeft;
-        heading %= 2 * Math.PI;
-      }
-      p.dataset.heading = heading.toString();
+        const dx = Math.cos(heading);
+        const dy = Math.sin(heading);
+        const pos = ctx.grid.getTilePosition(p);
+        if (Math.abs(dy) > Math.abs(dx)) {
+          if (dy < 0) pos.y--;
+          else pos.y++;
+        } else {
+          if (dx < 0) pos.x--;
+          else pos.x++;
+        }
 
-      const dx = Math.cos(heading);
-      const dy = Math.sin(heading);
-      const pos = ctx.grid.getTilePosition(p);
-      if (Math.abs(dy) > Math.abs(dx)) {
-        if (dy < 0) pos.y--;
-        else pos.y++;
-      } else {
-        if (dx < 0) pos.x--;
-        else pos.x++;
+        if (!ctx.grid.tilesAt(pos, 'particle').length) {
+          delete p.dataset.heading;
+          ctx.grid.updateTile(p, {
+            tag: ['particle'],
+            bg: 'var(--black)',
+            fg: 'var(--grey)',
+            text: '.',
+            pos,
+          });
+        } else {
+          ctx.grid.moveTileTo(p, pos);
+          if (!ctx.grid.queryTiles('keyMove').length) ctx.grid.nudgeViewTo(pos, 0.2);
+        }
       }
-
-      if (!ctx.grid.tilesAt(pos, 'particle').length) {
-        delete p.dataset.heading;
-        ctx.grid.updateTile(p, {
-          tag: ['particle'],
-          bg: 'var(--black)',
-          fg: 'var(--grey)',
-          text: '.',
-          pos,
-        });
-        ps.splice(this.pi, 1);
-        continue;
-      }
-
-      ctx.grid.moveTileTo(p, pos);
-      if (!ctx.grid.queryTiles('keyMove').length) ctx.grid.nudgeViewTo(pos, 0.2);
     }
   }
 
