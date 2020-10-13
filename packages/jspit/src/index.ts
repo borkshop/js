@@ -697,7 +697,7 @@ class DLA {
             this.turnLeft = parseFloat(value);
             this.doSettings(ctx);
           }}>
-          <label for="dla-turnLeft">Left Turning Arc: upto Math.PI/${this.turnLeft}</label>
+          <label for="dla-turnLeft">Left Turning Arc: upto ${this.turnLeft} * Math.PI</label>
           <br>
 
           <input id="dla-turnRight" type="range" min="0" max="1" step="0.01" value="${this.turnRight}" @change=${(ev:Event) => {
@@ -705,7 +705,7 @@ class DLA {
             this.turnRight = parseFloat(value);
             this.doSettings(ctx);
           }}>
-          <label for="dla-turnRight">Right Turning Radius: upto Math.PI/${this.turnRight}</label>
+          <label for="dla-turnRight">Right Turning Radius: upto ${this.turnRight} * Math.PI</label>
           <br>
 
           <input id="dla-rate" type="range" min="1" max="100" value="${this.rate}" @change=${(ev:Event) => {
