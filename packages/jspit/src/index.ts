@@ -360,13 +360,14 @@ interface ScenarioCons {
 
 class Sim {
   demos : ScenarioCons[]
-  cons : ScenarioCons | null = null
-  scen : Scenario | null = null
   modal : HTMLElement
   grid : TileGrid
   keys : KeyMap
   head : HTMLElement
   foot : HTMLElement
+
+  cons : ScenarioCons | null = null
+  scen : Scenario | null = null
 
   constructor(
     demos : ScenarioCons[],
@@ -456,7 +457,6 @@ class Sim {
     const ids = tiles.map(({id}) => id).join(';');
     if (this.#inspectingIDs === ids) return;
     this.#inspectingIDs = ids;
-    // if (!tiles.length) return;
 
     // TODO would be nice to be able to just translate event coordinates into
     // tile space
@@ -661,6 +661,11 @@ class DLA {
 
   particleID = 0
 
+  rate = 5
+  turnLeft = 0.5
+  turnRight = 0.5
+  stepLimit = 50
+
   setup(ctx:Context):void {
     ctx.grid.createTile(`particle-${++this.particleID}`, {
       tag: ['particle', 'init'],
@@ -756,11 +761,6 @@ class DLA {
       </section>
     `);
   }
-
-  rate = 5
-  turnLeft = 0.5;
-  turnRight = 0.5;
-  stepLimit = 50;
 
   elapsed = 0
   pi = 0
