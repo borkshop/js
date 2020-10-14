@@ -1,4 +1,5 @@
 import {html, render, TemplateResult} from 'lit-html';
+import {readHashFrag, setHashFrag, readHashVar, setHashVar} from './state';
 
 interface Point {
   x: number,
@@ -652,46 +653,6 @@ class ColorBoop {
     const {x: vx, y: vy, width: vw, height: vh} = ctx.grid.viewport;
     ctx.setStatus(html`player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}`);
   }
-}
-
-function readHashFrag():string|null {
-  const parts = window.location.hash.split(';');
-  const frag = parts.shift();
-  return frag ? frag.replace(/^#+/, '') : null;
-}
-
-function setHashFrag(frag:string) {
-  const parts = window.location.hash.split(';');
-  const expected = '#' + frag;
-  if (parts.length && parts[0] === expected) return;
-  window.location.hash = expected;
-}
-
-function readHashVar(name:string):string|null {
-  const parts = window.location.hash.split(';');
-  parts.shift();
-  const prefix = name + '=';
-  for (const part of parts) if (part.startsWith(prefix))
-    return unescape(part.slice(prefix.length));
-  return null;
-}
-
-function setHashVar(name:string, value:string|null) {
-  const parts = window.location.hash.split(';');
-  const frag = parts.shift() || '#;';
-  const prefix = name + '=';
-  let res = [frag];
-  let found = false;
-  for (const part of parts)
-    if (!part.startsWith(prefix)) {
-      res.push(part);
-    } else if (value !== null && !found) {
-      res.push(prefix + escape(value));
-      found = true;
-    }
-  if (value !== null && !found)
-    res.push(prefix + escape(value));
-  window.location.hash = res.join(';');
 }
 
 class DLA {
