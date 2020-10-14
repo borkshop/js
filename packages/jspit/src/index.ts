@@ -364,6 +364,8 @@ function make(tagName:string, className?:string):HTMLElement {
   return el;
 }
 
+type Nullable<T> = { [P in keyof T]: T[P] | null };
+
 class Sim {
   modal : HTMLElement
   grid : TileGrid
@@ -376,20 +378,31 @@ class Sim {
 
   constructor(
     cons : ScenarioCons,
-    modal : HTMLElement,
-    view : HTMLElement,
-    head : HTMLElement,
-    foot : HTMLElement,
-    cont? : HTMLElement,
+    el : HTMLElement,
+    options?:Partial<Nullable<{
+      modal : HTMLElement,
+      grid : HTMLElement,
+      head : HTMLElement,
+      foot : HTMLElement,
+      keysOn : HTMLElement,
+    }>>
   ) {
-    this.modal = modal;
-    this.head = head;
-    this.grid = new TileGrid(view);
-    this.foot = foot;
+    this.head = options?.head
+      || el.querySelector('header')
+      || el.appendChild(make('header'));
+    this.modal = options?.modal
+      || el.querySelector('.modal')
+      || el.appendChild(make('aside', 'modal'));
+    this.grid = new TileGrid(options?.grid
+      || el.querySelector('.grid')
+      || el.appendChild(make('div', 'grid')));
+    this.foot = options?.foot
+      || el.querySelector('footer')
+      || el.appendChild(make('footer'));
 
     this.keys = new KeyMap();
     this.keys.filter = this.filterKeys.bind(this);
-    this.keys.register(cont || this.grid.el);
+    this.keys.register(options?.keysOn || this.grid.el);
     this.#origGridClassname = this.grid.el.className;
 
     this.cons = cons;
@@ -876,17 +889,8 @@ async function main() {
   const main = document.querySelector('main');
   if (!main) throw new Error('no <main> element');
 
-  const modal = main.querySelector('.modal');
-  if (!modal) throw new Error('no <main> .modal')
-
-  const mainGrid = main.querySelector('.grid');
-  if (!mainGrid) throw new Error('no <main> .grid element');
-
-  const head = document.querySelector('header');
-  if (!head) throw new Error('no <header> element');
-
-  const foot = document.querySelector('footer');
-  if (!foot) throw new Error('no <footer> element');
+  const head = document.querySelector('header')
+    || document.body.insertBefore(make('header'), main);
 
   const demoOption = ({demoName, demoTitle}:ScenarioCons) => html`
     <option value="${demoName}" title="${demoTitle}">${demoName}</option>`;
@@ -909,13 +913,12 @@ async function main() {
     const cons = demoNamed(name);
     window.location.hash = `#${cons.demoName}`;
     sel.value = cons.demoName;
-    sim = new Sim(cons,
-      modal as HTMLElement,
-      mainGrid as HTMLElement,
+    sim = new Sim(cons, main, {
       head,
-      foot,
-      document.body,
-    );
+      modal: main.querySelector('*.modal') as HTMLElement|null,
+      foot: document.querySelector('footer'),
+      keysOn: document.body,
+    });
     sim.run();
   };
 
