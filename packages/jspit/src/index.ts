@@ -814,13 +814,10 @@ class DLA {
       }
 
       for (const p of ps) {
-        let heading = (p.dataset.heading && parseFloat(p.dataset.heading));
-        if (!heading) {
-          heading = Math.random() * 2 * Math.PI;
-        } else {
-          heading += Math.PI * Math.random() * (this.turnLeft + this.turnRight) - this.turnLeft;
-          heading %= 2 * Math.PI;
-        }
+        let heading = (p.dataset.heading && parseFloat(p.dataset.heading)) || 0;
+        const adj = Math.random() * (this.turnLeft + this.turnRight) - this.turnLeft;
+        heading += Math.PI * adj;
+        heading %= 2 * Math.PI;
         p.dataset.heading = heading.toString();
 
         const dx = Math.cos(heading);
@@ -876,6 +873,12 @@ class DLA {
   }
 }
 
+const demos = [
+  Hello,
+  ColorBoop,
+  DLA,
+];
+
 async function main() {
   await once(window, 'DOMContentLoaded');
 
@@ -894,11 +897,7 @@ async function main() {
   const foot = document.querySelector('footer');
   if (!foot) throw new Error('no <footer> element');
 
-  const sim = new Sim([
-      Hello,
-      ColorBoop,
-      DLA,
-    ],
+  const sim = new Sim(demos,
     modal as HTMLElement,
     mainGrid as HTMLElement,
     head,
