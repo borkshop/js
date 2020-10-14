@@ -738,6 +738,8 @@ class DLA {
       case 'turnRight':
       case 'rate':
         const given = value !== null;
+        if (!given) value = this[name].toString();
+        setHashVar(name, value);
         if (given) this[name] = parseFloat(value || '');
     }
   }
@@ -760,46 +762,47 @@ class DLA {
           orthogonally along the greatest projected axis.
         </p>
 
-        <fieldset>
-          <legend>Settings</legend>
+        <fieldset><legend>Settings</legend><dl>
+          <dt>Turns upto</dt>
+          <dd><label for="dla-turnLeft">Left: Math.PI *</label>
+            <input id="dla-turnLeft" name="turnLeft" type="number" min="0" max="1" step="0.2" value="${this.turnLeft}" @change=${change}>
+          </dd>
+          <dd><label for="dla-turnRight">Right: Math.PI *</label>
+            <input id="dla-turnRight" name="turnRight" type="number" min="0" max="1" step="0.2" value="${this.turnRight}" @change=${change}>
+          </dd>
 
-          <input id="dla-turnLeft" name="turnLeft" type="range" min="0" max="1" step="0.01" value="${this.turnLeft}" @change=${change}>
-          <label for="dla-turnLeft">Left Turning Arc: upto ${this.turnLeft} * Math.PI</label>
-          <br>
+          <dt>Particles Move</dt><dd>
+            <label for="dla-rate">every</label>
+            1 <!-- TODO -->
+            step <!-- TODO -->
+            <input id="dla-rate" name="rate" type="number" min="1" max="100" value="${this.rate}" @change=${change}>ms
+          </dd>
+        </dl></fieldset>
 
-          <input id="dla-turnRight" name="turnRight" type="range" min="0" max="1" step="0.01" value="${this.turnRight}" @change=${change}>
-          <label for="dla-turnRight">Right Turning Radius: upto ${this.turnRight} * Math.PI</label>
-          <br>
-
-          <input id="dla-rate" name="rate" type="range" min="1" max="100" value="${this.rate}" @change=${change}>
-          <label for="dla-rate">Particle Move Rate: every ${this.rate}ms</label>
-          <br>
-
-          <button @click=${() => {
-            ctx.showModal(null);
-            const drop = ctx.addCtl(html`
-              <button @click=${() => {
-                drop?.parentNode?.removeChild(drop);
-                this.dropPlayer(ctx);
-                this.rate = 100;
+        <button @click=${() => {
+          ctx.showModal(null);
+          const drop = ctx.addCtl(html`
+            <button @click=${() => {
+              drop?.parentNode?.removeChild(drop);
+              this.dropPlayer(ctx);
+              this.rate = 100;
+              doRate();
+            }}>Drop Player</button>
+          `);
+          const rate = ctx.addCtl(html``);
+          const doRate = () => {
+            if (!rate) return;
+            render(html`
+              <input id="dla-rate" type="range" min="1" max="100" value="${this.rate}" @change=${(ev:Event) => {
+                const {value} = ev.target as HTMLInputElement;
+                this.rate = parseFloat(value);
                 doRate();
-              }}>Drop Player</button>
-            `);
-            const rate = ctx.addCtl(html``);
-            const doRate = () => {
-              if (!rate) return;
-              render(html`
-                <input id="dla-rate" type="range" min="1" max="100" value="${this.rate}" @change=${(ev:Event) => {
-                  const {value} = ev.target as HTMLInputElement;
-                  this.rate = parseFloat(value);
-                  doRate();
-                }}>
-                <label for="dla-rate">Particle Move Rate: every ${this.rate}ms</label>
-              `, rate);
-            };
-            doRate();
-          }}>Run</button>
-        </fieldset>
+              }}>
+              <label for="dla-rate">Particle Move Rate: every ${this.rate}ms</label>
+            `, rate);
+          };
+          doRate();
+        }}>Run</button>
       </section>
 
       <section>

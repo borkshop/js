@@ -203,7 +203,7 @@ fieldset {
   color: var(--content-fg);
   border-radius: 0.3em;
   border: 0.1em solid var(--ui-accent);
-  padding: 0.3em 0.5em;
+  padding: 0 0.5em 0.3em 0.5em;
 }
 
 details {
@@ -211,11 +211,12 @@ details {
   padding: 0.3em 0.5em;
 }
 
-ul, ol {
+ul, ol, dl {
   margin: 0.3em 0;
   padding-top: 0;
   padding-bottom: 0;
 }
+
 /* TODO better list styles */
 
 /* vim:set ts=2 sw=2 expandtab */
