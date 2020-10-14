@@ -338,10 +338,11 @@ interface SimAction {
 }
 
 interface Context {
-  addCtl(tmpl:TemplateResult|null):HTMLElement|null
+  addCtl(tmpl:TemplateResult|null):HTMLElement
   showModal(tmpl:TemplateResult|null):void
   setStatus(tmpl:TemplateResult|null):void
   grid : TileGrid
+  reboot():void
 }
 
 interface Scenario {
@@ -349,6 +350,7 @@ interface Scenario {
   update?(ctx:Context, dt:number): void
   act?(ctx:Context, action:SimAction): SimAction
   inspect?(ctx:Context, pos:Point, tiles:HTMLElement[]):void
+  showMenu?(ctx:Context):void
 }
 
 interface ScenarioCons {
@@ -415,7 +417,11 @@ class Sim {
 
   filterKeys(event:KeyboardEvent) {
     if (event.key === 'Escape') {
-      this.reboot();
+      if (this.scen.showMenu) {
+        this.scen.showMenu(this)
+      } else {
+        this.reboot();
+      }
       return false;
     }
     if (this.modal.style.display !== 'none') return false;
@@ -469,7 +475,7 @@ class Sim {
       if (el.parentNode) el.parentNode.removeChild(el);
   }
 
-  addCtl(tmpl:TemplateResult|null):HTMLElement|null {
+  addCtl(tmpl:TemplateResult|null):HTMLElement {
     const ctl = this.head.appendChild(make('div', 'ctl scen'));
     render(tmpl, ctl);
     return ctl;
@@ -729,7 +735,7 @@ class DLA {
     ctx.grid.centerViewOn({x: 0, y: 0});
     for (const name of ['rate', 'turnLeft', 'turnRight'])
       this.updateSetting(name, readHashVar(name));
-    this.doSettings(ctx);
+    this.showMenu(ctx);
   }
 
   updateSetting(name:string, value:string|null) {
@@ -744,11 +750,18 @@ class DLA {
     }
   }
 
-  doSettings(ctx:Context):void {
+  #ctls: HTMLElement[] = []
+
+  showMenu(ctx:Context):void {
+    this.#ctls = this.#ctls.filter(ctl => {
+      ctl.parentNode?.removeChild(ctl);
+      return false;
+    });
+
     const change = (ev:Event) => {
       const {name, value} = ev.target as HTMLInputElement;
       this.updateSetting(name, value);
-      this.doSettings(ctx);
+      this.showMenu(ctx);
     };
 
     ctx.showModal(html`
@@ -802,6 +815,7 @@ class DLA {
             `, rate);
           };
           doRate();
+          this.#ctls.push(drop, rate);
         }}>Run</button>
       </section>
 
