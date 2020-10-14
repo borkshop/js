@@ -358,48 +358,44 @@ interface ScenarioCons {
   new(): Scenario
 }
 
+function make(tagName:string, className?:string):HTMLElement {
+  const el = document.createElement(tagName);
+  if (className) el.className = className;
+  return el;
+}
+
 class Sim {
-  demos : ScenarioCons[]
   modal : HTMLElement
   grid : TileGrid
   keys : KeyMap
   head : HTMLElement
   foot : HTMLElement
 
-  cons : ScenarioCons | null = null
-  scen : Scenario | null = null
+  cons : ScenarioCons
+  scen : Scenario
 
   constructor(
-    demos : ScenarioCons[],
+    cons : ScenarioCons,
     modal : HTMLElement,
     view : HTMLElement,
     head : HTMLElement,
     foot : HTMLElement,
     cont? : HTMLElement,
   ) {
-    this.demos = demos
     this.modal = modal;
-    this.grid = new TileGrid(view);
-    this.keys = new KeyMap();
     this.head = head;
+    this.grid = new TileGrid(view);
     this.foot = foot;
+
+    this.keys = new KeyMap();
     this.keys.filter = this.filterKeys.bind(this);
     this.keys.register(cont || this.grid.el);
     this.#origGridClassname = this.grid.el.className;
 
-    const demoOption = ({demoName, demoTitle}:ScenarioCons) => html`
-      <option value="${demoName}" title="${demoTitle}">${demoName}</option>`;
-
-    this.addCtl(html`
-      <select id="demo" title="Simulation Scenario" @change=${(ev:InputEvent) => {
-        const sel = ev.target as HTMLSelectElement;
-        this.change(sel.value);
-        sel.blur();
-      }}>${this.demos.map(demoOption)}</select>
-      <button @click=${() => this.reboot()} title="Reboot Scenario <Escape>">Reboot</button>
-    `)?.classList.remove('scen');
-
-    this.change(window.location.hash ? window.location.hash.slice(1) : '');
+    this.cons = cons;
+    this.scen = new this.cons();
+    this.reset();
+    this.init();
   }
 
   #origGridClassname:string
@@ -413,36 +409,27 @@ class Sim {
     return !event.altKey && !event.ctrlKey && !event.metaKey;
   }
 
-  change(name:string) {
-    let cons = null;
-    for (const d of this.demos) if (d.name === name) {
-      cons = d;
-      break;
-    }
-    if (!cons) cons = this.demos[0];
-    const sel = document.getElementById('demo') as HTMLSelectElement;
-    sel.value = cons.demoName;
-    window.location.hash = `#${cons.demoName}`;
-    this.cons = cons;
-    this.reboot();
-  }
-
-  reboot() {
+  reset() {
     this.grid.clear();
     this.grid.el.className = this.#origGridClassname;
     this.clearCtls();
     this.setStatus(null);
     this.modal.style.display = 'none';
-
-    this.scen = this.cons && new this.cons();
     if (this.#boundMouseMoved) this.grid.el.removeEventListener('mousemove', this.#boundMouseMoved);
-    if (this.scen) {
-      this.scen.setup(this);
-      if (this.scen.inspect) {
-        if (!this.#boundMouseMoved) this.#boundMouseMoved = this.mouseMoved.bind(this)
-        this.grid.el.addEventListener('mousemove', this.#boundMouseMoved);
-        this.grid.el.classList.add('inspectable');
-      }
+  }
+
+  reboot() {
+    this.reset();
+    this.scen = new this.cons();
+    this.init();
+  }
+
+  init() {
+    this.scen.setup(this);
+    if (this.scen.inspect) {
+      if (!this.#boundMouseMoved) this.#boundMouseMoved = this.mouseMoved.bind(this)
+      this.grid.el.addEventListener('mousemove', this.#boundMouseMoved);
+      this.grid.el.classList.add('inspectable');
     }
   }
 
@@ -470,10 +457,7 @@ class Sim {
   }
 
   addCtl(tmpl:TemplateResult|null):HTMLElement|null {
-    const ctl = document.createElement('div');
-    ctl.classList.add('ctl');
-    ctl.classList.add('scen');
-    this.head.appendChild(ctl);
+    const ctl = this.head.appendChild(make('div', 'ctl scen'));
     render(tmpl, ctl);
     return ctl;
   }
@@ -879,6 +863,13 @@ const demos = [
   DLA,
 ];
 
+function demoNamed(name:string):ScenarioCons {
+  for (const d of demos) if (d.name === name) return d;
+  return demos[0];
+}
+
+let sim: Sim|null;
+
 async function main() {
   await once(window, 'DOMContentLoaded');
 
@@ -897,14 +888,39 @@ async function main() {
   const foot = document.querySelector('footer');
   if (!foot) throw new Error('no <footer> element');
 
-  const sim = new Sim(demos,
-    modal as HTMLElement,
-    mainGrid as HTMLElement,
-    head,
-    foot,
-    document.body,
-  );
-  sim.run();
+  const demoOption = ({demoName, demoTitle}:ScenarioCons) => html`
+    <option value="${demoName}" title="${demoTitle}">${demoName}</option>`;
+
+  render(html`
+    <select id="demo" title="Simulation Scenario" @change=${(ev:InputEvent) => {
+      const sel = ev.target as HTMLSelectElement;
+      change(sel.value);
+      sel.blur();
+    }}>${demos.map(demoOption)}</select>
+  `, head.appendChild(make('div', 'ctl right')));
+  render(html`
+    <button @click=${() => sim?.reboot()} title="Reboot Scenario <Escape>">Reboot</button>
+  `, head.appendChild(make('div', 'ctl right')));
+
+  const sel = document.getElementById('demo') as HTMLSelectElement;
+
+  const change = (name:string) => {
+    if (sim) sim.halt();
+    const cons = demoNamed(name);
+    window.location.hash = `#${cons.demoName}`;
+    sel.value = cons.demoName;
+    sim = new Sim(cons,
+      modal as HTMLElement,
+      mainGrid as HTMLElement,
+      head,
+      foot,
+      document.body,
+    );
+    sim.run();
+  };
+
+  change(window.location.hash ? window.location.hash.slice(1) : '');
+
 }
 main();
 
