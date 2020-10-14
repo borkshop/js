@@ -785,9 +785,9 @@ class DLA {
           </dd>
 
           <dt>Particles Move</dt><dd>
-            <label for="dla-rate">every</label>
             1 <!-- TODO -->
             step <!-- TODO -->
+            <label for="dla-rate">every</label>
             <input id="dla-rate" name="rate" type="number" min="1" max="100" value="${this.rate}" @change=${change}>ms
           </dd>
         </dl></fieldset>
