@@ -1,4 +1,4 @@
-# 2020-10-12
+# 2020-10-13
 
 ## TODO
 
@@ -9,17 +9,25 @@
   - animations like boop and particles
   - viewport correction on resize
   - masking?
-  - custom shader funcs, or at least some affordance for stepped css classes
   - nudge needs to take whole tile into account, nudge if any part of the given point is out
+  - custom shader funcs, or at least some affordance for stepped css classes
 - DLA
-  - persist parameters in location hash
   - indirect color variables, add color settings
   - controlled RNG with seed setting
-  - FIX typo in range slide docs: `Math.Pi * range` not `/ range`
+  - settings panel could be a good place to try out lit-element
 
 ## WIP
 
+- DLA
+  - particle trace option
+  - particle N option
+
 ## Done
+
+- refactored Sim plumbing to decouple from the multi-Scenario demo use case
+- revamped DLA settings, now persisted through location hash
+
+# 2020-10-12
 
 - emptied out old jcorbin rep with a notice, stil publishing built game to
   jcorbin github pages
