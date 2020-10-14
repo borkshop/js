@@ -1,6 +1,5 @@
 {
   "plugins": [
-    ["@snowpack/plugin-optimize", {}],
     "@snowpack/plugin-typescript"
   ],
   "installOptions": {
