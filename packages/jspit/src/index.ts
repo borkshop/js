@@ -490,6 +490,22 @@ class Sim {
   inputRate = 100 // rate at which to coalesce and process movement input
   nudgeBy = 0.2   // proportion to scroll viewport by when at goes outside
 
+  running = false
+  async run() {
+    this.running = true;
+    let last = await nextFrame();
+    let dt = 0;
+    while (this.running) {
+      this.update(dt);
+      const next = await nextFrame();
+      dt = next - last, last = next;
+    }
+  }
+
+  halt() {
+    this.running = false;
+  }
+
   lastInput = 0
   update(dt:number):void {
     if ((this.lastInput += dt / this.inputRate) >= 1) {
@@ -878,8 +894,6 @@ async function main() {
   const foot = document.querySelector('footer');
   if (!foot) throw new Error('no <footer> element');
 
-  let running = true;
-
   const sim = new Sim([
       Hello,
       ColorBoop,
@@ -891,15 +905,7 @@ async function main() {
     foot,
     document.body,
   );
-
-  let last = await nextFrame();
-
-  let dt = 0;
-  while (running) {
-    sim.update(dt);
-    const next = await nextFrame();
-    dt = next - last, last = next;
-  }
+  sim.run();
 }
 main();
 
