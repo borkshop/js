@@ -819,6 +819,7 @@ class DLA {
     ctx.grid.createTile('at', {
       text: '@',
       tag: ['solid', 'mind', 'keyMove'],
+      fg: 'var(--orange)',
       pos: {x: 0, y: 0},
     });
   }
