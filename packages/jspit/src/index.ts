@@ -347,16 +347,19 @@ class Sim {
   modal : HTMLElement
   grid : TileGrid
   keys : KeyMap
+  el : HTMLElement
   head : HTMLElement
   foot : HTMLElement
+  keysOn : HTMLElement
 
   cons : ScenarioCons
   scen : Scenario
 
   constructor(
-    cons : ScenarioCons,
-    el : HTMLElement,
-    options?:Partial<Nullable<{
+    options:{
+      cons : ScenarioCons,
+      el : HTMLElement,
+    }&Partial<Nullable<{
       modal : HTMLElement,
       grid : HTMLElement,
       head : HTMLElement,
@@ -364,25 +367,27 @@ class Sim {
       keysOn : HTMLElement,
     }>>
   ) {
+    this.el = options.el;
     this.head = options?.head
-      || el.querySelector('header')
-      || el.appendChild(make('header'));
+      || this.el.querySelector('header')
+      || this.el.appendChild(make('header'));
     this.modal = options?.modal
-      || el.querySelector('.modal')
-      || el.appendChild(make('aside', 'modal'));
+      || this.el.querySelector('.modal')
+      || this.el.appendChild(make('aside', 'modal'));
     this.grid = new TileGrid(options?.grid
-      || el.querySelector('.grid')
-      || el.appendChild(make('div', 'grid')));
+      || this.el.querySelector('.grid')
+      || this.el.appendChild(make('div', 'grid')));
     this.foot = options?.foot
-      || el.querySelector('footer')
-      || el.appendChild(make('footer'));
+      || this.el.querySelector('footer')
+      || this.el.appendChild(make('footer'));
+    this.keysOn = options.keysOn || this.grid.el;
 
     this.keys = new KeyMap();
     this.keys.filter = this.filterKeys.bind(this);
-    this.keys.register(options?.keysOn || this.grid.el);
+    this.keys.register(this.keysOn);
     this.#origGridClassname = this.grid.el.className;
 
-    this.cons = cons;
+    this.cons = options.cons;
     this.scen = new this.cons();
     this.reset();
     this.init();
@@ -969,7 +974,9 @@ export class DemoApp {
     setHashFrag(cons.demoName);
     this.sel.value = cons.demoName;
 
-    this.sim = new Sim(cons, this.main, {
+    this.sim = new Sim({
+      cons,
+      el: this.main,
       head: this.head,
       foot: this.foot,
       keysOn: document.body,
