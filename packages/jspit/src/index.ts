@@ -681,6 +681,33 @@ function setHashFrag(frag:string) {
   window.location.hash = expected;
 }
 
+function readHashVar(name:string):string|null {
+  const parts = window.location.hash.split(';');
+  parts.shift();
+  const prefix = name + '=';
+  for (const part of parts) if (part.startsWith(prefix))
+    return unescape(part.slice(prefix.length));
+  return null;
+}
+
+function setHashVar(name:string, value:string|null) {
+  const parts = window.location.hash.split(';');
+  const frag = parts.shift() || '#;';
+  const prefix = name + '=';
+  let res = [frag];
+  let found = false;
+  for (const part of parts)
+    if (!part.startsWith(prefix)) {
+      res.push(part);
+    } else if (value !== null && !found) {
+      res.push(prefix + escape(value));
+      found = true;
+    }
+  if (value !== null && !found)
+    res.push(prefix + escape(value));
+  window.location.hash = res.join(';');
+}
+
 class DLA {
   static demoName = 'DLA'
   static demoTitle = 'Diffusion Limited Aggregation'
@@ -700,10 +727,28 @@ class DLA {
       text: '.',
     });
     ctx.grid.centerViewOn({x: 0, y: 0});
+    for (const name of ['rate', 'turnLeft', 'turnRight'])
+      this.updateSetting(name, readHashVar(name));
     this.doSettings(ctx);
   }
 
+  updateSetting(name:string, value:string|null) {
+    switch (name) {
+      case 'turnLeft':
+      case 'turnRight':
+      case 'rate':
+        const given = value !== null;
+        if (given) this[name] = parseFloat(value || '');
+    }
+  }
+
   doSettings(ctx:Context):void {
+    const change = (ev:Event) => {
+      const {name, value} = ev.target as HTMLInputElement;
+      this.updateSetting(name, value);
+      this.doSettings(ctx);
+    };
+
     ctx.showModal(html`
       <section>
         <h1>Diffusion Limited Aggregation</h1>
@@ -718,27 +763,15 @@ class DLA {
         <fieldset>
           <legend>Settings</legend>
 
-          <input id="dla-turnLeft" type="range" min="0" max="1" step="0.01" value="${this.turnLeft}" @change=${(ev:Event) => {
-            const {value} = ev.target as HTMLInputElement;
-            this.turnLeft = parseFloat(value);
-            this.doSettings(ctx);
-          }}>
+          <input id="dla-turnLeft" name="turnLeft" type="range" min="0" max="1" step="0.01" value="${this.turnLeft}" @change=${change}>
           <label for="dla-turnLeft">Left Turning Arc: upto ${this.turnLeft} * Math.PI</label>
           <br>
 
-          <input id="dla-turnRight" type="range" min="0" max="1" step="0.01" value="${this.turnRight}" @change=${(ev:Event) => {
-            const {value} = ev.target as HTMLInputElement;
-            this.turnRight = parseFloat(value);
-            this.doSettings(ctx);
-          }}>
+          <input id="dla-turnRight" name="turnRight" type="range" min="0" max="1" step="0.01" value="${this.turnRight}" @change=${change}>
           <label for="dla-turnRight">Right Turning Radius: upto ${this.turnRight} * Math.PI</label>
           <br>
 
-          <input id="dla-rate" type="range" min="1" max="100" value="${this.rate}" @change=${(ev:Event) => {
-            const {value} = ev.target as HTMLInputElement;
-            this.rate = parseFloat(value);
-            this.doSettings(ctx);
-          }}>
+          <input id="dla-rate" name="rate" type="range" min="1" max="100" value="${this.rate}" @change=${change}>
           <label for="dla-rate">Particle Move Rate: every ${this.rate}ms</label>
           <br>
 
