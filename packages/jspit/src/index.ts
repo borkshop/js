@@ -774,23 +774,9 @@ class DLA {
               drop?.parentNode?.removeChild(drop);
               this.dropPlayer(ctx);
               this.rate = 100;
-              doRate();
             }}>Drop Player</button>
           `);
-          const rate = ctx.addCtl(html``);
-          const doRate = () => {
-            if (!rate) return;
-            render(html`
-              <input id="dla-rate" type="range" min="1" max="100" value="${this.rate}" @change=${(ev:Event) => {
-                const {value} = ev.target as HTMLInputElement;
-                this.rate = parseFloat(value);
-                doRate();
-              }}>
-              <label for="dla-rate">Particle Move Rate: every ${this.rate}ms</label>
-            `, rate);
-          };
-          doRate();
-          this.#ctls.push(drop, rate);
+          this.#ctls.push(drop);
         }}>Run</button>
       </section>
 
