@@ -668,6 +668,19 @@ class ColorBoop {
   }
 }
 
+function readHashFrag():string|null {
+  const parts = window.location.hash.split(';');
+  const frag = parts.shift();
+  return frag ? frag.replace(/^#+/, '') : null;
+}
+
+function setHashFrag(frag:string) {
+  const parts = window.location.hash.split(';');
+  const expected = '#' + frag;
+  if (parts.length && parts[0] === expected) return;
+  window.location.hash = expected;
+}
+
 class DLA {
   static demoName = 'DLA'
   static demoTitle = 'Diffusion Limited Aggregation'
@@ -911,7 +924,7 @@ async function main() {
   const change = (name:string) => {
     if (sim) sim.halt();
     const cons = demoNamed(name);
-    window.location.hash = `#${cons.demoName}`;
+    setHashFrag(cons.demoName);
     sel.value = cons.demoName;
     sim = new Sim(cons, main, {
       head,
@@ -922,8 +935,7 @@ async function main() {
     sim.run();
   };
 
-  change(window.location.hash ? window.location.hash.slice(1) : '');
-
+  change(readHashFrag() || '');
 }
 main();
 
