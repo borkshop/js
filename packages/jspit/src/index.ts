@@ -909,59 +909,96 @@ class DLA {
   }
 }
 
-const demos = [
-  Hello,
-  ColorBoop,
-  DLA,
-];
+export class DemoApp {
+  demos = [
+    Hello,
+    ColorBoop,
+    DLA,
+  ]
 
-function demoNamed(name:string):ScenarioCons {
-  for (const d of demos) if (d.name === name) return d;
-  return demos[0];
+  main: HTMLElement
+  head: HTMLElement
+  foot: HTMLElement
+  sel: HTMLSelectElement
+  sim: Sim|null = null
+
+  constructor(options:Partial<Nullable<{
+    main: HTMLElement,
+    head: HTMLElement,
+    foot: HTMLElement,
+  }>>) {
+    if (!options.main) {
+      this.main = make('main');
+      document.body.appendChild(this.main);
+    } else {
+      this.main = options.main;
+    }
+
+    if (!options.head) {
+      this.head = make('header');
+      this.main.parentNode?.insertBefore(this.head, this.main);
+    } else {
+      this.head = options.head;
+    }
+
+    if (!options.foot) {
+      this.foot = make('footer');
+      if (this.main.nextSibling) {
+        this.main.parentNode?.insertBefore(this.foot, this.main.nextSibling);
+      } else {
+        this.main.parentNode?.appendChild(this.foot);
+      }
+    } else {
+      this.foot = options.foot;
+    }
+
+    for (const ctl of this.head.querySelectorAll('.ctl.demo'))
+      this.head.removeChild(ctl);
+
+    const demoOption = ({demoName, demoTitle}:ScenarioCons) => html`
+      <option value="${demoName}" title="${demoTitle}">${demoName}</option>`;
+
+    render(html`
+      <select id="demo" title="Simulation Scenario" @change=${() => {
+        this.change(this.sel.value);
+        this.sel.blur();
+      }}>${this.demos.map(demoOption)}</select>
+    `, this.head.appendChild(make('div', 'ctl demo right')));
+    render(html`
+      <button @click=${() => this.sim?.reboot()} title="Reboot Scenario <Escape>">Reboot</button>
+    `, this.head.appendChild(make('div', 'ctl demo right')));
+    this.sel = this.head.querySelector('#demo') as HTMLSelectElement;
+
+    this.change(readHashFrag() || '');
+  }
+
+  change(name:string) {
+    let cons = this.demos[0];
+    for (const d of this.demos) if (d.name === name) {
+      cons = d;
+      break;
+    }
+
+    if (this.sim) this.sim.halt();
+    setHashFrag(cons.demoName);
+    this.sel.value = cons.demoName;
+
+    this.sim = new Sim(cons, this.main, {
+      head: this.head,
+      foot: this.foot,
+      keysOn: document.body,
+    });
+    this.sim.run();
+  }
 }
-
-let sim: Sim|null;
 
 async function main() {
   await once(window, 'DOMContentLoaded');
-
-  const main = document.querySelector('main');
-  if (!main) throw new Error('no <main> element');
-
-  const head = document.querySelector('header')
-    || document.body.insertBefore(make('header'), main);
-
-  const demoOption = ({demoName, demoTitle}:ScenarioCons) => html`
-    <option value="${demoName}" title="${demoTitle}">${demoName}</option>`;
-
-  render(html`
-    <select id="demo" title="Simulation Scenario" @change=${(ev:InputEvent) => {
-      const sel = ev.target as HTMLSelectElement;
-      change(sel.value);
-      sel.blur();
-    }}>${demos.map(demoOption)}</select>
-  `, head.appendChild(make('div', 'ctl right')));
-  render(html`
-    <button @click=${() => sim?.reboot()} title="Reboot Scenario <Escape>">Reboot</button>
-  `, head.appendChild(make('div', 'ctl right')));
-
-  const sel = document.getElementById('demo') as HTMLSelectElement;
-
-  const change = (name:string) => {
-    if (sim) sim.halt();
-    const cons = demoNamed(name);
-    setHashFrag(cons.demoName);
-    sel.value = cons.demoName;
-    sim = new Sim(cons, main, {
-      head,
-      modal: main.querySelector('*.modal') as HTMLElement|null,
-      foot: document.querySelector('footer'),
-      keysOn: document.body,
-    });
-    sim.run();
-  };
-
-  change(readHashFrag() || '');
+  new DemoApp({
+    main: document.querySelector('main'),
+    head: document.querySelector('header'),
+    foot: document.querySelector('footer'),
+  });
 }
 main();
 
