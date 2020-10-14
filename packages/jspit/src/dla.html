@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="index.css" />
+    <title>jspit: Diffusion Limited Aggregation (DLA) demo</title>
+  </head>
+  <body>
+
+    <header></header>
+
+    <main>
+      <aside class="modal">
+        <section>
+          Loading...
+          <noscript>Insufficient JavaScript to diffuse...</noscript>
+        </section>
+      </aside>
+    </main>
+
+    <footer></footer>
+
+    <script type="module">
+      import {Sim} from './sim';
+      import {DLA} from './dla';
+      var sim = new Sim({
+        cons:   DLA,
+        head:   document.querySelector('header'),
+        el:     document.querySelector('main'),
+        foot:   document.querySelector('footer'),
+        keysOn: document.body,
+      });
+      sim.run();
+    </script>
+  </body>
+
+</html>
+<!-- vim:set ts=2 sw=2 expandtab -->
