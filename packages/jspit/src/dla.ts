@@ -25,6 +25,8 @@ export class DLA {
   static clampMoves     = false
   static trackClampDebt = true
 
+  static inputs:{[name: string]: HTMLInputElement} = {}
+
   static bindSettings(getInput:(name:string)=>HTMLInputElement|null) {
     DLA.bindSetting('initBase',      getInput('initBase'));
     DLA.bindSetting('initArc',       getInput('initArc'));
@@ -37,6 +39,7 @@ export class DLA {
   }
 
   static bindToggle(name:'clampMoves'|'trackClampDebt', input:HTMLInputElement|null) {
+    if (input) DLA.inputs[name] = input;
     const update = (enabled:boolean):boolean => {
       setHashVar(name, enabled ? 'true' : 'false');
       DLA[name] = enabled;
@@ -50,6 +53,7 @@ export class DLA {
   }
 
   static bindSetting(name:'initBase'|'initArc'|'turnLeft'|'turnRight'|'rate'|'stepLimit', input:HTMLInputElement|null) {
+    if (input) DLA.inputs[name] = input;
     const update = (value:string|null):string|null => {
       const given = value !== null;
       if (!given) value = DLA[name].toString();
