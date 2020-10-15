@@ -108,19 +108,27 @@ main {
   right: 0;
 }
 
-aside.modal {
+aside {
   position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1000;
-  height: 100%;
-  width: 100%;
   overflow: auto;
+  z-index: 1000;
+  top: 0;
+  right: 0;
+  width: 40%;
+  height: 100%;
 }
 
+aside.modal {
+  left: 0;
+  width: 100%;
+}
+
+aside section               { margin-top: 1em; }
+aside section:first-of-type { margin-top: 0; }
+
 aside.modal section {
-  margin: 0 20%;
-  margin-top: 1em;
+  margin-left: 20%;
+  margin-right: 20%;
 }
 
 section {
