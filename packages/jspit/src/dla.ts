@@ -22,13 +22,31 @@ export class DLA {
   static turnRight = 0.5
   static stepLimit = 50
 
+  static clampMoves     = false
+  static trackClampDebt = true
+
   static bindSettings(getInput:(name:string)=>HTMLInputElement|null) {
-    DLA.bindSetting('initBase',  getInput('initBase'));
-    DLA.bindSetting('initArc',   getInput('initArc'));
-    DLA.bindSetting('turnLeft',  getInput('turnLeft'));
-    DLA.bindSetting('turnRight', getInput('turnRight'));
-    DLA.bindSetting('rate',      getInput('rate'));
-    DLA.bindSetting('stepLimit', getInput('stepLimit'));
+    DLA.bindSetting('initBase',      getInput('initBase'));
+    DLA.bindSetting('initArc',       getInput('initArc'));
+    DLA.bindSetting('turnLeft',      getInput('turnLeft'));
+    DLA.bindSetting('turnRight',     getInput('turnRight'));
+    DLA.bindSetting('rate',          getInput('rate'));
+    DLA.bindSetting('stepLimit',     getInput('stepLimit'));
+    DLA.bindToggle('clampMoves',     getInput('clampMoves'));
+    DLA.bindToggle('trackClampDebt', getInput('trackClampDebt'));
+  }
+
+  static bindToggle(name:'clampMoves'|'trackClampDebt', input:HTMLInputElement|null) {
+    const update = (enabled:boolean):boolean => {
+      setHashVar(name, enabled ? 'true' : 'false');
+      DLA[name] = enabled;
+      return enabled;
+    };
+    const value = update((readHashVar(name) || DLA[name].toString()).toLowerCase() === 'true');
+    if (input) {
+      input.checked = value;
+      input.addEventListener('change', () => update(input.checked));
+    }
   }
 
   static bindSetting(name:'initBase'|'initArc'|'turnLeft'|'turnRight'|'rate'|'stepLimit', input:HTMLInputElement|null) {
@@ -106,18 +124,38 @@ export class DLA {
         heading %= 2 * Math.PI;
         this.grid.setTileData(p, 'heading', heading);
 
-        const dx = Math.cos(heading);
-        const dy = Math.sin(heading);
+        let dx = Math.cos(heading);
+        let dy = Math.sin(heading);
         const pos = this.grid.getTilePosition(p);
-        if (Math.abs(dy) > Math.abs(dx)) {
-          if (dy < 0) pos.y--;
-          else pos.y++;
+
+        if (DLA.clampMoves) {
+          if (DLA.trackClampDebt) {
+            const prior = this.grid.getTileData(p, 'prior');
+            if (prior !== null && typeof prior === 'object' && !Array.isArray(prior)) {
+              if (typeof prior.x === 'number') dx += prior.x;
+              if (typeof prior.y === 'number') dy += prior.y;
+            }
+          }
+
+          if (Math.abs(dy) > Math.abs(dx)) {
+            if (dy < 0) pos.y++, dy++;
+            else        pos.y--, dy--;
+          } else {
+            if (dx < 0) pos.x++, dx++;
+            else        pos.x--, dx--;
+          }
+
+          if (DLA.trackClampDebt)
+            this.grid.setTileData(p, 'prior', {x: dx, y: dy});
         } else {
-          if (dx < 0) pos.x--;
-          else pos.x++;
+          // particles move smoothly, taking fractional positions
+          pos.x += dx;
+          pos.y += dy;
         }
 
         if (!this.grid.tilesAt(pos, 'particle').length) {
+          pos.x = Math.floor(pos.x);
+          pos.y = Math.floor(pos.y);
           this.grid.updateTile(p, {
             tag: ['particle'],
             bg: 'var(--particle-bg)',
