@@ -16,7 +16,8 @@ export class DLA {
   static nudgeBy = 0.2
 
   static dropAfter = 0
-  static rate      = 5
+  static genRate   = 1
+  static playRate  = 100
   static initBase  = 0
   static initArc   = 2.0
   static turnLeft  = 0.5
@@ -34,7 +35,8 @@ export class DLA {
     DLA.bindSetting('initArc',       getInput('initArc'));
     DLA.bindSetting('turnLeft',      getInput('turnLeft'));
     DLA.bindSetting('turnRight',     getInput('turnRight'));
-    DLA.bindSetting('rate',          getInput('rate'));
+    DLA.bindSetting('genRate',       getInput('genRate'));
+    DLA.bindSetting('playRate',      getInput('playRate'));
     DLA.bindSetting('stepLimit',     getInput('stepLimit'));
     DLA.bindToggle('clampMoves',     getInput('clampMoves'));
     DLA.bindToggle('trackClampDebt', getInput('trackClampDebt'));
@@ -54,7 +56,7 @@ export class DLA {
     }
   }
 
-  static bindSetting(name:'dropAfter'|'initBase'|'initArc'|'turnLeft'|'turnRight'|'rate'|'stepLimit', input:HTMLInputElement|null) {
+  static bindSetting(name:'dropAfter'|'initBase'|'initArc'|'turnLeft'|'turnRight'|'genRate'|'playRate'|'stepLimit', input:HTMLInputElement|null) {
     if (input) DLA.inputs[name] = input;
     const update = (value:string|null):string|null => {
       const given = value !== null;
@@ -95,23 +97,18 @@ export class DLA {
       fg: 'var(--dla-player)',
       pos: {x: 0, y: 0},
     });
-    // TODO ideally this would be an instanced setting
-    if (DLA.inputs.rate) {
-      DLA.inputs.rate.value = '100';
-      DLA.inputs.rate.dispatchEvent(new InputEvent('change'));
-    } else {
-      DLA.rate = 100;
-    }
   }
 
   update(dt:number): void {
-    if (DLA.dropAfter && this.particleID > DLA.dropAfter && 
-        !this.grid.queryTiles('keyMove').length) this.dropPlayer();
+    const havePlayer = !!this.grid.queryTiles('keyMove').length;
 
+    if (DLA.dropAfter && this.particleID > DLA.dropAfter && !havePlayer) this.dropPlayer();
+
+    const rate = havePlayer ? DLA.playRate : DLA.genRate;
     this.elapsed += dt
-    const n = Math.min(DLA.stepLimit, Math.floor(this.elapsed / DLA.rate));
+    const n = Math.min(DLA.stepLimit, Math.floor(this.elapsed / rate));
     if (!n) return;
-    this.elapsed -= n * DLA.rate;
+    this.elapsed -= n * rate;
     let ps = this.grid.queryTiles('particle', 'live');
     const spawn = () => {
       const heading = Math.PI * (DLA.initBase + (Math.random() - 0.5) * DLA.initArc);
