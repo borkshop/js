@@ -219,3 +219,33 @@ export class TileGrid {
     }
   }
 }
+
+export interface TileInspectEvent {
+  pos:Point
+  tiles:HTMLElement[]
+}
+
+export class TileInspector {
+  grid: TileGrid
+  handler: (ev:TileInspectEvent)=>void
+
+  constructor(
+    grid:TileGrid,
+    handler:(ev:TileInspectEvent)=>void,
+  ) {
+    this.grid = grid;
+    this.handler = handler;
+    this.grid.el.addEventListener('mousemove', this.mouseMoved.bind(this));
+  }
+
+  #inspectingIDs:string = ''
+
+  mouseMoved(ev:MouseEvent) {
+    const tiles = this.grid.tilesAtPoint(ev.clientX, ev.clientY);
+    const ids = tiles.map(({id}) => id).join(';');
+    if (this.#inspectingIDs === ids) return;
+    this.#inspectingIDs = ids;
+    const pos = this.grid.getTilePosition(tiles[0]);
+    this.handler({pos, tiles});
+  }
+}

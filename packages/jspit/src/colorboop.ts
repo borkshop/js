@@ -1,4 +1,4 @@
-import {Point, TileSpec, TileGrid} from './tiles';
+import {TileGrid, TileInspector, TileSpec} from './tiles';
 import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
@@ -187,36 +187,4 @@ function playPause() {
         player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}
       `, bound.foot);
     });
-}
-
-// TODO move into tiles module?
-
-export interface TileInspectEvent {
-  pos:Point
-  tiles:HTMLElement[]
-}
-
-export class TileInspector {
-  grid: TileGrid
-  handler: (ev:TileInspectEvent)=>void
-
-  constructor(
-    grid:TileGrid,
-    handler:(ev:TileInspectEvent)=>void,
-  ) {
-    this.grid = grid;
-    this.handler = handler;
-    this.grid.el.addEventListener('mousemove', this.mouseMoved.bind(this));
-  }
-
-  #inspectingIDs:string = ''
-
-  mouseMoved(ev:MouseEvent) {
-    const tiles = this.grid.tilesAtPoint(ev.clientX, ev.clientY);
-    const ids = tiles.map(({id}) => id).join(';');
-    if (this.#inspectingIDs === ids) return;
-    this.#inspectingIDs = ids;
-    const pos = this.grid.getTilePosition(tiles[0]);
-    this.handler({pos, tiles});
-  }
 }
