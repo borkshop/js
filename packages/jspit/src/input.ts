@@ -1,6 +1,12 @@
 export class KeyMap extends Map<string, number> {
-  constructor(target?:EventTarget) {
+  filter? : (keyEvent:KeyboardEvent) => boolean
+
+  constructor(
+    target?:EventTarget,
+    filter?: (keyEvent:KeyboardEvent) => boolean,
+  ) {
     super();
+    this.filter = filter;
     if (target) this.register(target);
   }
 
@@ -14,8 +20,6 @@ export class KeyMap extends Map<string, number> {
     const n = this.get(name) || 0;
     this.set(name, n+1);
   }
-
-  filter? : (keyEvent:KeyboardEvent) => boolean
 
   handleEvent(event:Event) {
     if (event.type !== 'keyup' && event.type !== 'keydown') return;
