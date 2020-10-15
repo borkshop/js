@@ -15,6 +15,7 @@ export class DLA {
   // proportion to scroll viewport by when at goes outside
   static nudgeBy = 0.2
 
+  static dropAfter = 0
   static rate      = 5
   static initBase  = 0
   static initArc   = 2.0
@@ -28,6 +29,7 @@ export class DLA {
   static inputs:{[name: string]: HTMLInputElement} = {}
 
   static bindSettings(getInput:(name:string)=>HTMLInputElement|null) {
+    DLA.bindSetting('dropAfter',     getInput('dropAfter'));
     DLA.bindSetting('initBase',      getInput('initBase'));
     DLA.bindSetting('initArc',       getInput('initArc'));
     DLA.bindSetting('turnLeft',      getInput('turnLeft'));
@@ -52,7 +54,7 @@ export class DLA {
     }
   }
 
-  static bindSetting(name:'initBase'|'initArc'|'turnLeft'|'turnRight'|'rate'|'stepLimit', input:HTMLInputElement|null) {
+  static bindSetting(name:'dropAfter'|'initBase'|'initArc'|'turnLeft'|'turnRight'|'rate'|'stepLimit', input:HTMLInputElement|null) {
     if (input) DLA.inputs[name] = input;
     const update = (value:string|null):string|null => {
       const given = value !== null;
@@ -93,9 +95,19 @@ export class DLA {
       fg: 'var(--dla-player)',
       pos: {x: 0, y: 0},
     });
+    // TODO ideally this would be an instanced setting
+    if (DLA.inputs.rate) {
+      DLA.inputs.rate.value = '100';
+      DLA.inputs.rate.dispatchEvent(new InputEvent('change'));
+    } else {
+      DLA.rate = 100;
+    }
   }
 
   update(dt:number): void {
+    if (DLA.dropAfter && this.particleID > DLA.dropAfter && 
+        !this.grid.queryTiles('keyMove').length) this.dropPlayer();
+
     this.elapsed += dt
     const n = Math.min(DLA.stepLimit, Math.floor(this.elapsed / DLA.rate));
     if (!n) return;
@@ -286,7 +298,6 @@ export function init(bind:Bindings) {
     if (state.world) {
       if (bound.dropPlayer) bound.dropPlayer.disabled = true;
       state.world.dropPlayer();
-      DLA.rate = 100; // TODO ideally this would be an instanced setting
     }
   });
 

@@ -58,16 +58,19 @@
               <label for="dla-rate">every</label>
               <input id="dla-rate" name="rate" type="number" min="1" max="100">ms
             </dd>
-
             <dd><label for="dla-clampMoves">
               <input id="dla-clampMoves" name="clampMoves" type="checkbox" />
               Disallow diagonal moves
             </label></dd>
-
             <dd><label for="dla-trackClampDebt">
               <input id="dla-trackClampDebt" name="trackClampDebt" type="checkbox" />
               Track accumulated diagonal heading debt
             </label></dd>
+
+            <dt>Automatically Drop Player</dt>
+            <dd><label for="dla-dropAfter">After</label>
+              <input id="dla-dropAfter" name="dropAfter" type="number" min="0" max="10000" step="1" /> particles (0 disables)
+            </dd>
 
           </dl></fieldset>
 
