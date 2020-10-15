@@ -197,9 +197,9 @@ export class DLA {
 // injected DOM parts
 interface Bindings extends UIBindings {
   keys: HTMLElement,
-  run: HTMLInputElement,
-  reset: HTMLInputElement,
-  dropPlayer: HTMLInputElement,
+  run: HTMLButtonElement,
+  reset: HTMLButtonElement,
+  dropPlayer: HTMLButtonElement,
 }
 export const bound:Partial<Bindings> = {};
 
@@ -243,15 +243,17 @@ export function init(bind:Bindings) {
 }
 
 function playPause() {
+  if (!state.grid) return;
+
+  showUI(bound, true, !state.world?.running);
+
   if (!state.world) {
-    if (!state.grid) return;
     state.world = new DLA(state.grid);
     if (bound.dropPlayer) bound.dropPlayer.disabled = false;
     if (bound.reset) bound.reset.disabled = false;
   }
 
   const {world, keys} = state;
-
   if (world.running) world.running = false;
   else world.run(
     () => keys?.consumePresses() || [],
@@ -259,6 +261,4 @@ function playPause() {
         <label for="particleID">Particles:</label>
         <span id="particleID">${world.particleID}</span>
       `, bound.foot));
-
-  showUI(bound, !!state.world, state.world?.running);
 }
