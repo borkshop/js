@@ -9,6 +9,17 @@ export interface TileSpec {
   tag?: string|string[]
   fg?: string
   bg?: string
+  data?: TileData
+}
+
+type TileDatum =
+  | string
+  | number
+  | TileDatum[]
+  | TileData
+
+interface TileData {
+  [name: string]: TileDatum
 }
 
 // mortonSpread inserts a 0 bit after each of 26 the low bits of x, masking
@@ -101,6 +112,13 @@ export class TileGrid {
       else if (Array.isArray(spec.tag)) for (const tag of spec.tag) tile.classList.add(tag);
     } else if (!tile.className) tile.className = 'tile';
     if (spec.pos) this.moveTileTo(tile, spec.pos);
+    if (spec.data) {
+      for (const name in tile.dataset)
+        if (!(name in spec.data))
+          delete tile.dataset[name];
+      for (const name in spec.data)
+        tile.dataset[name] = JSON.stringify(spec.data[name]);
+    }
     return tile;
   }
 
@@ -109,6 +127,24 @@ export class TileGrid {
       return this.el.querySelector('#' + this.tileID(elOrID));
     }
     return elOrID;
+  }
+
+  getTileData(elOrID:HTMLElement|string, name:string):TileDatum|null {
+    const tile = this.getTile(elOrID);
+    const sval = tile?.dataset[name];
+    if (!sval) return null;
+    try {
+      return JSON.parse(sval);
+    } catch(e) {
+    }
+    return null;
+  }
+
+  setTileData(elOrID:HTMLElement|string, name:string, value:TileDatum|null) {
+    const tile = this.getTile(elOrID);
+    if (!tile) return;
+    if (value === null) delete tile.dataset[name];
+    else                       tile.dataset[name] = JSON.stringify(value);
   }
 
   queryTiles(...tag:string[]) {

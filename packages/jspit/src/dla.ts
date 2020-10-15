@@ -91,11 +91,13 @@ export class DLA {
       }
 
       for (const p of ps) {
-        let heading = (p.dataset.heading && parseFloat(p.dataset.heading)) || 0;
+        let heading = this.grid.getTileData(p, 'heading');
+        if (typeof heading !== 'number') heading = 0;
+
         const adj = Math.random() * (DLA.turnLeft + DLA.turnRight) - DLA.turnLeft;
         heading += Math.PI * adj;
         heading %= 2 * Math.PI;
-        p.dataset.heading = heading.toString();
+        this.grid.setTileData(p, 'heading', heading);
 
         const dx = Math.cos(heading);
         const dy = Math.sin(heading);
@@ -109,13 +111,13 @@ export class DLA {
         }
 
         if (!this.grid.tilesAt(pos, 'particle').length) {
-          delete p.dataset.heading;
           this.grid.updateTile(p, {
             tag: ['particle'],
             bg: 'var(--particle-bg)',
             fg: 'var(--particle-dead)',
             text: '.',
             pos,
+            data: {},
           });
         } else {
           this.grid.moveTileTo(p, pos);
