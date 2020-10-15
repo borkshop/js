@@ -15,11 +15,9 @@ export class KeyMap extends Map<string, number> {
     this.set(name, n+1);
   }
 
-  enabled = true
   filter? : (keyEvent:KeyboardEvent) => boolean
 
   handleEvent(event:Event) {
-    if (!this.enabled) return;
     if (event.type !== 'keyup' && event.type !== 'keydown') return;
     const keyEvent = event as KeyboardEvent;
     if (this.filter && !this.filter(keyEvent)) return;
