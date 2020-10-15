@@ -1,10 +1,16 @@
-import {html, render} from 'lit-html';
-import type {Point, TileSpec} from './tiles';
-import type {Context, SimAction} from './sim';
+import type {Point, TileSpec, TileGrid} from './tiles';
+import {coalesceMoves} from './input';
+import {everyFrame, schedule} from './anim';
 
 export class ColorBoop {
   static demoName = 'ColorBoop'
   static demoTitle = 'Boop a color, get a color'
+
+  // rate at which to coalesce and process movement input
+  static inputRate = 100
+
+  // proportion to scroll viewport by when at goes outside
+  static nudgeBy = 0.2
 
   colors = [
     'black',
@@ -31,75 +37,110 @@ export class ColorBoop {
     'yellow-orange',
   ]
 
-  #viewer?:HTMLElement|null
+  grid : TileGrid
 
-  inspect?(_ctx:Context, pos:Point, tiles:HTMLElement[]):void {
-    if (this.#viewer) render(tiles.length
-      ? html`@${pos.x},${pos.y} ${tiles.map(({id}) => id)}`
-      : html`// mouse-over a tile to inspect it`,
-      this.#viewer
-    )
-  }
-
-  setup(ctx:Context) {
-    this.#viewer = ctx.addCtl(html`// mouse-over a tile to inspect it`);
-
-    ctx.showModal(html`
-      <section>
-        <h1 align="center">Welcome traveler</h1>
-        <p>
-          Boop a color, get a color!
-        </p>
-        <p>
-          This is the first and simplest example of jspit's <code>TileGrid</code>.
-        </p>
-        <p>
-          <button @click=${() => ctx.showModal(null)}>Ok!</button>
-        </p>
-      </section>
-    `);
-
-    ctx.grid.createTile('at', {
+  constructor(grid:TileGrid) {
+    this.grid = grid;
+    this.grid.clear();
+    this.grid.createTile('at', {
       text: '@',
       tag: ['solid', 'mind', 'keyMove'],
       pos: {x: 10, y: 10},
     });
     this.colors.forEach((color, i) => {
-      ctx.grid.createTile(`fg-swatch-${color}`, {
+      this.grid.createTile(`fg-swatch-${color}`, {
         fg: `var(--${color})`,
         tag: ['solid', 'swatch', 'fg'],
         text: '$',
         pos: {x: 5, y: i},
       });
-      ctx.grid.createTile(`bg-swatch-${color}`, {
+      this.grid.createTile(`bg-swatch-${color}`, {
         bg: `var(--${color})`,
         tag: ['solid', 'swatch', 'bg'],
         text: '$',
         pos: {x: 15, y: i},
       });
     });
-      
-    ctx.grid.centerViewOn({x: 10, y: 10});
+    this.grid.centerViewOn({x: 10, y: 10});
   }
 
-  act(ctx:Context, action:SimAction): SimAction {
-    if (!action.actor.classList.contains('solid')) return action;
-    const hits = ctx.grid.tilesAt(action.targ, 'solid');
-    if (!(action.ok = !hits.length)) for (const hit of hits)
-      if (hit.classList.contains('swatch')) {
-        const spec : TileSpec = {};
-        if      (hit.classList.contains('fg')) spec.fg = hit.style.color;
-        else if (hit.classList.contains('bg')) spec.bg = hit.style.backgroundColor;
-        ctx.grid.updateTile(action.actor, spec)
-      }
-    return action;
+  consumeInput(presses: Array<[string, number]>):boolean {
+    const movers = this.grid.queryTiles('keyMove');
+    if (!movers.length) return false;
+    if (movers.length > 1) throw new Error(`ambiguous ${movers.length}-mover situation`);
+    const actor = movers[0];
+
+    let {have, move} = coalesceMoves(presses);
+    if (!have) return false;
+
+    const pos = this.grid.getTilePosition(actor);
+    const targ = {x: pos.x + move.x, y: pos.y + move.y};
+    let action = {actor, pos, targ, ok: true};
+
+    // solid tiles collide
+    if (action.actor.classList.contains('solid')) {
+      const hits = this.grid.tilesAt(action.targ, 'solid');
+      if (!(action.ok = !hits.length)) for (const hit of hits)
+        if (hit.classList.contains('swatch')) {
+          const spec : TileSpec = {};
+          if      (hit.classList.contains('fg')) spec.fg = hit.style.color;
+          else if (hit.classList.contains('bg')) spec.bg = hit.style.backgroundColor;
+          this.grid.updateTile(action.actor, spec)
+        }
+      if (!action.ok) return false;
+    }
+
+    this.grid.moveTileTo(action.actor, action.targ);
+    this.grid.nudgeViewTo(action.targ, ColorBoop.nudgeBy);
+    return true;
   }
 
-  update(ctx:Context, _dt:number) {
-    const {x, y} = ctx.grid.getTilePosition('at');
-    const {x: w, y: h} = ctx.grid.tileSize;
-    const {x: vx, y: vy, width: vw, height: vh} = ctx.grid.viewport;
-    ctx.setStatus(html`player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}`);
+  running = false
+
+  run(
+    readKeys:() => Array<[string, number]>,
+    updated:(grid:TileGrid)=>void,
+  ) {
+    if (this.running) return;
+    this.running = true;
+    everyFrame(schedule(
+      () => this.running,
+      {every: ColorBoop.inputRate, then: () => {
+        if (this.consumeInput(readKeys())) updated(this.grid);
+        return true;
+      },
+    }));
   }
 }
 
+// TODO move into tiles module?
+
+export interface TileInspectEvent {
+  pos:Point
+  tiles:HTMLElement[]
+}
+
+export class TileInspector {
+  grid: TileGrid
+  handler: (ev:TileInspectEvent)=>void
+
+  constructor(
+    grid:TileGrid,
+    handler:(ev:TileInspectEvent)=>void,
+  ) {
+    this.grid = grid;
+    this.handler = handler;
+    this.grid.el.addEventListener('mousemove', this.mouseMoved.bind(this));
+  }
+
+  #inspectingIDs:string = ''
+
+  mouseMoved(ev:MouseEvent) {
+    const tiles = this.grid.tilesAtPoint(ev.clientX, ev.clientY);
+    const ids = tiles.map(({id}) => id).join(';');
+    if (this.#inspectingIDs === ids) return;
+    this.#inspectingIDs = ids;
+    const pos = this.grid.getTilePosition(tiles[0]);
+    this.handler({pos, tiles});
+  }
+}

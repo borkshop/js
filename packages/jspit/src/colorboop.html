@@ -8,30 +8,89 @@
   </head>
   <body>
 
-    <header></header>
+    <header>
+      <div id="inspector" class="ctl scen">// mouse-over a tile to inspect it</div>
+    </header>
 
     <main>
       <aside class="modal">
+
         <section>
-          Loading...
-          <noscript>No JavaScript, no boops!</noscript>
+          <h1 align="center">Welcome traveler</h1>
+          <p>
+            Boop a color, get a color!
+          </p>
+          <p>
+            This is the first and simplest example of jspit's <code>TileGrid</code>.
+          </p>
+          <p>
+            <button id="run">Ok!</button>
+            <button id="reset">Reset</button>
+          </p>
         </section>
+
+        <section>
+          <h3><a href="index.html">Back to Welcome screen</a></h3>
+        </section>
+
       </aside>
+      <div class="grid inspectable"></div>
     </main>
 
     <footer></footer>
 
     <script type="module">
-      import {Sim} from './sim';
-      import {ColorBoop} from './colorboop';
-      var sim = new Sim({
-        cons:   ColorBoop,
-        head:   document.querySelector('header'),
-        el:     document.querySelector('main'),
-        foot:   document.querySelector('footer'),
-        keysOn: document.body,
+      import {html, render} from 'lit-html';
+      import {ColorBoop, TileInspector} from './colorboop';
+      import {TileGrid} from './tiles';
+      import {KeyMap} from './input';
+
+      const head  = document.querySelector('header');
+      const foot  = document.querySelector('footer');
+      const main  = document.querySelector('main');
+      const modal = document.querySelector('main .modal');
+      const grid  = new TileGrid(document.querySelector('main .grid'));
+      const keys  = new KeyMap(document.body);
+      let world = null;
+
+      new TileInspector(grid, ({pos, tiles}) => render(tiles.length
+        ? html`@${pos.x},${pos.y} ${tiles.map(({id}) => id)}`
+        : html`// mouse-over a tile to inspect it`,
+        document.querySelector('#inspector')));
+
+      function playPause() {
+        if (!world) world = new ColorBoop(grid);
+        if (world.running) {
+          world.running = false;
+          modal.style.display = '';
+        } else {
+          modal.style.display = 'none';
+          world.run(keys.consumePresses.bind(keys), () => {
+            const {x, y} = grid.getTilePosition('at');
+            const {x: w, y: h} = grid.tileSize;
+            const {x: vx, y: vy, width: vw, height: vh} = grid.viewport;
+            render(
+              html`player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}`,
+              foot);
+          });
+        }
+      }
+
+      keys.filter = (ev) => {
+        if (ev.key === 'Escape') {
+          if (ev.type === 'keydown') playPause();
+          return false;
+        }
+        if (modal.style.display !== 'none') return false;
+        return !ev.altKey && !ev.ctrlKey && !ev.metaKey;
+      };
+
+      document.querySelector('#run').addEventListener('click', playPause);
+      document.querySelector('#reset').addEventListener('click', () => {
+        world = null;
+        playPause();
       });
-      sim.run();
+
     </script>
   </body>
 
