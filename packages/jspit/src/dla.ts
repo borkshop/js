@@ -15,19 +15,23 @@ export class DLA {
   // proportion to scroll viewport by when at goes outside
   static nudgeBy = 0.2
 
-  static rate = 5
-  static turnLeft = 0.5
+  static rate      = 5
+  static initBase  = 0
+  static initArc   = 2.0
+  static turnLeft  = 0.5
   static turnRight = 0.5
   static stepLimit = 50
 
   static bindSettings(getInput:(name:string)=>HTMLInputElement|null) {
+    DLA.bindSetting('initBase',  getInput('initBase'));
+    DLA.bindSetting('initArc',   getInput('initArc'));
     DLA.bindSetting('turnLeft',  getInput('turnLeft'));
     DLA.bindSetting('turnRight', getInput('turnRight'));
     DLA.bindSetting('rate',      getInput('rate'));
     DLA.bindSetting('stepLimit', getInput('stepLimit'));
   }
 
-  static bindSetting(name:'turnLeft'|'turnRight'|'rate'|'stepLimit', input:HTMLInputElement|null) {
+  static bindSetting(name:'initBase'|'initArc'|'turnLeft'|'turnRight'|'rate'|'stepLimit', input:HTMLInputElement|null) {
     const update = (value:string|null):string|null => {
       const given = value !== null;
       if (!given) value = DLA[name].toString();
@@ -76,10 +80,13 @@ export class DLA {
     this.elapsed -= n * DLA.rate;
     let ps = this.grid.queryTiles('particle', 'live');
     const spawn = () => {
+      const heading = Math.PI * (DLA.initBase + (Math.random() - 0.5) * DLA.initArc);
+
       const p = this.grid.createTile(`particle-${++this.particleID}`, {
         tag: ['particle', 'live'],
         fg: 'var(--particle-live)',
         text: '*',
+        data: {heading},
       });
       ps.push(p);
     };
