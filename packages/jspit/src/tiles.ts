@@ -26,7 +26,7 @@ function mortonSpread1(x:number):number {
 // mortonKey returns the Z-order curve index for a Point, aka its "Morton code"
 // https://en.wikipedia.org/wiki/Z-order_curve
 function mortonKey({x, y}:Point):number {
-  return mortonSpread1(x) | mortonSpread1(y)<<1;
+  return mortonSpread1(Math.floor(x)) | mortonSpread1(Math.floor(y))<<1;
 }
 
 interface TileSpatialIndex {
