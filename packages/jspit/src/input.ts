@@ -1,4 +1,9 @@
 export class KeyMap extends Map<string, number> {
+  constructor(target?:EventTarget) {
+    super();
+    if (target) this.register(target);
+  }
+
   countKey({altKey, ctrlKey, metaKey, shiftKey, key}:KeyboardEvent) {
     const name = `${
       altKey ? 'A-' : ''}${
