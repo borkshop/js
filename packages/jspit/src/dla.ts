@@ -3,6 +3,7 @@ import {readHashVar, setHashVar} from './state';
 import {TileGrid} from './tiles';
 import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
+import {show as showUI, Bindings as UIBindings} from './ui';
 
 export class DLA {
   static demoName = 'DLA'
@@ -194,12 +195,7 @@ export class DLA {
 }
 
 // injected DOM parts
-interface Bindings {
-  head: HTMLElement,
-  foot: HTMLElement,
-  main: HTMLElement,
-  menu: HTMLElement,
-  grid: HTMLElement,
+interface Bindings extends UIBindings {
   keys: HTMLElement,
   run: HTMLInputElement,
   reset: HTMLInputElement,
@@ -233,7 +229,7 @@ export function init(bind:Bindings) {
     if (state.world) state.world.running = false;
     state.world = undefined;
     if (bound.reset) bound.reset.disabled = true;
-    showUI();
+    showUI(bound, false, false);
   });
   bound.dropPlayer?.addEventListener('click', () => {
     if (state.world) {
@@ -264,19 +260,5 @@ function playPause() {
         <span id="particleID">${world.particleID}</span>
       `, bound.foot));
 
-  showUI();
-}
-
-function showUI() {
-  const {world, grid} = state;
-  const overlay = world ? '' : 'none';
-  if (bound.head) bound.head.style.display = overlay;
-  if (bound.foot) bound.foot.style.display = overlay;
-  if (grid?.el) grid.el.style.display = overlay;
-
-  if (bound.menu) {
-    if (world) bound.menu.classList.remove('modal');
-    else bound.menu.classList.add('modal');
-    bound.menu.style.display = world?.running ? 'none' : '';
-  }
+  showUI(bound, !!state.world, state.world?.running);
 }
