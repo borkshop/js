@@ -12,17 +12,24 @@
   - nudge needs to take whole tile into account, nudge if any part of the given point is out
   - custom shader funcs, or at least some affordance for stepped css classes
 - <https://www.w3schools.com/howto/howto_css_switch.asp>
-- DLA
-  - indirect color variables, add color settings
-  - controlled RNG with seed setting
-  - settings panel could be a good place to try out lit-element
-  - particle trace option
-  - particle N option
 
 ## WIP
 
+- DLA
+  - horizontally scale out the settings to have mulitple particle spawn points
+  - controlled RNG with seed setting
+  - tile visited
+  - particle trace option
+  - particle age
+  - particle bounce
+  - particle N option
+
 ## Done
 
+- added initial heading controls for DLA particles
+- fixed DLA particle movement: particels now take on fractional positions, but
+  create normal integer-aligned tiles
+- indirected DLA color variables
 - Finished de-Simification through DLA
 - Sketched a new page-module pattern around bindings and state
 - Improved menu system, no longer just modal, with a shared ui bindings module
