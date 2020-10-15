@@ -33,6 +33,7 @@ html {
 
   --ui-bg: var(--dark-grey);
   --ui-fg: var(--dark-white);
+  --ui-disabled: var(--lighter-grey);
 
   --ui-accent:       var(--grey);
   --ui-accent-focus: var(--light-grey);
@@ -196,6 +197,11 @@ select, button {
 
 button:hover, button:focus { color: var(--action-focus-color); border-color: var(--action-focus-color); }
 button:active              { color: var(--acting-color); border-color: var(--acting-color); }
+
+button:disabled {
+  color: var(--ui-disabled) !important;
+  border-color: var(--ui-disabled) !important;
+}
 
 fieldset {
   margin: 0.3em 0;
