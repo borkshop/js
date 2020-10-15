@@ -1,12 +1,9 @@
 import {render, TemplateResult} from 'lit-html';
 import {Point, TileGrid} from './tiles';
 import {KeyMap, coalesceMoves} from './input';
+import {everyFrame, schedule} from './anim';
 
 type Nullable<T> = { [P in keyof T]: T[P] | null };
-
-function nextFrame() {
-  return new Promise<number>(resolve => requestAnimationFrame(resolve));
-}
 
 function make(tagName:string, className?:string):HTMLElement {
   const el = document.createElement(tagName);
@@ -175,31 +172,25 @@ export class Sim {
   nudgeBy = 0.2   // proportion to scroll viewport by when at goes outside
 
   running = false
-  async run() {
-    this.running = true;
-    let last = await nextFrame();
-    let dt = 0;
-    while (this.running) {
-      this.update(dt);
-      const next = await nextFrame();
-      dt = next - last, last = next;
-    }
-  }
-
   halt() {
     this.running = false;
   }
 
-  lastInput = 0
-  update(dt:number):void {
-    if ((this.lastInput += dt / this.inputRate) >= 1) {
-      this.consumeInput();
-      this.lastInput = this.lastInput % 1;
-    }
-
-    if (this.scen && this.scen.update &&
-      this.modal.style.display === 'none')
-      this.scen.update(this, dt);
+  run() {
+    this.running = true;
+    everyFrame(schedule(
+      () => this.running,
+      {every: this.inputRate, then: () => {
+        this.consumeInput();
+        return true;
+      }},
+      (dt:number) => {
+        if (this.scen && this.scen.update &&
+          this.modal.style.display === 'none')
+          this.scen.update(this, dt);
+        return true;
+      },
+    ));
   }
 
   consumeInput() {
