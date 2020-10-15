@@ -1,6 +1,7 @@
-import type {Point, TileSpec, TileGrid} from './tiles';
-import {coalesceMoves} from './input';
+import {Point, TileSpec, TileGrid} from './tiles';
+import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
+import {show as showUI, Bindings as UIBindings} from './ui';
 
 export class ColorBoop {
   static demoName = 'ColorBoop'
@@ -75,23 +76,23 @@ export class ColorBoop {
 
     const pos = this.grid.getTilePosition(actor);
     const targ = {x: pos.x + move.x, y: pos.y + move.y};
-    let action = {actor, pos, targ, ok: true};
 
     // solid tiles collide
-    if (action.actor.classList.contains('solid')) {
-      const hits = this.grid.tilesAt(action.targ, 'solid');
-      if (!(action.ok = !hits.length)) for (const hit of hits)
-        if (hit.classList.contains('swatch')) {
+    if (actor.classList.contains('solid')) {
+      const hits = this.grid.tilesAt(targ, 'solid');
+      if (hits.length) {
+        for (const hit of hits) if (hit.classList.contains('swatch')) {
           const spec : TileSpec = {};
           if      (hit.classList.contains('fg')) spec.fg = hit.style.color;
           else if (hit.classList.contains('bg')) spec.bg = hit.style.backgroundColor;
-          this.grid.updateTile(action.actor, spec)
+          this.grid.updateTile(actor, spec)
         }
-      if (!action.ok) return false;
+        return true;
+      }
     }
 
-    this.grid.moveTileTo(action.actor, action.targ);
-    this.grid.nudgeViewTo(action.targ, ColorBoop.nudgeBy);
+    this.grid.moveTileTo(actor, targ);
+    this.grid.nudgeViewTo(targ, ColorBoop.nudgeBy);
     return true;
   }
 
@@ -111,6 +112,81 @@ export class ColorBoop {
       },
     }));
   }
+}
+
+// injected DOM parts
+interface Bindings extends UIBindings {
+  keys: HTMLElement
+  run: HTMLButtonElement
+  reset: HTMLButtonElement
+  inspect: HTMLElement
+}
+export const bound:Partial<Bindings> = {};
+
+// simulation / "game" state and dependencies
+interface State {
+  grid: TileGrid,
+  keys: KeyMap,
+  world: ColorBoop,
+}
+export const state:Partial<State> = {};
+
+import {html, render} from 'lit-html';
+
+export function init(bind:Bindings) {
+  Object.assign(bound, bind);
+
+  if (bound.grid) {
+    state.grid = new TileGrid(bound.grid);
+    new TileInspector(state.grid, ({pos, tiles}) => {
+      if (bound.inspect) render(tiles.length
+        ? html`@${pos.x},${pos.y} ${tiles.map(({id}) => id)}`
+        : html`// mouse-over a tile to inspect it`,
+        bound.inspect)
+    });
+  }
+
+  if (bound.keys) state.keys = new KeyMap(bound.keys, (ev:KeyboardEvent):boolean => {
+    if (ev.key === 'Escape') {
+      if (ev.type === 'keydown') playPause();
+      return false;
+    }
+    if (bound.menu?.style.display !== 'none') return false;
+    return !ev.altKey && !ev.ctrlKey && !ev.metaKey;
+  });
+
+  bound.run?.addEventListener('click', playPause);
+  bound.reset?.addEventListener('click', () => {
+    if (state.world) state.world.running = false;
+    state.world = undefined;
+    if (bound.reset) bound.reset.disabled = true;
+    showUI(bound, false, false);
+  });
+}
+
+function playPause() {
+  if (!state.grid) return;
+
+  showUI(bound, true, !state.world?.running);
+
+  if (!state.world) {
+    state.world = new ColorBoop(state.grid);
+    if (bound.reset) bound.reset.disabled = false;
+  }
+
+  const {world, grid, keys} = state;
+  if (world.running) world.running = false;
+  else world.run(
+    () => keys?.consumePresses() || [],
+    () => {
+      if (!grid || !bound.foot) return;
+      const {x, y} = grid.getTilePosition('at');
+      const {x: w, y: h} = grid.tileSize;
+      const {x: vx, y: vy, width: vw, height: vh} = grid.viewport;
+      render(html`
+        player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}
+      `, bound.foot);
+    });
 }
 
 // TODO move into tiles module?
