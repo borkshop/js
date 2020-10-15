@@ -28,6 +28,8 @@ html {
   --main-bg: var(--darker-grey);
   --main-fg: var(--light-grey);
 
+  --grid-bg: transparent;
+
   --content-bg: var(--dark-grey);
   --content-fg: var(--dark-white);
 
@@ -146,6 +148,7 @@ section {
   --xlate-x: 0;
   --xlate-y: 0;
 
+  background-color: var(--grid-bg);
   font-family: monospace;
 }
 
