@@ -1,13 +1,18 @@
 export class KeyMap extends Map<string, number> {
-  filter? : (keyEvent:KeyboardEvent) => boolean
+  filter?: (keyEvent:KeyboardEvent) => boolean
+  target: EventTarget
+  #handler: (ev:Event)=>void
 
   constructor(
-    target?:EventTarget,
+    target: EventTarget,
     filter?: (keyEvent:KeyboardEvent) => boolean,
   ) {
     super();
+    this.#handler = this.handleEvent.bind(this);
     this.filter = filter;
-    if (target) this.register(target);
+    this.target = target;
+    this.target.addEventListener('keydown', this.#handler);
+    this.target.addEventListener('keyup', this.#handler);
   }
 
   countKey({altKey, ctrlKey, metaKey, shiftKey, key}:KeyboardEvent) {
@@ -28,12 +33,6 @@ export class KeyMap extends Map<string, number> {
     this.countKey(keyEvent);
     event.stopPropagation();
     event.preventDefault();
-  }
-
-  register(target:EventTarget) {
-    const handler = this.handleEvent.bind(this);
-    target.addEventListener('keydown', handler);
-    target.addEventListener('keyup', handler);
   }
 
   consumePresses() {
