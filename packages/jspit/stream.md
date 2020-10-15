@@ -1,4 +1,4 @@
-# 2020-10-13
+# 2020-10-14
 
 ## TODO
 
@@ -11,21 +11,29 @@
   - masking?
   - nudge needs to take whole tile into account, nudge if any part of the given point is out
   - custom shader funcs, or at least some affordance for stepped css classes
+- <https://www.w3schools.com/howto/howto_css_switch.asp>
 - DLA
   - indirect color variables, add color settings
   - controlled RNG with seed setting
   - settings panel could be a good place to try out lit-element
-
-## WIP
-
-- DLA
   - particle trace option
   - particle N option
 
+## WIP
+
 ## Done
 
-- refactored Sim plumbing to decouple from the multi-Scenario demo use case
-- revamped DLA settings, now persisted through location hash
+- fully erased the `Sim` abstraction from `ColorBoop`; TODO follow through with
+  DLA tomorrow, then drop the `sim` module
+- reworked to a multi-page app structure: index, colorboop, and dla are now
+  separate `.html` files
+- started disaggregating modules, broke out `input`, `tiles`, `anim`, `state`,
+  `sim`, `dla`, and `colorboop` modules
+
+# 2020-10-13
+
+- refactored `Sim` plumbing to decouple from the multi-Scenario demo use case
+- revamped `DLA` settings, now persisted through location hash
 
 # 2020-10-12
 
