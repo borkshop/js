@@ -1,4 +1,4 @@
-# 2020-10-14
+# 2020-10-15
 
 ## TODO
 
@@ -22,6 +22,12 @@
 ## WIP
 
 ## Done
+
+- Finished de-Simification through DLA
+- Sketched a new page-module pattern around bindings and state
+- Improved menu system, no longer just modal, with a shared ui bindings module
+
+# 2020-10-14
 
 - fully erased the `Sim` abstraction from `ColorBoop`; TODO follow through with
   DLA tomorrow, then drop the `sim` module
