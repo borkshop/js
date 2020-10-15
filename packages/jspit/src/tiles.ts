@@ -150,6 +150,12 @@ export class TileGrid {
 
   spatialIndex:TileSpatialIndex = new TileMortonIndex()
 
+  tilesAtPoint(clientX:number, clientY:number) {
+    return document
+      .elementsFromPoint(clientX, clientY)
+      .filter(el => el.classList.contains('tile')) as HTMLElement[];
+  }
+
   tilesAt(at:Point, ...tag:string[]):HTMLElement[] {
     let tiles : HTMLElement[] = [];
     const ids = this.spatialIndex.tilesAt(at);
@@ -213,4 +219,3 @@ export class TileGrid {
     }
   }
 }
-
