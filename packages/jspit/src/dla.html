@@ -4,34 +4,98 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" type="text/css" href="index.css" />
+    <link rel="stylesheet" type="text/css" href="dla.css" />
     <title>jspit: Diffusion Limited Aggregation (DLA) demo</title>
   </head>
   <body>
 
-    <header></header>
+    <header style="display: none">
+
+      <!-- TODO make this a slider / toggle button -->
+      <button id="dropPlayer">Drop Player</button>
+
+    </header>
 
     <main>
-      <aside class="modal">
+      <aside class="menu modal">
+        <noscript>
+          <section>
+            <h3 class="error">Insufficient JavaScript to diffuse...</h3>
+          </section>
+        </noscript>
+
         <section>
-          Loading...
-          <noscript>Insufficient JavaScript to diffuse...</noscript>
+          <h1>Diffusion Limited Aggregation</h1>
+
+          <p>
+            This implementation fires particles from the origin with random
+            initial radial heading. Each move proceeds by randomly perturbing the
+            heading up to the turning radius set below, and advancing forward
+            orthogonally along the greatest projected axis.
+          </p>
+
+          <fieldset><legend>Settings</legend><dl>
+            <dt>Turns upto</dt>
+            <dd><label for="dla-turnLeft">Left: Math.PI *</label>
+              <input id="dla-turnLeft" name="turnLeft" type="number" min="0" max="1" step="0.2">
+            </dd>
+            <dd><label for="dla-turnRight">Right: Math.PI *</label>
+              <input id="dla-turnRight" name="turnRight" type="number" min="0" max="1" step="0.2">
+            </dd>
+
+            <dt>Particles Move</dt><dd>
+              1 <!-- TODO -->
+              step <!-- TODO -->
+              <label for="dla-rate">every</label>
+              <input id="dla-rate" name="rate" type="number" min="1" max="100">ms
+            </dd>
+          </dl></fieldset>
+
+          <button id="run">Run</button>
+          <button id="reset" disabled>Reset</button>
+          <!-- TODO fieldset and #reset mutex? -->
         </section>
+
+        <section>
+
+          Inspired by
+          <a href="//web.archive.org/web/20151003181050/http://codepen.io/DonKarlssonSan/full/BopXpq/">2015-10 codepen by DonKarlssonSan</a>
+          <br>
+          <br>
+
+          Other resources:
+          <ul>
+            <li><a href"https://roguelike.club/event2020.html">Roguecel 2020 talk by Herbert Wolverson</a> demonstrated DLA among other techniques</li>
+            <li><a href="//www.roguebasin.com/index.php?title=Diffusion-limited_aggregation">Roguebasin DLA article</a></li>
+            <li><a href="//en.wikipedia.org/wiki/Diffusion-limited_aggregation">WikiPedia on the wider topic</a></li>
+            <li><a href="//paulbourke.net/fractals/dla/">Paul Boruke, reference from DonKarlssonSan</a></li>
+          </ul>
+
+        </section>
+
+        <section>
+          <h3><a href="index.html">Back to Welcome screen</a></h3>
+        </section>
+
       </aside>
+      <div class="grid" style="display: none"></div>
     </main>
 
-    <footer></footer>
+    <footer style="display: none"></footer>
 
     <script type="module">
-      import {Sim} from './sim';
-      import {DLA} from './dla';
-      var sim = new Sim({
-        cons:   DLA,
-        head:   document.querySelector('header'),
-        el:     document.querySelector('main'),
-        foot:   document.querySelector('footer'),
-        keysOn: document.body,
+      import {init} from './dla';
+      init({
+        head: document.querySelector('header'),
+        foot: document.querySelector('footer'),
+        main: document.querySelector('main'),
+        menu: document.querySelector('main .menu'),
+        grid: document.querySelector('main .grid '),
+        keys: document.body,
+        run: document.querySelector('#run'),
+        reset: document.querySelector('#reset'),
+        dropPlayer: document.querySelector('#dropPlayer'),
       });
-      sim.run();
     </script>
   </body>
 

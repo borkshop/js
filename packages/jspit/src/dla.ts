@@ -1,144 +1,85 @@
-import {html} from 'lit-html';
+import {html, render} from 'lit-html';
 import {readHashVar, setHashVar} from './state';
-import type {Context, SimAction} from './sim';
+import {TileGrid} from './tiles';
+import {KeyMap, coalesceMoves} from './input';
+import {everyFrame, schedule} from './anim';
 
 export class DLA {
   static demoName = 'DLA'
   static demoTitle = 'Diffusion Limited Aggregation'
 
-  particleID = 0
+  // rate at which to coalesce and process movement input
+  static inputRate = 100
 
-  rate = 5
-  turnLeft = 0.5
-  turnRight = 0.5
-  stepLimit = 50
+  // proportion to scroll viewport by when at goes outside
+  static nudgeBy = 0.2
 
-  setup(ctx:Context):void {
-    ctx.grid.createTile(`particle-${++this.particleID}`, {
-      tag: ['particle', 'init'],
-      bg: 'var(--black)',
-      fg: 'var(--dark-grey)',
-      text: '.',
-    });
-    ctx.grid.centerViewOn({x: 0, y: 0});
-    for (const name of ['rate', 'turnLeft', 'turnRight'])
-      this.updateSetting(name, readHashVar(name));
-    this.showMenu(ctx);
+  static rate = 5
+  static turnLeft = 0.5
+  static turnRight = 0.5
+  static stepLimit = 50
+
+  static bindSettings(getInput:(name:string)=>HTMLInputElement|null) {
+    DLA.bindSetting('turnLeft',  getInput('turnLeft'));
+    DLA.bindSetting('turnRight', getInput('turnRight'));
+    DLA.bindSetting('rate',      getInput('rate'));
+    DLA.bindSetting('stepLimit', getInput('stepLimit'));
   }
 
-  updateSetting(name:string, value:string|null) {
-    switch (name) {
-      case 'turnLeft':
-      case 'turnRight':
-      case 'rate':
-        const given = value !== null;
-        if (!given) value = this[name].toString();
-        setHashVar(name, value);
-        if (given) this[name] = parseFloat(value || '');
+  static bindSetting(name:'turnLeft'|'turnRight'|'rate'|'stepLimit', input:HTMLInputElement|null) {
+    const update = (value:string|null):string|null => {
+      const given = value !== null;
+      if (!given) value = DLA[name].toString();
+      setHashVar(name, value);
+      if (given) DLA[name] = parseFloat(value || '');
+      return value;
+    };
+    const value = update(readHashVar(name));
+    if (input) {
+      input.value = value || '';
+      input.addEventListener('change', () => input.value = update(input.value) || '');
     }
   }
 
-  #ctls: HTMLElement[] = []
+  particleID = 0
 
-  showMenu(ctx:Context):void {
-    this.#ctls = this.#ctls.filter(ctl => {
-      ctl.parentNode?.removeChild(ctl);
-      return false;
+  grid: TileGrid
+
+  constructor(grid:TileGrid) {
+    this.grid = grid;
+    this.grid.clear();
+    this.grid.createTile(`particle-${++this.particleID}`, {
+      tag: ['particle', 'init'],
+      bg: 'var(--particle-bg)',
+      fg: 'var(--particle-dead)',
+      text: '.',
     });
-
-    const change = (ev:Event) => {
-      const {name, value} = ev.target as HTMLInputElement;
-      this.updateSetting(name, value);
-      this.showMenu(ctx);
-    };
-
-    ctx.showModal(html`
-      <section>
-        <h1>Diffusion Limited Aggregation</h1>
-
-        <p>
-          This implementation fires particles from the origin with random
-          initial radial heading. Each move proceeds by randomly perturbing the
-          heading up to the turning radius set below, and advancing forward
-          orthogonally along the greatest projected axis.
-        </p>
-
-        <fieldset><legend>Settings</legend><dl>
-          <dt>Turns upto</dt>
-          <dd><label for="dla-turnLeft">Left: Math.PI *</label>
-            <input id="dla-turnLeft" name="turnLeft" type="number" min="0" max="1" step="0.2" value="${this.turnLeft}" @change=${change}>
-          </dd>
-          <dd><label for="dla-turnRight">Right: Math.PI *</label>
-            <input id="dla-turnRight" name="turnRight" type="number" min="0" max="1" step="0.2" value="${this.turnRight}" @change=${change}>
-          </dd>
-
-          <dt>Particles Move</dt><dd>
-            1 <!-- TODO -->
-            step <!-- TODO -->
-            <label for="dla-rate">every</label>
-            <input id="dla-rate" name="rate" type="number" min="1" max="100" value="${this.rate}" @change=${change}>ms
-          </dd>
-        </dl></fieldset>
-
-        <button @click=${() => {
-          ctx.showModal(null);
-          const drop = ctx.addCtl(html`
-            <button @click=${() => {
-              drop?.parentNode?.removeChild(drop);
-              this.dropPlayer(ctx);
-              this.rate = 100;
-            }}>Drop Player</button>
-          `);
-          this.#ctls.push(drop);
-        }}>Run</button>
-      </section>
-
-      <section>
-
-        Inspired by
-        <a href="//web.archive.org/web/20151003181050/http://codepen.io/DonKarlssonSan/full/BopXpq/">2015-10 codepen by DonKarlssonSan</a>
-        <br>
-        <br>
-
-        Other resources:
-        <ul>
-          <li><a href"https://roguelike.club/event2020.html">Roguecel 2020 talk by Herbert Wolverson</a> demonstrated DLA among other techniques</li>
-          <li><a href="//www.roguebasin.com/index.php?title=Diffusion-limited_aggregation">Roguebasin DLA article</a></li>
-          <li><a href="//en.wikipedia.org/wiki/Diffusion-limited_aggregation">WikiPedia on the wider topic</a></li>
-          <li><a href="//paulbourke.net/fractals/dla/">Paul Boruke, reference from DonKarlssonSan</a></li>
-        </ul>
-
-      </section>
-    `);
+    this.grid.centerViewOn({x: 0, y: 0});
   }
 
   elapsed = 0
 
-  dropPlayer(ctx:Context) {
-    ctx.grid.createTile('at', {
+  dropPlayer() {
+    this.grid.createTile('at', {
       text: '@',
       tag: ['solid', 'mind', 'keyMove'],
-      fg: 'var(--orange)',
+      fg: 'var(--dla-player)',
       pos: {x: 0, y: 0},
     });
   }
 
-  update(ctx:Context, dt:number): void {
+  update(dt:number): void {
     this.elapsed += dt
-    const n = Math.min(this.stepLimit, Math.floor(this.elapsed / this.rate));
+    const n = Math.min(DLA.stepLimit, Math.floor(this.elapsed / DLA.rate));
     if (!n) return;
-    this.elapsed -= n * this.rate;
-    let ps = ctx.grid.queryTiles('particle', 'live');
+    this.elapsed -= n * DLA.rate;
+    let ps = this.grid.queryTiles('particle', 'live');
     const spawn = () => {
-      const p = ctx.grid.createTile(`particle-${++this.particleID}`, {
+      const p = this.grid.createTile(`particle-${++this.particleID}`, {
         tag: ['particle', 'live'],
-        fg: 'var(--green)',
+        fg: 'var(--particle-live)',
         text: '*',
       });
-      ctx.setStatus(html`
-        <label for="particleID">Particels:</label>
-        <span id="particleID">${this.particleID}</span>
-      `);
       ps.push(p);
     };
     for (let i = 0; i < n; ++i) {
@@ -150,14 +91,14 @@ export class DLA {
 
       for (const p of ps) {
         let heading = (p.dataset.heading && parseFloat(p.dataset.heading)) || 0;
-        const adj = Math.random() * (this.turnLeft + this.turnRight) - this.turnLeft;
+        const adj = Math.random() * (DLA.turnLeft + DLA.turnRight) - DLA.turnLeft;
         heading += Math.PI * adj;
         heading %= 2 * Math.PI;
         p.dataset.heading = heading.toString();
 
         const dx = Math.cos(heading);
         const dy = Math.sin(heading);
-        const pos = ctx.grid.getTilePosition(p);
+        const pos = this.grid.getTilePosition(p);
         if (Math.abs(dy) > Math.abs(dx)) {
           if (dy < 0) pos.y--;
           else pos.y++;
@@ -166,45 +107,176 @@ export class DLA {
           else pos.x++;
         }
 
-        if (!ctx.grid.tilesAt(pos, 'particle').length) {
+        if (!this.grid.tilesAt(pos, 'particle').length) {
           delete p.dataset.heading;
-          ctx.grid.updateTile(p, {
+          this.grid.updateTile(p, {
             tag: ['particle'],
-            bg: 'var(--black)',
-            fg: 'var(--grey)',
+            bg: 'var(--particle-bg)',
+            fg: 'var(--particle-dead)',
             text: '.',
             pos,
           });
         } else {
-          ctx.grid.moveTileTo(p, pos);
-          if (!ctx.grid.queryTiles('keyMove').length) ctx.grid.nudgeViewTo(pos, 0.2);
+          this.grid.moveTileTo(p, pos);
+          if (!this.grid.queryTiles('keyMove').length) this.grid.nudgeViewTo(pos, 0.2);
         }
       }
     }
   }
 
   digSeq = new Map<string, number>()
-  act(ctx:Context, action:SimAction): SimAction {
-    if (!action.actor.classList.contains('solid')) return action;
 
-    const hits = ctx.grid.tilesAt(action.targ);
+  consumeInput(presses: Array<[string, number]>):void {
+    const movers = this.grid.queryTiles('keyMove');
+    if (!movers.length) return;
+    if (movers.length > 1) throw new Error(`ambiguous ${movers.length}-mover situation`);
+    const actor = movers[0];
 
-    if (!hits.length) {
-      const aid = action.actor.id;
-      const did = (this.digSeq.get(aid) || 0) + 1;
-      this.digSeq.set(aid, did);
-      ctx.grid.createTile(`particle-placed-${aid}-${did}`, {
-        tag: ['particle'],
-        bg: 'var(--black)',
-        fg: 'var(--orange)',
-        text: '.',
-        pos: action.targ,
-      });
-    } else if (!hits.some((h) => h.classList.contains('particle'))) {
-      action.ok = false;
+    let {have, move} = coalesceMoves(presses);
+    if (!have) return;
+
+    const pos = this.grid.getTilePosition(actor);
+    const targ = {x: pos.x + move.x, y: pos.y + move.y};
+
+    // solid actors subject to collison
+    if (actor.classList.contains('solid')) {
+      const hits = this.grid.tilesAt(targ);
+
+      if (!hits.length) {
+        // place particles in the void
+        const aid = actor.id;
+        const did = (this.digSeq.get(aid) || 0) + 1;
+        this.digSeq.set(aid, did);
+        this.grid.createTile(`particle-placed-${aid}-${did}`, {
+          tag: ['particle'],
+          bg: 'var(--particle-bg)',
+          fg: 'var(--dla-player)',
+          text: '.',
+          pos: targ,
+        });
+      } else {
+        // can only move there if have particle support
+        if (!hits.some((h) => h.classList.contains('particle'))) return;
+      }
     }
 
-    return action;
+    this.grid.moveTileTo(actor, targ);
+    this.grid.nudgeViewTo(targ, DLA.nudgeBy);
+  }
+
+  running = false
+
+  run(
+    readKeys:() => Array<[string, number]>,
+    update?:(dt:number) => void,
+  ) {
+
+    this.running = true;
+    everyFrame(schedule(
+      () => this.running,
+
+      {every: DLA.inputRate, then: () => {
+        this.consumeInput(readKeys());
+        return true;
+      }},
+
+      // TODO hoist dynamic tick rate into into anim.schedule
+      // {every: () => this.rate, then: (dn) => {
+      // }),
+
+      (dt:number) => {
+        this.update(dt);
+        if (update) update(dt);
+        return true;
+      },
+    ));
   }
 }
 
+// injected DOM parts
+interface Bindings {
+  head: HTMLElement,
+  foot: HTMLElement,
+  main: HTMLElement,
+  menu: HTMLElement,
+  grid: HTMLElement,
+  keys: HTMLElement,
+  run: HTMLInputElement,
+  reset: HTMLInputElement,
+  dropPlayer: HTMLInputElement,
+}
+export const bound:Partial<Bindings> = {};
+
+// simulation / "game" state and dependencies
+interface State {
+  grid: TileGrid,
+  keys: KeyMap,
+  world: DLA,
+}
+export const state:Partial<State> = {};
+
+export function init(bind:Bindings) {
+  Object.assign(bound, bind);
+
+  if (bound.grid) state.grid = new TileGrid(bound.grid);
+  if (bound.keys) state.keys = new KeyMap(bound.keys, (ev:KeyboardEvent):boolean => {
+    if (ev.key === 'Escape') {
+      if (ev.type === 'keydown') playPause();
+      return false;
+    }
+    if (bound.menu?.style.display !== 'none') return false;
+    return !ev.altKey && !ev.ctrlKey && !ev.metaKey;
+  });
+
+  bound.run?.addEventListener('click', playPause);
+  bound.reset?.addEventListener('click', () => {
+    if (state.world) state.world.running = false;
+    state.world = undefined;
+    if (bound.reset) bound.reset.disabled = true;
+    showUI();
+  });
+  bound.dropPlayer?.addEventListener('click', () => {
+    if (state.world) {
+      if (bound.dropPlayer) bound.dropPlayer.disabled = true;
+      state.world.dropPlayer();
+      DLA.rate = 100; // TODO ideally this would be an instanced setting
+    }
+  });
+
+  DLA.bindSettings((name:string) => bound.menu?.querySelector(`input[name="${name}"]`) || null);
+}
+
+function playPause() {
+  if (!state.world) {
+    if (!state.grid) return;
+    state.world = new DLA(state.grid);
+    if (bound.dropPlayer) bound.dropPlayer.disabled = false;
+    if (bound.reset) bound.reset.disabled = false;
+  }
+
+  const {world, keys} = state;
+
+  if (world.running) world.running = false;
+  else world.run(
+    () => keys?.consumePresses() || [],
+    () => bound.foot && render(html`
+        <label for="particleID">Particles:</label>
+        <span id="particleID">${world.particleID}</span>
+      `, bound.foot));
+
+  showUI();
+}
+
+function showUI() {
+  const {world, grid} = state;
+  const overlay = world ? '' : 'none';
+  if (bound.head) bound.head.style.display = overlay;
+  if (bound.foot) bound.foot.style.display = overlay;
+  if (grid?.el) grid.el.style.display = overlay;
+
+  if (bound.menu) {
+    if (world) bound.menu.classList.remove('modal');
+    else bound.menu.classList.add('modal');
+    bound.menu.style.display = world?.running ? 'none' : '';
+  }
+}
