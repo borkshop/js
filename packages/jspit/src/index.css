@@ -50,6 +50,18 @@ html {
 
 html, * { box-sizing: border-box; }
 
+body header,
+body footer,
+body .grid {
+  display: none;
+}
+
+body.showUI header,
+body.showUI footer,
+body.showUI .grid {
+  display: block;
+}
+
 html {
   margin: 0;
   padding: 0;
@@ -99,13 +111,15 @@ header .ctl.right {
 
 main {
   position: absolute;
-  top: 1.5em;
-  bottom: 1.5em;
-}
-
-main {
+  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
+}
+
+body.showUI main {
+  top: 1.5em;
+  bottom: 1.5em;
 }
 
 aside {
@@ -113,23 +127,23 @@ aside {
   overflow: auto;
   z-index: 1000;
   top: 0;
-  right: 0;
-  width: 40%;
   height: 100%;
 }
 
-aside.modal {
-  left: 0;
-  width: 100%;
+body:not(.showUI) aside {
+  left: 20%;
+  right: 20%;
 }
+
+body.showUI aside {
+  right: 0;
+  width: 40%;
+}
+
+body.running aside { display: none; }
 
 aside section               { margin-top: 1em; }
 aside section:first-of-type { margin-top: 0; }
-
-aside.modal section {
-  margin-left: 20%;
-  margin-right: 20%;
-}
 
 section {
   background-color: var(--content-bg);

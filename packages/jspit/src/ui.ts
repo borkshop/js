@@ -1,10 +1,5 @@
 export interface Bindings {
-  head: HTMLElement,
-  foot: HTMLElement,
-  main: HTMLElement,
-  menu: HTMLElement,
-  grid: HTMLElement,
-  version: HTMLElement,
+  version: HTMLElement|NodeListOf<HTMLElement>,
 }
 
 function tailPart(s:string):string {
@@ -21,14 +16,13 @@ function getVersion():string {
 }
 
 export function show(bound:Partial<Bindings>, should:boolean, running:boolean) {
-  const overlay = should ? '' : 'none';
-  if (bound.head) bound.head.style.display = overlay;
-  if (bound.foot) bound.foot.style.display = overlay;
-  if (bound.grid) bound.grid.style.display = overlay;
-  if (bound.menu) {
-    if (should) bound.menu.classList.remove('modal');
-    else bound.menu.classList.add('modal');
-    bound.menu.style.display = running ? 'none' : '';
+  if (should) document.body.classList.add('showUI');
+  else        document.body.classList.remove('showUI');
+  if (running) document.body.classList.add('running');
+  else         document.body.classList.remove('running');
+  if (bound.version) {
+    const version = getVersion() || 'DEV';
+    if (bound.version instanceof HTMLElement) bound.version.innerText = version;
+    else for (const el of bound.version) el.innerText = version;
   }
-  if (bound.version) bound.version.innerText = getVersion() || 'DEV';
 }

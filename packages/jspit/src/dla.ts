@@ -256,6 +256,9 @@ export class DLA {
 
 // injected DOM parts
 interface Bindings extends UIBindings {
+  menu: HTMLElement,
+  grid: HTMLElement,
+  status: HTMLElement,
   keys: HTMLElement,
   run: HTMLButtonElement,
   reset: HTMLButtonElement,
@@ -280,7 +283,7 @@ export function init(bind:Bindings) {
       if (ev.type === 'keydown') playPause();
       return false;
     }
-    if (bound.menu?.style.display !== 'none') return false;
+    if (!state.world?.running) return false;
     return !ev.altKey && !ev.ctrlKey && !ev.metaKey;
   });
 
@@ -318,8 +321,8 @@ function playPause() {
   if (world.running) world.running = false;
   else world.run(
     () => keys?.consumePresses() || [],
-    () => bound.foot && render(html`
+    () => bound.status && render(html`
         <label for="particleID">Particles:</label>
         <span id="particleID">${world.particleID}</span>
-      `, bound.foot));
+      `, bound.status));
 }

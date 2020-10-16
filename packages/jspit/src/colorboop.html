@@ -8,7 +8,7 @@
   </head>
   <body>
 
-    <header style="display: none">
+    <header>
       <div id="inspector" class="ctl scen">// mouse-over a tile to inspect it</div>
     </header>
 
@@ -37,21 +37,25 @@
         </section>
 
       </aside>
-      <div style="display: none" class="grid inspectable"></div>
+      <div class="grid inspectable"></div>
     </main>
 
-    <footer style="display: none"></footer>
+    <footer>
+      <div class="status" style="float: left"></div>
+      <div class="version" style="float: right"></div>
+    </footer>
 
     <script type="module">
       import {init} from './colorboop';
       init({
         head:    document.querySelector('header'),
         foot:    document.querySelector('footer'),
+        status:  document.querySelector('footer .status'),
         main:    document.querySelector('main'),
         menu:    document.querySelector('main .modal'),
         grid:    document.querySelector('main .grid'),
         keys:    document.body,
-        version: document.querySelector('.version'),
+        version: document.querySelectorAll('.version'),
         run:     document.querySelector('#run'),
         reset:   document.querySelector('#reset'),
         inspect: document.querySelector('#inspector'),

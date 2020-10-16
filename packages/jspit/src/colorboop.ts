@@ -116,6 +116,8 @@ export class ColorBoop {
 
 // injected DOM parts
 interface Bindings extends UIBindings {
+  grid: HTMLElement,
+  status: HTMLElement
   keys: HTMLElement
   run: HTMLButtonElement
   reset: HTMLButtonElement
@@ -151,7 +153,7 @@ export function init(bind:Bindings) {
       if (ev.type === 'keydown') playPause();
       return false;
     }
-    if (bound.menu?.style.display !== 'none') return false;
+    if (!state.world?.running) return false;
     return !ev.altKey && !ev.ctrlKey && !ev.metaKey;
   });
 
@@ -181,12 +183,12 @@ function playPause() {
   else world.run(
     () => keys?.consumePresses() || [],
     () => {
-      if (!grid || !bound.foot) return;
+      if (!grid || !bound.status) return;
       const {x, y} = grid.getTilePosition('at');
       const {x: w, y: h} = grid.tileSize;
       const {x: vx, y: vy, width: vw, height: vh} = grid.viewport;
       render(html`
         player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}
-      `, bound.foot);
+      `, bound.status);
     });
 }

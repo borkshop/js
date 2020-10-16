@@ -9,11 +9,9 @@
   </head>
   <body>
 
-    <header style="display: none">
-
+    <header>
       <!-- TODO make this a slider / toggle button -->
       <button id="dropPlayer">Drop Player</button>
-
     </header>
 
     <main>
@@ -116,21 +114,22 @@
         </section>
 
       </aside>
-      <div class="grid" style="display: none"></div>
+      <div class="grid"></div>
     </main>
 
-    <footer style="display: none"></footer>
+    <footer>
+      <div class="status" style="float: left"></div>
+      <div class="version" style="float: right"></div>
+    </footer>
 
     <script type="module">
       import {init} from './dla';
       init({
-        head: document.querySelector('header'),
-        foot: document.querySelector('footer'),
-        main: document.querySelector('main'),
+        status: document.querySelector('footer .status'),
         menu: document.querySelector('main .menu'),
         grid: document.querySelector('main .grid '),
         keys: document.body,
-        version: document.querySelector('.version'),
+        version: document.querySelectorAll('.version'),
         run: document.querySelector('#run'),
         reset: document.querySelector('#reset'),
         dropPlayer: document.querySelector('#dropPlayer'),
