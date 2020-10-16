@@ -16,8 +16,6 @@
   </head>
   <body>
 
-    <header></header>
-
     <main>
       <aside class="modal">
 
@@ -44,6 +42,7 @@
         </section>
 
         <section align="center">
+          <div class="version" style="float: right"></div>
           <a href="//github.com/borkshop/js/tree/main/packages/jspit">Github</a>
           |
           <a href="//github.com/borkshop/js/blob/main/packages/jspit/stream.md">Dev Log</a>
@@ -52,20 +51,11 @@
       </aside>
     </main>
 
-    <footer>
-      <div class="version" style="float: right"></div>
-    </footer>
-
     <script type="module">
-      const version = document.querySelector('footer .version');
-      if (version) {
-        const base = document.querySelector('head base');
-        const href = base ? base.href : '';
-        const isDev = window.location.href.startsWith(href);
-        version.innerText = isDev
-          ? 'DEV'
-          : href.replace(window.location.href, '');
-      }
+      import {show} from './ui';
+      show({
+        version: document.querySelector('.version'),
+      });
     </script>
 
   </body>
