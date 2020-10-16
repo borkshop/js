@@ -162,6 +162,8 @@ export function init(bind:Bindings) {
     if (bound.reset) bound.reset.disabled = true;
     showUI(bound, false, false);
   });
+
+  showUI(bound, false, false);
 }
 
 function playPause() {

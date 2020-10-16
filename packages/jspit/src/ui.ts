@@ -4,6 +4,7 @@ export interface Bindings {
   main: HTMLElement,
   menu: HTMLElement,
   grid: HTMLElement,
+  version: HTMLElement,
 }
 
 export function show(bound:Partial<Bindings>, should:boolean, running:boolean) {
@@ -15,5 +16,9 @@ export function show(bound:Partial<Bindings>, should:boolean, running:boolean) {
     if (should) bound.menu.classList.remove('modal');
     else bound.menu.classList.add('modal');
     bound.menu.style.display = running ? 'none' : '';
+  }
+  if (bound.version) {
+    const parts = window.location.pathname.split('/');
+    bound.version.innerText = parts[parts.length - 2] || 'DEV';
   }
 }

@@ -299,6 +299,8 @@ export function init(bind:Bindings) {
   });
 
   DLA.bindSettings((name:string) => bound.menu?.querySelector(`input[name="${name}"]`) || null);
+
+  showUI(bound, false, false);
 }
 
 function playPause() {

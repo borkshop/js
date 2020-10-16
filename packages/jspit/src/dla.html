@@ -109,7 +109,10 @@
         </section>
 
         <section>
-          <h3><a href="index.html">Back to Welcome screen</a></h3>
+          <h3>
+            <div class="version" style="float: right"></div>
+            <a href="index.html">Back to Welcome screen</a>
+          </h3>
         </section>
 
       </aside>
@@ -127,6 +130,7 @@
         menu: document.querySelector('main .menu'),
         grid: document.querySelector('main .grid '),
         keys: document.body,
+        version: document.querySelector('.version'),
         run: document.querySelector('#run'),
         reset: document.querySelector('#reset'),
         dropPlayer: document.querySelector('#dropPlayer'),

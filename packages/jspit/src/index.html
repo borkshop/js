@@ -52,7 +52,21 @@
       </aside>
     </main>
 
-    <footer></footer>
+    <footer>
+      <div class="version" style="float: right"></div>
+    </footer>
+
+    <script type="module">
+      const version = document.querySelector('footer .version');
+      if (version) {
+        const base = document.querySelector('head base');
+        const href = base ? base.href : '';
+        const isDev = window.location.href.startsWith(href);
+        version.innerText = isDev
+          ? 'DEV'
+          : href.replace(window.location.href, '');
+      }
+    </script>
 
   </body>
 

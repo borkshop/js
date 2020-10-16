@@ -234,6 +234,14 @@ ul, ol, dl {
   padding-bottom: 0;
 }
 
+.version {
+  font-size: 0.8em;
+  margin-top: 0.2em;
+}
+.version:not(:empty):before {
+  content: "v"
+}
+
 /* TODO better list styles */
 
 /* vim:set ts=2 sw=2 expandtab */
