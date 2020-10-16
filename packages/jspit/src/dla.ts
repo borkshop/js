@@ -83,7 +83,7 @@ export class DLA {
       tag: ['particle', 'init'],
       bg: 'var(--particle-bg)',
       fg: 'var(--particle-dead)',
-      text: '.',
+      text: '·',
     });
     this.grid.centerViewOn({x: 0, y: 0});
   }
@@ -173,7 +173,7 @@ export class DLA {
             tag: ['particle'],
             bg: 'var(--particle-bg)',
             fg: 'var(--particle-dead)',
-            text: '.',
+            text: '·',
             pos,
             data: {},
           });
@@ -212,7 +212,7 @@ export class DLA {
           tag: ['particle'],
           bg: 'var(--particle-bg)',
           fg: 'var(--dla-player)',
-          text: '.',
+          text: '·',
           pos: targ,
         });
       } else {
