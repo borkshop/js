@@ -1,5 +1,5 @@
 import {html, render} from 'lit-html';
-import {readHashVar, setHashVar} from './state';
+import {bindVars} from './config';
 import {TileGrid} from './tiles';
 import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
@@ -15,61 +15,18 @@ export class DLA {
   // proportion to scroll viewport by when at goes outside
   static nudgeBy = 0.2
 
-  static dropAfter = 0
-  static genRate   = 1
-  static playRate  = 100
-  static initBase  = 0
-  static initArc   = 2.0
-  static turnLeft  = 0.5
-  static turnRight = 0.5
-  static stepLimit = 50
+  static settings = {
+    dropAfter: 0,
+    genRate:   1,
+    playRate:  100,
+    initBase:  0,
+    initArc:   2.0,
+    turnLeft:  0.5,
+    turnRight: 0.5,
+    stepLimit: 50,
 
-  static clampMoves     = false
-  static trackClampDebt = true
-
-  static inputs:{[name: string]: HTMLInputElement} = {}
-
-  static bindSettings(getInput:(name:string)=>HTMLInputElement|null) {
-    DLA.bindSetting('dropAfter',     getInput('dropAfter'));
-    DLA.bindSetting('initBase',      getInput('initBase'));
-    DLA.bindSetting('initArc',       getInput('initArc'));
-    DLA.bindSetting('turnLeft',      getInput('turnLeft'));
-    DLA.bindSetting('turnRight',     getInput('turnRight'));
-    DLA.bindSetting('genRate',       getInput('genRate'));
-    DLA.bindSetting('playRate',      getInput('playRate'));
-    DLA.bindSetting('stepLimit',     getInput('stepLimit'));
-    DLA.bindToggle('clampMoves',     getInput('clampMoves'));
-    DLA.bindToggle('trackClampDebt', getInput('trackClampDebt'));
-  }
-
-  static bindToggle(name:'clampMoves'|'trackClampDebt', input:HTMLInputElement|null) {
-    if (input) DLA.inputs[name] = input;
-    const update = (enabled:boolean):boolean => {
-      setHashVar(name, enabled ? 'true' : 'false');
-      DLA[name] = enabled;
-      return enabled;
-    };
-    const value = update((readHashVar(name) || DLA[name].toString()).toLowerCase() === 'true');
-    if (input) {
-      input.checked = value;
-      input.addEventListener('change', () => update(input.checked));
-    }
-  }
-
-  static bindSetting(name:'dropAfter'|'initBase'|'initArc'|'turnLeft'|'turnRight'|'genRate'|'playRate'|'stepLimit', input:HTMLInputElement|null) {
-    if (input) DLA.inputs[name] = input;
-    const update = (value:string|null):string|null => {
-      const given = value !== null;
-      if (!given) value = DLA[name].toString();
-      setHashVar(name, value);
-      if (given) DLA[name] = parseFloat(value || '');
-      return value;
-    };
-    const value = update(readHashVar(name));
-    if (input) {
-      input.value = value || '';
-      input.addEventListener('change', () => input.value = update(input.value) || '');
-    }
+    clampMoves:     false,
+    trackClampDebt: true,
   }
 
   particleID = 0
@@ -98,18 +55,27 @@ export class DLA {
   }
 
   update(dt:number): void {
+    const {
+      dropAfter,
+      genRate, playRate,
+      stepLimit,
+      initBase, initArc,
+      turnLeft, turnRight,
+      clampMoves, trackClampDebt,
+    } = DLA.settings;
+
     const havePlayer = !!this.grid.queryTiles('keyMove').length;
 
-    if (DLA.dropAfter && this.particleID > DLA.dropAfter && !havePlayer) this.dropPlayer();
+    if (dropAfter && this.particleID > dropAfter && !havePlayer) this.dropPlayer();
 
-    const rate = havePlayer ? DLA.playRate : DLA.genRate;
+    const rate = havePlayer ? playRate : genRate;
     this.elapsed += dt
-    const n = Math.min(DLA.stepLimit, Math.floor(this.elapsed / rate));
+    const n = Math.min(stepLimit, Math.floor(this.elapsed / rate));
     if (!n) return;
     this.elapsed -= n * rate;
     let ps = this.grid.queryTiles('particle', 'live');
     const spawn = () => {
-      const heading = Math.PI * (DLA.initBase + (Math.random() - 0.5) * DLA.initArc);
+      const heading = Math.PI * (initBase + (Math.random() - 0.5) * initArc);
 
       const p = this.grid.createTile(`particle-${++this.particleID}`, {
         tag: ['particle', 'live'],
@@ -129,7 +95,7 @@ export class DLA {
         let heading = this.grid.getTileData(p, 'heading');
         if (typeof heading !== 'number') heading = 0;
 
-        const adj = Math.random() * (DLA.turnLeft + DLA.turnRight) - DLA.turnLeft;
+        const adj = Math.random() * (turnLeft + turnRight) - turnLeft;
         heading += Math.PI * adj;
         heading %= 2 * Math.PI;
         this.grid.setTileData(p, 'heading', heading);
@@ -138,8 +104,8 @@ export class DLA {
         let dy = Math.sin(heading);
         const pos = this.grid.getTilePosition(p);
 
-        if (DLA.clampMoves) {
-          if (DLA.trackClampDebt) {
+        if (clampMoves) {
+          if (trackClampDebt) {
             const prior = this.grid.getTileData(p, 'prior');
             if (prior !== null && typeof prior === 'object' && !Array.isArray(prior)) {
               if (typeof prior.x === 'number') dx += prior.x;
@@ -155,7 +121,7 @@ export class DLA {
             else        pos.x--, dx--;
           }
 
-          if (DLA.trackClampDebt)
+          if (trackClampDebt)
             this.grid.setTileData(p, 'prior', {x: dx, y: dy});
         } else {
           // particles move smoothly, taking fractional positions
@@ -295,7 +261,10 @@ export function init(bind:Bindings) {
     }
   });
 
-  DLA.bindSettings((name:string) => bound.menu?.querySelector(`input[name="${name}"]`) || null);
+  bindVars({
+    data: DLA.settings,
+    getInput: (name:string) => bound.menu?.querySelector(`input[name="${name}"]`) || null,
+  });
 
   showUI(bound, false, false);
 }
