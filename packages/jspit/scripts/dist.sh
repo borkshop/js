@@ -1,17 +1,29 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
+# ensure the build directory is setup as a secondary working tree
 desc=$(git describe --always)
 build_dir=$(pwd)/build
 git worktree list | grep "$build_dir"
 
-yarn snowpack build --out "$build_dir/$desc" --clean --sourceMaps
+# enter and clean the build tree
+pushd "$build_dir"
+git checkout -f
+git clean -df
+popd
 
-cd "$build_dir"
+# actually build
+out_dir="$build_dir/$desc"
+yarn snowpack build --out "$out_dir" --clean --sourceMaps
 
-if prior=$(grep '<meta.*refresh' index.html | grep -o 'url=[^/]*' | cut -d= -f2); then
-    sed -i -e "s/$prior/$desc/g" index.html
-fi
+# instantiate the index page (rather than say a client-side redirect)
+sed \
+  -e "s~base href=\".\"~base href=\"$desc/\"~" \
+  <"$out_dir/index.html" \
+  >"$build_dir/index.html"
 
+# enter and commit the built tree
+pushd "$build_dir"
 git add -A
 git commit -m "build $desc"
+popd
