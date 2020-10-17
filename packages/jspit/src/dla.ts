@@ -272,6 +272,12 @@ export class DLA {
               {x: p3.x,   y: p3.y+1},
               {x: p3.x-1, y: p3.y},
             )
+            || (!clampMoves && this.anyCell(
+              {x: p3.x+1, y: p3.y-1},
+              {x: p3.x+1, y: p3.y+1},
+              {x: p3.x-1, y: p3.y+1},
+              {x: p3.x-1, y: p3.y-1},
+            ))
           )) {
             this.grid.updateTile(p, {
               tag: ['particle'],
