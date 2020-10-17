@@ -55,7 +55,7 @@ export class DLA {
     stepLimit: 0,
     particleLimit: 0,
 
-    clampMoves: true,
+    ordinalMoves: false,
   }
 
   particleID = 0
@@ -166,7 +166,7 @@ export class DLA {
       genRate, playRate,
       bounds,
       turnLeft, turnRight,
-      clampMoves,
+      ordinalMoves,
     } = DLA.settings;
 
     const havePlayer = !!this.grid.queryTiles('keyMove').length;
@@ -207,7 +207,7 @@ export class DLA {
         const p2 = {x: p1.x, y: p1.y};
         let dx = Math.cos(heading);
         let dy = Math.sin(heading);
-        if (clampMoves) {
+        if (!ordinalMoves) {
           // movement clamped to cardinal directions, with optional tracking of
           // "debt" from the diagonal not taken
           const prior = this.grid.getTileData(p, 'prior');
@@ -268,7 +268,7 @@ export class DLA {
               {x: p3.x,   y: p3.y+1},
               {x: p3.x-1, y: p3.y},
             )
-            || (!clampMoves && this.anyCell(
+            || (ordinalMoves && this.anyCell(
               {x: p3.x+1, y: p3.y-1},
               {x: p3.x+1, y: p3.y+1},
               {x: p3.x-1, y: p3.y+1},
