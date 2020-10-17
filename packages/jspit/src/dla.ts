@@ -36,8 +36,10 @@ export class DLA {
   constructor(grid:TileGrid) {
     this.grid = grid;
     this.grid.clear();
+    const pos = {x: 0, y: 0};
     this.grid.createTile(`particle-${++this.particleID}`, {
       tag: ['particle', 'init'],
+      pos,
       text: '·',
     });
     this.grid.centerViewOn({x: 0, y: 0});
@@ -47,10 +49,10 @@ export class DLA {
 
   dropPlayer() {
     this.grid.createTile('at', {
-      text: '@',
       tag: ['solid', 'mind', 'keyMove'],
-      fg: 'var(--dla-player)',
       pos: {x: 0, y: 0},
+      fg: 'var(--dla-player)',
+      text: '@',
     });
   }
 
@@ -140,9 +142,8 @@ export class DLA {
           pos.y = Math.floor(pos.y);
           this.grid.updateTile(p, {
             tag: ['particle'],
-            text: '·',
             pos,
-            data: {},
+            text: '·',
           });
         } else {
           this.grid.moveTileTo(p, pos);
@@ -177,9 +178,9 @@ export class DLA {
         this.digSeq.set(aid, did);
         this.grid.createTile(`particle-placed-${aid}-${did}`, {
           tag: ['particle'],
+          pos: targ,
           fg: 'var(--dla-player)',
           text: '·',
-          pos: targ,
         });
       } else {
         // can only move there if have particle support
