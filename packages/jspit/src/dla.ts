@@ -37,7 +37,7 @@ export class DLA {
     ],
 
     initWhere: {
-      value: InitWhere.Seed,
+      value: InitWhere.RandVoid,
       options: [
         {label: 'First Seed', value: InitWhere.Seed},
         {label: 'Random Seed', value: InitWhere.RandSeed},
@@ -49,8 +49,8 @@ export class DLA {
     initBase: 0,
     initArc:  2.0,
 
-    turnLeft:  0.5,
-    turnRight: 0.5,
+    turnLeft:  0.1,
+    turnRight: 0.1,
 
     stepLimit: 0,
     particleLimit: 0,
