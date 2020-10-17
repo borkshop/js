@@ -2,9 +2,13 @@ html {
   --main-bg: var(--grey);
 
   --dla-player: var(--yellow-orange);
-
-  --particle-bg: var(--light-grey);
-  --particle-dead: var(--dark-white);
-  --particle-live: var(--red);
 }
 
+.grid .tile.particle {
+  background-color: var(--light-grey);
+  color:            var(--dark-white);
+}
+
+.grid .tile.particle.live {
+  color: var(--red);
+}

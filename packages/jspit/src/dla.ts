@@ -81,8 +81,6 @@ export class DLA {
     this.grid.clear();
     this.grid.createTile(`particle-${++this.particleID}`, {
       tag: ['particle', 'init'],
-      bg: 'var(--particle-bg)',
-      fg: 'var(--particle-dead)',
       text: '·',
     });
     this.grid.centerViewOn({x: 0, y: 0});
@@ -115,7 +113,6 @@ export class DLA {
 
       const p = this.grid.createTile(`particle-${++this.particleID}`, {
         tag: ['particle', 'live'],
-        fg: 'var(--particle-live)',
         text: '*',
         data: {heading},
       });
@@ -171,8 +168,6 @@ export class DLA {
           pos.y = Math.floor(pos.y);
           this.grid.updateTile(p, {
             tag: ['particle'],
-            bg: 'var(--particle-bg)',
-            fg: 'var(--particle-dead)',
             text: '·',
             pos,
             data: {},
@@ -210,7 +205,6 @@ export class DLA {
         this.digSeq.set(aid, did);
         this.grid.createTile(`particle-placed-${aid}-${did}`, {
           tag: ['particle'],
-          bg: 'var(--particle-bg)',
           fg: 'var(--dla-player)',
           text: '·',
           pos: targ,
