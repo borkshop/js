@@ -125,11 +125,15 @@ export class DLA {
         heading %= 2 * Math.PI;
         this.grid.setTileData(p, 'heading', heading);
 
+        const p1 = this.grid.getTilePosition(p);
+
+        // move along heaading... somehow
+        const p2 = {x: p1.x, y: p1.y};
         let dx = Math.cos(heading);
         let dy = Math.sin(heading);
-        const pos = this.grid.getTilePosition(p);
-
         if (clampMoves) {
+          // movement clamped to cardinal directions, with optional tracking of
+          // "debt" from the diagonal not taken
           if (trackClampDebt) {
             const prior = this.grid.getTileData(p, 'prior');
             if (prior !== null && typeof prior === 'object' && !Array.isArray(prior)) {
@@ -137,34 +141,47 @@ export class DLA {
               if (typeof prior.y === 'number') dy += prior.y;
             }
           }
-
           if (Math.abs(dy) > Math.abs(dx)) {
-            if (dy < 0) pos.y++, dy++;
-            else        pos.y--, dy--;
+            if (dy < 0) p2.y++, dy++;
+            else        p2.y--, dy--;
           } else {
-            if (dx < 0) pos.x++, dx++;
-            else        pos.x--, dx--;
+            if (dx < 0) p2.x++, dx++;
+            else        p2.x--, dx--;
           }
-
           if (trackClampDebt)
             this.grid.setTileData(p, 'prior', {x: dx, y: dy});
         } else {
-          // particles move smoothly, taking fractional positions
-          pos.x += dx;
-          pos.y += dy;
+          // smooth movement, taking fractional positions
+          p2.x += dx;
+          p2.y += dy;
         }
 
-        if (!this.grid.tilesAt(pos, 'particle').length) {
-          pos.x = Math.floor(pos.x);
-          pos.y = Math.floor(pos.y);
-          this.grid.updateTile(p, {
-            tag: ['particle'],
-            pos,
-            text: '·',
-          });
+        // clamped to grid boundaries
+        const p3 = {x: Math.floor(p1.x), y: Math.floor(p1.y)};
+        const p4 = {x: Math.floor(p2.x), y: Math.floor(p2.y)};
+
+        // check for phase transition when entering a new grid cell based on
+        // what non-live particle prescence
+        if (p3.x !== p4.x || p3.y !== p4.y) {
+          const at4 = this.grid.tilesAt(p4, 'particle')
+            .filter(t => !t.classList.contains('live'));
+
+          // particle forging into the void; aka random walker
+          if (!at4.length) {
+            this.grid.updateTile(p, {
+              tag: ['particle'],
+              pos: p4,
+              text: '·',
+            });
+          }
+
+          else {
+            // TODO track and maybe limit travel?
+            this.grid.moveTileTo(p, p2);
+          }
         } else {
-          this.grid.moveTileTo(p, pos);
-          if (!this.grid.queryTiles('keyMove').length) this.grid.nudgeViewTo(pos, 0.2);
+          this.grid.moveTileTo(p, p2);
+          if (!havePlayer) this.grid.nudgeViewTo(p2, 0.2);
         }
       }
     }
