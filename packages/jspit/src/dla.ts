@@ -1,6 +1,6 @@
 import {html, render} from 'lit-html';
 import {bindVars} from './config';
-import {TileGrid} from './tiles';
+import {Point, TileGrid} from './tiles';
 import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
@@ -54,12 +54,27 @@ export class DLA {
     });
   }
 
+  initPlace():Point {
+    return {x: 0, y: 0};
+  }
+
+  spawn() {
+    const {initBase, initArc} = DLA.settings;
+    const pos = this.initPlace();
+    const heading = Math.PI * (initBase + (Math.random() - 0.5) * initArc);
+    return this.grid.createTile(`particle-${++this.particleID}`, {
+      tag: ['particle', 'live'],
+      pos,
+      text: '*',
+      data: {heading},
+    });
+  }
+
   update(dt:number): void {
     const {
       dropAfter,
       genRate, playRate,
       stepLimit,
-      initBase, initArc,
       turnLeft, turnRight,
       clampMoves, trackClampDebt,
     } = DLA.settings;
@@ -74,20 +89,11 @@ export class DLA {
     if (!n) return;
     this.elapsed -= n * rate;
     let ps = this.grid.queryTiles('particle', 'live');
-    const spawn = () => {
-      const heading = Math.PI * (initBase + (Math.random() - 0.5) * initArc);
 
-      const p = this.grid.createTile(`particle-${++this.particleID}`, {
-        tag: ['particle', 'live'],
-        text: '*',
-        data: {heading},
-      });
-      ps.push(p);
-    };
     for (let i = 0; i < n; ++i) {
       ps = ps.filter(p => p.classList.contains('live'));
       if (!ps.length) {
-        spawn();
+        ps.push(this.spawn());
         continue;
       }
 
