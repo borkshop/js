@@ -200,6 +200,10 @@ p {
   padding: 0;
 }
 
+label:hover {
+  color: var(--action-focus-color);
+}
+
 input, textarea {
   background-color: var(--ui-bg);
   color: var(--ui-fg);
