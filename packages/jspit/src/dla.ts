@@ -163,14 +163,26 @@ export class DLA {
         // check for phase transition when entering a new grid cell based on
         // what non-live particle prescence
         if (p3.x !== p4.x || p3.y !== p4.y) {
+          const at3 = this.grid.tilesAt(p3, 'particle')
+            .filter(t => t.id !== p.id && !t.classList.contains('live'));
           const at4 = this.grid.tilesAt(p4, 'particle')
             .filter(t => !t.classList.contains('live'));
 
           // particle forging into the void; aka random walker
-          if (!at4.length) {
+          if (at3.length && !at4.length) {
+            // TODO allow for more than 1 step
             this.grid.updateTile(p, {
               tag: ['particle'],
               pos: p4,
+              text: '·',
+            });
+          }
+
+          // particle aggregating onto prior; aka DLA depostion
+          else if (!at3.length && at4.length) {
+            this.grid.updateTile(p, {
+              tag: ['particle'],
+              pos: p3,
               text: '·',
             });
           }
