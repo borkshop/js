@@ -114,7 +114,7 @@ export class TileGrid {
       if (typeof spec.tag === 'string') tile.classList.add(spec.tag);
       else if (Array.isArray(spec.tag)) for (const tag of spec.tag) tile.classList.add(tag);
     } else if (!tile.className) tile.className = 'tile';
-    if (spec.pos) this.moveTileTo(tile, spec.pos);
+    this.moveTileTo(tile, spec.pos || {x: 0, y: 0});
     if (spec.data) {
       for (const name in tile.dataset)
         if (!(name in spec.data))
