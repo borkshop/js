@@ -153,6 +153,14 @@ export class DLA {
     return (bounds.w * bounds.h)/2;
   }
 
+  anyCell(...pts:Point[]):boolean {
+    for (const pt of pts)
+      if (this.grid.tilesAt(pt, 'particle')
+          .filter(t => !t.classList.contains('live'))
+          .length) return true;
+    return false;
+  }
+
   update(dt:number): void {
     const {
       dropAfter,
@@ -258,6 +266,12 @@ export class DLA {
           // in-void particle aggregating onto world; aka DLA depostion
           else if (!at3.length && !wrapped && (
             at4.length
+            || this.anyCell(
+              {x: p3.x,   y: p3.y-1},
+              {x: p3.x+1, y: p3.y},
+              {x: p3.x,   y: p3.y+1},
+              {x: p3.x-1, y: p3.y},
+            )
           )) {
             this.grid.updateTile(p, {
               tag: ['particle'],
