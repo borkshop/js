@@ -326,16 +326,18 @@ export class DLA {
       const hits = this.grid.tilesAt(targ);
 
       if (!hits.length) {
-        // place particles in the void
-        const aid = actor.id;
-        const did = (this.digSeq.get(aid) || 0) + 1;
-        this.digSeq.set(aid, did);
-        this.grid.createTile(`particle-placed-${aid}-${did}`, {
-          tag: ['particle'],
-          pos: targ,
-          fg: 'var(--dla-player)',
-          text: '·',
-        });
+        // // TODO bring back this power
+        // // place particles in the void
+        // const aid = actor.id;
+        // const did = (this.digSeq.get(aid) || 0) + 1;
+        // this.digSeq.set(aid, did);
+        // this.grid.createTile(`particle-placed-${aid}-${did}`, {
+        //   tag: ['particle'],
+        //   pos: targ,
+        //   fg: 'var(--dla-player)',
+        //   text: '·',
+        // });
+        return;
       } else {
         // can only move there if have particle support
         if (!hits.some((h) => h.classList.contains('particle'))) return;
