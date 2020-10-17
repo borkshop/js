@@ -50,7 +50,7 @@ export class DLA {
     turnLeft:  0.5,
     turnRight: 0.5,
 
-    stepLimit: 50,
+    stepLimit: 0,
 
     clampMoves:     false,
     trackClampDebt: true,
@@ -124,11 +124,16 @@ export class DLA {
     });
   }
 
+  stepLimit():number {
+    const {bounds, stepLimit} = DLA.settings;
+    if (stepLimit > 0) return stepLimit;
+    return bounds.w + bounds.h;
+  }
+
   update(dt:number): void {
     const {
       dropAfter,
       genRate, playRate,
-      stepLimit,
       bounds,
       turnLeft, turnRight,
       clampMoves, trackClampDebt,
@@ -140,7 +145,7 @@ export class DLA {
 
     const rate = havePlayer ? playRate : genRate;
     this.elapsed += dt
-    const n = Math.min(stepLimit, Math.floor(this.elapsed / rate));
+    const n = Math.floor(this.elapsed / rate);
     if (!n) return;
     this.elapsed -= n * rate;
     let ps = this.grid.queryTiles('particle', 'live');
@@ -153,6 +158,10 @@ export class DLA {
       }
 
       for (const p of ps) {
+        let steps = this.grid.getTileData(p, 'steps');
+        if (typeof steps !== 'number') steps = 0;
+        this.grid.setTileData(p, 'steps', ++steps);
+
         let heading = this.grid.getTileData(p, 'heading');
         if (typeof heading !== 'number') heading = 0;
 
@@ -233,6 +242,13 @@ export class DLA {
         }
 
         this.grid.moveTileTo(p, p2);
+
+        // increment step counter, and leave a ghost if limit met or exceeded
+        if (steps >= this.stepLimit()) {
+          this.grid.updateTile(p, {
+            tag: ['ghost'],
+          });
+        }
       }
     }
   }

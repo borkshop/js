@@ -85,6 +85,12 @@
               Track accumulated diagonal heading debt
             </label></dd>
 
+            <dd>
+              <label for="dla-stepLimit">Terminate after</label>
+              <input id="dla-stepLimit" name="stepLimit" type="number" min="0" />
+              steps; if set to <code>0</code> then <code>bounds.w + bounds.h</code> is used.
+            </dd>
+
             <dt>Automatically Drop Player</dt>
             <dd><label for="dla-dropAfter">After</label>
               <input id="dla-dropAfter" name="dropAfter" type="number" min="0" max="10000" step="1" /> particles (0 disables)
