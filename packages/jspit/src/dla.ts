@@ -218,6 +218,7 @@ export class DLA {
               pos: p4,
               text: '·',
             });
+            continue;
           }
 
           // particle aggregating onto prior; aka DLA depostion
@@ -227,16 +228,11 @@ export class DLA {
               pos: p3,
               text: '·',
             });
+            continue;
           }
-
-          else {
-            // TODO track and maybe limit travel?
-            this.grid.moveTileTo(p, p2);
-          }
-        } else {
-          this.grid.moveTileTo(p, p2);
-          if (!havePlayer) this.grid.nudgeViewTo(p2, 0.2);
         }
+
+        this.grid.moveTileTo(p, p2);
       }
     }
   }
