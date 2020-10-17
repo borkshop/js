@@ -1,4 +1,4 @@
-# 2020-10-15
+# 2020-10-16
 
 ## TODO
 
@@ -23,8 +23,17 @@
   - particle age
   - particle bounce
   - particle N option
+  - attractors
+  - discount ghosts from `particleLimit`
+  - drop player after particleLimit ; drop dropAfter?
 
 ## Done
+
+- fixed DLA demo to actually do DLA, preserving the random walker behavior as
+  well
+- revamped and generalized settings module
+
+# 2020-10-15
 
 - added initial heading controls for DLA particles
 - fixed DLA particle movement: particels now take on fractional positions, but
