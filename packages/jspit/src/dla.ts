@@ -17,12 +17,20 @@ export class DLA {
 
   static settings = {
     dropAfter: 0,
+
     genRate:   1,
     playRate:  100,
-    initBase:  0,
-    initArc:   2.0,
+
+    seeds: [
+      {x: 0, y: 0},
+    ],
+
+    initBase: 0,
+    initArc:  2.0,
+
     turnLeft:  0.5,
     turnRight: 0.5,
+
     stepLimit: 50,
 
     clampMoves:     false,
@@ -34,30 +42,39 @@ export class DLA {
   grid: TileGrid
 
   constructor(grid:TileGrid) {
+    const {seeds} = DLA.settings;
+
     this.grid = grid;
     this.grid.clear();
-    const pos = {x: 0, y: 0};
-    this.grid.createTile(`particle-${++this.particleID}`, {
-      tag: ['particle', 'init'],
-      pos,
-      text: '·',
-    });
-    this.grid.centerViewOn({x: 0, y: 0});
+    const center = {x: NaN, y: NaN};
+    for (const pos of seeds) {
+      this.grid.createTile(`particle-${++this.particleID}`, {
+        tag: ['particle', 'init'],
+        pos,
+        text: '·',
+      });
+      if (isNaN(center.x) || isNaN(center.y)) center.x = pos.x, center.y = pos.y;
+      else center.x = (center.x + pos.x)/2, center.y = (center.y + pos.y)/2;
+    }
+    if (!isNaN(center.x) && !isNaN(center.y)) this.grid.centerViewOn(center);
   }
 
   elapsed = 0
 
   dropPlayer() {
+    const {seeds} = DLA.settings;
+    const pos = seeds[0];
     this.grid.createTile('at', {
       tag: ['solid', 'mind', 'keyMove'],
-      pos: {x: 0, y: 0},
+      pos,
       fg: 'var(--dla-player)',
       text: '@',
     });
   }
 
   initPlace():Point {
-    return {x: 0, y: 0};
+    const {seeds} = DLA.settings;
+    return seeds[0];
   }
 
   spawn() {
