@@ -8,6 +8,7 @@ import {show as showUI, Bindings as UIBindings} from './ui';
 const enum InitWhere {
   Seed = 0,
   RandSeed,
+  RandPrior,
 }
 
 export class DLA {
@@ -40,6 +41,7 @@ export class DLA {
       options: [
         {label: 'First Seed', value: InitWhere.Seed},
         {label: 'Random Seed', value: InitWhere.RandSeed},
+        {label: 'Random Point: Particle', value: InitWhere.RandPrior},
       ],
     },
     initBase: 0,
@@ -98,6 +100,12 @@ export class DLA {
 
     case InitWhere.RandSeed:
       return seeds[Math.floor(Math.random()*seeds.length)];
+
+    case InitWhere.RandPrior:
+      const prior = this.grid.queryTiles('particle')
+        .filter(t => !t.classList.contains('live'));
+      const tile = prior[Math.floor(Math.random()*prior.length)];
+      return this.grid.getTilePosition(tile);
 
     default:
       throw new Error(`invalid initWhere value ${where}`);
