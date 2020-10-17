@@ -23,53 +23,61 @@ function parseBoolean(s:string):boolean|null {
   return null;
 }
 
-export function bindVars({data, getInput}:{
+interface Accessors {
+  getInput(name:string): HTMLInputElement|null;
+  getSelect(name:string): HTMLSelectElement|null;
+}
+
+export function bindVars({data, ...acc}:Accessors&{
   data:Data,
-  getInput:(name:string)=>HTMLInputElement|null,
 }) {
   for (const name in data) {
     bindVar({
+      ...acc,
       name,
-      input: getInput(name),
       load: () => data[name],
       save: (v:Datum) => data[name] = v,
     });
   }
 }
 
-function bindVar({name, input, load, save}:{
+function bindVar({name, load, save, getInput, getSelect}:Accessors&{
   name: string,
-  input: HTMLInputElement|null,
   load: () => any,
   save: (_:any) => void,
 }) {
-  switch (typeof load()) {
+  const value = load();
+  const {stov, vtos} = tossers(value);
+  switch (typeof value) {
 
   case 'string':
-    hookupVar({
-      name, input, load, save,
-      stov: (s:string) => s,
-      vtos: (v:any)    => typeof v === 'string' ? v : v.toString(),
+    hookupInput({
+      name,
+      input: getInput(name),
+      load, save,
+      stov, vtos,
       read: (i:HTMLInputElement) => i.value,
       write: (i:HTMLInputElement, v:any) => i.value = typeof v === 'string' ? v : v.toString(),
     });
     break;
 
   case 'number':
-    hookupVar({
-      name, input, load, save,
-      stov: (s:string) => s ? parseFloat(s) : null,
-      vtos: (v:any)    => typeof v === 'number' ? v.toString() : '',
+    hookupInput({
+      name,
+      input: getInput(name),
+      load, save,
+      stov, vtos,
       read: (i:HTMLInputElement) => i.valueAsNumber,
       write: (i:HTMLInputElement, v:any) => i.valueAsNumber = typeof v === 'number' ? v : NaN,
     });
     break;
 
   case 'boolean':
-    hookupVar({
-      name, input, load, save,
-      stov: (s:string) => s ? parseBoolean(s) : null,
-      vtos: (v:any)    => typeof v === 'boolean' ? v.toString() : '',
+    hookupInput({
+      name,
+      input: getInput(name),
+      load, save,
+      stov, vtos,
       read: (i:HTMLInputElement) => i.checked,
       write: (i:HTMLInputElement, v:any) => i.checked = typeof v === 'boolean' ? v : false,
     });
@@ -77,12 +85,26 @@ function bindVar({name, input, load, save}:{
 
   // TODO structured Array/list support? object/table?
 
-  default:
-    hookupVar({
-      name, input,
+  case 'object':
+
+    if (value.value !== undefined && value.options !== undefined) {
+      const {stov, vtos} = tossers(value.value);
+      hookupSelect({
+        name,
+        select: getSelect(name),
+        options: value.options,
+        load: () => load().value,
+        save: (value:any) => save({value, options: load().options}),
+        stov, vtos,
+      });
+      return;
+    }
+
+    hookupInput({
+      name,
+      input: getInput(name),
       load, save,
-      stov: (s:string) => JSON.parse(s),
-      vtos: (v:any)    => JSON.stringify(v),
+      stov, vtos,
       read: (i:HTMLInputElement) => {
         try {
           return JSON.parse(i.value);
@@ -95,7 +117,7 @@ function bindVar({name, input, load, save}:{
   }
 }
 
-function hookupVar({
+function hookupInput({
   name, input,
   load, save,
   stov, vtos,
@@ -105,11 +127,9 @@ function hookupVar({
   input: HTMLInputElement|null,
   load: () => any,
   save: (_:any) => void,
-  stov: (s:string) => any,
-  vtos: (v:any) => string,
   read: (i:HTMLInputElement) => any, // TODO can fail
   write: (i:HTMLInputElement, v:any) => void,
-}) {
+}&Tossers) {
   const update = (value:any) => {
     const given = value !== null && value !== undefined;
     if (!given) value = load();
@@ -120,4 +140,78 @@ function hookupVar({
   if (input) input.addEventListener('change', () => update(read(input)));
   const value = readHashVar(name);
   update(value === null ? load() : stov(value));
+}
+
+function hookupSelect({
+  name, select,
+  options,
+  load, save,
+  stov, vtos,
+}:{
+  name: string,
+  select: HTMLSelectElement|null,
+  options: string|{
+    value: string,
+    label?: string,
+  }[],
+  load: () => any,
+  save: (_:any) => void,
+}&Tossers) {
+  const update = (value:any) => {
+    const given = value !== null && value !== undefined;
+    if (!given) value = load();
+    setHashVar(name, vtos(value));
+    if (given) save(value);
+    if (select) select.value = value;
+  };
+  if (select) {
+    while (select.options.length) select.remove(0);
+    for (const opt of options) {
+      if (typeof opt === 'string') {
+        select.add(new Option(opt, opt));
+      } else {
+        const {label, value} = opt;
+        select.add(new Option(label, value === undefined ? label : value));
+      }
+    }
+    select.addEventListener('change', () => update(stov(select.value)));
+  }
+  const value = readHashVar(name);
+  update(value === null ? load() : stov(value));
+}
+
+interface Tossers {
+  stov(s:string): any;
+  vtos(v:any): string;
+}
+
+function tossers(value:Datum):Tossers {
+  switch (typeof value) {
+    case 'string':
+      return {
+        stov: (s:string) => s,
+        vtos: (v:any)    => typeof v === 'string' ? v : v.toString(),
+      };
+
+    case 'number':
+      return {
+        stov: (s:string) => s ? parseFloat(s) : null,
+        vtos: (v:any)    => typeof v === 'number' ? v.toString() : '',
+      };
+
+    case 'boolean':
+      return {
+        stov: (s:string) => s ? parseBoolean(s) : null,
+        vtos: (v:any)    => typeof v === 'boolean' ? v.toString() : '',
+      };
+
+    case 'object':
+      return {
+        stov: (s:string) => JSON.parse(s),
+        vtos: (v:any)    => JSON.stringify(v),
+      };
+
+    default:
+      throw new Error(`unupported ${name} setting of type ${typeof value}`);
+  }
 }

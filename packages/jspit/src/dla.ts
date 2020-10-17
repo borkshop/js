@@ -264,6 +264,7 @@ export function init(bind:Bindings) {
   bindVars({
     data: DLA.settings,
     getInput: (name:string) => bound.menu?.querySelector(`input[name="${name}"]`) || null,
+    getSelect: (name:string) => bound.menu?.querySelector(`select[name="${name}"]`) || null,
   });
 
   showUI(bound, false, false);
