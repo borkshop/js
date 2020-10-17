@@ -43,7 +43,7 @@ export class DLA {
       options: [
         {label: 'First Seed', value: InitWhere.Seed},
         {label: 'Random Seed', value: InitWhere.RandSeed},
-        {label: 'Random Point: Particle', value: InitWhere.RandPrior},
+        {label: 'Random Point: World', value: InitWhere.RandPrior},
         {label: 'Random Point: Void', value: InitWhere.RandVoid},
         {label: 'Random Point', value: InitWhere.RandAny},
       ],

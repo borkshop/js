@@ -25,12 +25,22 @@
         <section>
           <h1>Diffusion Limited Aggregation</h1>
 
-          <p>
-            This implementation fires particles from the origin with random
-            initial radial heading. Each move proceeds by randomly perturbing the
-            heading up to the turning radius set below, and advancing forward
-            orthogonally along the greatest projected axis.
-          </p>
+          This is actually a dual random walker and diffusion limited
+          aggregation hybrid:
+          <ul>
+            <li>If a particle is spawned outside the world, it keeps moving until
+              it touches the world, aggregating onto and expanding it.</li>
+            <li>If a particle is spawned inside the world, it keeps moving until
+              it exits the world, at which point it expand the world by one cell
+              and dies.</li>
+            <li>Particles may be spawned at seed points, or at random locations
+              chosen in the void or within the world.</li>
+            <li>Particles have a heading, and randomly turn within a fixed range
+              each turn before advancing forward.</li>
+            <li>Movement and aggregation happens along cardinal directions
+              (up/down and left/right), and may optionally be allowed along
+              ordinal directions (diagonally).</li>
+          </ul>
 
           <fieldset><legend>Settings</legend><dl>
 
