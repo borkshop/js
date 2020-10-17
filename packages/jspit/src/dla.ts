@@ -55,8 +55,7 @@ export class DLA {
     stepLimit: 0,
     particleLimit: 0,
 
-    clampMoves:     true,
-    trackClampDebt: true,
+    clampMoves: true,
   }
 
   particleID = 0
@@ -167,7 +166,7 @@ export class DLA {
       genRate, playRate,
       bounds,
       turnLeft, turnRight,
-      clampMoves, trackClampDebt,
+      clampMoves,
     } = DLA.settings;
 
     const havePlayer = !!this.grid.queryTiles('keyMove').length;
@@ -211,12 +210,10 @@ export class DLA {
         if (clampMoves) {
           // movement clamped to cardinal directions, with optional tracking of
           // "debt" from the diagonal not taken
-          if (trackClampDebt) {
-            const prior = this.grid.getTileData(p, 'prior');
-            if (prior !== null && typeof prior === 'object' && !Array.isArray(prior)) {
-              if (typeof prior.x === 'number') dx += prior.x;
-              if (typeof prior.y === 'number') dy += prior.y;
-            }
+          const prior = this.grid.getTileData(p, 'prior');
+          if (prior !== null && typeof prior === 'object' && !Array.isArray(prior)) {
+            if (typeof prior.x === 'number') dx += prior.x;
+            if (typeof prior.y === 'number') dy += prior.y;
           }
           if (Math.abs(dy) > Math.abs(dx)) {
             if (dy < 0) p2.y++, dy++;
@@ -225,8 +222,7 @@ export class DLA {
             if (dx < 0) p2.x++, dx++;
             else        p2.x--, dx--;
           }
-          if (trackClampDebt)
-            this.grid.setTileData(p, 'prior', {x: dx, y: dy});
+          this.grid.setTileData(p, 'prior', {x: dx, y: dy});
         } else {
           // smooth movement, taking fractional positions
           p2.x += dx;
