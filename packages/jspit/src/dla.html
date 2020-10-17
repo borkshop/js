@@ -91,6 +91,12 @@
               steps; if set to <code>0</code> then <code>bounds.w + bounds.h</code> is used.
             </dd>
 
+            <dt>Particle Limit</dt><dd>
+              <label for="dla-particleLimit">Stop spawning after</label>
+              <input id="dla-particleLimit" name="particleLimit" type="number" min="0" />;
+              if set to <code>0</code> then <code>( bounds.w * bounds.h )/2</code> is used.
+            </dd>
+
             <dt>Automatically Drop Player</dt>
             <dd><label for="dla-dropAfter">After</label>
               <input id="dla-dropAfter" name="dropAfter" type="number" min="0" max="10000" step="1" /> particles (0 disables)

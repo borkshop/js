@@ -51,6 +51,7 @@ export class DLA {
     turnRight: 0.5,
 
     stepLimit: 0,
+    particleLimit: 0,
 
     clampMoves:     false,
     trackClampDebt: true,
@@ -130,6 +131,15 @@ export class DLA {
     return bounds.w + bounds.h;
   }
 
+  particleLimit():number {
+    const {bounds, particleLimit} = DLA.settings;
+    if (particleLimit > 0) {
+      if (particleLimit > 1) return particleLimit;
+      return (bounds.w * bounds.h)*particleLimit;
+    }
+    return (bounds.w * bounds.h)/2;
+  }
+
   update(dt:number): void {
     const {
       dropAfter,
@@ -153,6 +163,7 @@ export class DLA {
     for (let i = 0; i < n; ++i) {
       ps = ps.filter(p => p.classList.contains('live'));
       if (!ps.length) {
+        if (this.particleID >= this.particleLimit()) return;
         ps.push(this.spawn());
         continue;
       }
