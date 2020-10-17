@@ -21,6 +21,11 @@ export class DLA {
     genRate:   1,
     playRate:  100,
 
+    bounds: {
+      x: -15, y: -15,
+      w:  30, h:  30,
+    },
+
     seeds: [
       {x: 0, y: 0},
     ],
@@ -94,6 +99,7 @@ export class DLA {
       dropAfter,
       genRate, playRate,
       stepLimit,
+      bounds,
       turnLeft, turnRight,
       clampMoves, trackClampDebt,
     } = DLA.settings;
@@ -155,6 +161,12 @@ export class DLA {
           p2.x += dx;
           p2.y += dy;
         }
+
+        // modulo bounds
+        while (p2.x < bounds.x)            p2.x += bounds.w;
+        while (p2.x > bounds.x + bounds.w) p2.x -= bounds.w;
+        while (p2.y < bounds.y)            p2.y += bounds.h;
+        while (p2.y > bounds.y + bounds.h) p2.y -= bounds.h;
 
         // clamped to grid boundaries
         const p3 = {x: Math.floor(p1.x), y: Math.floor(p1.y)};
