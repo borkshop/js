@@ -5,6 +5,11 @@ import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
 
+const enum InitWhere {
+  Seed = 0,
+  RandSeed,
+}
+
 export class DLA {
   static demoName = 'DLA'
   static demoTitle = 'Diffusion Limited Aggregation'
@@ -30,6 +35,13 @@ export class DLA {
       {x: 0, y: 0},
     ],
 
+    initWhere: {
+      value: InitWhere.Seed,
+      options: [
+        {label: 'First Seed', value: InitWhere.Seed},
+        {label: 'Random Seed', value: InitWhere.RandSeed},
+      ],
+    },
     initBase: 0,
     initArc:  2.0,
 
@@ -78,8 +90,18 @@ export class DLA {
   }
 
   initPlace():Point {
-    const {seeds} = DLA.settings;
-    return seeds[0];
+    const {seeds, initWhere: {value: where}} = DLA.settings;
+    switch (where) {
+    case InitWhere.Seed:
+      return seeds[0];
+      // TODO round robin all seeds?
+
+    case InitWhere.RandSeed:
+      return seeds[Math.floor(Math.random()*seeds.length)];
+
+    default:
+      throw new Error(`invalid initWhere value ${where}`);
+    }
   }
 
   spawn() {
