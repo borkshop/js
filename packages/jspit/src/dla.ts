@@ -226,10 +226,11 @@ export class DLA {
         }
 
         // modulo bounds
-        while (p2.x < bounds.x)            p2.x += bounds.w;
-        while (p2.x > bounds.x + bounds.w) p2.x -= bounds.w;
-        while (p2.y < bounds.y)            p2.y += bounds.h;
-        while (p2.y > bounds.y + bounds.h) p2.y -= bounds.h;
+        let wrapped = false;
+        while (p2.x < bounds.x)            p2.x += bounds.w, wrapped = true;
+        while (p2.x > bounds.x + bounds.w) p2.x -= bounds.w, wrapped = true;
+        while (p2.y < bounds.y)            p2.y += bounds.h, wrapped = true;
+        while (p2.y > bounds.y + bounds.h) p2.y -= bounds.h, wrapped = true;
 
         // clamped to grid boundaries
         const p3 = {x: Math.floor(p1.x), y: Math.floor(p1.y)};
@@ -243,7 +244,7 @@ export class DLA {
           const at4 = this.grid.tilesAt(p4, 'particle')
             .filter(t => !t.classList.contains('live'));
 
-          // particle forging into the void; aka random walker
+          // in-world particels may forge into the void; aka random walker
           if (at3.length && !at4.length) {
             // TODO allow for more than 1 step
             this.grid.updateTile(p, {
@@ -254,8 +255,10 @@ export class DLA {
             continue;
           }
 
-          // particle aggregating onto prior; aka DLA depostion
-          else if (!at3.length && at4.length) {
+          // in-void particle aggregating onto world; aka DLA depostion
+          else if (!at3.length && !wrapped && (
+            at4.length
+          )) {
             this.grid.updateTile(p, {
               tag: ['particle'],
               pos: p3,
