@@ -55,7 +55,7 @@ export class DLA {
     stepLimit: 0,
     particleLimit: 0,
 
-    clampMoves:     false,
+    clampMoves:     true,
     trackClampDebt: true,
   }
 
