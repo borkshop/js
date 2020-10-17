@@ -4,11 +4,14 @@ export interface Point {
 }
 
 export interface TileSpec {
-  text?: string
   pos?: Point
+
+  // TODO rename these to align with CSS
   tag?: string|string[]
+  text?: string
   fg?: string
   bg?: string
+
   data?: TileData
 }
 
