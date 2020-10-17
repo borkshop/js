@@ -1,4 +1,4 @@
-# 2020-10-16
+# 2020-10-17
 
 ## TODO
 
@@ -13,21 +13,65 @@
   - custom shader funcs, or at least some affordance for stepped css classes
 - <https://www.w3schools.com/howto/howto_css_switch.asp>
 
-## WIP
-
 - DLA
-  - horizontally scale out the settings to have mulitple particle spawn points
   - controlled RNG with seed setting
   - tile visited
   - particle trace option
   - particle age
   - particle bounce
   - particle N option
+  - heading range constraint
+  - spawn area / shape / fn
+  - bounce topo vs toroidal topo
+  - general particle bounce
+  - impassable tiles
+  - expand counters: ghost / live / dead (void v world)
   - attractors
   - discount ghosts from `particleLimit`
   - drop player after particleLimit ; drop dropAfter?
+  - constrain player moves to bounds
+  - stickiness probability ; maybe informed by neighbor count!
+  - switch to instanced config
+  - make hash var bind optional
+  - pivot config to support multiple schemes within one sim
+
+## WIP
 
 ## Done
+
+- read <http://paulbourke.net/fractals/dla/> for more background and
+  inspiration; elaborated DLA TODO section above
+
+### aside: finding stickiness probabilities
+
+Say we want to use a stickiness factor that scales with number of neighbors, we
+might have various design goals like:
+- the overall probability should be `0.5` when half the neighbors are occupied
+- the overall probability should be circa `0.9` at full neighbor saturation
+
+Using a joint probability model where each neighbor contributes an independent
+stick probability:
+> P(x) | P(y) = ~(~P(y) & ~P(y))
+
+We can:
+```
+  > let joint = (...ps) => 1 - ps.map(p => 1-p).reduce((a,b) => a*b, 1)
+  undefined
+
+  > joint(0.5, 0.5)
+  0.75
+
+  > joint(0.5, 0.5, 0.5)
+  0.875
+
+  > joint(...(new Array(4).fill(0.15910358474628546)))
+  0.5000000000000001
+
+  > joint(...(new Array(8).fill(0.26)))
+  0.9100805259796224
+```
+
+# 2020-10-16
 
 - fixed DLA demo to actually do DLA, preserving the random walker behavior as
   well
