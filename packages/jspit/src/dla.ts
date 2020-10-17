@@ -24,8 +24,6 @@ export class DLA {
   static nudgeBy = 0.2
 
   static settings = {
-    dropAfter: 0,
-
     genRate:   1,
     playRate:  100,
 
@@ -175,7 +173,6 @@ export class DLA {
 
   update(dt:number): void {
     const {
-      dropAfter,
       genRate, playRate,
       bounds,
       turnLeft, turnRight,
@@ -183,8 +180,6 @@ export class DLA {
     } = DLA.settings;
 
     const havePlayer = !!this.grid.queryTiles('keyMove').length;
-
-    if (dropAfter && this.particleID > dropAfter && !havePlayer) this.dropPlayer();
 
     const rate = havePlayer ? playRate : genRate;
     this.elapsed += dt
@@ -196,7 +191,10 @@ export class DLA {
     for (let i = 0; i < n; ++i) {
       ps = ps.filter(p => p.classList.contains('live'));
       if (!ps.length) {
-        if (this.particleID >= this.particleLimit()) return;
+        if (this.particleID >= this.particleLimit()) {
+          if (!havePlayer) this.dropPlayer();
+          return;
+        }
         ps.push(this.spawn());
         continue;
       }
