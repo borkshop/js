@@ -271,7 +271,7 @@ export class DLA {
           }
 
           // in-void particle aggregating onto world; aka DLA depostion
-          else if (!at3.length && !wrapped && (
+          else if (!at3.length && (
             at4.length
             || this.anyCell(
               {x: p3.x,   y: p3.y-1},
@@ -286,12 +286,19 @@ export class DLA {
               {x: p3.x-1, y: p3.y-1},
             ))
           )) {
-            this.grid.updateTile(p, {
-              tag: ['particle'],
-              pos: p3,
-              text: '·',
-            });
-            continue;
+            if (!wrapped) {
+              this.grid.updateTile(p, {
+                tag: ['particle'],
+                pos: p3,
+                text: '·',
+              });
+              continue;
+            } else if (at4.length) {
+              this.grid.updateTile(p, {
+                tag: ['ghost'],
+              });
+              continue;
+            }
           }
         }
 
