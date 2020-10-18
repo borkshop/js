@@ -23,7 +23,13 @@
         </noscript>
 
         <section>
-          <h1>Diffusion Limited Aggregation</h1>
+          <h1>
+            Diffusion Limited Aggregation
+            <span class="version" style="float: right">
+              version:<span class="current"></span>
+              <span class="latest"><a></a></span>
+            </span>
+          </h1>
 
           This is actually a dual random walker and diffusion limited
           aggregation hybrid:
@@ -133,10 +139,7 @@
         </section>
 
         <section>
-          <h3>
-            <div class="version" style="float: right"></div>
-            <a href="index.html">Back to Welcome screen</a>
-          </h3>
+          <h3><a href="index.html">Back to Welcome screen</a></h3>
         </section>
 
       </aside>
@@ -145,7 +148,7 @@
 
     <footer>
       <div class="status" style="float: left"></div>
-      <div class="version" style="float: right"></div>
+      <div class="version" style="float: right"><span class="current"></span></div>
     </footer>
 
     <script type="module">
@@ -155,7 +158,8 @@
         menu: document.querySelector('main .menu'),
         grid: document.querySelector('main .grid '),
         keys: document.body,
-        version: document.querySelectorAll('.version'),
+        version: document.querySelectorAll('.version .current'),
+        latest:  document.querySelector('.version .latest'),
         run: document.querySelector('#run'),
         reset: document.querySelector('#reset'),
         dropPlayer: document.querySelector('#dropPlayer'),

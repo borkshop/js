@@ -18,7 +18,13 @@
         <section>
           <h1 align="center">Welcome traveler</h1>
 
-          <h2>Boop a color, get a color!</h2>
+          <h2>
+            Boop a color, get a color!
+            <span class="version" style="float: right">
+              version:<span class="current"></span>
+              <span class="latest"><a></a></span>
+            </span>
+          </h2>
 
           <p>
             This is the first and simplest example of jspit's <code>TileGrid</code>.
@@ -31,7 +37,6 @@
 
         <section>
           <h3>
-            <div class="version" style="float: right"></div>
             <a href="index.html">Back to Welcome screen</a>
           </h3>
         </section>
@@ -42,7 +47,7 @@
 
     <footer>
       <div class="status" style="float: left"></div>
-      <div class="version" style="float: right"></div>
+      <div class="version" style="float: right"><span class="current"></span></div>
     </footer>
 
     <script type="module">
@@ -55,7 +60,8 @@
         menu:    document.querySelector('main .modal'),
         grid:    document.querySelector('main .grid'),
         keys:    document.body,
-        version: document.querySelectorAll('.version'),
+        version: document.querySelectorAll('.version .current'),
+        latest:  document.querySelector('.version .latest'),
         run:     document.querySelector('#run'),
         reset:   document.querySelector('#reset'),
         inspect: document.querySelector('#inspector'),
