@@ -34,11 +34,15 @@ function getVersion():string {
 }
 
 export async function getLatestVersion():Promise<string> {
-  const parser = new DOMParser();
-  const response = await fetch('/index.html', {cache: 'reload'});
-  const doc = parser.parseFromString(await response.text(), 'text/html');
-  const version = parseVersion(doc, response.url);
-  return version;
+  try {
+    const parser = new DOMParser();
+    const response = await fetch('/index.html', {cache: 'reload'});
+    const doc = parser.parseFromString(await response.text(), 'text/html');
+    const version = parseVersion(doc, response.url);
+    return version;
+  } catch (e) {
+    return 'UNKNOWN';
+  }
 }
 
 export async function show(bound:Partial<Bindings>, should:boolean, running:boolean) {
