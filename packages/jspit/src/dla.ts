@@ -1,6 +1,6 @@
 import {html, render} from 'lit-html';
 import {bindVars} from './config';
-import {Point, TileGrid} from './tiles';
+import {Point, TileGrid, TileInspector, TileInspectEvent} from './tiles';
 import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
@@ -399,26 +399,65 @@ interface Bindings extends UIBindings {
   run: HTMLButtonElement,
   reset: HTMLButtonElement,
   dropPlayer: HTMLButtonElement,
+  inspector: HTMLTextAreaElement,
+  inspectorAt: HTMLElement,
 }
 export const bound:Partial<Bindings> = {};
 
 // simulation / "game" state and dependencies
 interface State {
   grid: TileGrid,
+  inspector: TileInspector,
   keys: KeyMap,
   world: DLA,
 }
 export const state:Partial<State> = {};
 
+function onInsepcted({pos: {x, y}, tiles}:TileInspectEvent) {
+  if (bound.inspectorAt) {
+    bound.inspectorAt.innerText = `${isNaN(x) ? 'X' : Math.floor(x)},${isNaN(y) ? 'Y' : Math.floor(y)}`;
+  }
+  if (bound.inspector) {
+    // TODO a <select> might be neat, but would need more than an ephemeral
+    // "hold space" interaction mode
+    const lines = tiles.map(t => {
+      let line = `id=${t.id}`
+      line += ` tag=[${Array.from(t.classList).filter(n => n !== 'tile').join(', ')}]`;
+      return line;
+    });
+    bound.inspector.value = lines.join('\n');
+    bound.inspector.rows = lines.length;
+    bound.inspector.cols = lines.reduce((max, line) => Math.max(max, line.length), 0);
+  }
+}
+
 export function init(bind:Bindings) {
   Object.assign(bound, bind);
 
-  if (bound.grid) state.grid = new TileGrid(bound.grid);
+  if (bound.grid) {
+    state.grid = new TileGrid(bound.grid);
+    if (bound.inspector) {
+      state.inspector = new TileInspector(state.grid, onInsepcted);
+      state.inspector.disable();
+    }
+  }
+
   if (bound.keys) state.keys = new KeyMap(bound.keys, (ev:KeyboardEvent):boolean => {
+
     if (ev.key === 'Escape') {
       if (ev.type === 'keydown') playPause();
       return false;
     }
+
+    if (ev.code === 'Space') {
+      const enabled = ev.type === 'keydown';
+      if (enabled) state.inspector?.enable();
+      else         state.inspector?.disable();
+      state.grid?.el.classList.toggle('inspectable', enabled && !!state.inspector);
+      state.grid?.el.classList.toggle('retro', enabled);
+      return false;
+    }
+
     if (!state.world?.running) return false;
     return !ev.altKey && !ev.ctrlKey && !ev.metaKey;
   });

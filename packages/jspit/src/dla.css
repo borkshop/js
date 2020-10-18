@@ -4,15 +4,41 @@ html {
   --dla-player: var(--yellow-orange);
 }
 
+.grid #inspector {
+  float: left;
+  visibility: hidden;
+  padding: 0;
+}
+
+.grid #inspector textarea {
+  border: none;
+  resize: none;
+  user-select: all;
+}
+
+.grid.retro #inspector {
+  visibility: visible;
+}
+
 .grid .tile.particle {
   background-color: var(--light-grey);
   color:            var(--dark-white);
 }
 
-.grid .tile.ghost {
-  display: none;
+.grid .tile.ghost { visibility: hidden }
+
+.grid .tile.particle.live { color: var(--red); }
+
+.grid.retro { background-color: var(--black); }
+
+.grid.retro .tile.ghost { visibility: visible }
+
+.grid.retro .tile.particle.void  {
+  background-color: #47175f;
+  color: var(--purple);
 }
 
-.grid .tile.particle.live {
-  color: var(--red);
+.grid.retro .tile.particle.prime {
+  background-color: #1f472f;
+  color: var(--dark-sea-green);
 }

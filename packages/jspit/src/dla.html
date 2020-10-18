@@ -136,10 +136,14 @@
 
           </dl></fieldset>
 
+          <p>
+            <code>&lt;Space&gt;</code> hold to display hidden cell information<br />
+            <code>&lt;Escape&gt;</code> to show/hide this menu at any time<br />
+          </p>
+
           <div class="buttonbar">
             <button id="run">Run</button>
             <button id="reset" disabled>Reset</button>
-            <span style="float: right"><code>&lt;Escape&gt;</code> to show/hide this menu at any time</span>
             <br style="clear: both" />
           </div>
 
@@ -168,7 +172,16 @@
         </section>
 
       </aside>
-      <div class="grid"></div>
+      <div class="grid">
+
+        <fieldset id="inspector">
+          <legend>
+            <label for="inspector-ids">Tiles @<span id="inspector-at">X,Y</span>:</label>
+          </legend>
+          <textarea id="inspector-ids" readonly></textarea>
+        </fieldset>
+
+      </div>
     </main>
 
     <footer>
@@ -188,6 +201,8 @@
         run: document.querySelector('#run'),
         reset: document.querySelector('#reset'),
         dropPlayer: document.querySelector('#dropPlayer'),
+        inspector: document.querySelector('#inspector-ids'),
+        inspectorAt: document.querySelector('#inspector-at'),
       });
     </script>
   </body>
