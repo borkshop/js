@@ -295,6 +295,7 @@ export class DLA {
               continue;
             } else if (at4.length) {
               this.grid.updateTile(p, {
+                pos: p1,
                 tag: ['ghost'],
               });
               continue;
@@ -308,6 +309,7 @@ export class DLA {
         if (steps >= this.stepLimit()) {
           this.grid.updateTile(p, {
             tag: ['ghost'],
+            pos: p1,
           });
         }
       }
