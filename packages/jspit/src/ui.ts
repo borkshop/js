@@ -16,10 +16,8 @@ function getVersion():string {
 }
 
 export function show(bound:Partial<Bindings>, should:boolean, running:boolean) {
-  if (should) document.body.classList.add('showUI');
-  else        document.body.classList.remove('showUI');
-  if (running) document.body.classList.add('running');
-  else         document.body.classList.remove('running');
+  document.body.classList.toggle('showUI', should);
+  document.body.classList.toggle('running', running);
   if (bound.version) {
     const version = getVersion() || 'DEV';
     if (bound.version instanceof HTMLElement) bound.version.innerText = version;
