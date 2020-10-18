@@ -15,26 +15,24 @@
 - <http://www.roguebasin.com/index.php?title=Irregular_Shaped_Rooms>
 
 - DLA
-  - controlled RNG with seed setting
-  - tile visited
+  - cell visited counts
   - particle trace option
-  - particle age
-  - particle bounce
-  - particle N option
+  - spawn upto N live concurrent particles?
+  - reaction rules between live particles?
+  - linked particles; are they "non-live shadows"?
   - heading range constraint
   - spawn area / shape / fn
-  - bounce topo vs toroidal topo
-  - general particle bounce
-  - impassable tiles
-  - expand counters: ghost / live / dead (void v world)
-  - attractors
-  - discount ghosts from `particleLimit`
-  - drop player after particleLimit ; drop dropAfter?
-  - constrain player moves to bounds
+  - particle bounce, e.g after depositing or forging
+  - ...or off of impassable tiles, which would allow for concrete containment
+  - attractors that bias or snap heading
   - stickiness probability ; maybe informed by neighbor count!
-  - switch to instanced config
-  - make hash var bind optional
-  - pivot config to support multiple schemes within one sim
+  - config
+    - make hash var bind optional
+    - instanced per sim rather than static
+    - pivot to support multiple schemes within one sim
+  - constrain player moves to bounds
+  - expand counters: ghost / live / dead (void v world)
+  - discount ghosts from `particleLimit`
 
 ## WIP
 
