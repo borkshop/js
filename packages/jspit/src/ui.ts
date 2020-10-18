@@ -1,5 +1,6 @@
 export interface Bindings {
   version: HTMLElement|NodeListOf<HTMLElement>,
+  latest: HTMLElement,
 }
 
 function tailPart(s:string):string {
@@ -32,12 +33,34 @@ function getVersion():string {
   return parseVersion(document, window.location);
 }
 
-export function show(bound:Partial<Bindings>, should:boolean, running:boolean) {
+export async function getLatestVersion():Promise<string> {
+  const parser = new DOMParser();
+  const response = await fetch('/index.html', {cache: 'reload'});
+  const doc = parser.parseFromString(await response.text(), 'text/html');
+  const version = parseVersion(doc, response.url);
+  return version;
+}
+
+export async function show(bound:Partial<Bindings>, should:boolean, running:boolean) {
   document.body.classList.toggle('showUI', should);
   document.body.classList.toggle('running', running);
+  const version = getVersion() || 'DEV';
   if (bound.version) {
-    const version = getVersion() || 'DEV';
     if (bound.version instanceof HTMLElement) bound.version.innerText = version;
     else for (const el of bound.version) el.innerText = version;
+  }
+  if (bound.latest) {
+    const latest = await getLatestVersion();
+    if (latest && latest !== version) {
+      const link = bound.latest.tagName.toLowerCase() === 'a'
+        ? bound.latest as HTMLLinkElement
+        : bound.latest.querySelector('a');
+      if (link) {
+        if (getComputedStyle(bound.latest).display === 'none')
+          bound.latest.style.display = 'initial';
+        link.href = window.location.href.replace(`/${version}/`, `/${latest}/`);
+        link.innerText = latest;
+      }
+    }
   }
 }
