@@ -7,12 +7,29 @@ function tailPart(s:string):string {
   return parts.pop() || parts.pop() || '';
 }
 
-function getVersion():string {
-  const base = document.querySelector('head base');
+interface urlParts {
+  hash: string;
+  host: string;
+  hostname: string;
+  href: string;
+  readonly origin: string;
+  pathname: string;
+  port: string;
+  protocol: string;
+  search: string;
+}
+
+function parseVersion(doc:Document, url:string|urlParts):string {
+  if (typeof url === 'string') url = new URL(url);
+  const base = doc.querySelector('head base');
   const version = tailPart(base?.getAttribute('href') || '');
   if (version && version !== '.') return version;
-  const parts = window.location.pathname.split('/');
+  const parts = url.pathname.split('/');
   return parts[parts.length - 2] || '';
+}
+
+function getVersion():string {
+  return parseVersion(document, window.location);
 }
 
 export function show(bound:Partial<Bindings>, should:boolean, running:boolean) {
