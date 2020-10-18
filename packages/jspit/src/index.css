@@ -253,6 +253,8 @@ ul, ol, dl {
   padding-bottom: 0;
 }
 
+.linkbar span:not(:first-of-type):before { content: " | " }
+
 .version {
   font-size: 0.8em;
   margin-top: 0.2em;
