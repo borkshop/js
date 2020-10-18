@@ -11,7 +11,8 @@
   - masking?
   - nudge needs to take whole tile into account, nudge if any part of the given point is out
   - custom shader funcs, or at least some affordance for stepped css classes
-- <https://www.w3schools.com/howto/howto_css_switch.asp>
+- <http://www.roguebasin.com/index.php?title=Cellular_Automata_Method_for_Generating_Random_Cave-Like_Levels>
+- <http://www.roguebasin.com/index.php?title=Irregular_Shaped_Rooms>
 
 - DLA
   - controlled RNG with seed setting
