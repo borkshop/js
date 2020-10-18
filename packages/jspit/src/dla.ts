@@ -140,8 +140,9 @@ export class DLA {
     const {initBase, initArc} = DLA.settings;
     const pos = this.initPlace();
     const heading = Math.PI * (initBase + (Math.random() - 0.5) * initArc);
+    const kind = this.anyCell(pos) ? 'prime' : 'void';
     return this.grid.createTile(`particle-${++this.particleID}`, {
-      tag: ['particle', 'live'],
+      tag: ['particle', 'live', kind],
       pos,
       text: '*',
       data: {heading},
@@ -259,11 +260,11 @@ export class DLA {
           const at4 = this.grid.tilesAt(p4, 'particle')
             .filter(t => !t.classList.contains('live'));
 
-          // in-world particels may forge into the void; aka random walker
+          // in-world particles may forge into the void; aka random walker
           if (at3.length && !at4.length) {
             // TODO allow for more than 1 step
             this.grid.updateTile(p, {
-              tag: ['particle'],
+              tag: ['particle', 'prime'],
               pos: p4,
               text: '·',
             });
@@ -288,7 +289,7 @@ export class DLA {
           )) {
             if (!wrapped) {
               this.grid.updateTile(p, {
-                tag: ['particle'],
+                tag: ['particle', 'void'],
                 pos: p3,
                 text: '·',
               });
