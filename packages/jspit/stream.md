@@ -39,6 +39,7 @@
 
 ## Done
 
+- added latest verion detection and link display to all pages
 - read <http://paulbourke.net/fractals/dla/> for more background and
   inspiration; elaborated DLA TODO section above
 
