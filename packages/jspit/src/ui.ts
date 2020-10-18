@@ -33,10 +33,10 @@ function getVersion():string {
   return parseVersion(document, window.location);
 }
 
-export async function getLatestVersion():Promise<string> {
+export async function getLatestVersion(url:string):Promise<string> {
   try {
     const parser = new DOMParser();
-    const response = await fetch('/index.html', {cache: 'reload'});
+    const response = await fetch(url, {cache: 'reload'});
     const doc = parser.parseFromString(await response.text(), 'text/html');
     const version = parseVersion(doc, response.url);
     return version;
@@ -54,7 +54,10 @@ export async function show(bound:Partial<Bindings>, should:boolean, running:bool
     else for (const el of bound.version) el.innerText = version;
   }
   if (bound.latest) {
-    const latest = await getLatestVersion();
+    const isVersioned = window.location.href.includes(`/${version}/`);
+    const parts = window.location.pathname.split('/');
+    const index = parts.slice(0, isVersioned ? -2 : -1).join('/') + '/index.html';
+    const latest = await getLatestVersion(index);
     if (latest && latest !== version) {
       const link = bound.latest.tagName.toLowerCase() === 'a'
         ? bound.latest as HTMLLinkElement
