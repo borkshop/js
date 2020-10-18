@@ -46,6 +46,7 @@ html {
   --acted-color:        var(--bright-purple);
 
   font-family: sans;
+  font-size: 12pt;
 }
 
 html, * { box-sizing: border-box; }
