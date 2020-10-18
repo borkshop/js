@@ -72,6 +72,11 @@
               <select id="dla-initWhere" name="initWhere"></select>
             </dd>
             <dd>
+              <label for="dla-initAnyBalance" >Void-vs-World Balance:</label>
+              <input id="dla-initAnyBalance" name="initAnyBalance" type="number" min="0" max="1" step="0.01" />
+              (when using "Random Point" strategy above)
+            </dd>
+            <dd>
               <label for="dla-initBase">Facing Math.PI * ( </label>
               <input id="dla-initBase" name="initBase" type="number" min="0" max="1" step="0.2" />
               <label for="dla-initArc">+/-</label>
@@ -106,7 +111,7 @@
             <dt>Particle Limit</dt><dd>
               <label for="dla-particleLimit">Stop spawning after</label>
               <input id="dla-particleLimit" name="particleLimit" type="number" min="0" />;
-              if set to <code>0</code> then <code>( bounds.w * bounds.h )/2</code> is used.
+              if set to <code>0</code> then <code>(bounds.w * bounds.h)/2</code> is used.
             </dd>
 
           </dl></fieldset>

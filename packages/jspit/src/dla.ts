@@ -46,6 +46,7 @@ export class DLA {
         {label: 'Random Point', value: InitWhere.RandAny},
       ],
     },
+    initAnyBalance: 0.25,
     initBase: 0,
     initArc:  2.0,
 
@@ -94,7 +95,20 @@ export class DLA {
   }
 
   initPlace():Point {
-    const {bounds, seeds, initWhere: {value: where}} = DLA.settings;
+    const {bounds, seeds, initWhere: {value: where}, initAnyBalance} = DLA.settings;
+
+    const chooseVoid = () => {
+      while (true) {
+        const pos = {
+          x: bounds.x + Math.random() * bounds.w,
+          y: bounds.y + Math.random() * bounds.h,
+        };
+        const at = this.grid.tilesAt(pos, 'particle')
+          .filter(t => !t.classList.contains('live'));
+        if (!at.length) return pos;
+      }
+    };
+
     const choosePrior = () => {
       const prior = this.grid.queryTiles('particle')
         .filter(t => !t.classList.contains('live'));
@@ -114,22 +128,11 @@ export class DLA {
       return choosePrior();
 
     case InitWhere.RandVoid:
-      while (true) {
-        const pos = {
-          x: bounds.x + Math.random() * bounds.w,
-          y: bounds.y + Math.random() * bounds.h,
-        };
-        const at = this.grid.tilesAt(pos, 'particle')
-          .filter(t => !t.classList.contains('live'));
-        if (!at.length) return pos;
-      }
+      return chooseVoid();
 
     case InitWhere.RandAny:
-      if (Math.random() < 0.25 /* TODO setting */) return choosePrior();
-      return {
-        x: bounds.x + Math.random() * bounds.w,
-        y: bounds.y + Math.random() * bounds.h,
-      };
+      if (Math.random() < initAnyBalance) return choosePrior();
+      return chooseVoid();
 
     default:
       throw new Error(`invalid initWhere value ${where}`);
