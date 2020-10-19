@@ -8,6 +8,10 @@ export interface TileQuery {
 
   // NOTE may start with ^ $ or * to encode a startWith/endsWith/contains match
   id?: string
+
+  // NOTE matches on the JOSN represention of a TileDatum; may also start with
+  // ^ $ or * like id above
+  data?: {[name: string]: string}
 }
 
 export interface TileSpec {
@@ -174,6 +178,11 @@ export class TileGrid {
       let {match, value} = parseMatcher(query.id);
       if (!match || match === '^') value = `${this.idspace}-${value}`;
       addAttr('id', match, value);
+    }
+
+    if (query?.data) for (const name in query.data) {
+      const {match, value} = parseMatcher(query.data[name]);
+      addAttr(`data-${name}`, match, value);
     }
 
     // TODO how to support tag negation
