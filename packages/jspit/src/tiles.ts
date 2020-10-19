@@ -89,8 +89,10 @@ export class TileGrid {
     return {x: 0, y: 0};
   }
 
+  idspace = 'tile' // TODO autogen this
+
   tileID(id:string) {
-    return `${this.el.id}${this.el.id ? '-': ''}tile-${id}`;
+    return `${this.el.id}${this.el.id ? '-': ''}${this.idspace}-${id}`;
   }
 
   createTile(id: string, spec:TileSpec):HTMLElement {
