@@ -105,9 +105,7 @@ export class TileGrid {
     return this.updateTile(tile, spec) as HTMLElement;
   }
 
-  updateTile(elOrID:HTMLElement|string, spec:TileSpec) {
-    const tile = this.getTile(elOrID);
-    if (!tile) return null;
+  updateTile(tile:HTMLElement, spec:TileSpec) {
     if (spec.text) tile.innerText = spec.text;
     if (spec.fg) tile.style.color = spec.fg;
     if (spec.bg) tile.style.backgroundColor = spec.bg;
@@ -134,8 +132,7 @@ export class TileGrid {
     return elOrID;
   }
 
-  getTileData(elOrID:HTMLElement|string, name:string):TileDatum|null {
-    const tile = this.getTile(elOrID);
+  getTileData(tile:HTMLElement, name:string):TileDatum|null {
     const sval = tile?.dataset[name];
     if (!sval) return null;
     try {
@@ -145,8 +142,7 @@ export class TileGrid {
     return null;
   }
 
-  setTileData(elOrID:HTMLElement|string, name:string, value:TileDatum|null) {
-    const tile = this.getTile(elOrID);
+  setTileData(tile:HTMLElement, name:string, value:TileDatum|null) {
     if (!tile) return;
     if (value === null) delete tile.dataset[name];
     else                       tile.dataset[name] = JSON.stringify(value);
@@ -163,17 +159,13 @@ export class TileGrid {
     while (this.el.firstChild) this.el.removeChild(this.el.firstChild);
   }
 
-  getTilePosition(elOrID:HTMLElement|string) {
-    const tile = this.getTile(elOrID);
-    if (!tile) return {x: NaN, y: NaN};
+  getTilePosition(tile:HTMLElement) {
     const x = parseFloat(tile.style.getPropertyValue('--x')) || 0;
     const y = parseFloat(tile.style.getPropertyValue('--y')) || 0;
     return {x, y};
   }
 
-  moveTileTo(elOrID:HTMLElement|string, pt:Point):Point {
-    const tile = this.getTile(elOrID);
-    if (!tile) return {x: NaN, y: NaN};
+  moveTileTo(tile:HTMLElement, pt:Point):Point {
     tile.style.setProperty('--x', pt.x.toString());
     tile.style.setProperty('--y', pt.y.toString());
     // TODO decouple/batch these with a mutation observer?
@@ -181,9 +173,7 @@ export class TileGrid {
     return pt;
   }
 
-  moveTileBy(elOrID:HTMLElement|string, {x: dx, y: dy}:Point) {
-    const tile = this.getTile(elOrID);
-    if (!tile) return {x: NaN, y: NaN};
+  moveTileBy(tile:HTMLElement, {x: dx, y: dy}:Point) {
     let {x, y} = this.getTilePosition(tile);
     x += dx, y += dy;
     return this.moveTileTo(tile, {x, y});

@@ -184,7 +184,12 @@ function playPause() {
     () => keys?.consumePresses() || [],
     () => {
       if (!grid || !bound.status) return;
-      const {x, y} = grid.getTilePosition('at');
+      const at = grid.getTile('at');
+      if (!at) {
+        render(html`no player`, bound.status);
+        return;
+      }
+      const {x, y} = grid.getTilePosition(at);
       const {x: w, y: h} = grid.tileSize;
       const {x: vx, y: vy, width: vw, height: vh} = grid.viewport;
       render(html`
