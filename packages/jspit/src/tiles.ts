@@ -3,6 +3,10 @@ export interface Point {
   y: number,
 }
 
+export interface TileQuery {
+  tag?: string|string[]
+}
+
 export interface TileSpec {
   pos?: Point
 
@@ -148,9 +152,23 @@ export class TileGrid {
     else                       tile.dataset[name] = JSON.stringify(value);
   }
 
-  queryTiles(...tag:string[]) {
+  tileQuerySelector(query?:TileQuery) {
+    // TODO how to support tag negation
+    const tagClasses = typeof query?.tag === 'string'
+      ? `.${query.tag}` : Array.isArray(query?.tag)
+      ? query?.tag.map(t => `.${t}`).join('')
+      : '';
+
+    return `.tile${tagClasses}`;
+  }
+
+  queryTile(query?:TileQuery) {
+    return this.el.querySelector(this.tileQuerySelector(query)) as HTMLElement|null;
+  }
+
+  queryTiles(query?:TileQuery) {
     const res : HTMLElement[] = [];
-    for (const el of this.el.querySelectorAll(`.tile${tag.map(t => `.${t}`).join('')}`))
+    for (const el of this.el.querySelectorAll(this.tileQuerySelector(query)))
       res.push(el as HTMLElement);
     return res;
   }

@@ -66,7 +66,7 @@ export class ColorBoop {
   }
 
   consumeInput(presses: Array<[string, number]>):boolean {
-    const movers = this.grid.queryTiles('keyMove');
+    const movers = this.grid.queryTiles({tag: 'keyMove'});
     if (!movers.length) return false;
     if (movers.length > 1) throw new Error(`ambiguous ${movers.length}-mover situation`);
     const actor = movers[0];

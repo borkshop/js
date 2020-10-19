@@ -110,7 +110,7 @@ export class DLA {
     };
 
     const choosePrior = () => {
-      const prior = this.grid.queryTiles('particle')
+      const prior = this.grid.queryTiles({tag: 'particle'})
         .filter(t => !t.classList.contains('live'));
       const tile = prior[Math.floor(Math.random()*prior.length)];
       return this.grid.getTilePosition(tile);
@@ -183,14 +183,14 @@ export class DLA {
       ordinalMoves,
     } = DLA.settings;
 
-    const havePlayer = !!this.grid.queryTiles('keyMove').length;
+    const havePlayer = !!this.grid.queryTile({tag: 'keyMove'});
 
     const rate = havePlayer ? playRate : genRate;
     this.elapsed += dt
     const n = Math.floor(this.elapsed / rate);
     if (!n) return;
     this.elapsed -= n * rate;
-    let ps = this.grid.queryTiles('particle', 'live');
+    let ps = this.grid.queryTiles({tag: ['particle', 'live']});
 
     for (let i = 0; i < n; ++i) {
       ps = ps.filter(p => p.classList.contains('live'));
@@ -323,7 +323,7 @@ export class DLA {
   digSeq = new Map<string, number>()
 
   consumeInput(presses: Array<[string, number]>):void {
-    const movers = this.grid.queryTiles('keyMove');
+    const movers = this.grid.queryTiles({tag: 'keyMove'});
     if (!movers.length) return;
     if (movers.length > 1) throw new Error(`ambiguous ${movers.length}-mover situation`);
     const actor = movers[0];
