@@ -5,6 +5,9 @@ export interface Point {
 
 export interface TileQuery {
   tag?: string|string[]
+
+  // NOTE may start with ^ $ or * to encode a startWith/endsWith/contains match
+  id?: string
 }
 
 export interface TileSpec {
@@ -153,13 +156,33 @@ export class TileGrid {
   }
 
   tileQuerySelector(query?:TileQuery) {
+    const parseMatcher = (s:string) => {
+      switch (s[0]) {
+        case '^':
+        case '$':
+        case '*':
+          return {match: s[0], value: s.slice(1)};
+        default:
+          return {match: '', value: s.slice(1)};
+      }
+    };
+
+    const attrs: string[] = [];
+    const addAttr = (name:string, match:string, value:string) => attrs.push(`${name}${match}=${value}`);
+
+    if (query?.id) {
+      let {match, value} = parseMatcher(query.id);
+      if (!match || match === '^') value = `${this.idspace}-${value}`;
+      addAttr('id', match, value);
+    }
+
     // TODO how to support tag negation
     const tagClasses = typeof query?.tag === 'string'
       ? `.${query.tag}` : Array.isArray(query?.tag)
       ? query?.tag.map(t => `.${t}`).join('')
       : '';
 
-    return `.tile${tagClasses}`;
+    return `.tile${tagClasses}${attrs.map(attr => `[${attr}]`).join('')}`;
   }
 
   queryTile(query?:TileQuery) {
