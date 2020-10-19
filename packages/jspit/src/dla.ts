@@ -139,17 +139,26 @@ export class DLA {
     }
   }
 
-  spawn() {
+  spawn():HTMLElement|null {
+    const ghost = this.grid.queryTile({
+      tag: 'ghost',
+      id: '^particle-',
+    });
+    if (!ghost && this.particleID >= this.particleLimit()) return null;
+
     const {initBase, initArc} = DLA.settings;
     const pos = this.initPlace();
     const heading = Math.PI * (initBase + (Math.random() - 0.5) * initArc);
     const kind = this.anyCell(pos) ? 'prime' : 'void';
-    return this.grid.createTile(`particle-${++this.particleID}`, {
+    const spec = {
       tag: ['particle', 'live', kind],
       pos,
       text: '*',
       data: {heading},
-    });
+    };
+    if (ghost)
+      return this.grid.updateTile(ghost, spec);
+    return this.grid.createTile(`particle-${++this.particleID}`, spec);
   }
 
   stepLimit():number {
@@ -195,11 +204,12 @@ export class DLA {
     for (let i = 0; i < n; ++i) {
       ps = ps.filter(p => p.classList.contains('live'));
       if (!ps.length) {
-        if (this.particleID >= this.particleLimit()) {
+        const p = this.spawn();
+        if (!p) {
           if (!havePlayer) this.dropPlayer();
           return;
         }
-        ps.push(this.spawn());
+        ps.push(p);
         continue;
       }
 
