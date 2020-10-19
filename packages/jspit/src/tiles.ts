@@ -156,7 +156,8 @@ export class TileGrid {
   }
 
   clear() {
-    while (this.el.firstChild) this.el.removeChild(this.el.firstChild);
+    for (const tile of this.queryTiles())
+      this.el.removeChild(tile);
   }
 
   getTilePosition(tile:HTMLElement) {
