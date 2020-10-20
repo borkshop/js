@@ -2,6 +2,9 @@
   "plugins": [
     "@snowpack/plugin-typescript"
   ],
+  "buildOptions": {
+    "clean": true
+  },
   "installOptions": {
     "installTypes": true
   }
