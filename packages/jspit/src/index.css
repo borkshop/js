@@ -260,33 +260,6 @@ ul, ol, dl {
 
 .linkbar span:not(:first-of-type):before { content: " | " }
 
-.version {
-  font-size: 12pt;
-  margin-top: 0.5em;
-}
-
-footer .version {
-  font-size: 10pt;
-}
-
-.version .current { user-select: all }
-.version .current:hover { text-decoration: underline }
-
-.version .latest { display: none }
-.version .latest a {
-  color: var(--red-orange);
-  font-weight: bold;
-  text-decoration: underline;
-}
-
-.version .latest:before { content: " latest:" }
-
-.version:not(:empty):before { content: "(" }
-.version:not(:empty):after { content: ")" }
-
-.linkbar .version:not(:empty):before { content: "" }
-.linkbar .version:not(:empty):after { content: "" }
-
 /* TODO better list styles */
 
 /* vim:set ts=2 sw=2 expandtab */
