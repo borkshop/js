@@ -186,7 +186,6 @@ export class DLA {
   update(dt:number): void {
     const {
       genRate, playRate,
-      bounds,
       turnLeft, turnRight,
       ordinalMoves,
     } = DLA.settings;
@@ -253,13 +252,6 @@ export class DLA {
           p2.y += dy;
         }
 
-        // modulo bounds
-        let wrapped = false;
-        while (p2.x < bounds.x)            p2.x += bounds.w, wrapped = true;
-        while (p2.x > bounds.x + bounds.w) p2.x -= bounds.w, wrapped = true;
-        while (p2.y < bounds.y)            p2.y += bounds.h, wrapped = true;
-        while (p2.y > bounds.y + bounds.h) p2.y -= bounds.h, wrapped = true;
-
         // clamped to grid boundaries
         const p3 = {x: Math.floor(p1.x), y: Math.floor(p1.y)};
         const p4 = {x: Math.floor(p2.x), y: Math.floor(p2.y)};
@@ -299,20 +291,12 @@ export class DLA {
               {x: p3.x-1, y: p3.y-1},
             ))
           )) {
-            if (!wrapped) {
-              this.grid.updateTile(p, {
-                tag: ['particle', 'void'],
-                pos: p3,
-                text: '·',
-              });
-              continue;
-            } else if (at4.length) {
-              this.grid.updateTile(p, {
-                pos: p1,
-                tag: ['ghost'],
-              });
-              continue;
-            }
+            this.grid.updateTile(p, {
+              tag: ['particle', 'void'],
+              pos: p3,
+              text: '·',
+            });
+            continue;
           }
         }
 
