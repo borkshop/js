@@ -345,7 +345,9 @@ export class TileInspector {
     const ids = tiles.map(({id}) => id).join(';');
     if (this.#inspectingIDs === ids) return;
     this.#inspectingIDs = ids;
-    const pos = this.grid.getTilePosition(tiles[0]);
+    const pos = tiles.length
+      ? this.grid.getTilePosition(tiles[0])
+      : {x: NaN, y: NaN}; // TODO would be nice to translate client[XY] to a tile point
     this.handler({pos, tiles});
   }
 }
