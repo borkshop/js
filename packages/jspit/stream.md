@@ -1,18 +1,20 @@
-# 2020-10-17
+# 2020-10-19
 
 ## TODO
 
-- maybe use a bundled build with compat transpilers
-- soul prototype
-- mind research: prolog-like systems
-- TileGrid
-  - animations like boop and particles
-  - viewport correction on resize
-  - masking?
-  - nudge needs to take whole tile into account, nudge if any part of the given point is out
-  - custom shader funcs, or at least some affordance for stepped css classes
 - <http://www.roguebasin.com/index.php?title=Cellular_Automata_Method_for_Generating_Random_Cave-Like_Levels>
 - <http://www.roguebasin.com/index.php?title=Irregular_Shaped_Rooms>
+- soul prototype
+- mind research: prolog-like systems
+
+- TileGrid
+  - masking?
+  - viewport correction on resize
+  - custom shader funcs, or at least some affordance for stepped css classes
+  - nudge needs to take whole tile into account, nudge if any part of the given point is out
+  - animations like boop and particles
+  - save/load ; initial state
+  - eject nudge, leave that up to controlling code
 
 - DLA
   - cell visited counts
@@ -30,13 +32,31 @@
     - make hash var bind optional
     - instanced per sim rather than static
     - pivot to support multiple schemes within one sim
-  - constrain player moves to bounds
-  - expand counters: ghost / live / dead (void v world)
-  - discount ghosts from `particleLimit`
 
 ## WIP
 
+- DLA
+  - factor out player input concern
+  - eliminate static bounds entirely: use an expanded dynamic bounding box to
+    spawn particles; also use to kill particles; then use the browser viewport
+    size to determin particle limit
+
 ## Done
+
+- TileGrid
+  - expanded inspector so that it can be toggled on and off after creation
+  - hardened edge so that user must past tile elements, rather than implicit
+    lookup of string ids
+  - expanded tile querying to support id substring matches and data attribute
+    matches
+- DLA
+  - added tile hidden data reveal mode with inspection widget
+  - reap and reincarnate ghosts before creating new particles when spawning;
+    this fixes the balance between void and prime particles, since dead void
+    particles would drag down that side's final count
+  - dropped toroidal topology in lieu of just step-expiring  particles
+
+# 2020-10-17
 
 - added latest verion detection and link display to all pages
 - read <http://paulbourke.net/fractals/dla/> for more background and
