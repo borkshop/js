@@ -196,6 +196,9 @@ section {
 .grid.inspectable .tile       { padding: 0.1em; }
 .grid.inspectable .tile:hover { padding: 0; border: 0.1em solid var(--magenta); }
 
+label       .tip { display: none }
+label:hover .tip { display: block }
+
 p {
   margin: 1em 0.5em;
   padding: 0;

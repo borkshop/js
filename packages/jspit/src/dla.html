@@ -78,7 +78,9 @@
             <dd><label for="dla-initAnyBalance" >
               Void-vs-World Balance:
               <input id="dla-initAnyBalance" name="initAnyBalance" type="number" min="0" max="1" step="0.01" />
-              (when using "Random Point" strategy above)
+              <div class="tip">
+                when using "Random Point" strategy above
+              </div>
             </label></dd>
             <dd>
               <label for="dla-initBase">
@@ -94,21 +96,21 @@
             <dt>Particles Move</dt>
 
             <dd>
-              <b>pre-player:</b>
-              1 step
-              <label for="dla-genRate">
-                every
-                <input id="dla-genRate" name="genRate" type="number" min="1" max="100">ms
-              </label>
+            <b>pre-player:</b>
+            1 step
+            <label for="dla-genRate">
+              every
+              <input id="dla-genRate" name="genRate" type="number" min="1" max="100">ms
+            </label>
             </dd>
 
             <dd>
-              <b>post-player:</b>
-              1 step
-              <label for="dla-playRate">
-                every
-                <input id="dla-playRate" name="playRate" type="number" min="1" max="100">ms
-              </label>
+            <b>post-player:</b>
+            1 step
+            <label for="dla-playRate">
+              every
+              <input id="dla-playRate" name="playRate" type="number" min="1" max="100">ms
+            </label>
             </dd>
 
             <dd><label for="dla-ordinalMoves">
@@ -118,14 +120,18 @@
 
             <dd><label for="dla-stepLimit">
               Terminate after
-              <input id="dla-stepLimit" name="stepLimit" type="number" min="0" /> steps;
-              if set to <code>0</code> then <code>bounds.w + bounds.h</code> is used.
+              <input id="dla-stepLimit" name="stepLimit" type="number" min="0" /> steps
+              <div class="tip">
+                if set to <code>0</code> then <code>bounds.w + bounds.h</code> is used.
+              </div>
             </label></dd>
 
             <dt>Particle Limit</dt><dd><label for="dla-particleLimit">
               Stop spawning after
-              <input id="dla-particleLimit" name="particleLimit" type="number" min="0" />;
-              if set to <code>0</code> then <code>(bounds.w * bounds.h)/2</code> is used.
+              <input id="dla-particleLimit" name="particleLimit" type="number" min="0" />
+              <div class="tip">
+                if set to <code>0</code> then <code>(bounds.w * bounds.h)/2</code> is used.
+              </div>
             </label></dd>
 
           </dl></fieldset>
