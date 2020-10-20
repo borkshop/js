@@ -37,7 +37,7 @@ export class DLA {
     ],
 
     initWhere: {
-      value: InitWhere.RandVoid,
+      value: InitWhere.RandAny,
       options: [
         {label: 'First Seed', value: InitWhere.Seed},
         {label: 'Random Seed', value: InitWhere.RandSeed},
@@ -117,22 +117,21 @@ export class DLA {
     };
 
     switch (where) {
-    case InitWhere.Seed:
-      return seeds[0];
-      // TODO round robin all seeds?
 
+    case InitWhere.Seed:
+      return seeds[0]; // TODO round robin all seeds?
     case InitWhere.RandSeed:
       return seeds[Math.floor(Math.random()*seeds.length)];
 
-    case InitWhere.RandPrior:
-      return choosePrior();
-
-    case InitWhere.RandVoid:
-      return chooseVoid();
-
+    case InitWhere.RandPrior: return choosePrior();
+    case InitWhere.RandVoid:  return chooseVoid();
     case InitWhere.RandAny:
-      if (Math.random() < initAnyBalance) return choosePrior();
-      return chooseVoid();
+        const nVoid  = this.grid.queryTiles({tag: ['particle', 'void']}).length;
+        const nPrime = this.grid.queryTiles({tag: ['particle', 'prime']}).length;
+        const total  = nVoid + nPrime;
+        const sVoid  = Math.pow(Math.random(), nVoid  - total * (1 - initAnyBalance));
+        const sPrime = Math.pow(Math.random(), nPrime - total *      initAnyBalance);
+        return sPrime >= sVoid ? choosePrior() : chooseVoid();
 
     default:
       throw new Error(`invalid initWhere value ${where}`);
