@@ -51,50 +51,64 @@
           <fieldset><legend>Settings</legend><dl>
 
             <dt>Turns upto</dt>
-            <dd><label for="dla-turnLeft">Left: Math.PI *</label>
+            <dd><label for="dla-turnLeft">
+              Left: Math.PI *
               <input id="dla-turnLeft" name="turnLeft" type="number" min="0" max="1" step="0.2" />
-            </dd>
-            <dd><label for="dla-turnRight">Right: Math.PI *</label>
+            </label></dd>
+            <dd><label for="dla-turnRight">
+              Right: Math.PI *
               <input id="dla-turnRight" name="turnRight" type="number" min="0" max="1" step="0.2" />
-            </dd>
+            </label></dd>
 
-            <dt><label for="dla-bounds">Bounds</label></dt><dd>
+            <dt><label for="dla-bounds">
+              Bounds:
               <input id="dla-bounds" name="bounds" size="32" type="text" />
-            </dd>
+            </label></dt>
 
-            <dt><label for="dla-seeds">Seeds</label></dt><dd>
+            <dt><label for="dla-seeds">
+              Seeds:
               <input id="dla-seeds" name="seeds" size="32" type="text" />
-            </dd>
+            </label></dt>
 
             <dt>Spawn Particles</dt>
-            <dd>
-              <label for="dla-initWhere">Where:</label>
+            <dd><label for="dla-initWhere">
+              Where:
               <select id="dla-initWhere" name="initWhere"></select>
-            </dd>
-            <dd>
-              <label for="dla-initAnyBalance" >Void-vs-World Balance:</label>
+            </label></dd>
+            <dd><label for="dla-initAnyBalance" >
+              Void-vs-World Balance:
               <input id="dla-initAnyBalance" name="initAnyBalance" type="number" min="0" max="1" step="0.01" />
               (when using "Random Point" strategy above)
-            </dd>
+            </label></dd>
             <dd>
-              <label for="dla-initBase">Facing Math.PI * ( </label>
-              <input id="dla-initBase" name="initBase" type="number" min="0" max="1" step="0.2" />
-              <label for="dla-initArc">+/-</label>
-              <input id="dla-initArc" name="initArc" type="number" min="0" max="1" step="0.2" /> )
+              <label for="dla-initBase">
+                Facing Math.PI * (
+                <input id="dla-initBase" name="initBase" type="number" min="0" max="1" step="0.2" />
+              </label>
+              <label for="dla-initArc">
+                +/-
+                <input id="dla-initArc" name="initArc" type="number" min="0" max="1" step="0.2" /> )
+              </label>
             </dd>
 
             <dt>Particles Move</dt>
 
             <dd>
               <b>pre-player:</b>
-              1 step <label for="dla-genRate">every</label>
-              <input id="dla-genRate" name="genRate" type="number" min="1" max="100">ms
+              1 step
+              <label for="dla-genRate">
+                every
+                <input id="dla-genRate" name="genRate" type="number" min="1" max="100">ms
+              </label>
             </dd>
 
             <dd>
               <b>post-player:</b>
-              1 step <label for="dla-playRate">every</label>
-              <input id="dla-playRate" name="playRate" type="number" min="1" max="100">ms
+              1 step
+              <label for="dla-playRate">
+                every
+                <input id="dla-playRate" name="playRate" type="number" min="1" max="100">ms
+              </label>
             </dd>
 
             <dd><label for="dla-ordinalMoves">
@@ -102,17 +116,17 @@
               Allow ordinal (diagonal) moves
             </label></dd>
 
-            <dd>
-              <label for="dla-stepLimit">Terminate after</label>
-              <input id="dla-stepLimit" name="stepLimit" type="number" min="0" />
-              steps; if set to <code>0</code> then <code>bounds.w + bounds.h</code> is used.
-            </dd>
+            <dd><label for="dla-stepLimit">
+              Terminate after
+              <input id="dla-stepLimit" name="stepLimit" type="number" min="0" /> steps;
+              if set to <code>0</code> then <code>bounds.w + bounds.h</code> is used.
+            </label></dd>
 
-            <dt>Particle Limit</dt><dd>
-              <label for="dla-particleLimit">Stop spawning after</label>
+            <dt>Particle Limit</dt><dd><label for="dla-particleLimit">
+              Stop spawning after
               <input id="dla-particleLimit" name="particleLimit" type="number" min="0" />;
               if set to <code>0</code> then <code>(bounds.w * bounds.h)/2</code> is used.
-            </dd>
+            </label></dd>
 
           </dl></fieldset>
 
