@@ -8,6 +8,6 @@
   "scripts": {
     "start": "snowpack dev",
     "build": "snowpack build",
-    "dist": "bash ./scripts/dist.sh && bash ./scripts/prune.sh"
+    "dist": "bash ./scripts/dist.sh && bash ./scripts/dist-prune.sh"
   }
 }

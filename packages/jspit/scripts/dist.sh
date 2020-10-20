@@ -2,9 +2,10 @@
 set -euxo pipefail
 
 # ensure the build directory is setup as a secondary working tree
-desc=$(git describe --always)
-build_dir=$(pwd)/build
+build_dir=$(pwd)/dist
 git worktree list | grep "$build_dir"
+
+desc=$(git describe --always)
 
 # enter and clean the build tree
 pushd "$build_dir"
