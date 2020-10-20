@@ -1,4 +1,3 @@
-import {html, render} from 'lit-html';
 import {bindVars} from './config';
 import {Point, TileGrid, TileInspector, TileInspectEvent} from './tiles';
 import {KeyMap, coalesceMoves} from './input';
@@ -387,7 +386,7 @@ export class DLA {
 interface Bindings extends UIBindings {
   menu: HTMLElement,
   grid: HTMLElement,
-  status: HTMLElement,
+  particleID: HTMLElement,
   keys: HTMLElement,
   run: HTMLButtonElement,
   reset: HTMLButtonElement,
@@ -493,8 +492,9 @@ function playPause() {
   if (world.running) world.running = false;
   else world.run(
     () => keys?.consumePresses() || [],
-    () => bound.status && render(html`
-        <label for="particleID">Particles:</label>
-        <span id="particleID">${world.particleID}</span>
-      `, bound.status));
+    () => {
+      if (bound.particleID)
+        bound.particleID.innerText = world.particleID.toString();
+    }
+  );
 }

@@ -256,6 +256,8 @@ ul, ol, dl {
   padding-bottom: 0;
 }
 
+.value { user-select: all }
+
 .linkbar span:not(:first-of-type):before { content: " | " }
 
 .version {

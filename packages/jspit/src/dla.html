@@ -182,7 +182,11 @@
     </main>
 
     <footer>
-      <div class="status" style="float: left"></div>
+        <label for="particleID">
+          Particles:
+          <span id="particleID" class="value">0</span>
+        </label>
+
     </footer>
 
     <script type="module">
@@ -198,6 +202,7 @@
         dropPlayer: document.querySelector('#dropPlayer'),
         inspector: document.querySelector('#inspector-ids'),
         inspectorAt: document.querySelector('#inspector-at'),
+        particleID: document.querySelector('#particleID'),
       });
     </script>
   </body>
