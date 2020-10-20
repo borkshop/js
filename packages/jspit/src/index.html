@@ -42,11 +42,6 @@
         </section>
 
         <section align="center">
-          <div class="version" style="float: right">
-            version:<span class="current"></span>
-            <span class="latest"><a></a></span>
-          </div>
-
           <div class="linkbar">
             <span><a href="//github.com/borkshop/js/tree/main/packages/jspit">Github</a></span>
             <span><a href="//github.com/borkshop/js/blob/main/packages/jspit/stream.md">Dev Log</a></span>
@@ -55,15 +50,6 @@
 
       </aside>
     </main>
-
-    <script type="module">
-      import {show} from './ui';
-      show({
-        version: document.querySelector('.version .current'),
-        latest:  document.querySelector('.version .latest'),
-      }, false, false);
-    </script>
-
   </body>
 
 </html>

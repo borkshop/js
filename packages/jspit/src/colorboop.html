@@ -20,10 +20,6 @@
 
           <h2>
             Boop a color, get a color!
-            <span class="version" style="float: right">
-              version:<span class="current"></span>
-              <span class="latest"><a></a></span>
-            </span>
           </h2>
 
           <p>
@@ -47,7 +43,6 @@
 
     <footer>
       <div class="status" style="float: left"></div>
-      <div class="version" style="float: right"><span class="current"></span></div>
     </footer>
 
     <script type="module">
@@ -60,8 +55,6 @@
         menu:    document.querySelector('main .modal'),
         grid:    document.querySelector('main .grid'),
         keys:    document.body,
-        version: document.querySelectorAll('.version .current'),
-        latest:  document.querySelector('.version .latest'),
         run:     document.querySelector('#run'),
         reset:   document.querySelector('#reset'),
         inspect: document.querySelector('#inspector'),
