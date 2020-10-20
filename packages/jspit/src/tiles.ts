@@ -109,7 +109,7 @@ export class TileGrid {
   createTile(id: string, spec:TileSpec):HTMLElement {
     let tile = this.getTile(id);
     if (!tile) {
-      tile = document.createElement('div');
+      tile = this.el.ownerDocument.createElement('div');
       this.el.appendChild(tile)
       tile.id = this.tileID(id)
     }
@@ -233,7 +233,7 @@ export class TileGrid {
   spatialIndex:TileSpatialIndex = new TileMortonIndex()
 
   tilesAtPoint(clientX:number, clientY:number) {
-    return document
+    return this.el.ownerDocument
       .elementsFromPoint(clientX, clientY)
       .filter(el => el.classList.contains('tile')) as HTMLElement[];
   }
