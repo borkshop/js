@@ -317,7 +317,25 @@ export class TileInspector {
   ) {
     this.grid = grid;
     this.handler = handler;
-    this.grid.el.addEventListener('mousemove', this.mouseMoved.bind(this));
+    this.enable();
+  }
+
+  #listener?: (ev:MouseEvent) => void
+
+  enable() {
+    if (this.#listener) return;
+    this.#inspectingIDs = '';
+    this.handler({pos: {x: NaN, y: NaN}, tiles: []});
+    this.#listener = this.mouseMoved.bind(this);
+    this.grid.el.addEventListener('mousemove', this.#listener);
+  }
+
+  disable() {
+    if (!this.#listener) return;
+    this.grid.el.removeEventListener('mousemove', this.#listener);
+    this.#listener = undefined;
+    this.#inspectingIDs = '';
+    this.handler({pos: {x: NaN, y: NaN}, tiles: []});
   }
 
   #inspectingIDs:string = ''
