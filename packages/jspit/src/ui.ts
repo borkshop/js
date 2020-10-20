@@ -1,4 +1,5 @@
 export interface Bindings {
+  doc: Document,
   version: HTMLElement|NodeListOf<HTMLElement>,
   latest: HTMLElement,
 }
@@ -29,8 +30,8 @@ function parseVersion(doc:Document, url:string|urlParts):string {
   return parts[parts.length - 2] || '';
 }
 
-function getVersion():string {
-  return parseVersion(document, window.location);
+function getVersion(doc:Document):string {
+  return parseVersion(doc, window.location);
 }
 
 export async function getLatestVersion(url:string):Promise<string> {
@@ -46,9 +47,12 @@ export async function getLatestVersion(url:string):Promise<string> {
 }
 
 export async function show(bound:Partial<Bindings>, should:boolean, running:boolean) {
-  document.body.classList.toggle('showUI', should);
-  document.body.classList.toggle('running', running);
-  const version = getVersion() || 'DEV';
+  let version = 'DEV';
+  if (bound.doc) {
+    bound.doc.body.classList.toggle('showUI', should);
+    bound.doc.body.classList.toggle('running', running);
+    version = getVersion(bound.doc);
+  }
   if (bound.version) {
     if (bound.version instanceof HTMLElement) bound.version.innerText = version;
     else for (const el of bound.version) el.innerText = version;
