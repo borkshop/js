@@ -414,9 +414,11 @@ function thenInput():boolean {
   if (have) for (const mover of grid.queryTiles({className: ['mover', 'input']}))
     grid.setTileData(mover, 'move', move);
 
+  const playerAt: Point[] = [];
+
   processMoves({grid, kinds: {
     // solid movers must stay on particle support and are subject to collison
-    solid: ({at}):boolean => {
+    solid: ({mover, at, to}):boolean => {
 
       // TODO restore dig ability
       // if (!at.length) {
@@ -439,12 +441,20 @@ function thenInput():boolean {
       if (at.some(h => h.classList.contains('solid'))) return false;
       // TODO interaction
 
+      if (mover.classList.contains('input')) playerAt.push(to);
       return true;
     }
   }});
 
-  // NOTE it's ¡Inconceivable! that the player can move out of viewport, so we
-  // don't afford that with any sort of bounds check adjustment here
+  const c = playerAt.reduce((c, p) => {
+    if (isNaN(c.x) || isNaN(c.y)) return p;
+    return {x: (c.x + p.x)/2, y: (c.y + p.y)/2};
+  }, {x: NaN, y: NaN});
+  if (!isNaN(c.x) && !isNaN(c.y)) {
+    const {x: vx, y: vy, w, h} = grid.viewport;
+    if (c.x <= vx || c.y <= vy || c.x+1 >= vx + w || c.y+1 >= vy + h)
+      grid.viewPoint = c;
+  }
 
   return true;
 }
