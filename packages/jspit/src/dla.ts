@@ -29,10 +29,7 @@ export class DLA {
     genRate:   1,
     playRate:  100,
 
-    bounds: {
-      x: -15, y: -15,
-      w:  30, h:  30,
-    },
+    bounds: {x: 0, y: 0, w: 0, h: 0},
 
     seeds: [
       {x: 0, y: 0},
@@ -85,9 +82,17 @@ export class DLA {
     }
     if (!isNaN(center.x) && !isNaN(center.y)) this.grid.centerViewOn(center);
 
+    if (!(this.config.bounds.w*this.config.bounds.h)) {
+      const {width, height} = this.grid.viewport;
+      this.config.bounds = {
+        x: -width/2, y: -height/2,
+        w:  width,   h:  height,
+      };
+    }
+
     if (!this.config.particleLimit) {
       const {bounds: {w, h}} = this.config;
-      this.config.particleLimit = (w * h)/2;
+      this.config.particleLimit = (w * h)/3;
     } else if (this.config.particleLimit < 1) {
       const {bounds: {w, h}, particleLimit} = this.config;
       this.config.particleLimit = (w * h)*particleLimit;
@@ -95,7 +100,7 @@ export class DLA {
 
     if (!this.config.stepLimit) {
       const {bounds: {w, h}} = this.config;
-      this.config.stepLimit = w + h;
+      this.config.stepLimit = Math.max(w, h) / 2;
     }
   }
 

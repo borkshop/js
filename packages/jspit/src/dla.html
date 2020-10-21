@@ -59,6 +59,9 @@
             <dt><label for="dla-bounds">
               Bounds:
               <input id="dla-bounds" name="bounds" size="32" type="text" />
+              <div class="tip">
+                defaults to viewport size
+              </div>
             </label></dt>
 
             <dt><label for="dla-seeds">
@@ -119,7 +122,7 @@
               Terminate after
               <input id="dla-stepLimit" name="stepLimit" type="number" min="0" /> steps
               <div class="tip">
-                if set to <code>0</code> then <code>bounds.w + bounds.h</code> is used.
+                if set to <code>0</code> then <code>max(bounds.w, bounds.h)/2</code> is used.
               </div>
             </label></dd>
 
@@ -127,7 +130,7 @@
               Stop spawning after
               <input id="dla-particleLimit" name="particleLimit" type="number" min="0" />
               <div class="tip">
-                if set to <code>0</code> then <code>(bounds.w * bounds.h)/2</code> is used.
+                if set to <code>0</code> then <code>(bounds.w * bounds.h)/3</code> is used.
               </div>
             </label></dd>
 
