@@ -4,7 +4,7 @@ export interface Point {
 }
 
 export interface TileQuery {
-  tag?: string|string[]
+  className?: string|string[]
 
   // NOTE may start with ^ $ or * to encode a startsWith/endsWith/contains match
   id?: string
@@ -17,9 +17,9 @@ export interface TileQuery {
 export interface TileSpec {
   pos?: Point
 
-  // TODO rename these to align with CSS
-  tag?: string|string[]
+  className?: string|string[]
   text?: string
+  // TODO rename these to align with CSS
   fg?: string
   bg?: string
 
@@ -118,15 +118,16 @@ export class TileGrid {
   }
 
   updateTile(tile:HTMLElement, spec:TileSpec) {
+    if (spec.pos) this.moveTileTo(tile, spec.pos);
     if (spec.text) tile.innerText = spec.text;
+    if (spec.className) {
+      tile.className = 'tile';
+      if (typeof spec.className === 'string') tile.classList.add(spec.className);
+      else if (Array.isArray(spec.className))
+        for (const name of spec.className) tile.classList.add(name);
+    } else if (!tile.className) tile.className = 'tile';
     if (spec.fg) tile.style.color = spec.fg;
     if (spec.bg) tile.style.backgroundColor = spec.bg;
-    if (spec.tag) {
-      tile.className = 'tile';
-      if (typeof spec.tag === 'string') tile.classList.add(spec.tag);
-      else if (Array.isArray(spec.tag)) for (const tag of spec.tag) tile.classList.add(tag);
-    } else if (!tile.className) tile.className = 'tile';
-    if (spec.pos) this.moveTileTo(tile, spec.pos);
     if (spec.data) {
       for (const name in tile.dataset)
         if (!(name in spec.data))
@@ -186,10 +187,10 @@ export class TileGrid {
       addAttr(`data-${name}`, match, value);
     }
 
-    // TODO how to support tag negation
-    const tagClasses = typeof query?.tag === 'string'
-      ? `.${query.tag}` : Array.isArray(query?.tag)
-      ? query?.tag.map(t => `.${t}`).join('')
+    // TODO how to support className negation
+    const tagClasses = typeof query?.className === 'string'
+      ? `.${query.className}` : Array.isArray(query?.className)
+      ? query?.className.map(t => `.${t}`).join('')
       : '';
 
     return `.tile${tagClasses}${attrs.map(attr => `[${attr}]`).join('')}`;
@@ -239,7 +240,7 @@ export class TileGrid {
       .filter(el => el.classList.contains('tile')) as HTMLElement[];
   }
 
-  tilesAt(at:Point, ...tag:string[]):HTMLElement[] {
+  tilesAt(at:Point, ...className:string[]):HTMLElement[] {
     let tiles : HTMLElement[] = [];
     const ids = this.spatialIndex.tilesAt(at);
     if (!ids) return tiles;
@@ -247,8 +248,8 @@ export class TileGrid {
       const el = this.el.querySelector(`#${id}`);
       if (el) tiles.push(el as HTMLElement);
     }
-    if (tag.length) tiles = tiles
-      .filter(el => tag.every(t => el.classList.contains(t)));
+    if (className.length) tiles = tiles
+      .filter(el => className.every(t => el.classList.contains(t)));
     return tiles;
   }
 
@@ -360,7 +361,7 @@ export function dumpTiles({tiles, into, dump}:{
 }) {
   if (!dump) dump = t => {
     let line = `id=${t.id}`
-    line += ` tag=[${Array.from(t.classList).filter(n => n !== 'tile').join(', ')}]`;
+    line += ` class=[${Array.from(t.classList).filter(n => n !== 'tile').join(', ')}]`;
     return line;
   };
 
@@ -377,12 +378,12 @@ export function dumpTiles({tiles, into, dump}:{
 
 export function processMoves(
   grid: TileGrid,
-  tag: string,
+  moverClass: string,
   kinds: {[kind: string]: (grid: TileGrid, mover: HTMLElement, at: HTMLElement[]) => boolean},
 ):void {
   // TODO support grouped resolution and/or priority...
   for (const [kind, may] of Object.entries(kinds)) {
-    for (const mover of grid.queryTiles({tag: [tag, kind]})) {
+    for (const mover of grid.queryTiles({className: [moverClass, kind]})) {
       const move = grid.getTileData(mover, 'move');
       if (!move || typeof move !== 'object') continue;
       if (!(

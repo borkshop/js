@@ -71,9 +71,9 @@ export class DLA {
     const center = {x: NaN, y: NaN};
     for (const pos of seeds) {
       this.grid.createTile(`particle-${++this.particleID}`, {
-        tag: ['particle', 'init'],
         pos,
         text: '·',
+        className: ['particle', 'init'],
       });
       if (isNaN(center.x) || isNaN(center.y)) center.x = pos.x, center.y = pos.y;
       else center.x = (center.x + pos.x)/2, center.y = (center.y + pos.y)/2;
@@ -108,10 +108,10 @@ export class DLA {
     const {seeds} = this.config;
     const pos = seeds[0];
     this.grid.createTile('at', {
-      tag: ['solid', 'mover', 'input'],
       pos,
-      fg: 'var(--dla-player)',
       text: '@',
+      className: ['solid', 'mover', 'input'],
+      fg: 'var(--dla-player)',
     });
   }
 
@@ -131,7 +131,7 @@ export class DLA {
     };
 
     const choosePrior = () => {
-      const prior = this.grid.queryTiles({tag: 'particle'})
+      const prior = this.grid.queryTiles({className: 'particle'})
         .filter(t => !t.classList.contains('live'));
       const tile = prior[Math.floor(Math.random()*prior.length)];
       return this.grid.getTilePosition(tile);
@@ -147,8 +147,8 @@ export class DLA {
     case InitWhere.RandPrior: return choosePrior();
     case InitWhere.RandVoid:  return chooseVoid();
     case InitWhere.RandAny:
-        const nVoid  = this.grid.queryTiles({tag: ['particle', 'void']}).length;
-        const nPrime = this.grid.queryTiles({tag: ['particle', 'prime']}).length;
+        const nVoid  = this.grid.queryTiles({className: ['particle', 'void']}).length;
+        const nPrime = this.grid.queryTiles({className: ['particle', 'prime']}).length;
         const total  = nVoid + nPrime;
         const sVoid  = Math.pow(Math.random(), nVoid  - total * (1 - initAnyBalance));
         const sPrime = Math.pow(Math.random(), nPrime - total *      initAnyBalance);
@@ -163,19 +163,19 @@ export class DLA {
     const {initBase, initArc, particleLimit} = this.config;
 
     const ghost = this.grid.queryTile({
-      tag: 'ghost',
+      className: 'ghost',
       id: '^particle-',
     });
     if (!ghost &&
-       this.grid.queryTiles({tag: 'particle'}).length >= particleLimit) return null;
+       this.grid.queryTiles({className: 'particle'}).length >= particleLimit) return null;
 
     const pos = this.initPlace();
     const heading = Math.PI * (initBase + (Math.random() - 0.5) * initArc);
     const kind = this.anyCell(pos) ? 'prime' : 'void';
     const spec = {
-      tag: ['particle', 'live', kind],
       pos,
       text: '*',
+      className: ['particle', 'live', kind],
       data: {heading},
     };
     if (ghost)
@@ -199,14 +199,14 @@ export class DLA {
       stepLimit,
     } = this.config;
 
-    const havePlayer = !!this.grid.queryTile({tag: ['mover', 'input']});
+    const havePlayer = !!this.grid.queryTile({className: ['mover', 'input']});
 
     const rate = havePlayer ? playRate : genRate;
     this.elapsed += dt
     const n = Math.floor(this.elapsed / rate);
     if (!n) return;
     this.elapsed -= n * rate;
-    let ps = this.grid.queryTiles({tag: ['particle', 'live']});
+    let ps = this.grid.queryTiles({className: ['particle', 'live']});
 
     for (let i = 0; i < n; ++i) {
       ps = ps.filter(p => p.classList.contains('live'));
@@ -277,9 +277,9 @@ export class DLA {
           if (at3.length && !at4.length) {
             // TODO allow for more than 1 step
             this.grid.updateTile(p, {
-              tag: ['particle', 'prime'],
               pos: p4,
               text: '·',
+              className: ['particle', 'prime'],
             });
             continue;
           }
@@ -301,9 +301,9 @@ export class DLA {
             ))
           )) {
             this.grid.updateTile(p, {
-              tag: ['particle', 'void'],
               pos: p3,
               text: '·',
+              className: ['particle', 'void'],
             });
             continue;
           }
@@ -314,8 +314,8 @@ export class DLA {
         // increment step counter, and leave a ghost if limit met or exceeded
         if (steps >= stepLimit) {
           this.grid.updateTile(p, {
-            tag: ['ghost'],
             pos: p1,
+            className: ['ghost'],
           });
         }
       }
@@ -415,7 +415,7 @@ function thenInput():boolean {
   const presses = keys.consumePresses();
 
   let {have, move} = coalesceMoves(presses);
-  if (have) for (const mover of grid.queryTiles({tag: ['mover', 'input']}))
+  if (have) for (const mover of grid.queryTiles({className: ['mover', 'input']}))
     grid.setTileData(mover, 'move', move);
 
   processMoves(grid, 'mover', {
@@ -428,7 +428,7 @@ function thenInput():boolean {
       //   const did = (digSeq.get(aid) || 0) + 1;
       //   digSeq.set(aid, did);
       //   grid.createTile(`particle-placed-${aid}-${did}`, {
-      //     tag: ['particle'],
+      //     className: ['particle'],
       //     pos: to,
       //     fg: 'var(--dla-player)',
       //     text: '·',
@@ -447,7 +447,7 @@ function thenInput():boolean {
     }
   });
 
-  for (const mover of grid.queryTiles({tag: ['mover', 'input']})) {
+  for (const mover of grid.queryTiles({className: ['mover', 'input']})) {
     const pos = grid.getTilePosition(mover);
     grid.nudgeViewTo(pos, DLA.nudgeBy);
   }

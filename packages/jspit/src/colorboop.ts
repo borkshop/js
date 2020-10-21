@@ -9,7 +9,7 @@ function setup(grid:TileGrid) {
   grid.clear();
   grid.createTile('at', {
     text: '@',
-    tag: ['solid', 'mover', 'input'],
+    className: ['solid', 'mover', 'input'],
     pos: {x: 10, y: 10},
   });
 
@@ -39,16 +39,16 @@ function setup(grid:TileGrid) {
   ];
   colors.forEach((color, i) => {
     grid.createTile(`fg-swatch-${color}`, {
-      fg: `var(--${color})`,
-      tag: ['solid', 'swatch', 'fg'],
-      text: '$',
       pos: {x: 5, y: i},
+      text: '$',
+      className: ['solid', 'swatch', 'fg'],
+      fg: `var(--${color})`,
     });
     grid.createTile(`bg-swatch-${color}`, {
-      bg: `var(--${color})`,
-      tag: ['solid', 'swatch', 'bg'],
-      text: '$',
       pos: {x: 15, y: i},
+      text: '$',
+      className: ['solid', 'swatch', 'bg'],
+      bg: `var(--${color})`,
     });
   });
   grid.centerViewOn({x: 10, y: 10});
@@ -101,7 +101,7 @@ function thenInput():boolean {
   if (!grid || !keys) return false;
 
   let {have, move} = coalesceMoves(keys.consumePresses());
-  if (have) for (const mover of grid.queryTiles({tag: ['mover', 'input']}))
+  if (have) for (const mover of grid.queryTiles({className: ['mover', 'input']}))
     grid.setTileData(mover, 'move', move);
   processMoves(grid, 'mover', {
     // solid tiles collide, leading to interaction
@@ -119,7 +119,7 @@ function thenInput():boolean {
       return true;
     },
   });
-  for (const mover of grid.queryTiles({tag: ['mover', 'input']}))
+  for (const mover of grid.queryTiles({className: ['mover', 'input']}))
     grid.nudgeViewTo(grid.getTilePosition(mover), 0.2);
   return true;
 }
