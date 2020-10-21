@@ -169,7 +169,8 @@ export class DLA {
       tag: 'ghost',
       id: '^particle-',
     });
-    if (!ghost && this.particleID >= particleLimit) return null;
+    if (!ghost &&
+       this.grid.queryTiles({tag: 'particle'}).length >= particleLimit) return null;
 
     const pos = this.initPlace();
     const heading = Math.PI * (initBase + (Math.random() - 0.5) * initArc);
