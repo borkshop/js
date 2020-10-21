@@ -9,5 +9,8 @@
     "start": "snowpack dev",
     "build": "snowpack build"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "devDependencies": {
+    "@types/resize-observer-browser": "^0.1.4"
+  }
 }

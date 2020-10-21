@@ -83,9 +83,12 @@ export class TileGrid {
 
   idspace = 'tile' // TODO autogen this
 
+  #obs : ResizeObserver
+
   constructor(el:HTMLElement) {
     this.el = el;
-    // TODO handle resize events
+    this.#obs = new ResizeObserver(() => this._updateSize());
+    this.#obs.observe(this.el);
   }
 
   get tileSize(): Point {
@@ -126,6 +129,15 @@ export class TileGrid {
   }
 
   set viewPoint({x, y}:Point) {
+    this.#viewPoint = {x, y};
+    this._updateSize();
+  }
+
+  #viewPoint?: Point
+
+  _updateSize() {
+    if (!this.#viewPoint) return;
+    const {x, y} = this.#viewPoint;
     const {w, h} = this.viewSize;
     this.viewOffset = {x: x - w / 2, y: y - h / 2};
   }
