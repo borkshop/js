@@ -352,3 +352,20 @@ export class TileInspector {
     this.handler({pos, tiles});
   }
 }
+
+export function dumpTiles({tiles, into, dump}:{
+  tiles: HTMLElement[],
+  into: HTMLTextAreaElement,
+  dump?: (tile: HTMLElement)=>string
+}) {
+  if (!dump) dump = t => {
+    let line = `id=${t.id}`
+    line += ` tag=[${Array.from(t.classList).filter(n => n !== 'tile').join(', ')}]`;
+    return line;
+  };
+
+  const lines = tiles.map(dump);
+  into.value = lines.join('\n');
+  into.rows = lines.length;
+  into.cols = lines.reduce((max, line) => Math.max(max, line.length), 0);
+}

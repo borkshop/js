@@ -1,5 +1,8 @@
 import {bindVars} from './config';
-import {Point, TileGrid, TileInspector, TileInspectEvent} from './tiles';
+import {
+  Point, TileGrid,
+  TileInspector, TileInspectEvent, dumpTiles,
+} from './tiles';
 import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
@@ -409,18 +412,7 @@ function onInsepcted({pos: {x, y}, tiles}:TileInspectEvent) {
   if (bound.inspectorAt) {
     bound.inspectorAt.innerText = `${isNaN(x) ? 'X' : Math.floor(x)},${isNaN(y) ? 'Y' : Math.floor(y)}`;
   }
-  if (bound.inspector) {
-    // TODO a <select> might be neat, but would need more than an ephemeral
-    // "hold space" interaction mode
-    const lines = tiles.map(t => {
-      let line = `id=${t.id}`
-      line += ` tag=[${Array.from(t.classList).filter(n => n !== 'tile').join(', ')}]`;
-      return line;
-    });
-    bound.inspector.value = lines.join('\n');
-    bound.inspector.rows = lines.length;
-    bound.inspector.cols = lines.reduce((max, line) => Math.max(max, line.length), 0);
-  }
+  if (bound.inspector) dumpTiles({tiles, into: bound.inspector});
 }
 
 export function init(bind:Bindings) {
