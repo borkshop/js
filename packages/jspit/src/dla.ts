@@ -111,7 +111,6 @@ export class DLA {
       pos,
       text: '@',
       className: ['solid', 'mover', 'input'],
-      fg: 'var(--dla-player)',
     });
   }
 

@@ -20,6 +20,10 @@ html {
   visibility: visible;
 }
 
+.grid .mover.input {
+  color: var(--dla-player);
+}
+
 .grid .tile.particle {
   background-color: var(--light-grey);
   color:            var(--dark-white);
