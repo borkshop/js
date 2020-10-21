@@ -100,14 +100,14 @@ export class ColorBoop {
 
   run(
     readKeys:() => Array<[string, number]>,
-    updated:(grid:TileGrid)=>void,
+    updated?:(grid:TileGrid)=>void,
   ) {
     if (this.running) return;
     this.running = true;
     everyFrame(schedule(
       () => this.running,
       {every: ColorBoop.inputRate, then: () => {
-        if (this.consumeInput(readKeys())) updated(this.grid);
+        if (this.consumeInput(readKeys()) && updated) updated(this.grid);
         return true;
       },
     }));
@@ -117,7 +117,6 @@ export class ColorBoop {
 // injected DOM parts
 interface Bindings extends UIBindings {
   grid: HTMLElement,
-  status: HTMLElement
   keys: HTMLElement
   run: HTMLButtonElement
   reset: HTMLButtonElement
@@ -131,8 +130,6 @@ interface State {
   world: ColorBoop,
 }
 export const state:Partial<State> = {};
-
-import {html, render} from 'lit-html';
 
 export function init(bind:Bindings) {
   Object.assign(bound, bind);
@@ -169,22 +166,9 @@ function playPause() {
     if (bound.reset) bound.reset.disabled = false;
   }
 
-  const {world, grid, keys} = state;
+  const {world, keys} = state;
   if (world.running) world.running = false;
   else world.run(
     () => keys?.consumePresses() || [],
-    () => {
-      if (!grid || !bound.status) return;
-      const at = grid.getTile('at');
-      if (!at) {
-        render(html`no player`, bound.status);
-        return;
-      }
-      const {x, y} = grid.getTilePosition(at);
-      const {x: w, y: h} = grid.tileSize;
-      const {x: vx, y: vy, width: vw, height: vh} = grid.viewport;
-      render(html`
-        player@${x},${y}+${w}+${h} view@${vx},${vy}+${Math.floor(vw)}+${Math.floor(vh)}
-      `, bound.status);
-    });
+  );
 }
