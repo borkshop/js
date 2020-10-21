@@ -16,6 +16,10 @@ const enum InitWhere {
   RandAny,
 }
 
+function nextPoint(it:Generator<Point>):Point {
+  return it.next().value || {x: NaN, y: NaN};
+}
+
 export class DLA {
   // rate at which to coalesce and process movement input
   static inputRate = 100
@@ -111,28 +115,30 @@ export class DLA {
     });
   }
 
-  initPlace():Point {
-    const {bounds, seeds, initWhere: {value: where}, initAnyBalance} = this.config;
-
-    const chooseVoid = () => {
-      while (true) {
-        const pos = {
-          x: bounds.x + Math.random() * bounds.w,
-          y: bounds.y + Math.random() * bounds.h,
-        };
-        const at = this.grid.tilesAt(pos, 'particle')
-          .filter(t => !t.classList.contains('live'));
-        if (!at.length) return pos;
-      }
-    };
-
-    const choosePrior = () => {
-      const prior = this.grid.queryTiles({className: 'particle'})
+  *chooseVoid() {
+    const {bounds} = this.config;
+    while (true) {
+      const pos = {
+        x: bounds.x + Math.random() * bounds.w,
+        y: bounds.y + Math.random() * bounds.h,
+      };
+      const at = this.grid.tilesAt(pos, 'particle')
         .filter(t => !t.classList.contains('live'));
-      const tile = prior[Math.floor(Math.random()*prior.length)];
-      return this.grid.getTilePosition(tile);
-    };
+      if (!at.length) yield pos;
+    }
+  }
 
+  *choosePrior() {
+    const prior = this.grid.queryTiles({className: 'particle'})
+      .filter(t => !t.classList.contains('live'));
+    while (true) {
+      const tile = prior[Math.floor(Math.random()*prior.length)];
+      yield this.grid.getTilePosition(tile);
+    }
+  }
+
+  initPlace():Point {
+    const {seeds, initWhere: {value: where}, initAnyBalance} = this.config;
     switch (where) {
 
     case InitWhere.Seed:
@@ -140,15 +146,15 @@ export class DLA {
     case InitWhere.RandSeed:
       return seeds[Math.floor(Math.random()*seeds.length)];
 
-    case InitWhere.RandPrior: return choosePrior();
-    case InitWhere.RandVoid:  return chooseVoid();
+    case InitWhere.RandPrior: return nextPoint(this.choosePrior());
+    case InitWhere.RandVoid:  return nextPoint(this.chooseVoid());
     case InitWhere.RandAny:
-        const nVoid  = this.grid.queryTiles({className: ['particle', 'void']}).length;
-        const nPrime = this.grid.queryTiles({className: ['particle', 'prime']}).length;
-        const total  = nVoid + nPrime;
-        const sVoid  = Math.pow(Math.random(), nVoid  - total * (1 - initAnyBalance));
-        const sPrime = Math.pow(Math.random(), nPrime - total *      initAnyBalance);
-        return sPrime >= sVoid ? choosePrior() : chooseVoid();
+      const nVoid  = this.grid.queryTiles({className: ['particle', 'void']}).length;
+      const nPrime = this.grid.queryTiles({className: ['particle', 'prime']}).length;
+      const total  = nVoid + nPrime;
+      const sVoid  = Math.pow(Math.random(), nVoid  - total * (1 - initAnyBalance));
+      const sPrime = Math.pow(Math.random(), nPrime - total *      initAnyBalance);
+      return nextPoint(sPrime >= sVoid ? this.choosePrior() : this.chooseVoid());
 
     default:
       throw new Error(`invalid initWhere value ${where}`);
