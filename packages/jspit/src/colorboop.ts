@@ -1,4 +1,4 @@
-import {TileGrid, TileSpec, processMoves} from './tiles';
+import {TileGrid, processMoves} from './tiles';
 import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
@@ -42,13 +42,17 @@ function setup(grid:TileGrid) {
       pos: {x: 5, y: i},
       text: '$',
       className: ['solid', 'swatch', 'fg'],
-      fg: `var(--${color})`,
+      style: {
+        color: `var(--${color})`,
+      },
     });
     grid.createTile(`bg-swatch-${color}`, {
       pos: {x: 15, y: i},
       text: '$',
       className: ['solid', 'swatch', 'bg'],
-      bg: `var(--${color})`,
+      style: {
+        backgroundColor: `var(--${color})`,
+      },
     });
   });
   grid.centerViewOn({x: 10, y: 10});
@@ -109,10 +113,10 @@ function thenInput():boolean {
       const hits = at.filter(h => h.classList.contains('solid'));
       if (hits.length) {
         for (const hit of hits) if (hit.classList.contains('swatch')) {
-          const spec : TileSpec = {};
-          if      (hit.classList.contains('fg')) spec.fg = hit.style.color;
-          else if (hit.classList.contains('bg')) spec.bg = hit.style.backgroundColor;
-          grid.updateTile(mover, spec);
+          const style: Partial<CSSStyleDeclaration> = {};
+          if (hit.style.color) style.color = hit.style.color;
+          if (hit.style.backgroundColor) style.backgroundColor = hit.style.backgroundColor;
+          grid.updateTile(mover, {style});
         }
         return false;
       }

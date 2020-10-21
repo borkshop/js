@@ -16,13 +16,9 @@ export interface TileQuery {
 
 export interface TileSpec {
   pos?: Point
-
   className?: string|string[]
   text?: string
-  // TODO rename these to align with CSS
-  fg?: string
-  bg?: string
-
+  style?: Partial<CSSStyleDeclaration>
   data?: TileData
 }
 
@@ -126,8 +122,7 @@ export class TileGrid {
       else if (Array.isArray(spec.className))
         for (const name of spec.className) tile.classList.add(name);
     } else if (!tile.className) tile.className = 'tile';
-    if (spec.fg) tile.style.color = spec.fg;
-    if (spec.bg) tile.style.backgroundColor = spec.bg;
+    Object.assign(tile.style, spec.style);
     if (spec.data) {
       for (const name in tile.dataset)
         if (!(name in spec.data))
