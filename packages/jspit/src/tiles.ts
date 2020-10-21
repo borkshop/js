@@ -371,11 +371,15 @@ export function dumpTiles({tiles, into, dump}:{
   }
 }
 
-export function processMoves(
+export function processMoves({
+  grid,
+  moverClass = 'mover',
+  kinds,
+}:{
   grid: TileGrid,
-  moverClass: string,
+  moverClass?: string,
   kinds: {[kind: string]: (grid: TileGrid, mover: HTMLElement, at: HTMLElement[]) => boolean},
-):void {
+}):void {
   // TODO support grouped resolution and/or priority...
   for (const [kind, may] of Object.entries(kinds)) {
     for (const mover of grid.queryTiles({className: [moverClass, kind]})) {

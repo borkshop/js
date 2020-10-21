@@ -107,7 +107,7 @@ function thenInput():boolean {
   let {have, move} = coalesceMoves(keys.consumePresses());
   if (have) for (const mover of grid.queryTiles({className: ['mover', 'input']}))
     grid.setTileData(mover, 'move', move);
-  processMoves(grid, 'mover', {
+  processMoves({grid, kinds: {
     // solid tiles collide, leading to interaction
     solid: (grid: TileGrid, mover: HTMLElement, at: HTMLElement[]) => {
       const hits = at.filter(h => h.classList.contains('solid'));
@@ -122,7 +122,7 @@ function thenInput():boolean {
       }
       return true;
     },
-  });
+  }});
   for (const mover of grid.queryTiles({className: ['mover', 'input']}))
     grid.nudgeViewTo(grid.getTilePosition(mover), 0.2);
   return true;
