@@ -135,24 +135,66 @@ export class DLA {
     }
   }
 
-  initPlace():Point {
+  initPlace():Point&{heading:number} {
+    const facing = (p: Point[], a: Point[]):Point&{heading:number} => {
+      const pads = p.map(pt => a
+        .map(({x, y}, i) => [i, Math.pow(pt.x - x, 2) + Math.pow(pt.y - y, 2)]));
+      let pi=NaN, ai=NaN, qpa=NaN;
+      for (let i = 0; i < pads.length; ++i) {
+        const jqs = pads[i];
+        for (const [j, q] of jqs)
+          if (isNaN(qpa) || q < qpa)
+            pi=i, ai=j, qpa=q;
+      }
+      const pos = p[pi], at=a[ai];
+      const heading = Math.atan2(at.x - pos.x, at.y - pos.y);
+      return {heading, ...pos};
+    };
+    const takePoints = (n:number, g:Generator<Point>):Point[] => {
+      const r: Point[] = [];
+      for (let i = 0; i < n; ++i) {
+        const {value, done} = g.next();
+        if (value) r.push(value)
+        if (done) break;
+      }
+      return r;
+    };
+
+    const taken = 10;
     const {seeds, initWhere: {value: where}, initAnyBalance} = this.config;
     switch (where) {
 
     case InitWhere.Seed:
-      return seeds[0]; // TODO round robin all seeds?
+      // TODO round robin all seeds?
+      return facing(seeds[0], takePoints(taken, this.chooseVoid()));
     case InitWhere.RandSeed:
-      return seeds[Math.floor(Math.random()*seeds.length)];
+      return facing(seeds, takePoints(taken, this.chooseVoid()));
 
-    case InitWhere.RandPrior: return nextPoint(this.choosePrior());
-    case InitWhere.RandVoid:  return nextPoint(this.chooseVoid());
+    case InitWhere.RandPrior:
+      return facing(
+        takePoints(taken, this.choosePrior()),
+        takePoints(taken, this.chooseVoid()),
+      );
+    case InitWhere.RandVoid:
+      return facing(
+        takePoints(taken, this.chooseVoid()),
+        takePoints(taken, this.choosePrior()),
+      );
     case InitWhere.RandAny:
       const nVoid  = this.grid.queryTiles({className: ['particle', 'void']}).length;
       const nPrime = this.grid.queryTiles({className: ['particle', 'prime']}).length;
       const total  = nVoid + nPrime;
       const sVoid  = Math.pow(Math.random(), nVoid  - total * (1 - initAnyBalance));
       const sPrime = Math.pow(Math.random(), nPrime - total *      initAnyBalance);
-      return nextPoint(sPrime >= sVoid ? this.choosePrior() : this.chooseVoid());
+      return sPrime >= sVoid
+        ? facing(
+          takePoints(taken, this.choosePrior()),
+          takePoints(taken, this.chooseVoid()),
+        )
+        : facing(
+          takePoints(taken, this.chooseVoid()),
+          takePoints(taken, this.choosePrior()),
+        );
 
     default:
       throw new Error(`invalid initWhere value ${where}`);
@@ -169,7 +211,7 @@ export class DLA {
     if (!ghost &&
        this.grid.queryTiles({className: 'particle'}).length >= particleLimit) return null;
 
-    const pos = this.initPlace();
+    const {heading, ...pos} = this.initPlace();
     const kind = this.anyCell(pos) ? 'prime' : 'void';
 
     const it = kind === 'prime' ? this.chooseVoid() : this.choosePrior();
@@ -180,7 +222,6 @@ export class DLA {
           Math.pow(to.x - pos.x, 2) + Math.pow(to.y - pos.y, 2)
       ) to = pt;
     }
-    const heading = Math.atan2(to.x - pos.x, to.y - pos.y);
 
     const spec = {
       pos,
