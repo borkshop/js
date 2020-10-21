@@ -255,12 +255,6 @@ export class TileGrid {
     return pt;
   }
 
-  moveTileBy(tile:HTMLElement, {x: dx, y: dy}:Point) {
-    let {x, y} = this.getTilePosition(tile);
-    x += dx, y += dy;
-    return this.moveTileTo(tile, {x, y});
-  }
-
   spatialIndex:TileSpatialIndex = new TileMortonIndex()
 
   tilesAtPoint(clientX:number, clientY:number) {
