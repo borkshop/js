@@ -1,4 +1,4 @@
-import {TileGrid, TileInspector, TileSpec} from './tiles';
+import {TileGrid, TileSpec} from './tiles';
 import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
@@ -121,7 +121,6 @@ interface Bindings extends UIBindings {
   keys: HTMLElement
   run: HTMLButtonElement
   reset: HTMLButtonElement
-  inspect: HTMLElement
 }
 export const bound:Partial<Bindings> = {};
 
@@ -138,15 +137,7 @@ import {html, render} from 'lit-html';
 export function init(bind:Bindings) {
   Object.assign(bound, bind);
 
-  if (bound.grid) {
-    state.grid = new TileGrid(bound.grid);
-    new TileInspector(state.grid, ({pos, tiles}) => {
-      if (bound.inspect) render(tiles.length
-        ? html`@${pos.x},${pos.y} ${tiles.map(({id}) => id)}`
-        : html`// mouse-over a tile to inspect it`,
-        bound.inspect)
-    });
-  }
+  if (bound.grid) state.grid = new TileGrid(bound.grid);
 
   if (bound.keys) state.keys = new KeyMap(bound.keys, (ev:KeyboardEvent):boolean => {
     if (ev.key === 'Escape') {
