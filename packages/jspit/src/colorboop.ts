@@ -124,8 +124,12 @@ function thenInput():boolean {
       return true;
     },
   }});
-  for (const mover of grid.queryTiles({className: ['mover', 'input']}))
-    grid.nudgeViewTo(grid.getTilePosition(mover), 0.2);
+  for (const mover of grid.queryTiles({className: ['mover', 'input']})) {
+    const {x, y} = grid.getTilePosition(mover);
+    const {x: vx, y: vy, width, height} = grid.viewport;
+    if (x < vx || y < vy || x >= vx + width || y >= vy + height)
+      grid.centerViewOn({x, y});
+  }
   return true;
 }
 

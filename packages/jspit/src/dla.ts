@@ -20,9 +20,6 @@ export class DLA {
   // rate at which to coalesce and process movement input
   static inputRate = 100
 
-  // proportion to scroll viewport by when at goes outside
-  static nudgeBy = 0.2
-
   static config = {
     genRate:   1,
     playRate:  100,
@@ -446,10 +443,8 @@ function thenInput():boolean {
     }
   }});
 
-  for (const mover of grid.queryTiles({className: ['mover', 'input']})) {
-    const pos = grid.getTilePosition(mover);
-    grid.nudgeViewTo(pos, DLA.nudgeBy);
-  }
+  // NOTE it's ¡Inconceivable! that the player can move out of viewport, so we
+  // don't afford that with any sort of bounds check adjustment here
 
   return true;
 }

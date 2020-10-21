@@ -281,22 +281,6 @@ export class TileGrid {
     x -= width / 2, y -= height / 2;
     return this.moveViewTo({x, y});
   }
-
-  nudgeViewTo({x, y}:Point, nudge:Point|number) {
-    let {x: vx, y: vy, width, height} = this.viewport;
-    let nx = width, ny = height;
-    if (typeof nudge === 'number') nx *= nudge,   ny *= nudge;
-    else                           nx  = nudge.x, ny  = nudge.y;
-    while (true) {
-      const dx = x < vx ? -1 : x > vx + width ? 1 : 0;
-      const dy = y < vy ? -1 : y > vy + height ? 1 : 0;
-      if      (dx < 0) vx -= nx;
-      else if (dx > 0) vx += nx;
-      else if (dy < 0) vy -= ny;
-      else if (dy > 0) vy += ny;
-      else             return this.moveViewTo({x: vx, y: vy});
-    }
-  }
 }
 
 export interface TileInspectEvent {
