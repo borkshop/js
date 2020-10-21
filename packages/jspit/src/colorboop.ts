@@ -1,4 +1,4 @@
-import {TileGrid, TileSpec} from './tiles';
+import {TileGrid, TileSpec, processMoves} from './tiles';
 import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
@@ -45,7 +45,7 @@ export class ColorBoop {
     this.grid.clear();
     this.grid.createTile('at', {
       text: '@',
-      tag: ['solid', 'mind', 'keyMove'],
+      tag: ['solid', 'mover', 'input'],
       pos: {x: 10, y: 10},
     });
     this.colors.forEach((color, i) => {
@@ -64,54 +64,6 @@ export class ColorBoop {
     });
     this.grid.centerViewOn({x: 10, y: 10});
   }
-
-  consumeInput(presses: Array<[string, number]>):boolean {
-    const movers = this.grid.queryTiles({tag: 'keyMove'});
-    if (!movers.length) return false;
-    if (movers.length > 1) throw new Error(`ambiguous ${movers.length}-mover situation`);
-    const actor = movers[0];
-
-    let {have, move} = coalesceMoves(presses);
-    if (!have) return false;
-
-    const pos = this.grid.getTilePosition(actor);
-    const targ = {x: pos.x + move.x, y: pos.y + move.y};
-
-    // solid tiles collide
-    if (actor.classList.contains('solid')) {
-      const hits = this.grid.tilesAt(targ, 'solid');
-      if (hits.length) {
-        for (const hit of hits) if (hit.classList.contains('swatch')) {
-          const spec : TileSpec = {};
-          if      (hit.classList.contains('fg')) spec.fg = hit.style.color;
-          else if (hit.classList.contains('bg')) spec.bg = hit.style.backgroundColor;
-          this.grid.updateTile(actor, spec)
-        }
-        return true;
-      }
-    }
-
-    this.grid.moveTileTo(actor, targ);
-    this.grid.nudgeViewTo(targ, ColorBoop.nudgeBy);
-    return true;
-  }
-
-  running = false
-
-  run(
-    readKeys:() => Array<[string, number]>,
-    updated?:(grid:TileGrid)=>void,
-  ) {
-    if (this.running) return;
-    this.running = true;
-    everyFrame(schedule(
-      () => this.running,
-      {every: ColorBoop.inputRate, then: () => {
-        if (this.consumeInput(readKeys()) && updated) updated(this.grid);
-        return true;
-      },
-    }));
-  }
 }
 
 // injected DOM parts
@@ -128,6 +80,7 @@ interface State {
   grid: TileGrid,
   keys: KeyMap,
   world: ColorBoop,
+  running: boolean,
 }
 export const state:Partial<State> = {};
 
@@ -141,13 +94,13 @@ export function init(bind:Bindings) {
       if (ev.type === 'keydown') playPause();
       return false;
     }
-    if (!state.world?.running) return false;
+    if (!state.running) return false;
     return !ev.altKey && !ev.ctrlKey && !ev.metaKey;
   });
 
   bound.run?.addEventListener('click', playPause);
   bound.reset?.addEventListener('click', () => {
-    if (state.world) state.world.running = false;
+    if (state.world) state.running = false;
     state.world = undefined;
     if (bound.reset) bound.reset.disabled = true;
     showUI(bound, false, false);
@@ -156,19 +109,49 @@ export function init(bind:Bindings) {
   showUI(bound, false, false);
 }
 
+function thenInput():boolean {
+  const {keys, grid} = state;
+  if (!grid || !keys) return false;
+
+  let {have, move} = coalesceMoves(keys.consumePresses());
+  if (have) for (const mover of grid.queryTiles({tag: ['mover', 'input']}))
+    grid.setTileData(mover, 'move', move);
+  processMoves(grid, 'mover', {
+    // solid tiles collide, leading to interaction
+    solid: (grid: TileGrid, mover: HTMLElement, at: HTMLElement[]) => {
+      const hits = at.filter(h => h.classList.contains('solid'));
+      if (hits.length) {
+        for (const hit of hits) if (hit.classList.contains('swatch')) {
+          const spec : TileSpec = {};
+          if      (hit.classList.contains('fg')) spec.fg = hit.style.color;
+          else if (hit.classList.contains('bg')) spec.bg = hit.style.backgroundColor;
+          grid.updateTile(mover, spec);
+        }
+        return false;
+      }
+      return true;
+    },
+  });
+  for (const mover of grid.queryTiles({tag: ['mover', 'input']}))
+    grid.nudgeViewTo(grid.getTilePosition(mover), ColorBoop.nudgeBy);
+  return true;
+}
+
 function playPause() {
   if (!state.grid) return;
 
-  showUI(bound, true, !state.world?.running);
+  showUI(bound, true, !state.running);
 
   if (!state.world) {
     state.world = new ColorBoop(state.grid);
     if (bound.reset) bound.reset.disabled = false;
   }
 
-  const {world, keys} = state;
-  if (world.running) world.running = false;
-  else world.run(
-    () => keys?.consumePresses() || [],
-  );
+  if (state.running) state.running = false; else {
+    state.running = true;
+    everyFrame(schedule(
+      () => !!state.running,
+      {every: ColorBoop.inputRate, then: thenInput},
+    ));
+  }
 }
