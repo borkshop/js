@@ -45,8 +45,6 @@ export class DLA {
       ],
     },
     initAnyBalance: 0.25,
-    initBase: 0,
-    initArc:  2.0,
 
     turnLeft:  0.1,
     turnRight: 0.1,
@@ -162,7 +160,7 @@ export class DLA {
   }
 
   spawn():HTMLElement|null {
-    const {initBase, initArc, particleLimit} = this.config;
+    const {particleLimit} = this.config;
 
     const ghost = this.grid.queryTile({
       className: 'ghost',
@@ -172,8 +170,18 @@ export class DLA {
        this.grid.queryTiles({className: 'particle'}).length >= particleLimit) return null;
 
     const pos = this.initPlace();
-    const heading = Math.PI * (initBase + (Math.random() - 0.5) * initArc);
     const kind = this.anyCell(pos) ? 'prime' : 'void';
+
+    const it = kind === 'prime' ? this.chooseVoid() : this.choosePrior();
+    let to = nextPoint(it);
+    for (let i = 0; i < 3; ++i) {
+      const pt = nextPoint(it);
+      if (Math.pow(pt.x - pos.x, 2) + Math.pow(pt.y - pos.y, 2) <
+          Math.pow(to.x - pos.x, 2) + Math.pow(to.y - pos.y, 2)
+      ) to = pt;
+    }
+    const heading = Math.atan2(to.x - pos.x, to.y - pos.y);
+
     const spec = {
       pos,
       text: '*',
