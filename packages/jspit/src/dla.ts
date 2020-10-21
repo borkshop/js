@@ -84,6 +84,19 @@ export class DLA {
       else center.x = (center.x + pos.x)/2, center.y = (center.y + pos.y)/2;
     }
     if (!isNaN(center.x) && !isNaN(center.y)) this.grid.centerViewOn(center);
+
+    if (!this.config.particleLimit) {
+      const {bounds: {w, h}} = this.config;
+      this.config.particleLimit = (w * h)/2;
+    } else if (this.config.particleLimit < 1) {
+      const {bounds: {w, h}, particleLimit} = this.config;
+      this.config.particleLimit = (w * h)*particleLimit;
+    }
+
+    if (!this.config.stepLimit) {
+      const {bounds: {w, h}} = this.config;
+      this.config.stepLimit = w + h;
+    }
   }
 
   elapsed = 0
@@ -144,13 +157,14 @@ export class DLA {
   }
 
   spawn():HTMLElement|null {
+    const {initBase, initArc, particleLimit} = this.config;
+
     const ghost = this.grid.queryTile({
       tag: 'ghost',
       id: '^particle-',
     });
-    if (!ghost && this.particleID >= this.particleLimit()) return null;
+    if (!ghost && this.particleID >= particleLimit) return null;
 
-    const {initBase, initArc} = this.config;
     const pos = this.initPlace();
     const heading = Math.PI * (initBase + (Math.random() - 0.5) * initArc);
     const kind = this.anyCell(pos) ? 'prime' : 'void';
@@ -163,21 +177,6 @@ export class DLA {
     if (ghost)
       return this.grid.updateTile(ghost, spec);
     return this.grid.createTile(`particle-${++this.particleID}`, spec);
-  }
-
-  stepLimit():number {
-    const {bounds, stepLimit} = this.config;
-    if (stepLimit > 0) return stepLimit;
-    return bounds.w + bounds.h;
-  }
-
-  particleLimit():number {
-    const {bounds, particleLimit} = this.config;
-    if (particleLimit > 0) {
-      if (particleLimit > 1) return particleLimit;
-      return (bounds.w * bounds.h)*particleLimit;
-    }
-    return (bounds.w * bounds.h)/2;
   }
 
   anyCell(...pts:Point[]):boolean {
@@ -193,6 +192,7 @@ export class DLA {
       genRate, playRate,
       turnLeft, turnRight,
       ordinalMoves,
+      stepLimit,
     } = this.config;
 
     const havePlayer = !!this.grid.queryTile({tag: 'keyMove'});
@@ -308,7 +308,7 @@ export class DLA {
         this.grid.moveTileTo(p, p2);
 
         // increment step counter, and leave a ghost if limit met or exceeded
-        if (steps >= this.stepLimit()) {
+        if (steps >= stepLimit) {
           this.grid.updateTile(p, {
             tag: ['ghost'],
             pos: p1,
