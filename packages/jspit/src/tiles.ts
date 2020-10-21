@@ -109,13 +109,14 @@ export class TileGrid {
     this.el.style.setProperty('--xlate-y', Math.floor(y).toString());
   }
 
+  get viewSize() {
+    const {clientWidth, clientHeight} = this.el,
+          {x, y} = this.tileSize;
+    return {w: clientWidth / x, h: clientHeight / y};
+  }
+
   get viewport() {
-    const
-      tileSize = this.tileSize,
-      {x, y} = this.viewOffset,
-      w = this.el.clientWidth  / tileSize.x,
-      h = this.el.clientHeight / tileSize.y;
-    return {x, y, w, h};
+    return {...this.viewOffset, ...this.viewSize};
   }
 
   moveViewBy({x: dx, y: dy}:Point):void {

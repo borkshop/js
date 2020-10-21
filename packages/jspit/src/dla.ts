@@ -78,7 +78,7 @@ export class DLA {
     if (!isNaN(center.x) && !isNaN(center.y)) this.grid.moveViewTo(center);
 
     if (!(this.config.bounds.w*this.config.bounds.h)) {
-      const {w, h} = this.grid.viewport;
+      const {w, h} = this.grid.viewSize;
       this.config.bounds = {
         x: -w/2, y: -h/2,
         w:  w,   h:  h,
