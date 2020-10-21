@@ -3,17 +3,17 @@ import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
 
-export class ColorBoop {
-  static demoName = 'ColorBoop'
-  static demoTitle = 'Boop a color, get a color'
+function setup(grid:TileGrid) {
+  showUI(bound, true, !!state.running);
 
-  // rate at which to coalesce and process movement input
-  static inputRate = 100
+  grid.clear();
+  grid.createTile('at', {
+    text: '@',
+    tag: ['solid', 'mover', 'input'],
+    pos: {x: 10, y: 10},
+  });
 
-  // proportion to scroll viewport by when at goes outside
-  static nudgeBy = 0.2
-
-  colors = [
+  const colors = [
     'black',
     'darker-grey',
     'dark-grey',
@@ -36,34 +36,24 @@ export class ColorBoop {
     'red-orange',
     'yellow',
     'yellow-orange',
-  ]
-
-  grid : TileGrid
-
-  constructor(grid:TileGrid) {
-    this.grid = grid;
-    this.grid.clear();
-    this.grid.createTile('at', {
-      text: '@',
-      tag: ['solid', 'mover', 'input'],
-      pos: {x: 10, y: 10},
+  ];
+  colors.forEach((color, i) => {
+    grid.createTile(`fg-swatch-${color}`, {
+      fg: `var(--${color})`,
+      tag: ['solid', 'swatch', 'fg'],
+      text: '$',
+      pos: {x: 5, y: i},
     });
-    this.colors.forEach((color, i) => {
-      this.grid.createTile(`fg-swatch-${color}`, {
-        fg: `var(--${color})`,
-        tag: ['solid', 'swatch', 'fg'],
-        text: '$',
-        pos: {x: 5, y: i},
-      });
-      this.grid.createTile(`bg-swatch-${color}`, {
-        bg: `var(--${color})`,
-        tag: ['solid', 'swatch', 'bg'],
-        text: '$',
-        pos: {x: 15, y: i},
-      });
+    grid.createTile(`bg-swatch-${color}`, {
+      bg: `var(--${color})`,
+      tag: ['solid', 'swatch', 'bg'],
+      text: '$',
+      pos: {x: 15, y: i},
     });
-    this.grid.centerViewOn({x: 10, y: 10});
-  }
+  });
+  grid.centerViewOn({x: 10, y: 10});
+
+  if (bound.reset) bound.reset.disabled = false;
 }
 
 // injected DOM parts
@@ -79,7 +69,6 @@ export const bound:Partial<Bindings> = {};
 interface State {
   grid: TileGrid,
   keys: KeyMap,
-  world: ColorBoop,
   running: boolean,
 }
 export const state:Partial<State> = {};
@@ -87,7 +76,10 @@ export const state:Partial<State> = {};
 export function init(bind:Bindings) {
   Object.assign(bound, bind);
 
-  if (bound.grid) state.grid = new TileGrid(bound.grid);
+  if (bound.grid) {
+    state.grid = new TileGrid(bound.grid);
+    setup(state.grid);
+  }
 
   if (bound.keys) state.keys = new KeyMap(bound.keys, (ev:KeyboardEvent):boolean => {
     if (ev.key === 'Escape') {
@@ -100,13 +92,8 @@ export function init(bind:Bindings) {
 
   bound.run?.addEventListener('click', playPause);
   bound.reset?.addEventListener('click', () => {
-    if (state.world) state.running = false;
-    state.world = undefined;
-    if (bound.reset) bound.reset.disabled = true;
-    showUI(bound, false, false);
+    if (state.grid) setup(state.grid);
   });
-
-  showUI(bound, false, false);
 }
 
 function thenInput():boolean {
@@ -133,25 +120,20 @@ function thenInput():boolean {
     },
   });
   for (const mover of grid.queryTiles({tag: ['mover', 'input']}))
-    grid.nudgeViewTo(grid.getTilePosition(mover), ColorBoop.nudgeBy);
+    grid.nudgeViewTo(grid.getTilePosition(mover), 0.2);
   return true;
 }
 
 function playPause() {
   if (!state.grid) return;
 
-  showUI(bound, true, !state.running);
-
-  if (!state.world) {
-    state.world = new ColorBoop(state.grid);
-    if (bound.reset) bound.reset.disabled = false;
-  }
-
   if (state.running) state.running = false; else {
     state.running = true;
     everyFrame(schedule(
       () => !!state.running,
-      {every: ColorBoop.inputRate, then: thenInput},
+      {every: 100, then: thenInput},
     ));
   }
+
+  showUI(bound, true, !!state.running);
 }
