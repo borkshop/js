@@ -110,7 +110,7 @@ export class DLA {
     const {seeds} = this.config;
     const pos = seeds[0];
     this.grid.createTile('at', {
-      tag: ['solid', 'mind', 'keyMove'],
+      tag: ['solid', 'mover', 'input'],
       pos,
       fg: 'var(--dla-player)',
       text: '@',
@@ -200,7 +200,7 @@ export class DLA {
       stepLimit,
     } = this.config;
 
-    const havePlayer = !!this.grid.queryTile({tag: 'keyMove'});
+    const havePlayer = !!this.grid.queryTile({tag: ['mover', 'input']});
 
     const rate = havePlayer ? playRate : genRate;
     this.elapsed += dt
@@ -326,7 +326,7 @@ export class DLA {
   digSeq = new Map<string, number>()
 
   consumeInput(presses: Array<[string, number]>):void {
-    const movers = this.grid.queryTiles({tag: 'keyMove'});
+    const movers = this.grid.queryTiles({tag: ['mover', 'input']});
     if (!movers.length) return;
     if (movers.length > 1) throw new Error(`ambiguous ${movers.length}-mover situation`);
     const actor = movers[0];
@@ -363,34 +363,6 @@ export class DLA {
     this.grid.moveTileTo(actor, targ);
     this.grid.nudgeViewTo(targ, DLA.nudgeBy);
   }
-
-  running = false
-
-  run(
-    readKeys:() => Array<[string, number]>,
-    update?:(dt:number) => void,
-  ) {
-
-    this.running = true;
-    everyFrame(schedule(
-      () => this.running,
-
-      {every: DLA.inputRate, then: () => {
-        this.consumeInput(readKeys());
-        return true;
-      }},
-
-      // TODO hoist dynamic tick rate into into anim.schedule
-      // {every: () => this.rate, then: (dn) => {
-      // }),
-
-      (dt:number) => {
-        this.update(dt);
-        if (update) update(dt);
-        return true;
-      },
-    ));
-  }
 }
 
 // injected DOM parts
@@ -413,6 +385,7 @@ interface State {
   inspector: TileInspector,
   keys: KeyMap,
   world: DLA,
+  running: boolean
 }
 export const state:Partial<State> = {};
 
@@ -450,13 +423,13 @@ export function init(bind:Bindings) {
       return false;
     }
 
-    if (!state.world?.running) return false;
+    if (!state.running) return false;
     return !ev.altKey && !ev.ctrlKey && !ev.metaKey;
   });
 
   bound.run?.addEventListener('click', playPause);
   bound.reset?.addEventListener('click', () => {
-    if (state.world) state.world.running = false;
+    if (state.world) state.running = false;
     state.world = undefined;
     if (bound.reset) bound.reset.disabled = true;
     showUI(bound, false, false);
@@ -480,7 +453,7 @@ export function init(bind:Bindings) {
 function playPause() {
   if (!state.grid) return;
 
-  showUI(bound, true, !state.world?.running);
+  showUI(bound, true, !state.running);
 
   if (!state.world) {
     state.world = new DLA(state.grid);
@@ -488,13 +461,24 @@ function playPause() {
     if (bound.reset) bound.reset.disabled = false;
   }
 
-  const {world, keys} = state;
-  if (world.running) world.running = false;
-  else world.run(
-    () => keys?.consumePresses() || [],
-    () => {
-      if (bound.particleID)
-        bound.particleID.innerText = world.particleID.toString();
-    }
-  );
+  if (state.running) state.running = false; else {
+    state.running = true;
+    const {world, keys} = state;
+    everyFrame(schedule(
+      () => !!state.running,
+
+      {every: DLA.inputRate, then: () => {
+        const presses = keys?.consumePresses() || [];
+        world.consumeInput(presses);
+        return true;
+      }},
+
+      (dt:number) => {
+        state.world?.update(dt);
+        if (bound.particleID)
+          bound.particleID.innerText = world.particleID.toString();
+        return true;
+      },
+    ));
+  }
 }
