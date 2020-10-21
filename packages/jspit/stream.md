@@ -1,4 +1,4 @@
-# 2020-10-20
+# 2020-10-21
 
 ## TODO
 
@@ -9,7 +9,6 @@
 
 - TileGrid
   - masking?
-  - viewport correction on resize
   - custom shader funcs, or at least some affordance for stepped css classes
   - nudge needs to take whole tile into account, nudge if any part of the given point is out
   - animations like boop and particles
@@ -30,16 +29,28 @@
   - config
     - make hash var bind optional
     - pivot to support multiple schemes within one sim
-  - terminate particles more aggresively (e.g. if have moved away from bounds for N turns)
   - eliminate static bounds entirely: use an expanded dynamic bounding box to
     spawn particles
+  - terminate particles more aggresively (e.g. if have moved away from bounds
+    for N turns)
 
 ## WIP
 
+- DLA
+  - make it a reusable module as basis for Next demo, pulling down as much of
+    the above TODO as appropriate
 - TileGrid
-  - drop nudge, leave that up to controlling code
+  - viewport correction on resize
 
 ## Done
+
+- tiles module:
+  - reshaped `TileSpec` for better CSS/DOM alignment
+  - provide default mover class
+  - refactored `TileGrid` view movement code, dropping the overly specific
+    nudge routine
+
+# 2020-10-20
 
 - moved deployment to vercel, dropping version display for now
 - dropped lit-html dependency; generalized dla's inspector dumping, but decided
