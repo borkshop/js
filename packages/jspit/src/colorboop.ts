@@ -100,6 +100,11 @@ export function init(bind:Bindings) {
   });
 }
 
+function definedStyles(style:CSSStyleDeclaration) {
+  return Object.fromEntries(Object.entries(style)
+    .filter(([k, v]) => !!v && parseInt(k).toString() !== k));
+}
+
 function thenInput():boolean {
   const {keys, grid} = state;
   if (!grid || !keys) return false;
@@ -112,12 +117,8 @@ function thenInput():boolean {
     solid: (grid: TileGrid, mover: HTMLElement, at: HTMLElement[]) => {
       const hits = at.filter(h => h.classList.contains('solid'));
       if (hits.length) {
-        for (const hit of hits) if (hit.classList.contains('swatch')) {
-          const style: Partial<CSSStyleDeclaration> = {};
-          if (hit.style.color) style.color = hit.style.color;
-          if (hit.style.backgroundColor) style.backgroundColor = hit.style.backgroundColor;
-          grid.updateTile(mover, {style});
-        }
+        for (const hit of hits) if (hit.classList.contains('swatch'))
+          grid.updateTile(mover, {style: definedStyles(hit.style)});
         return false;
       }
       return true;
