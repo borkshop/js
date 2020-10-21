@@ -1,6 +1,6 @@
 # JSPit - a roguelike Pit made in JavaScript
 
-**Play** at [jcorbin.github.io/jspit](https://jcorbin.github.io/jspit).
+**Play** at [jcorbin.github.io/jspit](https://jspit.vercel.app).
 
 This is my current ( as of 2020-10 ) development sandbox for learning and
 experimenting with game programming. This time targeting a browser game,
