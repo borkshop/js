@@ -113,6 +113,7 @@ export class TileGrid {
       this.el.appendChild(tile)
       tile.id = this.tileID(id)
     }
+    if (!spec.pos) spec.pos = {x: 0, y: 0};
     return this.updateTile(tile, spec) as HTMLElement;
   }
 
@@ -125,7 +126,7 @@ export class TileGrid {
       if (typeof spec.tag === 'string') tile.classList.add(spec.tag);
       else if (Array.isArray(spec.tag)) for (const tag of spec.tag) tile.classList.add(tag);
     } else if (!tile.className) tile.className = 'tile';
-    this.moveTileTo(tile, spec.pos || {x: 0, y: 0});
+    if (spec.pos) this.moveTileTo(tile, spec.pos);
     if (spec.data) {
       for (const name in tile.dataset)
         if (!(name in spec.data))
