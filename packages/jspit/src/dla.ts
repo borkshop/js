@@ -17,9 +17,6 @@ const enum InitWhere {
 }
 
 export class DLA {
-  static demoName = 'DLA'
-  static demoTitle = 'Diffusion Limited Aggregation'
-
   // rate at which to coalesce and process movement input
   static inputRate = 100
 
