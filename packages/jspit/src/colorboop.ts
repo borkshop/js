@@ -55,7 +55,7 @@ function setup(grid:TileGrid) {
       },
     });
   });
-  grid.centerViewOn({x: 10, y: 10});
+  grid.moveViewTo({x: 10, y: 10});
 
   if (bound.reset) bound.reset.disabled = false;
 }
@@ -128,7 +128,7 @@ function thenInput():boolean {
     const {x, y} = grid.getTilePosition(mover);
     const {x: vx, y: vy, w, h} = grid.viewport;
     if (x < vx || y < vy || x >= vx + w || y >= vy + h)
-      grid.centerViewOn({x, y});
+      grid.moveViewTo({x, y});
   }
   return true;
 }

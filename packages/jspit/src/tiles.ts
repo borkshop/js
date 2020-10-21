@@ -104,6 +104,11 @@ export class TileGrid {
     return {x, y};
   }
 
+  set viewOffset({x, y}:Point) {
+    this.el.style.setProperty('--xlate-x', Math.floor(x).toString());
+    this.el.style.setProperty('--xlate-y', Math.floor(y).toString());
+  }
+
   get viewport() {
     const
       tileSize = this.tileSize,
@@ -113,23 +118,16 @@ export class TileGrid {
     return {x, y, w, h};
   }
 
-  moveViewTo({x, y}:Point) {
-    x = Math.floor(x);
-    y = Math.floor(y);
-    this.el.style.setProperty('--xlate-x', x.toString());
-    this.el.style.setProperty('--xlate-y', y.toString());
-    return {x, y};
+  moveViewBy({x: dx, y: dy}:Point):void {
+    let {x, y} = this.viewOffset;
+    x += dx, y += dy;
+    this.viewOffset = {x, y};
   }
 
-  moveViewBy({x: dx, y: dy}:Point) {
-    const {x, y} = this.viewOffset;
-    return this.moveViewTo({x: x + dx, y: y + dy});
-  }
-
-  centerViewOn({x, y}:Point) {
+  moveViewTo({x, y}:Point):void {
     const {w, h} = this.viewport;
     x -= w / 2, y -= h / 2;
-    return this.moveViewTo({x, y});
+    this.viewOffset = {x, y};
   }
 
   tileID(id:string) {
