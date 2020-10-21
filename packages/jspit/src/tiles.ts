@@ -119,10 +119,15 @@ export class TileGrid {
     return {...this.viewOffset, ...this.viewSize};
   }
 
-  moveViewTo({x, y}:Point):void {
-    const {w, h} = this.viewport;
-    x -= w / 2, y -= h / 2;
-    this.viewOffset = {x, y};
+  get viewPoint():Point {
+    const {x: vx, y: vy, w, h} = this.viewport;
+    const x = vx + w / 2, y = vy + h / 2;
+    return {x, y};
+  }
+
+  set viewPoint({x, y}:Point) {
+    const {w, h} = this.viewSize;
+    this.viewOffset = {x: x - w / 2, y: y - h / 2};
   }
 
   tileID(id:string) {

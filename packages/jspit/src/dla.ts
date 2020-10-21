@@ -75,7 +75,7 @@ export class DLA {
       if (isNaN(center.x) || isNaN(center.y)) center.x = pos.x, center.y = pos.y;
       else center.x = (center.x + pos.x)/2, center.y = (center.y + pos.y)/2;
     }
-    if (!isNaN(center.x) && !isNaN(center.y)) this.grid.moveViewTo(center);
+    if (!isNaN(center.x) && !isNaN(center.y)) this.grid.viewPoint = center;
 
     if (!(this.config.bounds.w*this.config.bounds.h)) {
       const {w, h} = this.grid.viewSize;
