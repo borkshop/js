@@ -322,47 +322,6 @@ export class DLA {
       }
     }
   }
-
-  digSeq = new Map<string, number>()
-
-  consumeInput(presses: Array<[string, number]>):void {
-    const movers = this.grid.queryTiles({tag: ['mover', 'input']});
-    if (!movers.length) return;
-    if (movers.length > 1) throw new Error(`ambiguous ${movers.length}-mover situation`);
-    const actor = movers[0];
-
-    let {have, move} = coalesceMoves(presses);
-    if (!have) return;
-
-    const pos = this.grid.getTilePosition(actor);
-    const targ = {x: pos.x + move.x, y: pos.y + move.y};
-
-    // solid actors subject to collison
-    if (actor.classList.contains('solid')) {
-      const hits = this.grid.tilesAt(targ);
-
-      if (!hits.length) {
-        // // TODO bring back this power
-        // // place particles in the void
-        // const aid = actor.id;
-        // const did = (this.digSeq.get(aid) || 0) + 1;
-        // this.digSeq.set(aid, did);
-        // this.grid.createTile(`particle-placed-${aid}-${did}`, {
-        //   tag: ['particle'],
-        //   pos: targ,
-        //   fg: 'var(--dla-player)',
-        //   text: '·',
-        // });
-        return;
-      } else {
-        // can only move there if have particle support
-        if (!hits.some((h) => h.classList.contains('particle'))) return;
-      }
-    }
-
-    this.grid.moveTileTo(actor, targ);
-    this.grid.nudgeViewTo(targ, DLA.nudgeBy);
-  }
 }
 
 // injected DOM parts
@@ -450,6 +409,52 @@ export function init(bind:Bindings) {
   showUI(bound, false, false);
 }
 
+function thenInput():boolean {
+  const {keys, grid} = state;
+  if (!keys || !grid) return false;
+
+  const presses = keys.consumePresses();
+
+  const movers = grid.queryTiles({tag: ['mover', 'input']});
+  if (!movers.length) return true;
+  if (movers.length > 1) throw new Error(`ambiguous ${movers.length}-mover situation`);
+  const actor = movers[0];
+
+  let {have, move} = coalesceMoves(presses);
+  if (!have) return true;
+
+  const pos = grid.getTilePosition(actor);
+  const targ = {x: pos.x + move.x, y: pos.y + move.y};
+
+  // solid actors subject to collison
+  if (actor.classList.contains('solid')) {
+    const hits = grid.tilesAt(targ);
+
+    if (!hits.length) {
+      // // TODO bring back this power
+      // // place particles in the void
+      // const aid = actor.id;
+      // const did = (digSeq.get(aid) || 0) + 1;
+      // digSeq.set(aid, did);
+      // grid.createTile(`particle-placed-${aid}-${did}`, {
+      //   tag: ['particle'],
+      //   pos: targ,
+      //   fg: 'var(--dla-player)',
+      //   text: '·',
+      // });
+      return true;
+    } else {
+      // can only move there if have particle support
+      if (!hits.some((h) => h.classList.contains('particle'))) return true;
+    }
+  }
+
+  grid.moveTileTo(actor, targ);
+  grid.nudgeViewTo(targ, DLA.nudgeBy);
+
+  return true;
+}
+
 function playPause() {
   if (!state.grid) return;
 
@@ -463,18 +468,15 @@ function playPause() {
 
   if (state.running) state.running = false; else {
     state.running = true;
-    const {world, keys} = state;
     everyFrame(schedule(
       () => !!state.running,
 
-      {every: DLA.inputRate, then: () => {
-        const presses = keys?.consumePresses() || [];
-        world.consumeInput(presses);
-        return true;
-      }},
+      {every: DLA.inputRate, then: thenInput},
 
       (dt:number) => {
-        state.world?.update(dt);
+        const {world} = state;
+        if (!world) return false;
+        world.update(dt);
         if (bound.particleID)
           bound.particleID.innerText = world.particleID.toString();
         return true;
