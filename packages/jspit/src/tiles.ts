@@ -6,11 +6,11 @@ export interface Point {
 export interface TileQuery {
   tag?: string|string[]
 
-  // NOTE may start with ^ $ or * to encode a startWith/endsWith/contains match
+  // NOTE may start with ^ $ or * to encode a startsWith/endsWith/contains match
   id?: string
 
-  // NOTE matches on the JOSN represention of a TileDatum; may also start with
-  // ^ $ or * like id above
+  // NOTE matches on the JOSN representation of a TileDatum; may also start
+  // with ^ $ or * like id above
   data?: {[name: string]: string}
 }
 
