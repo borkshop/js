@@ -114,7 +114,7 @@ function thenInput():boolean {
     grid.setTileData(mover, 'move', move);
   processMoves({grid, kinds: {
     // solid tiles collide, leading to interaction
-    solid: (grid: TileGrid, mover: HTMLElement, at: HTMLElement[]) => {
+    solid: ({grid, mover, at}) => {
       const hits = at.filter(h => h.classList.contains('solid'));
       if (hits.length) {
         for (const hit of hits) if (hit.classList.contains('swatch'))

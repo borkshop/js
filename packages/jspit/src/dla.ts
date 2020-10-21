@@ -416,7 +416,7 @@ function thenInput():boolean {
 
   processMoves({grid, kinds: {
     // solid movers must stay on particle support and are subject to collison
-    solid: (_grid: TileGrid, _mover: HTMLElement, at: HTMLElement[]):boolean => {
+    solid: ({at}):boolean => {
 
       // TODO restore dig ability
       // if (!at.length) {

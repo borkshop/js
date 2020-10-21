@@ -366,7 +366,13 @@ export function processMoves({
 }:{
   grid: TileGrid,
   moverClass?: string,
-  kinds: {[kind: string]: (grid: TileGrid, mover: HTMLElement, at: HTMLElement[]) => boolean},
+  kinds: {[kind: string]: (req:{
+    grid: TileGrid,
+    mover: HTMLElement,
+    at: HTMLElement[],
+    pos: Point,
+    to: Point,
+  }) => boolean},
 }):void {
   // TODO support grouped resolution and/or priority...
   for (const [kind, may] of Object.entries(kinds)) {
@@ -380,7 +386,7 @@ export function processMoves({
       const pos = grid.getTilePosition(mover);
       const to = {x: pos.x + move.x, y: pos.y + move.y};
       const at = grid.tilesAt(to);
-      if (may(grid, mover, at))
+      if (may({grid, mover, at, pos, to}))
         grid.moveTileTo(mover, to);
       grid.setTileData(mover, 'move', null);
     }
