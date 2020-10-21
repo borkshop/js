@@ -2,6 +2,7 @@ import {bindVars} from './config';
 import {
   Point, TileGrid,
   TileInspector, TileInspectEvent, dumpTiles,
+  processMoves,
 } from './tiles';
 import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
@@ -415,42 +416,43 @@ function thenInput():boolean {
 
   const presses = keys.consumePresses();
 
-  const movers = grid.queryTiles({tag: ['mover', 'input']});
-  if (!movers.length) return true;
-  if (movers.length > 1) throw new Error(`ambiguous ${movers.length}-mover situation`);
-  const actor = movers[0];
-
   let {have, move} = coalesceMoves(presses);
-  if (!have) return true;
+  if (have) for (const mover of grid.queryTiles({tag: ['mover', 'input']}))
+    grid.setTileData(mover, 'move', move);
 
-  const pos = grid.getTilePosition(actor);
-  const targ = {x: pos.x + move.x, y: pos.y + move.y};
+  processMoves(grid, 'mover', {
+    // solid movers must stay on particle support and are subject to collison
+    solid: (_grid: TileGrid, _mover: HTMLElement, at: HTMLElement[]):boolean => {
 
-  // solid actors subject to collison
-  if (actor.classList.contains('solid')) {
-    const hits = grid.tilesAt(targ);
+      // TODO restore dig ability
+      // if (!at.length) {
+      //   const aid = mover.id;
+      //   const did = (digSeq.get(aid) || 0) + 1;
+      //   digSeq.set(aid, did);
+      //   grid.createTile(`particle-placed-${aid}-${did}`, {
+      //     tag: ['particle'],
+      //     pos: to,
+      //     fg: 'var(--dla-player)',
+      //     text: '·',
+      //   });
+      //   return;
+      // }
 
-    if (!hits.length) {
-      // // TODO bring back this power
-      // // place particles in the void
-      // const aid = actor.id;
-      // const did = (digSeq.get(aid) || 0) + 1;
-      // digSeq.set(aid, did);
-      // grid.createTile(`particle-placed-${aid}-${did}`, {
-      //   tag: ['particle'],
-      //   pos: targ,
-      //   fg: 'var(--dla-player)',
-      //   text: '·',
-      // });
-      return true;
-    } else {
       // can only move there if have particle support
-      if (!hits.some((h) => h.classList.contains('particle'))) return true;
-    }
-  }
+      if (!at.some(h => h.classList.contains('particle'))) return false;
 
-  grid.moveTileTo(actor, targ);
-  grid.nudgeViewTo(targ, DLA.nudgeBy);
+      // may not move there if occupied by another solid
+      if (at.some(h => h.classList.contains('solid'))) return false;
+      // TODO interaction
+
+      return true;
+    }
+  });
+
+  for (const mover of grid.queryTiles({tag: ['mover', 'input']})) {
+    const pos = grid.getTilePosition(mover);
+    grid.nudgeViewTo(pos, DLA.nudgeBy);
+  }
 
   return true;
 }

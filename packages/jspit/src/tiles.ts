@@ -374,3 +374,27 @@ export function dumpTiles({tiles, into, dump}:{
     into.cols = lines.reduce((max, line) => Math.max(max, line.length), 0);
   }
 }
+
+export function processMoves(
+  grid: TileGrid,
+  tag: string,
+  kinds: {[kind: string]: (grid: TileGrid, mover: HTMLElement, at: HTMLElement[]) => boolean},
+):void {
+  // TODO support grouped resolution and/or priority...
+  for (const [kind, may] of Object.entries(kinds)) {
+    for (const mover of grid.queryTiles({tag: [tag, kind]})) {
+      const move = grid.getTileData(mover, 'move');
+      if (!move || typeof move !== 'object') continue;
+      if (!(
+        'x' in move && typeof move.x === 'number' &&
+        'y' in move && typeof move.y === 'number'
+      )) continue;
+      const pos = grid.getTilePosition(mover);
+      const to = {x: pos.x + move.x, y: pos.y + move.y};
+      const at = grid.tilesAt(to);
+      if (may(grid, mover, at))
+        grid.moveTileTo(mover, to);
+      grid.setTileData(mover, 'move', null);
+    }
+  }
+}
