@@ -364,8 +364,13 @@ export function dumpTiles({tiles, into, dump}:{
     return line;
   };
 
-  const lines = tiles.map(dump);
-  into.value = lines.join('\n');
-  into.rows = lines.length;
-  into.cols = lines.reduce((max, line) => Math.max(max, line.length), 0);
+  if (!tiles.length) {
+    into.style.display = 'none';
+  } else {
+    into.style.display = '';
+    const lines = tiles.map(dump);
+    into.value = lines.join('\n');
+    into.rows = lines.length;
+    into.cols = lines.reduce((max, line) => Math.max(max, line.length), 0);
+  }
 }
