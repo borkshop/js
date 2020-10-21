@@ -25,7 +25,7 @@ export class DLA {
   // proportion to scroll viewport by when at goes outside
   static nudgeBy = 0.2
 
-  static settings = {
+  static config = {
     genRate:   1,
     playRate:  100,
 
@@ -65,10 +65,13 @@ export class DLA {
 
   grid: TileGrid
 
-  constructor(grid:TileGrid) {
-    const {seeds} = DLA.settings;
+  config?:any
 
+  constructor(grid:TileGrid) {
+    this.config = Object.create(DLA.config);
     this.grid = grid;
+
+    const {seeds} = this.config;
     this.grid.clear();
     const center = {x: NaN, y: NaN};
     for (const pos of seeds) {
@@ -86,7 +89,7 @@ export class DLA {
   elapsed = 0
 
   dropPlayer() {
-    const {seeds} = DLA.settings;
+    const {seeds} = this.config;
     const pos = seeds[0];
     this.grid.createTile('at', {
       tag: ['solid', 'mind', 'keyMove'],
@@ -97,7 +100,7 @@ export class DLA {
   }
 
   initPlace():Point {
-    const {bounds, seeds, initWhere: {value: where}, initAnyBalance} = DLA.settings;
+    const {bounds, seeds, initWhere: {value: where}, initAnyBalance} = this.config;
 
     const chooseVoid = () => {
       while (true) {
@@ -147,7 +150,7 @@ export class DLA {
     });
     if (!ghost && this.particleID >= this.particleLimit()) return null;
 
-    const {initBase, initArc} = DLA.settings;
+    const {initBase, initArc} = this.config;
     const pos = this.initPlace();
     const heading = Math.PI * (initBase + (Math.random() - 0.5) * initArc);
     const kind = this.anyCell(pos) ? 'prime' : 'void';
@@ -163,13 +166,13 @@ export class DLA {
   }
 
   stepLimit():number {
-    const {bounds, stepLimit} = DLA.settings;
+    const {bounds, stepLimit} = this.config;
     if (stepLimit > 0) return stepLimit;
     return bounds.w + bounds.h;
   }
 
   particleLimit():number {
-    const {bounds, particleLimit} = DLA.settings;
+    const {bounds, particleLimit} = this.config;
     if (particleLimit > 0) {
       if (particleLimit > 1) return particleLimit;
       return (bounds.w * bounds.h)*particleLimit;
@@ -190,7 +193,7 @@ export class DLA {
       genRate, playRate,
       turnLeft, turnRight,
       ordinalMoves,
-    } = DLA.settings;
+    } = this.config;
 
     const havePlayer = !!this.grid.queryTile({tag: 'keyMove'});
 
@@ -461,7 +464,7 @@ export function init(bind:Bindings) {
   });
 
   bindVars({
-    data: DLA.settings,
+    data: DLA.config,
     getInput: (name:string) => bound.menu?.querySelector(`input[name="${name}"]`) || null,
     getSelect: (name:string) => bound.menu?.querySelector(`select[name="${name}"]`) || null,
   });
