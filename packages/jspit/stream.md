@@ -1,4 +1,4 @@
-# 2020-10-19
+# 2020-10-20
 
 ## TODO
 
@@ -32,16 +32,20 @@
     - make hash var bind optional
     - instanced per sim rather than static
     - pivot to support multiple schemes within one sim
-
-## WIP
-
-- DLA
   - factor out player input concern
   - eliminate static bounds entirely: use an expanded dynamic bounding box to
     spawn particles; also use to kill particles; then use the browser viewport
     size to determin particle limit
 
+## WIP
+
 ## Done
+
+- moved deployment to vercel, dropping version display for now
+- dropped lit-html dependency; generalized dla's inspector dumping, but decided
+  to not use it in colorboop for now
+
+# 2020-10-19
 
 - TileGrid
   - expanded inspector so that it can be toggled on and off after creation
