@@ -100,16 +100,6 @@ header, footer {
 header { top: 0; }
 footer { bottom: 0; }
 
-header .ctl {
-  float: left;
-  margin: 0.1em 0.5em 0 0;
-}
-
-header .ctl.right {
-  float: right;
-  margin: 0.1em 0 0 0.5em;
-}
-
 main {
   position: absolute;
   top: 0;
