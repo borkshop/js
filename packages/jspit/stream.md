@@ -14,7 +14,6 @@
   - nudge needs to take whole tile into account, nudge if any part of the given point is out
   - animations like boop and particles
   - save/load ; initial state
-  - eject nudge, leave that up to controlling code
 
 - DLA
   - cell visited counts
@@ -30,20 +29,26 @@
   - stickiness probability ; maybe informed by neighbor count!
   - config
     - make hash var bind optional
-    - instanced per sim rather than static
     - pivot to support multiple schemes within one sim
-  - factor out player input concern
+  - terminate particles more aggresively (e.g. if have moved away from bounds for N turns)
   - eliminate static bounds entirely: use an expanded dynamic bounding box to
-    spawn particles; also use to kill particles; then use the browser viewport
-    size to determin particle limit
+    spawn particles
 
 ## WIP
+
+- TileGrid
+  - drop nudge, leave that up to controlling code
 
 ## Done
 
 - moved deployment to vercel, dropping version display for now
 - dropped lit-html dependency; generalized dla's inspector dumping, but decided
   to not use it in colorboop for now
+- DLA
+  - made config instanced per world rather than just static
+  - provided defaults bounds based on viewport
+- factored out general move processing routine into tiles module
+- de-objectified ColorBoop
 
 # 2020-10-19
 
