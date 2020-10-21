@@ -81,13 +81,15 @@ class TileMortonIndex {
 export class TileGrid {
   el : HTMLElement
 
+  idspace = 'tile' // TODO autogen this
+
   constructor(el:HTMLElement) {
     this.el = el;
     // TODO handle resize events
   }
 
   get tileSize(): Point {
-    // TODO use an invisible ghost tile? cache?
+    // TODO use an invisible measurement tile? cache?
     for (const tile of this.el.querySelectorAll('.tile')) {
       const x = tile.clientWidth;
       const y = tile.clientHeight;
@@ -96,7 +98,39 @@ export class TileGrid {
     return {x: 0, y: 0};
   }
 
-  idspace = 'tile' // TODO autogen this
+  get viewOffset() {
+    const x = parseFloat(this.el.style.getPropertyValue('--xlate-x')) || 0;
+    const y = parseFloat(this.el.style.getPropertyValue('--xlate-y')) || 0;
+    return {x, y};
+  }
+
+  get viewport() {
+    const
+      tileSize = this.tileSize,
+      {x, y} = this.viewOffset,
+      width = this.el.clientWidth  / tileSize.x,
+      height = this.el.clientHeight / tileSize.y;
+    return {x, y, width, height};
+  }
+
+  moveViewTo({x, y}:Point) {
+    x = Math.floor(x);
+    y = Math.floor(y);
+    this.el.style.setProperty('--xlate-x', x.toString());
+    this.el.style.setProperty('--xlate-y', y.toString());
+    return {x, y};
+  }
+
+  moveViewBy({x: dx, y: dy}:Point) {
+    const {x, y} = this.viewOffset;
+    return this.moveViewTo({x: x + dx, y: y + dy});
+  }
+
+  centerViewOn({x, y}:Point) {
+    const {width, height} = this.viewport;
+    x -= width / 2, y -= height / 2;
+    return this.moveViewTo({x, y});
+  }
 
   tileID(id:string) {
     return `${this.el.id}${this.el.id ? '-': ''}${this.idspace}-${id}`;
@@ -246,40 +280,6 @@ export class TileGrid {
     if (className.length) tiles = tiles
       .filter(el => className.every(t => el.classList.contains(t)));
     return tiles;
-  }
-
-  get viewOffset() {
-    const x = parseFloat(this.el.style.getPropertyValue('--xlate-x')) || 0;
-    const y = parseFloat(this.el.style.getPropertyValue('--xlate-y')) || 0;
-    return {x, y};
-  }
-
-  get viewport() {
-    const
-      tileSize = this.tileSize,
-      {x, y} = this.viewOffset,
-      width = this.el.clientWidth  / tileSize.x,
-      height = this.el.clientHeight / tileSize.y;
-    return {x, y, width, height};
-  }
-
-  moveViewTo({x, y}:Point) {
-    x = Math.floor(x);
-    y = Math.floor(y);
-    this.el.style.setProperty('--xlate-x', x.toString());
-    this.el.style.setProperty('--xlate-y', y.toString());
-    return {x, y};
-  }
-
-  moveViewBy({x: dx, y: dy}:Point) {
-    const {x, y} = this.viewOffset;
-    return this.moveViewTo({x: x + dx, y: y + dy});
-  }
-
-  centerViewOn({x, y}:Point) {
-    const {width, height} = this.viewport;
-    x -= width / 2, y -= height / 2;
-    return this.moveViewTo({x, y});
   }
 }
 
