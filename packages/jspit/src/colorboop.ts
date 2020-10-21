@@ -126,8 +126,8 @@ function thenInput():boolean {
   }});
   for (const mover of grid.queryTiles({className: ['mover', 'input']})) {
     const {x, y} = grid.getTilePosition(mover);
-    const {x: vx, y: vy, width, height} = grid.viewport;
-    if (x < vx || y < vy || x >= vx + width || y >= vy + height)
+    const {x: vx, y: vy, w, h} = grid.viewport;
+    if (x < vx || y < vy || x >= vx + w || y >= vy + h)
       grid.centerViewOn({x, y});
   }
   return true;

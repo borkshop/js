@@ -108,9 +108,9 @@ export class TileGrid {
     const
       tileSize = this.tileSize,
       {x, y} = this.viewOffset,
-      width = this.el.clientWidth  / tileSize.x,
-      height = this.el.clientHeight / tileSize.y;
-    return {x, y, width, height};
+      w = this.el.clientWidth  / tileSize.x,
+      h = this.el.clientHeight / tileSize.y;
+    return {x, y, w, h};
   }
 
   moveViewTo({x, y}:Point) {
@@ -127,8 +127,8 @@ export class TileGrid {
   }
 
   centerViewOn({x, y}:Point) {
-    const {width, height} = this.viewport;
-    x -= width / 2, y -= height / 2;
+    const {w, h} = this.viewport;
+    x -= w / 2, y -= h / 2;
     return this.moveViewTo({x, y});
   }
 
