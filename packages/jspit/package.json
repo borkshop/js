@@ -10,7 +10,5 @@
     "build": "snowpack build",
     "dist": "bash ./scripts/dist.sh && bash ./scripts/dist-prune.sh"
   },
-  "dependencies": {
-    "lit-html": "^1.3.0"
-  }
+  "dependencies": {}
 }
