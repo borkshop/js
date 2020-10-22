@@ -32,10 +32,10 @@ interface TileData {
   [name: string]: TileDatum
 }
 
-// mortonSpread inserts a 0 bit after each of 26 the low bits of x, masking
+// mortonSpread1 inserts a 0 bit after each of 26 the low bits of x, masking
 // away any higher bits; this is the best we can do in JavaScript since integer
 // precision maxes out at 53 bits.
-function mortonSpread1(x:number):number {
+export function mortonSpread1(x:number):number {
   x =  x             & 0x00000002ffffff; // x = ---- ----  ---- ----  ---- ----  ---- --98  7654 3210  fedc ba98  7654 3210
   x = (x ^ (x << 8)) & 0x0200ff00ff00ff; // x = ---- --98  ---- ----  7654 3210  ---- ----  fedc ba98  ---- ----  7654 3210
   x = (x ^ (x << 4)) & 0x020f0f0f0f0f0f; // x = ---- ----  ---- 7654  ---- 3210  ---- fedc  ---- ba98  ---- 7654  ---- 3210
@@ -44,9 +44,20 @@ function mortonSpread1(x:number):number {
   return x;
 }
 
+// mortonCompact1 is the inverse of mortonSpread1, removing half (the even
+// ones) of the lowerv 53 bits from x.
+export function mortonCompact1(x:number):number {
+  x =  x             & 0x05555555555555;
+  x = (x ^ (x >> 1)) & 0x02333333333333;
+  x = (x ^ (x >> 2)) & 0x020f0f0f0f0f0f;
+  x = (x ^ (x >> 4)) & 0x0200ff00ff00ff;
+  x = (x ^ (x >> 8)) & 0x00000002ffffff;
+  return x;
+}
+
 // mortonKey returns the Z-order curve index for a Point, aka its "Morton code"
 // https://en.wikipedia.org/wiki/Z-order_curve
-function mortonKey({x, y}:Point):number {
+export function mortonKey({x, y}:Point):number {
   return mortonSpread1(Math.floor(x)) | mortonSpread1(Math.floor(y))<<1;
 }
 
