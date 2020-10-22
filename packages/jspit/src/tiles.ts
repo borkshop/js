@@ -313,23 +313,25 @@ export class TileInspector {
   ) {
     this.grid = grid;
     this.handler = handler;
-    this.enable();
+    this.enabled = true;
   }
 
   #listener?: (ev:MouseEvent) => void
 
-  enable() {
-    if (this.#listener) return;
-    this.#lastHandlid = '';
-    this.handler({pos: {x: NaN, y: NaN}, tiles: []});
-    this.#listener = this.mouseMoved.bind(this);
-    this.grid.el.addEventListener('mousemove', this.#listener);
+  get enabled():boolean {
+    return !!this.#listener
   }
 
-  disable() {
-    if (!this.#listener) return;
-    this.grid.el.removeEventListener('mousemove', this.#listener);
-    this.#listener = undefined;
+  set enabled(is:boolean) {
+    if (is) {
+      if (this.#listener) return;
+      this.#listener = this.mouseMoved.bind(this);
+      this.grid.el.addEventListener('mousemove', this.#listener);
+    } else {
+      if (!this.#listener) return;
+      this.grid.el.removeEventListener('mousemove', this.#listener);
+      this.#listener = undefined;
+    }
     this.#lastHandlid = '';
     this.handler({pos: {x: NaN, y: NaN}, tiles: []});
   }

@@ -424,10 +424,7 @@ const keyCodeMap = {
   },
   'Space': (ev:KeyboardEvent) => {
     const enabled = ev.type === 'keydown';
-    if (state.inspector) {
-      if (enabled) state.inspector?.enable();
-      else         state.inspector?.disable();
-    }
+    if (state.inspector) state.inspector.enabled = enabled;
     if (state.grid) {
       state.grid.el.classList.toggle('inspectable', enabled && !!state.inspector);
       state.grid.el.classList.toggle('retro', enabled);
@@ -442,7 +439,7 @@ export function init(bind:Bindings) {
     state.grid = new TileGrid(bound.grid);
     if (bound.inspector) {
       state.inspector = new TileInspector(state.grid, onInsepcted);
-      state.inspector.disable();
+      state.inspector.enabled = false;
     }
   }
 
