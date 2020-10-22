@@ -39,8 +39,6 @@
 - DLA
   - make it a reusable module as basis for Next demo, pulling down as much of
     the above TODO as appropriate
-- TileGrid
-  - viewport correction on resize
 
 ## Done
 
@@ -49,6 +47,8 @@
   - provide default mover class
   - refactored `TileGrid` view movement code, dropping the overly specific
     nudge routine
+  - refactored viewport management, reducing surface are, and adding resize
+    handling to keep the requested point centered
 
 # 2020-10-20
 
