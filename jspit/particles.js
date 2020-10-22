@@ -48,6 +48,16 @@ export function stepParticles({
   if (typeof update === 'function') {
     update(grid, grid.queryTiles(query))
   }
+  // else if (typeof update === 'object') {
+  //   for (const [kind, up] of Object.entries(update)) {
+  //     const {className: qc, ...rq} = query;
+  //     const className =
+  //         typeof qc === 'string' ? [qc, kind]
+  //       : Array.isArray(qc)      ? [...qc, kind]
+  //       : kind;
+  //     up(grid, grid.queryTiles({className, ...rq}));
+  //   }
+  // }
 
   const ps = grid.queryTiles(query);
   for (const p of ps) {
@@ -91,3 +101,4 @@ export function stepParticles({
   return !!ps.length;
 }
 
+// TODO traceParticles that runs each to completion and/or N argument to above stepParticles
