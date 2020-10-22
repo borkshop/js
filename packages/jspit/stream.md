@@ -7,12 +7,15 @@
 - soul prototype
 - mind research: prolog-like systems
 
-- TileGrid
-  - masking?
-  - custom shader funcs, or at least some affordance for stepped css classes
-  - nudge needs to take whole tile into account, nudge if any part of the given point is out
-  - animations like boop and particles
-  - save/load ; initial state
+- tiles
+  - watch for any spatial index bugs, once saw a zombie particle at incorrect
+    location, which allowed the player to step into the void in the DLA demo
+  - TileGrid
+    - masking?
+    - custom shader funcs, or at least some affordance for stepped css classes
+    - nudge needs to take whole tile into account, nudge if any part of the given point is out
+    - animations like boop and particles
+    - save/load ; initial state
 
 - DLA
   - cell visited counts
@@ -36,12 +39,10 @@
 
 ## WIP
 
-- DLA
-  - make it a reusable module as basis for Next demo, pulling down as much of
-    the above TODO as appropriate
-
 ## Done
 
+- factored out particles module with the core underlying update logic from the
+  DLA demo
 - tiles module:
   - reshaped `TileSpec` for better CSS/DOM alignment
   - provide default mover class
