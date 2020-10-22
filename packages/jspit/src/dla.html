@@ -27,8 +27,10 @@
             Diffusion Limited Aggregation
           </h1>
 
-          This is actually a dual random walker and diffusion limited
-          aggregation hybrid:
+          <p>
+            This is actually a dual random walker and diffusion limited
+            aggregation hybrid:
+          </p>
           <ul>
             <li>If a particle is spawned outside the world, it keeps moving until
               it touches the world, aggregating onto and expanding it.</li>
@@ -186,7 +188,6 @@
       import {init} from './dla';
       init({
         doc: document,
-        status: document.querySelector('footer .status'),
         menu: document.querySelector('main .menu'),
         grid: document.querySelector('main .grid '),
         keys: document.body,
