@@ -61,9 +61,9 @@ class TileMortonIndex {
   #back = new Map<string, number>();
 
   update(ids:string[], pos:Point[]) {
-    for (const [i, id] of ids.entries()) {
-      const pt = pos[i];
-      const key = mortonKey(pt);
+    for (let i = 0; i < ids.length; ++i) {
+      const id = ids[i];
+      const key = mortonKey(pos[i]);
       const prior = this.#back.get(id);
       if (prior !== undefined) this.#fore.get(prior)?.delete(id);
       const at = this.#fore.get(key);
