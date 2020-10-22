@@ -149,6 +149,21 @@ export class DLA {
       //   y: bounds.y + Math.random() * bounds.h,
       // };
 
+      // NOTE choosing points on a 1-d z-curve still has bias
+      // // how many random bits do we need to choose a point in bounds?
+      // import {mortonCompact1} from './tiles';
+      //
+      // const {w, h} = this.config.bounds;
+      // this.config.boundBits =
+      //   Math.ceil(Math.log(w) / Math.log(2)) +
+      //   Math.ceil(Math.log(h) / Math.log(2));
+      //
+      // const r = Math.random() * Math.pow(2, this.config.boundBits);
+      // const pos = {
+      //   x: bounds.x + mortonCompact1(r),
+      //   y: bounds.y + mortonCompact1(r >> 1),
+      // };
+
       const
         r = Math.random() * Math.sqrt(Math.pow(bounds.w, 2) + Math.pow(bounds.h, 2)),
         θ = Math.random() * 2 * Math.PI,
