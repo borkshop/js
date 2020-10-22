@@ -4,6 +4,7 @@ import {
   TileInspector, TileInspectEvent, dumpTiles,
   processMoves,
 } from './tiles';
+import {stepParticles} from './particles';
 import {KeyMap, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
@@ -257,118 +258,76 @@ export class DLA {
     const n = Math.floor(this.elapsed / rate);
     if (!n) return;
     this.elapsed -= n * rate;
-    let ps = this.grid.queryTiles({className: ['particle', 'live']});
-
-    for (let i = 0; i < n; ++i) {
-      ps = ps.filter(p => p.classList.contains('live'));
-      if (!ps.length) {
-        const p = this.spawn();
-        if (!p) {
-          if (!havePlayer) this.dropPlayer();
-          return;
+    for (let i = 0; i < n; ++i) if (!stepParticles({
+      grid: this.grid,
+      update: (grid, ps) => {
+        for (const p of ps) {
+          let heading = grid.getTileData(p, 'heading');
+          if (typeof heading !== 'number') heading = 0;
+          const adj = Math.random() * (turnLeft + turnRight) - turnLeft;
+          heading += Math.PI * adj;
+          heading %= 2 * Math.PI;
+          grid.setTileData(p, 'heading', heading);
         }
-        ps.push(p);
-        continue;
-      }
-
-      for (const p of ps) {
-        let steps = this.grid.getTileData(p, 'steps');
-        if (typeof steps !== 'number') steps = 0;
-        this.grid.setTileData(p, 'steps', ++steps);
-
-        let heading = this.grid.getTileData(p, 'heading');
-        if (typeof heading !== 'number') heading = 0;
-
-        const adj = Math.random() * (turnLeft + turnRight) - turnLeft;
-        heading += Math.PI * adj;
-        heading %= 2 * Math.PI;
-        this.grid.setTileData(p, 'heading', heading);
-
-        const p1 = this.grid.getTilePosition(p);
-
-        // move along heaading... somehow
-        const p2 = {x: p1.x, y: p1.y};
-        let dx = Math.cos(heading);
-        let dy = Math.sin(heading);
-        if (!ordinalMoves) {
-          // movement clamped to cardinal directions, with optional tracking of
-          // "debt" from the diagonal not taken
-          const prior = this.grid.getTileData(p, 'prior');
-          if (prior !== null && typeof prior === 'object' && !Array.isArray(prior)) {
-            if (typeof prior.x === 'number') dx += prior.x;
-            if (typeof prior.y === 'number') dy += prior.y;
-          }
-          if (Math.abs(dy) > Math.abs(dx)) {
-            if (dy < 0) p2.y++, dy++;
-            else        p2.y--, dy--;
-          } else {
-            if (dx < 0) p2.x++, dx++;
-            else        p2.x--, dx--;
-          }
-          this.grid.setTileData(p, 'prior', {x: dx, y: dy});
-        } else {
-          // smooth movement, taking fractional positions
-          p2.x += dx;
-          p2.y += dy;
-        }
-
+      },
+      handle: (grid, p, pos, to) => {
         // clamped to grid boundaries
-        const p3 = {x: Math.floor(p1.x), y: Math.floor(p1.y)};
-        const p4 = {x: Math.floor(p2.x), y: Math.floor(p2.y)};
+        const posCell = {x: Math.floor(pos.x), y: Math.floor(pos.y)};
+        const toCell = {x: Math.floor(to.x), y: Math.floor(to.y)};
 
         // check for phase transition when entering a new grid cell based on
-        // what non-live particle prescence
-        if (p3.x !== p4.x || p3.y !== p4.y) {
-          const at3 = this.grid.tilesAt(p3, 'particle')
+        // any non-live particle prescence
+        if (posCell.x !== toCell.x || posCell.y !== toCell.y) {
+          const at3 = grid.tilesAt(posCell, 'particle')
             .filter(t => t.id !== p.id && !t.classList.contains('live'));
-          const at4 = this.grid.tilesAt(p4, 'particle')
+          const at4 = grid.tilesAt(toCell, 'particle')
             .filter(t => !t.classList.contains('live'));
 
           // in-world particles may forge into the void; aka random walker
           if (at3.length && !at4.length) {
             // TODO allow for more than 1 step
-            this.grid.updateTile(p, {
-              pos: p4,
+            grid.updateTile(p, {
+              pos: toCell,
               text: '·',
               className: ['particle', 'prime'],
             });
-            continue;
+            return false;
           }
 
           // in-void particle aggregating onto world; aka DLA depostion
           else if (!at3.length && (
             at4.length
             || this.anyCell(
-              {x: p3.x,   y: p3.y-1},
-              {x: p3.x+1, y: p3.y},
-              {x: p3.x,   y: p3.y+1},
-              {x: p3.x-1, y: p3.y},
+              {x: posCell.x,   y: posCell.y-1},
+              {x: posCell.x+1, y: posCell.y},
+              {x: posCell.x,   y: posCell.y+1},
+              {x: posCell.x-1, y: posCell.y},
             )
             || (ordinalMoves && this.anyCell(
-              {x: p3.x+1, y: p3.y-1},
-              {x: p3.x+1, y: p3.y+1},
-              {x: p3.x-1, y: p3.y+1},
-              {x: p3.x-1, y: p3.y-1},
+              {x: posCell.x+1, y: posCell.y-1},
+              {x: posCell.x+1, y: posCell.y+1},
+              {x: posCell.x-1, y: posCell.y+1},
+              {x: posCell.x-1, y: posCell.y-1},
             ))
           )) {
-            this.grid.updateTile(p, {
-              pos: p3,
+            grid.updateTile(p, {
+              pos: posCell,
               text: '·',
               className: ['particle', 'void'],
             });
-            continue;
+            return false;
           }
         }
 
-        this.grid.moveTileTo(p, p2);
-
-        // increment step counter, and leave a ghost if limit met or exceeded
-        if (steps >= stepLimit) {
-          this.grid.updateTile(p, {
-            pos: p1,
-            className: ['ghost'],
-          });
-        }
+        return true;
+      },
+      ordinalMoves,
+      stepLimit,
+    })) {
+      const p = this.spawn();
+      if (!p) {
+        if (!havePlayer) this.dropPlayer();
+        return;
       }
     }
   }
