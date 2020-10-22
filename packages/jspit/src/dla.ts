@@ -20,6 +20,30 @@ function nextPoint(it:Generator<Point>):Point {
   return it.next().value || {x: NaN, y: NaN};
 }
 
+function choosePointFacing(A: Point[], B: Point[]):Point&{heading:number} {
+  let pos: Point|null = null,
+      at:  Point|null = null,
+      dab: number     = NaN;
+  for (const a of A) for (const b of B) {
+    const d = Math.pow(a.x - b.x, 2) + Math.pow(a.y - b.y, 2);
+    if (d >= dab) continue;
+    pos=a, at=b, dab=d;
+  }
+  if (!pos || !at) return {heading: NaN, x: NaN, y: NaN};
+  const heading = Math.atan2(at.x - pos.x, at.y - pos.y);
+  return {heading, ...pos};
+}
+
+function takePoints(n:number, g:Generator<Point>):Point[] {
+  const r: Point[] = [];
+  for (let i = 0; i < n; ++i) {
+    const {value, done} = g.next();
+    if (value) r.push(value)
+    if (done) break;
+  }
+  return r;
+}
+
 export class DLA {
   // rate at which to coalesce and process movement input
   static inputRate = 100
@@ -136,47 +160,23 @@ export class DLA {
   }
 
   initPlace():Point&{heading:number} {
-    const facing = (p: Point[], a: Point[]):Point&{heading:number} => {
-      const pads = p.map(pt => a
-        .map(({x, y}, i) => [i, Math.pow(pt.x - x, 2) + Math.pow(pt.y - y, 2)]));
-      let pi=NaN, ai=NaN, qpa=NaN;
-      for (let i = 0; i < pads.length; ++i) {
-        const jqs = pads[i];
-        for (const [j, q] of jqs)
-          if (isNaN(qpa) || q < qpa)
-            pi=i, ai=j, qpa=q;
-      }
-      const pos = p[pi], at=a[ai];
-      const heading = Math.atan2(at.x - pos.x, at.y - pos.y);
-      return {heading, ...pos};
-    };
-    const takePoints = (n:number, g:Generator<Point>):Point[] => {
-      const r: Point[] = [];
-      for (let i = 0; i < n; ++i) {
-        const {value, done} = g.next();
-        if (value) r.push(value)
-        if (done) break;
-      }
-      return r;
-    };
-
     const taken = 10;
     const {seeds, initWhere: {value: where}, initAnyBalance} = this.config;
     switch (where) {
 
     case InitWhere.Seed:
       // TODO round robin all seeds?
-      return facing(seeds[0], takePoints(taken, this.chooseVoid()));
+      return choosePointFacing(seeds[0], takePoints(taken, this.chooseVoid()));
     case InitWhere.RandSeed:
-      return facing(seeds, takePoints(taken, this.chooseVoid()));
+      return choosePointFacing(seeds, takePoints(taken, this.chooseVoid()));
 
     case InitWhere.RandPrior:
-      return facing(
+      return choosePointFacing(
         takePoints(taken, this.choosePrior()),
         takePoints(taken, this.chooseVoid()),
       );
     case InitWhere.RandVoid:
-      return facing(
+      return choosePointFacing(
         takePoints(taken, this.chooseVoid()),
         takePoints(taken, this.choosePrior()),
       );
@@ -187,11 +187,11 @@ export class DLA {
       const sVoid  = Math.pow(Math.random(), nVoid  - total * (1 - initAnyBalance));
       const sPrime = Math.pow(Math.random(), nPrime - total *      initAnyBalance);
       return sPrime >= sVoid
-        ? facing(
+        ? choosePointFacing(
           takePoints(taken, this.choosePrior()),
           takePoints(taken, this.chooseVoid()),
         )
-        : facing(
+        : choosePointFacing(
           takePoints(taken, this.chooseVoid()),
           takePoints(taken, this.choosePrior()),
         );
