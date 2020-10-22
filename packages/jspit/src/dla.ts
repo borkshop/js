@@ -141,10 +141,19 @@ export class DLA {
   *chooseVoid() {
     const {bounds} = this.config;
     while (true) {
-      const pos = {
-        x: bounds.x + Math.random() * bounds.w,
-        y: bounds.y + Math.random() * bounds.h,
-      };
+
+      // TODO this leads to bias for P(reasons); would be nice to unpack and
+      // understand that more
+      // const pos = {
+      //   x: bounds.x + Math.random() * bounds.w,
+      //   y: bounds.y + Math.random() * bounds.h,
+      // };
+
+      const
+        r = Math.random() * Math.sqrt(Math.pow(bounds.w, 2) + Math.pow(bounds.h, 2)),
+        θ = Math.random() * 2 * Math.PI,
+        pos = {x: Math.cos(θ) * r, y: Math.sin(θ) * r};
+
       const at = this.grid.tilesAt(pos, 'particle')
         .filter(t => !t.classList.contains('live'));
       if (!at.length) yield pos;
