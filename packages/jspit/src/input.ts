@@ -1,18 +1,36 @@
-export class KeyMap extends Map<string, number> {
-  filter?: (keyEvent:KeyboardEvent) => boolean
+export class KeyCtl extends Map<string, number> {
   target: EventTarget
   #handler: (ev:Event)=>void
 
-  constructor(
-    target: EventTarget,
-    filter?: (keyEvent:KeyboardEvent) => boolean,
-  ) {
+  #counting: boolean = false
+  get counting() { return this.#counting; }
+  set counting(enabled:boolean) {
+    this.#counting = enabled;
+    this.clear();
+  }
+
+  on: {
+    code: {[name: string]: undefined|((keyEvent:KeyboardEvent)=>void)},
+    key: {[name: string]: undefined|((keyEvent:KeyboardEvent)=>void)},
+  } = {code: {}, key: {}}
+
+  constructor(target: EventTarget) {
     super();
     this.#handler = this.handleEvent.bind(this);
-    this.filter = filter;
     this.target = target;
     this.target.addEventListener('keydown', this.#handler);
     this.target.addEventListener('keyup', this.#handler);
+  }
+
+  handleEvent(event:Event) {
+    if (event.type !== 'keyup' && event.type !== 'keydown') return;
+    const keyEvent = event as KeyboardEvent;
+    const on = this.on.code[keyEvent.code] || this.on.key[keyEvent.key];
+    if      (on)             on(keyEvent);
+    else if (this.#counting) this.countKey(keyEvent);
+    else                     return;
+    event.stopPropagation();
+    event.preventDefault();
   }
 
   countKey({altKey, ctrlKey, metaKey, shiftKey, key}:KeyboardEvent) {
@@ -24,15 +42,6 @@ export class KeyMap extends Map<string, number> {
       key}`;
     const n = this.get(name) || 0;
     this.set(name, n+1);
-  }
-
-  handleEvent(event:Event) {
-    if (event.type !== 'keyup' && event.type !== 'keydown') return;
-    const keyEvent = event as KeyboardEvent;
-    if (this.filter && !this.filter(keyEvent)) return;
-    this.countKey(keyEvent);
-    event.stopPropagation();
-    event.preventDefault();
   }
 
   consumePresses() {

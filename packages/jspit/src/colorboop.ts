@@ -1,5 +1,5 @@
 import {TileGrid, processMoves} from './tiles';
-import {KeyMap, coalesceMoves} from './input';
+import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
 
@@ -72,7 +72,7 @@ export const bound:Partial<Bindings> = {};
 // simulation / "game" state and dependencies
 interface State {
   grid: TileGrid,
-  keys: KeyMap,
+  keys: KeyCtl,
   running: boolean,
 }
 export const state:Partial<State> = {};
@@ -85,14 +85,12 @@ export function init(bind:Bindings) {
     setup(state.grid);
   }
 
-  if (bound.keys) state.keys = new KeyMap(bound.keys, (ev:KeyboardEvent):boolean => {
-    if (ev.key === 'Escape') {
+  if (bound.keys) {
+    state.keys = new KeyCtl(bound.keys);
+    state.keys.on.code['Escape'] = (ev:KeyboardEvent) => {
       if (ev.type === 'keydown') playPause();
-      return false;
-    }
-    if (!state.running) return false;
-    return !ev.altKey && !ev.ctrlKey && !ev.metaKey;
-  });
+    };
+  }
 
   bound.run?.addEventListener('click', playPause);
   bound.reset?.addEventListener('click', () => {
@@ -141,9 +139,11 @@ function playPause() {
 
 function stop() {
   state.running = false;
+  if (state.keys) state.keys.counting = false;
 }
 
 function run() {
+  if (state.keys) state.keys.counting = true;
   state.running = true;
   everyFrame(schedule(
     () => !!state.running,

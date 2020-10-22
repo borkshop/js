@@ -5,7 +5,7 @@ import {
   processMoves,
 } from './tiles';
 import {stepParticles} from './particles';
-import {KeyMap, coalesceMoves} from './input';
+import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 import {show as showUI, Bindings as UIBindings} from './ui';
 
@@ -405,7 +405,7 @@ export const bound:Partial<Bindings> = {};
 interface State {
   grid: TileGrid,
   inspector: TileInspector,
-  keys: KeyMap,
+  keys: KeyCtl,
   world: DLA,
   running: boolean
 }
@@ -418,6 +418,23 @@ function onInsepcted({pos: {x, y}, tiles}:TileInspectEvent) {
   if (bound.inspector) dumpTiles({tiles, into: bound.inspector});
 }
 
+const keyCodeMap = {
+  'Escape': (ev:KeyboardEvent) => {
+    if (ev.type === 'keydown') playPause();
+  },
+  'Space': (ev:KeyboardEvent) => {
+    const enabled = ev.type === 'keydown';
+    if (state.inspector) {
+      if (enabled) state.inspector?.enable();
+      else         state.inspector?.disable();
+    }
+    if (state.grid) {
+      state.grid.el.classList.toggle('inspectable', enabled && !!state.inspector);
+      state.grid.el.classList.toggle('retro', enabled);
+    }
+  },
+};
+
 export function init(bind:Bindings) {
   Object.assign(bound, bind);
 
@@ -429,25 +446,10 @@ export function init(bind:Bindings) {
     }
   }
 
-  if (bound.keys) state.keys = new KeyMap(bound.keys, (ev:KeyboardEvent):boolean => {
-
-    if (ev.key === 'Escape') {
-      if (ev.type === 'keydown') playPause();
-      return false;
-    }
-
-    if (ev.code === 'Space') {
-      const enabled = ev.type === 'keydown';
-      if (enabled) state.inspector?.enable();
-      else         state.inspector?.disable();
-      state.grid?.el.classList.toggle('inspectable', enabled && !!state.inspector);
-      state.grid?.el.classList.toggle('retro', enabled);
-      return false;
-    }
-
-    if (!state.running) return false;
-    return !ev.altKey && !ev.ctrlKey && !ev.metaKey;
-  });
+  if (bound.keys) {
+    state.keys = new KeyCtl(bound.keys);
+    Object.assign(state.keys.on.code, keyCodeMap);
+  }
 
   bound.run?.addEventListener('click', playPause);
   bound.reset?.addEventListener('click', () => {
@@ -485,6 +487,7 @@ function playPause() {
 }
 
 function stop() {
+  if (state.keys) state.keys.counting = false;
   state.running = false;
   showUI(bound, true, false);
 }
@@ -494,6 +497,7 @@ function run() {
   if (!keys || !world || !grid) return;
 
   state.running = true;
+  keys.counting = true;
   showUI(bound, true, true);
 
   everyFrame(schedule(
