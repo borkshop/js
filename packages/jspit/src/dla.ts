@@ -449,7 +449,7 @@ export function init(bind:Bindings) {
 
   bound.run?.addEventListener('click', playPause);
   bound.reset?.addEventListener('click', () => {
-    if (state.world) state.running = false;
+    stop();
     state.world = undefined;
     if (bound.reset) bound.reset.disabled = true;
     showUI(bound, false, false);
@@ -492,21 +492,29 @@ function playPause() {
     if (bound.reset) bound.reset.disabled = false;
   }
 
-  if (state.running) state.running = false; else {
-    state.running = true;
-    everyFrame(schedule(
-      () => !!state.running,
+  if (state.running) stop(); else run();
+}
 
-      {every: DLA.inputRate, then: thenInput},
+function stop() {
+  state.running = false;
+}
 
-      (dt:number) => {
-        const {world} = state;
-        if (!world) return false;
-        world.update(dt);
-        if (bound.particleID)
-          bound.particleID.innerText = world.particleID.toString();
-        return true;
-      },
-    ));
-  }
+function run() {
+  const {world} = state;
+  if (!world) return;
+
+  state.running = true;
+
+  everyFrame(schedule(
+    () => !!state.running,
+
+    {every: DLA.inputRate, then: thenInput},
+
+    (dt:number) => {
+      world.update(dt);
+      if (bound.particleID)
+        bound.particleID.innerText = world.particleID.toString();
+      return true;
+    },
+  ));
 }
