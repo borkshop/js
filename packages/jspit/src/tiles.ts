@@ -100,6 +100,11 @@ export class TileGrid {
     this.el = el;
     this.#obs = new ResizeObserver(() => this._updateSize());
     this.#obs.observe(this.el);
+    const tiles = this.queryTiles();
+    this.spatialIndex.update(
+      tiles.map(tile => tile.id),
+      tiles.map(tile => this.getTilePosition(tile)),
+    );
   }
 
   get tileSize(): Point {
