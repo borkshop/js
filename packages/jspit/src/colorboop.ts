@@ -135,14 +135,18 @@ function thenInput():boolean {
 
 function playPause() {
   if (!state.grid) return;
-
-  if (state.running) state.running = false; else {
-    state.running = true;
-    everyFrame(schedule(
-      () => !!state.running,
-      {every: 100, then: thenInput},
-    ));
-  }
-
+  if (state.running) stop(); else run();
   showUI(bound, true, !!state.running);
+}
+
+function stop() {
+  state.running = false;
+}
+
+function run() {
+  state.running = true;
+  everyFrame(schedule(
+    () => !!state.running,
+    {every: 100, then: thenInput},
+  ));
 }
