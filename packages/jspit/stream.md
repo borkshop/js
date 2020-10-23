@@ -1,4 +1,4 @@
-# 2020-10-21
+# 2020-10-22
 
 ## TODO
 
@@ -39,7 +39,22 @@
 
 ## WIP
 
+- domgeon: room builder, better starting notation, door interaction, and a
+  digging item to start
+
 ## Done
+
+- wrote a small domgeon skeleton with a hardcoded 5x5 room
+- added `TileGrid` support for pre-existing tiles
+- improved `TileInspector` so that it emits events for empty cells too
+- refactored demo page module structure to further simplify start/stop
+  structure
+- generalized `KeyMap` into `KeyCtl` to generalize the prior `filter` code
+  dispatch for things like `Escape` and `Space`
+- tried a last few tricks for initial DLA void point selection, without much
+  result other than a `mortonCompact1` function
+
+# 2020-10-21
 
 - factored out particles module with the core underlying update logic from the
   DLA demo
