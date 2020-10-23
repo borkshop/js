@@ -383,6 +383,16 @@ export function dumpTiles({tiles, into, dump}:{
   }
 }
 
+// TODO support grouped resolution and/or priority...
+
+type moverProc = (req:{
+  grid: TileGrid,
+  mover: HTMLElement,
+  at: HTMLElement[],
+  pos: Point,
+  to: Point,
+}) => boolean
+
 export function processMoves({
   grid,
   moverClass = 'mover',
@@ -390,29 +400,32 @@ export function processMoves({
 }:{
   grid: TileGrid,
   moverClass?: string,
-  kinds: {[kind: string]: (req:{
-    grid: TileGrid,
-    mover: HTMLElement,
-    at: HTMLElement[],
-    pos: Point,
-    to: Point,
-  }) => boolean},
+  kinds: {[kind: string]: moverProc},
 }):void {
-  // TODO support grouped resolution and/or priority...
-  for (const [kind, may] of Object.entries(kinds)) {
-    for (const mover of grid.queryTiles({className: [moverClass, kind]})) {
-      const move = grid.getTileData(mover, 'move');
-      if (!move || typeof move !== 'object') continue;
-      if (!(
-        'x' in move && typeof move.x === 'number' &&
-        'y' in move && typeof move.y === 'number'
-      )) continue;
-      const pos = grid.getTilePosition(mover);
-      const to = {x: pos.x + move.x, y: pos.y + move.y};
-      const at = grid.tilesAt(to);
-      if (may({grid, mover, at, pos, to}))
-        grid.moveTileTo(mover, to);
-      grid.setTileData(mover, 'move', null);
-    }
+  for (const kind in kinds) processMoveClass({grid, moverClass, kind, may: kinds[kind]});
+  if (!('' in kinds))       processMoveClass({grid, moverClass});
+}
+
+export function processMoveClass({grid, moverClass='mover', kind='', may}:{
+  grid: TileGrid,
+  moverClass?: string,
+  kind?: string,
+  may?: moverProc,
+}):void {
+  for (const mover of grid.queryTiles({
+    className: kind ? [moverClass, kind] : moverClass,
+  })) {
+    const move = grid.getTileData(mover, 'move');
+    if (!move || typeof move !== 'object') continue;
+    if (!(
+      'x' in move && typeof move.x === 'number' &&
+      'y' in move && typeof move.y === 'number'
+    )) continue;
+    const pos = grid.getTilePosition(mover);
+    const to = {x: pos.x + move.x, y: pos.y + move.y};
+    const at = grid.tilesAt(to);
+    if (!may || may({grid, mover, at, pos, to}))
+      grid.moveTileTo(mover, to);
+    grid.setTileData(mover, 'move', null);
   }
 }
