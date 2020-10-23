@@ -485,7 +485,7 @@ function playPause() {
     if (bound.reset) bound.reset.disabled = false;
   }
 
-  if (state.running) stop(); else run();
+  if (state.running) stop(); else start();
 }
 
 function stop() {
@@ -494,7 +494,7 @@ function stop() {
   toggleUI();
 }
 
-function run() {
+async function start() {
   const {keys, world, grid} = state;
   if (!keys || !world || !grid) return;
 
@@ -502,7 +502,7 @@ function run() {
   keys.counting = true;
   toggleUI();
 
-  everyFrame(schedule(
+  return everyFrame(schedule(
     () => !!state.running,
 
     {every: DLA.inputRate, then: () => {

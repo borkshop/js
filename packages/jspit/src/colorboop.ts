@@ -136,7 +136,7 @@ function thenInput():boolean {
 
 function playPause() {
   if (!state.grid) return;
-  if (state.running) stop(); else run();
+  if (state.running) stop(); else start();
   if (bound.ui) bound.ui.classList.toggle('running', !!state.running);
 }
 
@@ -145,10 +145,10 @@ function stop() {
   if (state.keys) state.keys.counting = false;
 }
 
-function run() {
+async function start() {
   if (state.keys) state.keys.counting = true;
   state.running = true;
-  everyFrame(schedule(
+  return everyFrame(schedule(
     () => !!state.running,
     {every: 100, then: thenInput},
   ));
