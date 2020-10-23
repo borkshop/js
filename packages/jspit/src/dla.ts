@@ -93,7 +93,8 @@ export class DLA {
     this.grid.clear();
     const center = {x: NaN, y: NaN};
     for (const pos of seeds) {
-      this.grid.createTile(`particle-${++this.particleID}`, {
+      this.grid.createTile({
+        id: `particle-${++this.particleID}`,
         pos,
         text: '·',
         className: ['particle', 'init'],
@@ -132,10 +133,10 @@ export class DLA {
   dropPlayer() {
     const {seeds} = this.config;
     const pos = seeds[0];
-    this.grid.createTile('at', {
+    this.grid.createTile({
       pos,
       text: '@',
-      className: ['solid', 'mover', 'input'],
+      className: ['input', 'solid', 'mover'],
     });
   }
 
@@ -257,7 +258,9 @@ export class DLA {
     };
     if (ghost)
       return this.grid.updateTile(ghost, spec);
-    return this.grid.createTile(`particle-${++this.particleID}`, spec);
+    return this.grid.createTile({
+      id: `particle-${++this.particleID}`,
+      ...spec});
   }
 
   anyCell(...pts:Point[]):boolean {

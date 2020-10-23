@@ -4,9 +4,10 @@ import {everyFrame, schedule} from './anim';
 
 function setup(grid:TileGrid) {
   grid.clear();
-  grid.createTile('at', {
+  grid.createTile({
+    id: 'player',
     text: '@',
-    className: ['solid', 'mover', 'input'],
+    className: ['mover', 'solid', 'input'],
     pos: {x: 10, y: 10},
   });
 
@@ -35,18 +36,18 @@ function setup(grid:TileGrid) {
     'yellow-orange',
   ];
   colors.forEach((color, i) => {
-    grid.createTile(`fg-swatch-${color}`, {
+    grid.createTile({
       pos: {x: 5, y: i},
       text: '$',
-      className: ['solid', 'swatch', 'fg'],
+      className: ['swatch', 'solid', 'fg'],
       style: {
         color: `var(--${color})`,
       },
     });
-    grid.createTile(`bg-swatch-${color}`, {
+    grid.createTile({
       pos: {x: 15, y: i},
       text: '$',
-      className: ['solid', 'swatch', 'bg'],
+      className: ['swatch', 'solid', 'bg'],
       style: {
         backgroundColor: `var(--${color})`,
       },

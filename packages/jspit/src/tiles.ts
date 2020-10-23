@@ -162,11 +162,21 @@ export class TileGrid {
     return `${this.el.id}${this.el.id ? '-': ''}${this.idspace}-${id}`;
   }
 
-  createTile(id: string, spec:TileSpec):HTMLElement {
-    let tile = this.getTile(id);
+  #kindid = new Map<string, number>()
+
+  createTile({id, ...spec}:{id?: string}&TileSpec):HTMLElement {
+    let tile = id ? this.getTile(id) : null;
     if (!tile) {
       tile = this.el.ownerDocument.createElement('div');
       this.el.appendChild(tile)
+      if (!id) {
+        let kind = '';
+        if (typeof spec.className === 'string') kind = spec.className;
+        else if (Array.isArray(spec.className)) kind = spec.className[0];
+        let n = this.#kindid.get(kind) || 0;
+        id = `${kind}${kind ? '-' : ''}${++n}`;
+        this.#kindid.set(kind, n);
+      }
       tile.id = this.tileID(id)
     }
     if (!spec.pos) spec.pos = {x: 0, y: 0};
