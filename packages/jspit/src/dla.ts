@@ -355,6 +355,34 @@ export class DLA {
       }
     }
   }
+
+  processMoves() {
+    const playerAt: Point[] = [];
+
+    processMoves({grid: this.grid, kinds: {
+      // solid movers must stay on particle support and are subject to collison
+      solid: ({mover, at, to}):boolean => {
+        // can only move there if have particle support
+        if (!at.some(h => h.classList.contains('particle'))) return false;
+
+        // may not move there if occupied by another solid
+        if (at.some(h => h.classList.contains('solid'))) return false;
+
+        if (mover.classList.contains('input')) playerAt.push(to);
+        return true;
+      }
+    }});
+
+    const c = playerAt.reduce((c, p) => {
+      if (isNaN(c.x) || isNaN(c.y)) return p;
+      return {x: (c.x + p.x)/2, y: (c.y + p.y)/2};
+    }, {x: NaN, y: NaN});
+    if (!isNaN(c.x) && !isNaN(c.y)) {
+      const {x: vx, y: vy, w, h} = this.grid.viewport;
+      if (c.x <= vx || c.y <= vy || c.x+1 >= vx + w || c.y+1 >= vy + h)
+        this.grid.viewPoint = c;
+    }
+  }
 }
 
 // injected DOM parts
@@ -443,57 +471,13 @@ export function init(bind:Bindings) {
 }
 
 function thenInput():boolean {
-  const {keys, grid} = state;
-  if (!keys || !grid) return false;
-
+  const {world, keys, grid} = state;
+  if (!world || !keys || !grid) return false;
   const presses = keys.consumePresses();
-
   let {have, move} = coalesceMoves(presses);
   if (have) for (const mover of grid.queryTiles({className: ['mover', 'input']}))
     grid.setTileData(mover, 'move', move);
-
-  const playerAt: Point[] = [];
-
-  processMoves({grid, kinds: {
-    // solid movers must stay on particle support and are subject to collison
-    solid: ({mover, at, to}):boolean => {
-
-      // TODO restore dig ability
-      // if (!at.length) {
-      //   const aid = mover.id;
-      //   const did = (digSeq.get(aid) || 0) + 1;
-      //   digSeq.set(aid, did);
-      //   grid.createTile(`particle-placed-${aid}-${did}`, {
-      //     className: ['particle'],
-      //     pos: to,
-      //     fg: 'var(--dla-player)',
-      //     text: '·',
-      //   });
-      //   return;
-      // }
-
-      // can only move there if have particle support
-      if (!at.some(h => h.classList.contains('particle'))) return false;
-
-      // may not move there if occupied by another solid
-      if (at.some(h => h.classList.contains('solid'))) return false;
-      // TODO interaction
-
-      if (mover.classList.contains('input')) playerAt.push(to);
-      return true;
-    }
-  }});
-
-  const c = playerAt.reduce((c, p) => {
-    if (isNaN(c.x) || isNaN(c.y)) return p;
-    return {x: (c.x + p.x)/2, y: (c.y + p.y)/2};
-  }, {x: NaN, y: NaN});
-  if (!isNaN(c.x) && !isNaN(c.y)) {
-    const {x: vx, y: vy, w, h} = grid.viewport;
-    if (c.x <= vx || c.y <= vy || c.x+1 >= vx + w || c.y+1 >= vy + h)
-      grid.viewPoint = c;
-  }
-
+  world.processMoves();
   return true;
 }
 
