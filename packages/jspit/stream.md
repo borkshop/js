@@ -1,4 +1,4 @@
-# 2020-10-22
+# 2020-10-23
 
 ## TODO
 
@@ -11,11 +11,10 @@
   - watch for any spatial index bugs, once saw a zombie particle at incorrect
     location, which allowed the player to step into the void in the DLA demo
   - TileGrid
-    - masking?
     - custom shader funcs, or at least some affordance for stepped css classes
-    - nudge needs to take whole tile into account, nudge if any part of the given point is out
     - animations like boop and particles
     - save/load ; initial state
+    - masking?
 
 - DLA
   - cell visited counts
@@ -37,12 +36,25 @@
   - terminate particles more aggresively (e.g. if have moved away from bounds
     for N turns)
 
+- domgeon:
+  - digging item
+
 ## WIP
 
-- domgeon: room builder, better starting notation, door interaction, and a
-  digging item to start
+- domgeon:
+  - builder
+  - door interaction
+  - visibility ala <https://www.albertford.com/shadowcasting>
 
 ## Done
+
+- domgeon
+  - reified everything to expose an object off which custom DM logic may hang
+  - decoupled inspector
+- tiles
+  - provide auto generated tild ids, easing domgeon inline creation scripts
+
+# 2020-10-22
 
 - wrote a small domgeon skeleton with a hardcoded 5x5 room
 - added `TileGrid` support for pre-existing tiles
