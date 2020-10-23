@@ -111,6 +111,8 @@ export class DLA {
         w:  w,   h:  h,
       };
     }
+    if (!(this.config.bounds.w*this.config.bounds.h))
+      throw new Error('invalid DLA bounds');
 
     if (!this.config.particleLimit) {
       const {bounds: {w, h}} = this.config;
