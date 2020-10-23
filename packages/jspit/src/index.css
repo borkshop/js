@@ -151,7 +151,6 @@ section {
   overflow: hidden;
 
   line-height: 1.0;
-  cursor: none;
   font-size: 18pt;
   user-select: none;
 
@@ -164,6 +163,8 @@ section {
   background-color: var(--grid-bg);
   font-family: monospace;
 }
+
+body.running .grid { cursor: none; }
 
 .grid .tile {
   --x: 0;
