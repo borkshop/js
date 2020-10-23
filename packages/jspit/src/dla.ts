@@ -473,8 +473,6 @@ export function init(bind:Bindings) {
 function playPause() {
   if (!state.grid) return;
 
-  showUI(bound, true, !state.running);
-
   if (!state.world) {
     state.world = new DLA(state.grid);
     if (bound.dropPlayer) bound.dropPlayer.disabled = false;
@@ -486,6 +484,7 @@ function playPause() {
 
 function stop() {
   state.running = false;
+  showUI(bound, true, false);
 }
 
 function run() {
@@ -493,6 +492,7 @@ function run() {
   if (!keys || !world || !grid) return;
 
   state.running = true;
+  showUI(bound, true, true);
 
   everyFrame(schedule(
     () => !!state.running,
