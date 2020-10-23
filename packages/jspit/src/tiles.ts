@@ -390,7 +390,7 @@ export function dumpTiles({tiles, into, dump}:{
 
 // TODO support grouped resolution and/or priority...
 
-type moverProc = (req:{
+export type TileMoverProc = (req:{
   grid: TileGrid,
   mover: HTMLElement,
   at: HTMLElement[],
@@ -398,24 +398,25 @@ type moverProc = (req:{
   to: Point,
 }) => boolean
 
-export function processMoves({
+export function moveTiles({
   grid,
   moverClass = 'mover',
   kinds,
 }:{
   grid: TileGrid,
   moverClass?: string,
-  kinds: {[kind: string]: moverProc},
+  kinds: {[kind: string]: TileMoverProc},
 }):void {
-  for (const kind in kinds) processMoveClass({grid, moverClass, kind, may: kinds[kind]});
-  if (!('' in kinds))       processMoveClass({grid, moverClass});
+  for (const kind in kinds)
+    moveTileClass({grid, moverClass, kind, may: kinds[kind]});
+  if (!('' in kinds)) moveTileClass({grid, moverClass});
 }
 
-export function processMoveClass({grid, moverClass='mover', kind='', may}:{
+export function moveTileClass({grid, moverClass='mover', kind='', may}:{
   grid: TileGrid,
   moverClass?: string,
   kind?: string,
-  may?: moverProc,
+  may?: TileMoverProc,
 }):void {
   for (const mover of grid.queryTiles({
     className: kind ? [moverClass, kind] : moverClass,

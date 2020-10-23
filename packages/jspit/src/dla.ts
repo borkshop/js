@@ -2,7 +2,7 @@ import {bindVars} from './config';
 import {
   Point, TileGrid,
   TileInspector, TileInspectEvent, dumpTiles,
-  processMoves,
+  moveTiles,
 } from './tiles';
 import {stepParticles} from './particles';
 import {KeyCtl, coalesceMoves} from './input';
@@ -360,7 +360,7 @@ export class DLA {
   processMoves() {
     const playerAt: Point[] = [];
 
-    processMoves({grid: this.grid, kinds: {
+    moveTiles({grid: this.grid, kinds: {
       // solid movers must stay on particle support and are subject to collison
       solid: ({mover, at, to}):boolean => {
         // can only move there if have particle support

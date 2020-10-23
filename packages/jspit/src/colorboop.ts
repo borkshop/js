@@ -1,4 +1,4 @@
-import {TileGrid, processMoves} from './tiles';
+import {TileGrid, moveTiles} from './tiles';
 import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 
@@ -113,7 +113,7 @@ function thenInput():boolean {
   let {have, move} = coalesceMoves(keys.consumePresses());
   if (have) for (const mover of grid.queryTiles({className: ['mover', 'input']}))
     grid.setTileData(mover, 'move', move);
-  processMoves({grid, kinds: {
+  moveTiles({grid, kinds: {
     // solid tiles collide, leading to interaction
     solid: ({grid, mover, at}) => {
       const hits = at.filter(h => h.classList.contains('solid'));

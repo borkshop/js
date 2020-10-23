@@ -1,7 +1,7 @@
 import {
   Point, TileGrid,
   TileInspector, dumpTiles,
-  processMoves,
+  moveTiles,
 } from './tiles';
 import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
@@ -50,7 +50,7 @@ function processInput(keys:KeyCtl, grid:TileGrid) {
     grid.setTileData(mover, 'move', move);
   }
 
-  processMoves({grid, kinds: {
+  moveTiles({grid, kinds: {
     solid: ({at}):boolean => {
       // can only move there if have particle support
       if (!at.some(h => h.classList.contains('floor'))) return false;
