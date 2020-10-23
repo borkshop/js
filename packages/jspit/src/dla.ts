@@ -470,17 +470,6 @@ export function init(bind:Bindings) {
   showUI(bound, false, false);
 }
 
-function thenInput():boolean {
-  const {world, keys, grid} = state;
-  if (!world || !keys || !grid) return false;
-  const presses = keys.consumePresses();
-  let {have, move} = coalesceMoves(presses);
-  if (have) for (const mover of grid.queryTiles({className: ['mover', 'input']}))
-    grid.setTileData(mover, 'move', move);
-  world.processMoves();
-  return true;
-}
-
 function playPause() {
   if (!state.grid) return;
 
@@ -500,15 +489,22 @@ function stop() {
 }
 
 function run() {
-  const {world} = state;
-  if (!world) return;
+  const {keys, world, grid} = state;
+  if (!keys || !world || !grid) return;
 
   state.running = true;
 
   everyFrame(schedule(
     () => !!state.running,
 
-    {every: DLA.inputRate, then: thenInput},
+    {every: DLA.inputRate, then: () => {
+      const presses = keys.consumePresses();
+      let {have, move} = coalesceMoves(presses);
+      if (have) for (const mover of grid.queryTiles({className: ['mover', 'input']}))
+        grid.setTileData(mover, 'move', move);
+      world.processMoves();
+      return true;
+    }},
 
     (dt:number) => {
       world.update(dt);
