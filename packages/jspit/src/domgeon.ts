@@ -1,7 +1,7 @@
 import {
   Point, TileGrid,
   TileInspector, dumpTiles,
-  moveTiles,
+  moveTiles, TileMoverProc,
 } from './tiles';
 import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
@@ -18,39 +18,15 @@ function centroid(ps: Point[]):Point {
   }, ps[0]);
 }
 
-// injected DOM parts
-interface Bindings {
-  ui: HTMLElement,
-  grid: HTMLElement,
-  keys: HTMLElement,
-  inspector: HTMLElement,
-}
-export const bound:Partial<Bindings> = {};
+export class DOMgeon extends EventTarget {
+  grid: TileGrid
+  ui: HTMLElement
+  keys: KeyCtl
 
-// simulation / "game" state and dependencies
-interface State {
-  grid: TileGrid,
-  inspector: TileInspector,
-  keys: KeyCtl,
-  running: boolean
-}
-export const state:Partial<State> = {};
+  inputRate: number
+  running: boolean = false
 
-const keyCodeMap = {
-  'Escape': (ev:KeyboardEvent) => {
-    if (ev.type === 'keydown') {
-      if (state.running) stop(); else run();
-    }
-  },
-};
-
-function processInput(keys:KeyCtl, grid:TileGrid) {
-  let {have, move} = coalesceMoves(keys.consumePresses());
-  if (have) for (const mover of grid.queryTiles({className: ['mover', 'input']})) {
-    grid.setTileData(mover, 'move', move);
-  }
-
-  moveTiles({grid, kinds: {
+  moveProcs: {[kind: string]: TileMoverProc} = {
     solid: ({at}):boolean => {
       // can only move there if have particle support
       if (!at.some(h => h.classList.contains('floor'))) return false;
@@ -60,64 +36,94 @@ function processInput(keys:KeyCtl, grid:TileGrid) {
 
       return true;
     },
-  }});
-
-  // ensure viewport centered on player input(s)
-  const c = centroid(grid.queryTiles({className: ['mover', 'input']})
-    .map(input => grid.getTilePosition(input)));
-  const {x: vx, y: vy, w, h} = grid.viewport;
-  if (c.x <= vx || c.y <= vy || c.x+1 >= vx + w || c.y+1 >= vy + h)
-    grid.viewPoint = c;
-}
-
-export function init(bind:Bindings) {
-  Object.assign(bound, bind);
-
-  if (bound.keys) {
-    state.keys = new KeyCtl(bound.keys);
-    Object.assign(state.keys.on.code, keyCodeMap);
   }
 
-  if (bound.grid) {
-    const grid = state.grid = new TileGrid(bound.grid);
+  constructor(params: Partial<{
+    grid: HTMLElement
+    ui: HTMLElement
+    keys: HTMLElement
+    inputRate: number
+  }>) {
+    super();
+    if (!params.grid) throw new Error('must provide a DOMgeon grid element');
 
-    if (bound.inspector) {
-      const txt = bound.inspector.querySelector('textarea');
-      const at = bound.inspector.querySelector('[data-for="pos"]') as HTMLElement|null;
-      state.inspector = new TileInspector(grid, ({pos: {x, y}, tiles}) => {
-        if (at) at.innerText = `${isNaN(x) ? 'X' : Math.floor(x)},${isNaN(y) ? 'Y' : Math.floor(y)}`;
-        if (txt) dumpTiles({tiles, into: txt});
-      });
+    const {
+      // element bindings
+      grid,
+      keys = grid,
+      ui = grid,
+
+      // config
+      inputRate = 100,
+    } = params;
+    this.ui = ui;
+    this.inputRate = inputRate;
+
+    this.grid = new TileGrid(grid);
+    this.grid.viewPoint = centroid(this.grid.queryTiles({className: ['mover', 'input']})
+      .map(input => this.grid.getTilePosition(input)));
+
+    this.keys = new KeyCtl(keys);
+    this.keys.on.code['Escape'] = (ev:KeyboardEvent) => {
+      if (ev.type !== 'keyup') return;
+      if (this.running) this.stop(); else this.start();
+    };
+
+    this.ui.classList.toggle('showUI', true);
+  }
+
+  stop() {
+    this.running = false;
+  }
+
+  async start() {
+    this.running = true;
+    this.ui.classList.toggle('running', true);
+    this.keys.counting = true;
+    this.dispatchEvent(new Event('start'));
+    await everyFrame(schedule(
+      () => !!this.running,
+      {every: this.inputRate, then: () => { this.processInput(); return true }},
+      // TODO other updates for things like particle system
+    ));
+    this.dispatchEvent(new Event('stop'));
+    this.keys.counting = false;
+    this.ui.classList.toggle('running', false);
+  }
+
+  processInput() {
+    let {have, move} = coalesceMoves(this.keys.consumePresses());
+    if (have) for (const mover of this.grid.queryTiles({className: ['mover', 'input']})) {
+      this.grid.setTileData(mover, 'move', move);
     }
 
-    grid.viewPoint = centroid(grid.queryTiles({className: ['mover', 'input']})
-      .map(input => grid.getTilePosition(input)));
+    moveTiles({grid: this.grid, kinds: this.moveProcs});
+
+    // ensure viewport centered on player input(s)
+    const c = centroid(this.grid.queryTiles({className: ['mover', 'input']})
+      .map(input => this.grid.getTilePosition(input)));
+    const {x: vx, y: vy, w, h} = this.grid.viewport;
+    if (c.x <= vx || c.y <= vy || c.x+1 >= vx + w || c.y+1 >= vy + h)
+      this.grid.viewPoint = c;
   }
-
-  if (bound.ui) bound.ui.classList.toggle('showUI', true);
-
-  stop();
 }
 
-function stop() {
-  if (state.keys) state.keys.counting = false;
-  state.running = false;
-  if (bound.ui) bound.ui.classList.toggle('running', false);
-  if (state.grid) state.grid.el.classList.toggle('inspectable', true);
-}
+export class DOMgeonInspector extends TileInspector {
+  el: HTMLElement
+  dmg: DOMgeon
 
-function run() {
-  const {keys, grid} = state;
-  if (!keys || !grid) return;
+  constructor(dmg: DOMgeon, el: HTMLElement) {
+    const txt = el.querySelector('textarea');
+    const at = el.querySelector('[data-for="pos"]') as HTMLElement|null;
+    super(dmg.grid, ({pos: {x, y}, tiles}) => {
+      if (at) at.innerText = `${isNaN(x) ? 'X' : Math.floor(x)},${isNaN(y) ? 'Y' : Math.floor(y)}`;
+      if (txt) dumpTiles({tiles, into: txt});
+    });
 
-  state.running = true;
-  keys.counting = true;
-  if (bound.ui) bound.ui.classList.toggle('running', true);
-  if (state.grid) state.grid.el.classList.toggle('inspectable', false);
-
-  everyFrame(schedule(
-    () => !!state.running,
-    {every: 100, then: () => { processInput(keys, grid); return true }},
-    // TODO other updates for things like particle system
-  ));
+    this.el = el;
+    this.dmg = dmg;
+    this.dmg.addEventListener('stop', () => this.dmg.grid.el.classList.toggle('inspectable', true));
+    this.dmg.addEventListener('start', () => this.dmg.grid.el.classList.toggle('inspectable', false));
+    this.dmg.grid.el.classList.toggle('inspectable', !this.dmg.running);
+  }
 }

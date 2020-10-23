@@ -9,7 +9,3 @@
   user-select: all;
   width: 100%;
 }
-
-.tile.solid {
-  background-color: var(--darker-grey);
-}
