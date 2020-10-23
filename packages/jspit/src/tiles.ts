@@ -407,9 +407,9 @@ export function moveTiles({
   moverClass?: string,
   kinds: {[kind: string]: TileMoverProc},
 }):void {
-  for (const kind in kinds)
+  for (const kind in kinds) if (kind)
     moveTileClass({grid, moverClass, kind, may: kinds[kind]});
-  if (!('' in kinds)) moveTileClass({grid, moverClass});
+  moveTileClass({grid, moverClass, may: kinds['']});
 }
 
 export function moveTileClass({grid, moverClass='mover', kind='', may}:{
