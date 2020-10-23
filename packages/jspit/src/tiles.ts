@@ -145,6 +145,7 @@ export class TileGrid {
   }
 
   set viewPoint({x, y}:Point) {
+    if (isNaN(x) || isNaN(y)) return;
     this.#viewPoint = {x, y};
     this._updateSize();
   }
