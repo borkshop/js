@@ -7,7 +7,6 @@ import {
 import {stepParticles} from './particles';
 import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
-import {show as showUI, Bindings as UIBindings} from './ui';
 
 const enum InitWhere {
   Seed = 0,
@@ -388,7 +387,8 @@ export class DLA {
 }
 
 // injected DOM parts
-interface Bindings extends UIBindings {
+interface Bindings {
+  ui: HTMLElement,
   menu: HTMLElement,
   grid: HTMLElement,
   particleID: HTMLElement,
@@ -453,7 +453,7 @@ export function init(bind:Bindings) {
     stop();
     state.world = undefined;
     if (bound.reset) bound.reset.disabled = true;
-    showUI(bound, false, false);
+    toggleUI();
   });
   bound.dropPlayer?.addEventListener('click', () => {
     if (state.world) {
@@ -467,8 +467,13 @@ export function init(bind:Bindings) {
     getInput: (name:string) => bound.menu?.querySelector(`input[name="${name}"]`) || null,
     getSelect: (name:string) => bound.menu?.querySelector(`select[name="${name}"]`) || null,
   });
+  toggleUI();
+}
 
-  showUI(bound, false, false);
+function toggleUI() {
+  if (!bound.ui) return;
+  bound.ui.classList.toggle('showUI', !!state.world);
+  bound.ui.classList.toggle('running', !!state.running);
 }
 
 function playPause() {
@@ -486,7 +491,7 @@ function playPause() {
 function stop() {
   if (state.keys) state.keys.counting = false;
   state.running = false;
-  showUI(bound, true, false);
+  toggleUI();
 }
 
 function run() {
@@ -495,7 +500,7 @@ function run() {
 
   state.running = true;
   keys.counting = true;
-  showUI(bound, true, true);
+  toggleUI();
 
   everyFrame(schedule(
     () => !!state.running,

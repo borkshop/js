@@ -5,7 +5,6 @@ import {
 } from './tiles';
 import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
-import {show as showUI, Bindings as UIBindings} from './ui';
 
 function centroid(ps: Point[]):Point {
   switch (ps.length) {
@@ -20,7 +19,8 @@ function centroid(ps: Point[]):Point {
 }
 
 // injected DOM parts
-interface Bindings extends UIBindings {
+interface Bindings {
+  ui: HTMLElement,
   grid: HTMLElement,
   keys: HTMLElement,
   inspector: HTMLElement,
@@ -94,13 +94,15 @@ export function init(bind:Bindings) {
       .map(input => grid.getTilePosition(input)));
   }
 
+  if (bound.ui) bound.ui.classList.toggle('showUI', true);
+
   stop();
 }
 
 function stop() {
   if (state.keys) state.keys.counting = false;
   state.running = false;
-  showUI(bound, true, false);
+  if (bound.ui) bound.ui.classList.toggle('running', false);
   if (state.grid) state.grid.el.classList.toggle('inspectable', true);
 }
 
@@ -110,7 +112,7 @@ function run() {
 
   state.running = true;
   keys.counting = true;
-  showUI(bound, true, true);
+  if (bound.ui) bound.ui.classList.toggle('running', true);
   if (state.grid) state.grid.el.classList.toggle('inspectable', false);
 
   everyFrame(schedule(

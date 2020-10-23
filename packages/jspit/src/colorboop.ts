@@ -1,11 +1,8 @@
 import {TileGrid, processMoves} from './tiles';
 import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
-import {show as showUI, Bindings as UIBindings} from './ui';
 
 function setup(grid:TileGrid) {
-  showUI(bound, true, !!state.running);
-
   grid.clear();
   grid.createTile('at', {
     text: '@',
@@ -61,7 +58,8 @@ function setup(grid:TileGrid) {
 }
 
 // injected DOM parts
-interface Bindings extends UIBindings {
+interface Bindings {
+  ui: HTMLElement,
   grid: HTMLElement,
   keys: HTMLElement
   run: HTMLButtonElement
@@ -79,6 +77,11 @@ export const state:Partial<State> = {};
 
 export function init(bind:Bindings) {
   Object.assign(bound, bind);
+
+  if (bound.ui) {
+    bound.ui.classList.toggle('showUI', true);
+    bound.ui.classList.toggle('running', !!state.running);
+  }
 
   if (bound.grid) {
     state.grid = new TileGrid(bound.grid);
@@ -134,7 +137,7 @@ function thenInput():boolean {
 function playPause() {
   if (!state.grid) return;
   if (state.running) stop(); else run();
-  showUI(bound, true, !!state.running);
+  if (bound.ui) bound.ui.classList.toggle('running', !!state.running);
 }
 
 function stop() {
