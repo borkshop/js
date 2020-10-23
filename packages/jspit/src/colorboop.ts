@@ -142,14 +142,14 @@ function playPause() {
 
 function stop() {
   state.running = false;
-  if (state.keys) state.keys.counting = false;
 }
 
 async function start() {
   if (state.keys) state.keys.counting = true;
   state.running = true;
-  return everyFrame(schedule(
+  await everyFrame(schedule(
     () => !!state.running,
     {every: 100, then: thenInput},
   ));
+  if (state.keys) state.keys.counting = false;
 }

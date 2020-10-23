@@ -489,9 +489,7 @@ function playPause() {
 }
 
 function stop() {
-  if (state.keys) state.keys.counting = false;
   state.running = false;
-  toggleUI();
 }
 
 async function start() {
@@ -499,10 +497,9 @@ async function start() {
   if (!keys || !world || !grid) return;
 
   state.running = true;
-  keys.counting = true;
   toggleUI();
-
-  return everyFrame(schedule(
+  keys.counting = true;
+  await everyFrame(schedule(
     () => !!state.running,
 
     {every: DLA.inputRate, then: () => {
@@ -521,4 +518,6 @@ async function start() {
       return true;
     },
   ));
+  keys.counting = false;
+  toggleUI();
 }
