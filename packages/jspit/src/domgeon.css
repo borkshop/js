@@ -1,0 +1,15 @@
+#inspector {
+  padding: 0;
+  z-index: 1000;
+}
+
+#inspector textarea {
+  border: none;
+  resize: none;
+  user-select: all;
+  width: 100%;
+}
+
+.tile.solid {
+  background-color: var(--darker-grey);
+}

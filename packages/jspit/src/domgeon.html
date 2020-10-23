@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="index.css" />
+    <link rel="stylesheet" type="text/css" href="domgeon.css" />
+    <title>jspit: DOMgeon prototype</title>
+  </head>
+  <body>
+
+    <header>
+    </header>
+
+    <main>
+      <aside class="menu modal">
+        <noscript>
+          <section>
+            <h3 class="error">DOMgeoneering requires JavaScript</h3>
+          </section>
+        </noscript>
+
+        <section>
+          <h1>
+            DOMgeon Prototype
+          </h1>
+        </section>
+
+        <fieldset>
+          <legend>TODO:</legend>
+          <ul>
+            <li>config/scripted construction</li>
+            <li>floors</li>
+            <li>walls</li>
+            <li>doors</li>
+            <li>interactions</li>
+            <li>maybe inventory and items</li>
+          </ul>
+        </fieldset>
+
+
+        <fieldset id="inspector">
+          <legend>
+            <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
+          </legend>
+          <textarea readonly></textarea>
+        </fieldset>
+
+        <div style="float: right">
+          <h3><a href="index.html">Back to Welcome screen</a></h3>
+        </div>
+
+      </aside>
+
+      <div class="grid">
+
+        <div id="player" class="tile mover solid input" style="--x: 0; --y: 0">@</div>
+
+        <div id="floor-1" class="tile floor" style="--x: -2; --y: -2">·</div>
+        <div id="floor-2" class="tile floor" style="--x: -1; --y: -2">·</div>
+        <div id="floor-3" class="tile floor" style="--x: 0; --y: -2">·</div>
+        <div id="floor-4" class="tile floor" style="--x: 1; --y: -2">·</div>
+        <div id="floor-5" class="tile floor" style="--x: 2; --y: -2">·</div>
+        <div id="floor-6" class="tile floor" style="--x: -2; --y: -1">·</div>
+        <div id="floor-7" class="tile floor" style="--x: -1; --y: -1">·</div>
+        <div id="floor-8" class="tile floor" style="--x: 0; --y: -1">·</div>
+        <div id="floor-9" class="tile floor" style="--x: 1; --y: -1">·</div>
+        <div id="floor-10" class="tile floor" style="--x: 2; --y: -1">·</div>
+        <div id="floor-11" class="tile floor" style="--x: -2; --y: 0">·</div>
+        <div id="floor-12" class="tile floor" style="--x: -1; --y: 0">·</div>
+        <div id="floor-13" class="tile floor" style="--x: 0; --y: 0">·</div>
+        <div id="floor-14" class="tile floor" style="--x: 1; --y: 0">·</div>
+        <div id="floor-15" class="tile floor" style="--x: 2; --y: 0">·</div>
+        <div id="floor-16" class="tile floor" style="--x: -2; --y: 1">·</div>
+        <div id="floor-17" class="tile floor" style="--x: -1; --y: 1">·</div>
+        <div id="floor-18" class="tile floor" style="--x: 0; --y: 1">·</div>
+        <div id="floor-19" class="tile floor" style="--x: 1; --y: 1">·</div>
+        <div id="floor-20" class="tile floor" style="--x: 2; --y: 1">·</div>
+        <div id="floor-21" class="tile floor" style="--x: -2; --y: 2">·</div>
+        <div id="floor-22" class="tile floor" style="--x: -1; --y: 2">·</div>
+        <div id="floor-23" class="tile floor" style="--x: 0; --y: 2">·</div>
+        <div id="floor-24" class="tile floor" style="--x: 1; --y: 2">·</div>
+        <div id="floor-25" class="tile floor" style="--x: 2; --y: 2">·</div>
+
+        <div id="wall-1" class="tile wall solid" style="--x: -2; --y: -2">-</div>
+        <div id="wall-2" class="tile wall solid" style="--x: -1; --y: -2">-</div>
+        <div id="wall-3" class="tile door solid" style="--x: 0; --y: -2">+</div>
+        <div id="wall-4" class="tile wall solid" style="--x: 1; --y: -2">-</div>
+        <div id="wall-5" class="tile wall solid" style="--x: 2; --y: -2">-</div>
+        <div id="wall-6" class="tile wall solid" style="--x: -2; --y: -1">|</div>
+        <div id="wall-10" class="tile wall solid" style="--x: 2; --y: -1">|</div>
+        <div id="wall-11" class="tile wall solid" style="--x: -2; --y: 0">|</div>
+        <div id="wall-15" class="tile wall solid" style="--x: 2; --y: 0">|</div>
+        <div id="wall-16" class="tile wall solid" style="--x: -2; --y: 1">|</div>
+        <div id="wall-20" class="tile wall solid" style="--x: 2; --y: 1">|</div>
+        <div id="wall-21" class="tile wall solid" style="--x: -2; --y: 2">-</div>
+        <div id="wall-22" class="tile wall solid" style="--x: -1; --y: 2">-</div>
+        <div id="wall-23" class="tile door solid" style="--x: 0; --y: 2">+</div>
+        <div id="wall-24" class="tile wall solid" style="--x: 1; --y: 2">-</div>
+        <div id="wall-25" class="tile wall solid" style="--x: 2; --y: 2">-</div>
+
+      </div>
+
+    </main>
+
+    <footer>
+    </footer>
+
+    <script type="module">
+      import {init} from './domgeon';
+      init({
+        doc: document,
+        keys: document.body,
+        grid: document.querySelector('main .grid '),
+        inspector: document.querySelector('#inspector'),
+      });
+    </script>
+  </body>
+
+</html>
+<!-- vim:set ts=2 sw=2 expandtab -->
