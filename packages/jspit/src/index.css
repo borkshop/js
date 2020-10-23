@@ -52,14 +52,12 @@ html {
 html, * { box-sizing: border-box; }
 
 body header,
-body footer,
-body .grid {
+body footer {
   display: none;
 }
 
 body.showUI header,
-body.showUI footer,
-body.showUI .grid {
+body.showUI footer {
   display: block;
 }
 
