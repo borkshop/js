@@ -320,7 +320,7 @@ export class TileInspector {
 
   enable() {
     if (this.#listener) return;
-    this.#inspectingIDs = '';
+    this.#lastHandlid = '';
     this.handler({pos: {x: NaN, y: NaN}, tiles: []});
     this.#listener = this.mouseMoved.bind(this);
     this.grid.el.addEventListener('mousemove', this.#listener);
@@ -330,21 +330,32 @@ export class TileInspector {
     if (!this.#listener) return;
     this.grid.el.removeEventListener('mousemove', this.#listener);
     this.#listener = undefined;
-    this.#inspectingIDs = '';
+    this.#lastHandlid = '';
     this.handler({pos: {x: NaN, y: NaN}, tiles: []});
   }
 
-  #inspectingIDs:string = ''
+  #lastHandlid:string = ''
 
   mouseMoved(ev:MouseEvent) {
+    let pos: Point|null = null;
     const tiles = this.grid.tilesAtPoint(ev.clientX, ev.clientY);
-    const ids = tiles.map(({id}) => id).join(';');
-    if (this.#inspectingIDs === ids) return;
-    this.#inspectingIDs = ids;
-    const pos = tiles.length
-      ? this.grid.getTilePosition(tiles[0])
-      : {x: NaN, y: NaN}; // TODO would be nice to translate client[XY] to a tile point
-    this.handler({pos, tiles});
+
+    if (tiles.length) {
+      pos = this.grid.getTilePosition(tiles[0]);
+    } else {
+      let {x, y} = this.grid.viewOffset;
+      const gridRect = this.grid.el.getBoundingClientRect();
+      const {x: w, y: h} = this.grid.tileSize;
+      x += (ev.clientX - gridRect.left) / w;
+      y += (ev.clientY - gridRect.top) / h;
+      pos = {x, y};
+    }
+
+    const handlid = `${pos.x},${pos.y}[${tiles.map(({id}) => id).join(';')}]`;
+    if (this.#lastHandlid !== handlid) {
+      this.#lastHandlid = handlid;
+      this.handler({pos, tiles});
+    }
   }
 }
 
