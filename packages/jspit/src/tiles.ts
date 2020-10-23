@@ -299,6 +299,19 @@ export class TileGrid {
       .filter(el => el.classList.contains('tile')) as HTMLElement[];
   }
 
+  tileAt(at:Point, ...className:string[]):HTMLElement|null {
+    const ids = this.spatialIndex.tilesAt(at);
+    if (ids) for (const id of ids) {
+      const el = this.el.querySelector(`#${id}`);
+      if (!el) continue;
+      if (className.length &&
+          className.every(t => el.classList.contains(t))
+      ) continue;
+      return el as HTMLElement;
+    }
+    return null;
+  }
+
   tilesAt(at:Point, ...className:string[]):HTMLElement[] {
     let tiles : HTMLElement[] = [];
     const ids = this.spatialIndex.tilesAt(at);
