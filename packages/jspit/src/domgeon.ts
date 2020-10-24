@@ -38,19 +38,25 @@ export class DOMgeon extends EventTarget {
     },
   }
 
-  constructor(params: Partial<{
+  constructor(params: HTMLElement|Partial<{
     grid: HTMLElement
     ui: HTMLElement
     keys: HTMLElement
     inputRate: number
   }>) {
     super();
+    if (params instanceof HTMLElement) params = {grid: params};
     if (!params.grid) throw new Error('must provide a DOMgeon grid element');
 
     const {
       // element bindings
       grid,
+
+      // TODO should the default be more like ownerDocument.body?
       keys = grid,
+
+      // TODO this should be wholly optional or dropped entirely now that we
+      // provide start/stop events
       ui = grid,
 
       // config

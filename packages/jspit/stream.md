@@ -1,11 +1,105 @@
-# 2020-10-23
+# Week Ending 2020-10-24
+
+- moved jspit deployment to vercel, which ended up simpliying away all of the
+  common "ui" module code shared between demos, since it was 90% concerned with
+  version display and management
+- dropped lit-html dependency, there are now no 3rd party runtime deps
+- finished out the jspit DLA demo enough to call it "done" for now:
+  implementing things like ghost particle reaping served as a decent smoke test
+  of the the tile system
+
+- started a DOMgeon prototype as a 3rd jspit demo page
+  - will eventually split out a template package backed by a module that can
+    eventually be published outside the borkshop monorepo
+  - started out with a hardcoded-html 5x5 room, which was a useful exercise for
+    "this should be possbile" even if it's too cumbersome for much use
+  - after landing on a believable `class DOMgeon` base API, shifted this to
+    inline scripted room construction
+  - also started out with a `DOMgeonInspector` built on top of the base
+    `TileInspector`; this may eventually pivot into a proper `DOMgeonEditor`
+  - the basic minimal core is something like:
+
+    ```html
+    <div id="grid"></div>
+    <style>
+      /* TODO style your .grid .tile classes */
+    </style>
+    <script type="module">
+      import {DOMgeon} from '.../domgeon';
+      const dmg = window.dmg = new DOMgeon(document.getElementById('grid'));
+      dmg.grid.createTile({
+        id: 'player',
+        pos: {x: 0, y: 0},             // NOTE tile system coordinates
+        className: ['input', 'mover'], // NOTE would typically include 'solid'
+        text: '@',
+      });
+      // NOTE typically, create a level out of tile likes:
+      // - className:'floor'           -- these define a space for .solid.mover tiles
+      // - className:['wall', 'solid'] -- these further constrain .solid.mover tiles
+    </script>
+    ```
+
+    Speculatively, would like to end up with an additional layer, where there's
+    no inline javacript, but maybe just: a JSON config block inside a
+    `grid > script[type="applicaton/json"]` element afforded by a standardized
+    module script.
+
+- generalized the "input" module's `KeyMap` into `KeyCtl`
+
+  Eases adding simple key/code handling on top of parseed movement coalescing;
+  this unified code previously duplicated by both demoes
+
+  Plus now makes it easy for a DM to do things like:
+  ```javascript
+  dmg.keys.on.key['5'] = (ev) => if (ev.type === 'keyup') alert('what of it?')
+  ```
+  to easily define custom behavior for a key.
+
+  TODO: such handler function gets called for both key up and down, expecting
+  the user to first check the event type; we could further ease this by
+  allowing the map value above to be an object like `{up?: (ev)=>void, down?:
+  (ev)=>void}` and/or providing a simpler default like "you only see `keyup`
+  events, unless you ask for down..."
+
+- iterated a lot on how best to scope the boundaries across html / css / inline
+  script / page script / and supporting modules
+  - 80% happy with where the `tiles` module is at, it contains things like:
+    - `TileGrid` -- the main rendering component used by everything
+    - `TileSpec` and `TileQuery` -- types that it deals in for creating,
+      updating, and retieving tiles
+    - `TileInspector` -- an addon that supports building a mouse-oriented
+      "What's That?" UI
+    - `moveTiles` -- supports implementing arbitrary tile movement rules, with
+      a default provision for "solid" tile collison and "floor" support tile
+      requirement
+    - dropped things like "view nudging", instead the grid now has a central
+      "veiePoint" property mediated by accessors; the viewport now tracks this
+      center point on resize
+    - naturalized the shape of `TileSpec` to aling better with DOM shapes; things
+      like "fg/bg are now style.color and style.backgroundColor"
+    - am a little uncertain about the shit-I-made up under `TileQuery`, and may
+      drop/refactor it before 1.0
+    - the grid now provides default IDs based on an internal monotonic counter
+      keyed by the first/primary `className`;. i.e. if you
+      `grid.createTile({className: 'floor'})`, it get's a "floor-N" id
+    - made the `TileInspector` track empt cells too, now the only thing missing
+      from things like `DOMgeonInspector` is a ghost tile to move around when
+      none is selected...
+  - factored a new "particles" module out of the DLA demo; for now it's just a
+    `stepParticles()` to call in something like an `update(dt)` loop, but it
+    can eventually accrete things like: spawning routines adapted from the DLA
+    demo and aceelerated/out-of-DOM versions for procgen
+
+# 2020-10-24
 
 ## TODO
 
-- <http://www.roguebasin.com/index.php?title=Cellular_Automata_Method_for_Generating_Random_Cave-Like_Levels>
-- <http://www.roguebasin.com/index.php?title=Irregular_Shaped_Rooms>
-- soul prototype
-- mind research: prolog-like systems
+- domgeon:
+  - player inventorty/ability system; good initial use cases includ a digging
+    item, floor tile creator, a particle gun, or void walking boots
+  - visibility ala <https://www.albertford.com/shadowcasting>
+  - interactable tiles like doors and runes
+  - a builder based on common patterns like rectangld draw/fill
 
 - tiles
   - watch for any spatial index bugs, once saw a zombie particle at incorrect
@@ -16,43 +110,21 @@
     - save/load ; initial state
     - masking?
 
-- DLA
-  - cell visited counts
-  - particle trace option
-  - spawn upto N live concurrent particles?
-  - reaction rules between live particles?
-  - linked particles; are they "non-live shadows"?
-  - heading range constraint
-  - spawn area / shape / fn
-  - particle bounce, e.g after depositing or forging
-  - ...or off of impassable tiles, which would allow for concrete containment
-  - attractors that bias or snap heading
-  - stickiness probability ; maybe informed by neighbor count!
-  - config
-    - make hash var bind optional
-    - pivot to support multiple schemes within one sim
-  - eliminate static bounds entirely: use an expanded dynamic bounding box to
-    spawn particles
-  - terminate particles more aggresively (e.g. if have moved away from bounds
-    for N turns)
-
-- domgeon:
-  - digging item
-
 ## WIP
 
-- domgeon:
-  - builder
-  - door interaction
-  - visibility ala <https://www.albertford.com/shadowcasting>
-
 ## Done
+
+- wrote a weekly stream summary
+- stored the jspit "game" TODOs down in a new stream Basement section; calling
+  DLA "done for now ™"
+
+# 2020-10-23
 
 - domgeon
   - reified everything to expose an object off which custom DM logic may hang
   - decoupled inspector
 - tiles
-  - provide auto generated tild ids, easing domgeon inline creation scripts
+  - provide auto generated tile ids, easing domgeon inline creation scripts
 
 # 2020-10-22
 
@@ -376,8 +448,36 @@ I'd wanted to take this further to include such things as:
 - further things to do when "not moving"
 - (meta) progression through an additional soul component of some kind
 
+# Basement
+
+## TODO
+
+- soul prototype
+- mind research: prolog-like systems
+- DLA
+  - cell visited counts
+  - particle trace option
+  - spawn upto N live concurrent particles?
+  - reaction rules between live particles?
+  - linked particles; are they "non-live shadows"?
+  - heading range constraint
+  - spawn area / shape / fn
+  - particle bounce, e.g after depositing or forging
+  - ...or off of impassable tiles, which would allow for concrete containment
+  - attractors that bias or snap heading
+  - stickiness probability ; maybe informed by neighbor count!
+  - config
+    - make hash var bind optional
+    - pivot to support multiple schemes within one sim
+  - eliminate static bounds entirely: use an expanded dynamic bounding box to
+    spawn particles
+  - terminate particles more aggresively (e.g. if have moved away from bounds
+    for N turns)
+
 # Resources
 
+- <http://www.roguebasin.com/index.php?title=Cellular_Automata_Method_for_Generating_Random_Cave-Like_Levels>
+- <http://www.roguebasin.com/index.php?title=Irregular_Shaped_Rooms>
 - <https://www.albertford.com/shadowcasting> use this to control information
   transfer between the objective world and subjective worlds
 - <http://www.roguebasin.com/index.php?title=The_Incredible_Power_of_Dijkstra_Maps>
