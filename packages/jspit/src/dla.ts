@@ -507,7 +507,7 @@ async function start() {
     () => !!state.running,
 
     {every: DLA.inputRate, then: () => {
-      const presses = keys.consumePresses();
+      const presses = keys.consume();
       let {have, move} = coalesceMoves(presses);
       if (have) for (const mover of grid.queryTiles({className: ['mover', 'input']}))
         grid.setTileData(mover, 'move', move);

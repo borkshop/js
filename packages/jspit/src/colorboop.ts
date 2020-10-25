@@ -111,7 +111,7 @@ function thenInput():boolean {
   const {keys, grid} = state;
   if (!grid || !keys) return false;
 
-  let {have, move} = coalesceMoves(keys.consumePresses());
+  let {have, move} = coalesceMoves(keys.consume());
   if (have) for (const mover of grid.queryTiles({className: ['mover', 'input']}))
     grid.setTileData(mover, 'move', move);
   moveTiles({grid, kinds: {
