@@ -4,11 +4,15 @@
   "description": "JS Pit",
   "author": "Joshua T Corbin <jcorbin@wunjo.org>",
   "license": "BSD-3-Clause",
+  "main": "src/index.html",
+  "type": "module",
+
   "repository": {
     "type": "git",
     "url": "https://github.com/borkshop/js.git",
     "directory": "packages/jspit"
   },
+
   "private": true,
   "scripts": {
     "start": "snowpack dev",
