@@ -1,0 +1,49 @@
+* {
+  box-sizing: border;
+}
+
+html {
+  user-select: none;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.viewport {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+
+.dpad {
+  padding: 10px;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  height: 1.5in;
+  width: 1.5in;
+}
+
+.stats {
+  padding: 10px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 0.5in;
+}
+
+.curtain {
+  fill: hsla(0, 50%, 100%, 0.75);
+}
+
+text.moji {
+  font-size: 0.7px;
+  height: 1;
+  width: 1;
+  dominant-baseline: central;
+  text-anchor: middle;
+}
