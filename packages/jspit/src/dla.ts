@@ -1,12 +1,13 @@
-import {bindVars} from './config';
 import {
   Point, TileGrid,
   TileInspector, TileInspectEvent, dumpTiles,
   moveTiles,
-} from './tiles';
+} from 'cdom/tiles';
+import {KeyCtl, coalesceMoves} from 'cdom/input';
+import {everyFrame, schedule} from 'cdom/anim';
+
+import {bindVars} from './config';
 import {stepParticles} from './particles';
-import {KeyCtl, coalesceMoves} from './input';
-import {everyFrame, schedule} from './anim';
 
 const enum InitWhere {
   Seed = 0,

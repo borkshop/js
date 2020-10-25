@@ -1,0 +1,258 @@
+html {
+
+  /* darkula color definition to start from, because lazy
+   */
+  --black:          #000000;
+  --darker-grey:    #121212;
+  --dark-grey:      #262626;
+  --grey:           #444444;
+  --light-grey:     #585858;
+  --lighter-grey:   #666666;
+  --white:          #c0c0c0;
+  --dark-white:     #9e9e9e;
+  --blue:           #5f87af;
+  --bright-purple:  #5f00ff;
+  --cyan:           #00d7d7;
+  --dark-orange:    #af5f00;
+  --dark-sea-green: #5f875f;
+  --green:          #00af00;
+  --light-cyan:     #5fafaf;
+  --magenta:        #ff0087;
+  --orange:         #d78700;
+  --purple:         #8787af;
+  --red:            #d70000;
+  --red-orange:     #af5f5f;
+  --yellow:         #808000;
+  --yellow-orange:  #d7af00;
+
+  --main-bg: var(--darker-grey);
+  --main-fg: var(--light-grey);
+
+  --grid-bg: transparent;
+
+  --content-bg: var(--dark-grey);
+  --content-fg: var(--dark-white);
+
+  --ui-bg: var(--dark-grey);
+  --ui-fg: var(--dark-white);
+  --ui-disabled: var(--lighter-grey);
+
+  --ui-accent:       var(--grey);
+  --ui-accent-focus: var(--light-grey);
+
+  --action-color:       var(--blue);
+  --action-focus-color: var(--cyan);
+  --acting-color:       var(--magenta);
+  --acted-color:        var(--bright-purple);
+
+  font-family: sans;
+  font-size: 12pt;
+}
+
+html, * { box-sizing: border-box; }
+
+body header,
+body footer {
+  display: none;
+}
+
+body.showUI header,
+body.showUI footer {
+  display: block;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0.3em 0.5em;
+  height: 100%;
+  overflow: hidden;
+}
+
+html, body {
+  background-color: var(--main-bg);
+  color: var(--main-fg);
+}
+
+a         { color: var(--action-color); text-decoration: none; }
+a:hover,
+a:focus   { color: var(--action-focus-color); text-decoration: underline }
+a:active  { color: var(--acting-color); }
+
+header, footer {
+  position: absolute;
+  height: 1.5em;
+  left: 0;
+  right: 0;
+  background-color: var(--content-bg);
+  color: var(--content-fg);
+  padding: 0 0.5em;
+}
+
+header { top: 0; }
+footer { bottom: 0; }
+
+main {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+body.showUI main {
+  top: 1.5em;
+  bottom: 1.5em;
+}
+
+aside {
+  position: absolute;
+  overflow: auto;
+  z-index: 1000;
+  top: 0;
+  max-height: 100%;
+}
+
+body:not(.showUI) aside {
+  left: 20%;
+  right: 20%;
+}
+
+body.showUI aside {
+  right: 0;
+  width: 40%;
+}
+
+body.running aside { display: none; }
+
+aside section               { margin-top: 1em; }
+aside section:first-of-type { margin-top: 0; }
+
+section {
+  background-color: var(--content-bg);
+  color: var(--content-fg);
+  margin-top: 1em;
+  padding: 0.3em 0.5em;
+  border-radius: 0.3em;
+}
+
+.grid {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+
+  line-height: 1.0;
+  font-size: 18pt;
+  user-select: none;
+
+  --tile-width:  1em;
+  --tile-height: 1em;
+
+  --xlate-x: 0;
+  --xlate-y: 0;
+
+  background-color: var(--grid-bg);
+  font-family: monospace;
+}
+
+body.running .grid { cursor: none; }
+
+.grid .tile {
+  --x: 0;
+  --y: 0;
+  position: absolute;
+  left: calc((var(--x) - var(--xlate-x)) * var(--tile-width));
+  top:  calc((var(--y) - var(--xlate-y)) * var(--tile-height));
+  width: var(--tile-width);
+  height: var(--tile-height);
+
+  text-align: center;
+  vertical-align: middle;
+  user-select: none;
+}
+
+.grid .tile.solid { z-index: 1; }
+.grid .tile.mind  { z-index: 2; }
+
+.grid.inspectable { cursor: crosshair; }
+.grid.inspectable .tile       { padding: 0.1em; }
+.grid.inspectable .tile:hover { padding: 0; border: 0.1em solid var(--magenta); }
+
+label       .tip { display: none }
+label:hover .tip { display: block }
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
+p {
+  margin: 1em 0.5em;
+  padding: 0;
+}
+
+label:hover {
+  color: var(--action-focus-color);
+}
+
+input, textarea {
+  background-color: var(--ui-bg);
+  color: var(--ui-fg);
+  border: 0.1em solid var(--ui-accent);
+  border-radius: 0.3em;
+}
+
+input:hover, textarea:hover, select:hover,
+input:focus, textarea:focus, select:focus {
+  color: var(--action-focus-color);
+  border-color: var(--action-focus-color);
+}
+
+select, button {
+  background-color: var(--ui-bg);
+  color: var(--action-color);
+  border: 0.1em solid var(--ui-accent);
+  border-radius: 0.3em;
+}
+
+button:hover, button:focus { color: var(--action-focus-color); border-color: var(--action-focus-color); }
+button:active              { color: var(--acting-color); border-color: var(--acting-color); }
+
+button:disabled {
+  color: var(--ui-disabled) !important;
+  border-color: var(--ui-disabled) !important;
+}
+
+fieldset {
+  margin: 0.3em 0;
+  background-color: var(--content-bg);
+  color: var(--content-fg);
+  border-radius: 0.3em;
+  border: 0.1em solid var(--ui-accent);
+  padding: 0 0.5em 0.3em 0.5em;
+}
+
+details {
+  margin: 0.3em 0;
+  padding: 0.3em 0.5em;
+}
+
+ul, ol, dl {
+  margin: 0.3em 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.value { user-select: all }
+
+.linkbar span:not(:first-of-type):before { content: " | " }
+
+/* TODO better list styles */
+
+/* vim:set ts=2 sw=2 expandtab */

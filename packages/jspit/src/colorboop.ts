@@ -1,6 +1,6 @@
-import {TileGrid, moveTiles} from './tiles';
-import {KeyCtl, coalesceMoves} from './input';
-import {everyFrame, schedule} from './anim';
+import {TileGrid, moveTiles} from 'cdom/tiles';
+import {KeyCtl, coalesceMoves} from 'cdom/input';
+import {everyFrame, schedule} from 'cdom/anim';
 
 function setup(grid:TileGrid) {
   grid.clear();

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="index.css" />
+    <title>Cascading DOMgeon Template</title>
+  </head>
+  <body>
+
+    <header>
+    </header>
+
+    <main>
+      <aside class="menu modal">
+        <noscript>
+          <section>
+            <h3 class="error">DOMgeoneering requires JavaScript</h3>
+          </section>
+        </noscript>
+
+        <section>
+          <h1>Cascading DOMgeon Template</h1>
+        </section>
+
+        <fieldset>
+          <legend>TODO:</legend>
+          <ul>
+            <li>doors should go places</li>
+            <li>visibility ala <a ref="https://www.albertford.com/shadowcasting">shadow casting</a></li>
+            <li>maybe inventory and items</li>
+          </ul>
+        </fieldset>
+
+
+        <fieldset id="inspector">
+          <legend>
+            <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
+          </legend>
+          <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
+        </fieldset>
+
+        <div style="float: right">
+          <h3><a href="index.html">Back to Welcome screen</a></h3>
+        </div>
+
+      </aside>
+
+      <style>
+        /* tile stacking priorities */
+        .tile.floor { z-index:  0 }
+        .tile.wall  { z-index: 10 }
+        .tile.mover { z-index: 20 }
+        .tile.input { z-index: 50 }
+
+        /* wall should occlude floor */
+        .tile.wall { background-color: var(--darker-grey) }
+      </style>
+      <div class="grid">
+      </div>
+
+    </main>
+
+    <footer>
+    </footer>
+
+    <script type="module">
+      import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
+      const dmg = window.dmg = new DOMgeon({
+        ui: document.body,
+        keys: document.body,
+        grid: document.querySelector('main .grid'),
+      });
+      new DOMgeonInspector(dmg, document.querySelector('#inspector'));
+
+      // TODO probably a DOMgeonBuilder would be nice
+      const w=13, h=8;
+
+      const pos = {x: Math.floor(w/2), y: Math.floor(h/2)};
+      dmg.grid.createTile({pos, className: ['input', 'mover', 'solid'], text: '@'});
+      dmg.grid.viewPoint = pos;
+
+      for (let x=0; x<w; x++) for (let y=0; y<h; y++)
+        dmg.grid.createTile({pos: {x, y}, className: 'floor', text: '·'});
+      for (let x=0; x<w; x++)
+        if (x === Math.floor(w/2)) {
+          dmg.grid.createTile({pos: {x, y:   0}, className: ['door', 'solid'], text: '+'});
+          dmg.grid.createTile({pos: {x, y: h-1}, className: ['door', 'solid'], text: '+'});
+        } else {
+          dmg.grid.createTile({pos: {x, y:   0}, className: ['wall', 'solid'], text: '-'});
+          dmg.grid.createTile({pos: {x, y: h-1}, className: ['wall', 'solid'], text: '-'});
+        }
+      for (let y=1; y<h-1; y++) {
+        dmg.grid.createTile({pos: {x:   0, y}, className: ['wall', 'solid'], text: '|'});
+        dmg.grid.createTile({pos: {x: w-1, y}, className: ['wall', 'solid'], text: '|'});
+      }
+
+    </script>
+  </body>
+
+</html>
+<!-- vim:set ts=2 sw=2 expandtab -->
