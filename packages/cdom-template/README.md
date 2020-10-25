@@ -10,5 +10,25 @@ structure; temlating a standalone repository is not yet sorted out.
 - `cp -a packages/cdom-template packages/your-thing`
 - `$EDITOR packages/your-thing/package.json` and rename a few things
 - `$EDITOR packages/your-thing/src/index.html` and have fun!
+- `yarn start` to start your dev server
 
-TODO automate the above with a template creation tool of some ilk...
+# Building
+
+When you're reading to publish your DOMgeon contraption run `yarn build` to
+create a static site `build/` directory, that should look something like:
+
+```
+$ find build
+build
+build/index.html
+build/cdom
+build/cdom/domgeon.js
+build/cdom/tiles.js
+build/cdom/anim.js
+build/cdom/input.js
+build/__snowpack__
+build/__snowpack__/env.js
+build/index.css
+```
+
+This will just work for a Vercel project with an approppriate "Other" config.
