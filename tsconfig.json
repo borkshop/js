@@ -3,6 +3,11 @@
     "module": "es2020",
     "target": "es2020",
 
+    "allowJs": true,
+    "checkJs": true,
+
+    "esModuleInterop": true,
+
     "moduleResolution": "node",
     "jsx": "preserve",
     "allowSyntheticDefaultImports": true,
@@ -19,7 +24,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "esModuleInterop": true
+    "noFallthroughCasesInSwitch": true
   }
 }
