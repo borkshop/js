@@ -1,4 +1,4 @@
-import type {Point, TileGrid, TileQuery, TileSpec} from './tiles';
+import type {Point, TileGrid, TileQuery, TileSpec} from 'cdom/tiles';
 
 export function stepParticles({
   grid,
