@@ -1,33 +1,46 @@
+// @ts-check
+
 import {
-  Point, TileGrid,
+  TileGrid,
   TileInspector, dumpTiles,
-  moveTiles, TileMoverProc,
+  moveTiles,
+  centroid,
 } from './tiles';
 import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 
-function centroid(ps: Point[]):Point {
-  switch (ps.length) {
-    case 0: return {x: NaN, y: NaN};
-    case 1: return ps[0];
-  }
-  return ps.slice(1).reduce(({x, y}, p) => {
-    x += p.x, y += p.y;
-    x /= 2, y /= 2;
-    return {x, y};
-  }, ps[0]);
-}
+/** @typedef {Object} DOMgeonOptions
+ *
+ * @prop {HTMLElement} grid - document element to place tiles within
+ * @prop {HTMLElement} [ui] - document element to toggle UI state classes upon
+ * @prop {HTMLElement} [keys] - document element to listen for key events upon
+ * @prop {number} [inputRate=100] - how often to process key events, defaults to 100ms or 10hz
+ */
 
 export class DOMgeon extends EventTarget {
-  grid: TileGrid
-  ui: HTMLElement
-  keys: KeyCtl
+  /** @type {TileGrid} */
+  grid
 
-  inputRate: number
-  running: boolean = false
+  /** @type {HTMLElement} */
+  ui
 
-  moveProcs: {[kind: string]: TileMoverProc} = {
-    solid: ({at}):boolean => {
+  /** @type {KeyCtl} */
+  keys
+
+  /** @type {number} */
+  inputRate
+
+  /** @type {boolean} */
+  running = false
+
+
+
+  /**
+   * @typedef { import("./tiles").TileMoverProc } TileMoverProc
+   * @type {Object<string, TileMoverProc>}
+   */
+  moveProcs  = {
+    solid: ({at}) => {
       // can only move there if have particle support
       if (!at.some(h => h.classList.contains('floor'))) return false;
 
@@ -38,15 +51,15 @@ export class DOMgeon extends EventTarget {
     },
   }
 
-  constructor(params: HTMLElement|Partial<{
-    grid: HTMLElement
-    ui: HTMLElement
-    keys: HTMLElement
-    inputRate: number
-  }>) {
+  /**
+   * May pass just a grid element if no other option is needed.
+   *
+   * @param {HTMLElement|DOMgeonOptions} options
+   */
+  constructor(options) {
     super();
-    if (params instanceof HTMLElement) params = {grid: params};
-    if (!params.grid) throw new Error('must provide a DOMgeon grid element');
+    if (options instanceof HTMLElement) options = {grid: options};
+    if (!options.grid) throw new Error('must provide a DOMgeon grid element');
 
     const {
       // element bindings
@@ -61,7 +74,7 @@ export class DOMgeon extends EventTarget {
 
       // config
       inputRate = 100,
-    } = params;
+    } = options;
     this.ui = ui;
     this.inputRate = inputRate;
 
@@ -70,7 +83,7 @@ export class DOMgeon extends EventTarget {
       .map(input => this.grid.getTilePosition(input)));
 
     this.keys = new KeyCtl(keys);
-    this.keys.on.code['Escape'] = (ev:KeyboardEvent) => {
+    this.keys.on.code['Escape'] = (ev) => {
       if (ev.type !== 'keyup') return;
       if (this.running) this.stop(); else this.start();
     };
@@ -115,12 +128,19 @@ export class DOMgeon extends EventTarget {
 }
 
 export class DOMgeonInspector extends TileInspector {
-  el: HTMLElement
-  dmg: DOMgeon
+  /** @type {HTMLElement} */
+  el
 
-  constructor(dmg: DOMgeon, el: HTMLElement) {
+  /** @type {DOMgeon} */
+  dmg
+
+  /**
+   * @param {DOMgeon} dmg
+   * @param {HTMLElement} el
+   */
+  constructor(dmg, el) {
     const txt = el.querySelector('textarea');
-    const at = el.querySelector('[data-for="pos"]') as HTMLElement|null;
+    const at = /** @type {HTMLElement|null} */ (el.querySelector('[data-for="pos"]'));
     super(dmg.grid, ({pos: {x, y}, tiles}) => {
       if (at) at.innerText = `${isNaN(x) ? 'X' : Math.floor(x)},${isNaN(y) ? 'Y' : Math.floor(y)}`;
       if (txt) dumpTiles({tiles, into: txt});

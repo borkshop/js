@@ -632,3 +632,19 @@ export function moveTileClass({grid, moverClass='mover', kind='', may}) {
     grid.setTileData(mover, 'move', null);
   }
 }
+
+/**
+ * @param {Point[]} ps
+ * @return {Point}
+ */
+export function centroid(ps) {
+  switch (ps.length) {
+    case 0: return {x: NaN, y: NaN};
+    case 1: return ps[0];
+  }
+  return ps.slice(1).reduce(({x, y}, p) => {
+    x += p.x, y += p.y;
+    x /= 2, y /= 2;
+    return {x, y};
+  }, ps[0]);
+}
