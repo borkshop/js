@@ -1,3 +1,82 @@
+# 2020-10-26
+
+## TODO
+
+- domgeon:
+  - player inventorty/ability system; good initial use cases includ a digging
+    item, floor tile creator, a particle gun, or void walking boots
+  - visibility ala <https://www.albertford.com/shadowcasting>
+  - interactable tiles like doors and runes
+  - a builder based on common patterns like rectangld draw/fill
+
+- tiles
+  - watch for any spatial index bugs, once saw a zombie particle at incorrect
+    location, which allowed the player to step into the void in the DLA demo
+  - TileGrid
+    - custom shader funcs, or at least some affordance for stepped css classes
+    - animations like boop and particles
+    - save/load ; initial state
+    - masking?
+
+## WIP
+
+## Done
+
+- prompted by @kris, inspired by [properjs.org](http://properjs.org/), and it
+  resonance with [snowpack.dev](https://www.snowpack.dev/)'s design philosophy:
+  - switched away from direct TS files in lieu of ts-checked JS; done for cdom,
+    jspit itself still needs to be translated
+  - made quite a few improvements made while translating and documenting
+  - flattened the repository by two steps: `packages/{cdom,jspit}/src/*` are
+    all now just `{cdom,jspit}/*`
+  - moved away from using the node module system to structure out monorepo,
+    instead relying on snowpack mounts, symlinks, and typescript's "classic"
+    module resolution order, which is basically "retry in the parent directory"
+  - did however choose to not take the tooling since:
+    - consistency in dev tool versions and production builds (e.g. under
+      vercel) is still useful, rather than relying on system-wide `tsc` and
+      friends
+    - `file:///` or "just run `http-server`" aren't really a good dev xp
+    - don't want to go all the way back to `Makefile`s for project
+      orchestration, and there is value that yarn et al provide there, let
+      alone network effects
+    - there's still use for file transformations, like markdown rendering and
+      sprite sheet assembly, and maybe even a DSL, or at least JSON/CSV use
+      case for game rule/data inclusion
+    - snowpack serves as a useful / minimal dev server and build tool so far,
+      in particular things I'd miss at this point:
+      - dev server uncaught exception overlay
+      - live reloading, no matter what fate HMR, rather than mashing refresh
+      - the ability to still fold in `.ts` files and consume 3rd party node
+        modules without any additional effort
+    - now, having decided to keep `tsc` and `snowpack` in the mix, we still
+      have a need for each project/site root within the monorepo to contain a
+      `package.json` and a `tsconfig.json`; however I was able to inline the
+      snowpack config itself into `package.json`, so one less file; also we can
+      get away with a mere symlink for `tsconfig.json`, but must have one
+      because reasons... alos I was unable to get `jsconfig.json` to work,
+      especially under how the snowpack typescript plugin invokes tsc; that may
+      be configurable, but I had to draw the line somewhere, and get to done...
+
+- so in summary, what we now have:
+  - `/package.json` still contains workspace declarations for `jspit` and
+    `cdom-template`, but that's now hardcoded rather than globbed
+  - `/cdom` is the library, contatins `.js` modules, but is not a formal "package"
+  - `/cdom-template` is the starter kit for "write you a DOMgeon, using HTML,
+    CSS, and maybe some JavaScript (inline or otherwise)".
+  - `/jspit` is similar to the template, but still written in TS to prove that
+    still works; will probably continue to progressively translate it, at least
+    when things mature out into `/cdom`; TBD what I write new code in when
+    experimenting, since jsdoc-annotated code is still more cumbersome than
+    native TS
+  - `/svgeon` is still its own island, lacking a `package.json` and not setup
+    as a workspace
+  - the way that jspit and the template find cdom is two part: their snowpack
+    config has `../cdom` explicitly mounted at `/cdom`; typescript's configured
+    to use its "classic" rather than "node" module resolution, so it Just
+    Works™ when it tries `../cdom/*` after failing to find `./cdom/*` from an
+    `import yada from 'cdom/thing'`
+
 # Week Ending 2020-10-24
 
 - moved jspit deployment to vercel, which ended up simpliying away all of the
@@ -91,28 +170,6 @@
     demo and aceelerated/out-of-DOM versions for procgen
 
 # 2020-10-24
-
-## TODO
-
-- domgeon:
-  - player inventorty/ability system; good initial use cases includ a digging
-    item, floor tile creator, a particle gun, or void walking boots
-  - visibility ala <https://www.albertford.com/shadowcasting>
-  - interactable tiles like doors and runes
-  - a builder based on common patterns like rectangld draw/fill
-
-- tiles
-  - watch for any spatial index bugs, once saw a zombie particle at incorrect
-    location, which allowed the player to step into the void in the DLA demo
-  - TileGrid
-    - custom shader funcs, or at least some affordance for stepped css classes
-    - animations like boop and particles
-    - save/load ; initial state
-    - masking?
-
-## WIP
-
-## Done
 
 - wrote a weekly stream summary
 - stored the jspit "game" TODOs down in a new stream Basement section; calling
