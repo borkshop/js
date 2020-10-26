@@ -299,7 +299,7 @@ export class DLA {
           grid.setTileData(p, 'heading', heading);
         }
       },
-      handle: (grid, p, pos, to) => {
+      handle: (grid:TileGrid, p, pos, to) => {
         // clamped to grid boundaries
         const posCell = {x: Math.floor(pos.x), y: Math.floor(pos.y)};
         const toCell = {x: Math.floor(to.x), y: Math.floor(to.y)};
