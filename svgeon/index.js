@@ -3,7 +3,7 @@
 /**
  * @return {Promise<number>}
  */
-export function animationFrame() {
+function animationFrame() {
   return new Promise(resolve => requestAnimationFrame(resolve));
 }
 
@@ -20,14 +20,18 @@ export function animationFrame() {
  * @template T
  * @return {Deferred<T>}
  */
-const defer = () => {
+function defer() {
   let resolve, reject;
   const promise = new Promise((res, rej) => {
     resolve = res;
     reject = rej;
   });
+  if (resolve === undefined || reject === undefined) {
+    throw new Error('The type system, it deceived us!');
+  }
+  /** @type {Deferred<T>} */
   return { promise, resolve, reject };
-};
+}
 
 /**
  * @param {number} ms
@@ -42,6 +46,7 @@ function delay(ms) {
 const inputPeriod = 200;
 const turnPeriod = 100;
 
+/** @type {Object<string, string>} */
 const aliases = {
   ArrowLeft: 'west',
   ArrowUp: 'north',
@@ -51,11 +56,11 @@ const aliases = {
 
 async function main() {
 
-  /**
-   * @type {Deferred<void>}
-   */
+  /** @type {Deferred<void>} */
   let kick = defer();
+  /** @type {string[]} */
   const queue = [];
+  /** @type {Object<string, number>} */
   const keyboard = {};
 
   /**
@@ -118,7 +123,11 @@ async function main() {
   const y1s = [0];
   const x2s = [0];
   const y2s = [0];
-  const elements = [document.getElementById('agent')];
+  const agent = document.getElementById('agent');
+  if (agent === null) {
+    throw new Error('Agent must exist in the document');
+  }
+  const elements = [agent];
   const transitions = [lerp];
 
   /**
@@ -132,6 +141,7 @@ async function main() {
     y2s[0] = y1s[0] + y;
   }
 
+  /** @type {Object<string, () => void>} */
   const commands = {
     west() { move(-1, 0); },
     east() { move(1, 0); },
@@ -159,9 +169,11 @@ async function main() {
     while (true) {
       await Promise.all([kick.promise, d]);
       d = delay(turnPeriod);
+      /** @type {Deferred<void>} */
       kick = defer();
-      if (queue.length) {
-        exec(queue.shift());
+      const command = queue.shift()
+      if (command !== undefined) {
+        exec(command);
         kick.resolve();
       }
     }
@@ -185,7 +197,6 @@ async function main() {
   inputLoop();
   execLoop();
   animationLoop();
-
 }
 
 main();
