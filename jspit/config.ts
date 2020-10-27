@@ -52,6 +52,17 @@ export function bindProp({obj, name, ...acc}:Accessors&{
   });
 }
 
+export function bindCSSVar({style, name, ...acc}:Accessors&{
+  style: CSSStyleDeclaration,
+  name: string,
+}) {
+  bindVar({...acc,
+    name,
+    load: () => style.getPropertyValue(`--${name}`),
+    save: (v:Datum) => style.setProperty(`--${name}`, `${v}`),
+  });
+}
+
 function bindVar({name, load, save, getInput, getSelect}:Accessors&{
   name: string,
   load: () => any,
