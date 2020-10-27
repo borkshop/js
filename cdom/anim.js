@@ -29,13 +29,13 @@ export async function everyFrame(update) {
 
 /**
  * @typedef {Object} TickedPart - an animation part that runs on an internal unit of time ticks
- * @prop {number} every - specified time tick unit
+ * @prop {number|(()=>number)} every - specified time tick unit; may be a function to implement a dynamic rate
  * @prop {Part} then - part callback, will be passed an integer number of elapsed ticks
  */
 
 /**
  * @typedef {Part|TickedPart} SchedulePart
- * @param {SchedulePart[]} parts - one or more animation parts, optionally with their own internal tic krate
+ * @param {SchedulePart[]} parts - one or more animation parts, optionally with their own internal tick rate
  * @return {Part} - a compound part that will run all of the given parts
  */
 export function schedule(...parts) {
@@ -46,8 +46,10 @@ export function schedule(...parts) {
   return (dt) => {
     for (let i = 0; i < every.length; ++i) {
       let n = dt;
-      if (every[i] > 0) {
-        last[i] += dt / every[i];
+      const evry = every[i];
+      const rate = typeof evry === 'number' ? evry : evry();
+      if (rate > 0) {
+        last[i] += dt / rate;
         if (n = Math.floor(last[i])) last[i] -= n;
       }
       if (n && !then[i](n)) return false;
