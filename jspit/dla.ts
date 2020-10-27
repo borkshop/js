@@ -129,8 +129,6 @@ export class DLA {
     }
   }
 
-  elapsed = 0
-
   dropPlayer() {
     const {seeds} = this.config;
     const pos = seeds[0];
@@ -272,21 +270,20 @@ export class DLA {
     return false;
   }
 
-  update(dt:number): void {
+  stepRate() {
+    const {genRate, playRate} = this.config;
+    const havePlayer = !!this.grid.queryTile({className: ['mover', 'input']});
+    return havePlayer ? playRate : genRate;
+  }
+
+  stepN(n:number): void {
+    const havePlayer = !!this.grid.queryTile({className: ['mover', 'input']});
     const {
-      genRate, playRate,
       turnLeft, turnRight,
       ordinalMoves,
       stepLimit,
     } = this.config;
 
-    const havePlayer = !!this.grid.queryTile({className: ['mover', 'input']});
-
-    const rate = havePlayer ? playRate : genRate;
-    this.elapsed += dt
-    const n = Math.floor(this.elapsed / rate);
-    if (!n) return;
-    this.elapsed -= n * rate;
     for (let i = 0; i < n; ++i) if (!stepParticles({
       grid: this.grid,
       update: (grid, ps) => {
@@ -518,8 +515,12 @@ async function start() {
       return true;
     }},
 
-    (dt:number) => {
-      world.update(dt);
+    {
+      every: () => world.stepRate(),
+      then: (n) => { world.stepN(n); return true },
+    },
+
+    () => {
       if (bound.particleID)
         bound.particleID.innerText = world.particleID.toString();
       return true;
