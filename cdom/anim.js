@@ -34,7 +34,8 @@ export async function everyFrame(update) {
  */
 
 /**
- * @param {(Part|TickedPart)[]} parts - one or more animation parts, optionally with their own internal tic krate
+ * @typedef {Part|TickedPart} SchedulePart
+ * @param {SchedulePart[]} parts - one or more animation parts, optionally with their own internal tic krate
  * @return {Part} - a compound part that will run all of the given parts
  */
 export function schedule(...parts) {

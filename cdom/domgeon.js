@@ -95,6 +95,9 @@ export class DOMgeon extends EventTarget {
     this.running = false;
   }
 
+  /** @type {import('./anim').SchedulePart[]} */
+  animParts = []
+
   async start() {
     this.running = true;
     this.ui.classList.toggle('running', true);
@@ -103,7 +106,7 @@ export class DOMgeon extends EventTarget {
     await everyFrame(schedule(
       () => !!this.running,
       {every: this.inputRate, then: () => { this.processInput(); return true }},
-      // TODO other updates for things like particle system
+      ...this.animParts
     ));
     this.dispatchEvent(new Event('stop'));
     this.keys.counting = false;
