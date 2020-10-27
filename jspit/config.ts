@@ -41,6 +41,17 @@ export function bindVars({data, ...acc}:Accessors&{
   }
 }
 
+export function bindProp({obj, name, ...acc}:Accessors&{
+  obj: {[name: string]: any},
+  name: string,
+}) {
+  bindVar({...acc,
+    name,
+    load: () => obj[name],
+    save: (v:Datum) => obj[name] = v,
+  });
+}
+
 function bindVar({name, load, save, getInput, getSelect}:Accessors&{
   name: string,
   load: () => any,
