@@ -442,7 +442,7 @@ export class TileGrid {
       const el = /** @type {HTMLElement|null} */ (this.el.querySelector(`#${id}`)) ;
       if (!el) continue;
       if (className.length &&
-          className.every(t => el.classList.contains(t))
+          !className.every(t => el.classList.contains(t))
       ) continue;
       return el;
     }
