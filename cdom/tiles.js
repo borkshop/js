@@ -339,7 +339,7 @@ export class TileGrid {
      * @param {string} value
      * @return {void}
      */
-    const addAttr = (name, match, value) => { attrs.push(`${name}${match}=${value}`) };
+    const addAttr = (name, match, value) => { attrs.push(`${name}${match}=${JSON.stringify(value)}`) };
 
     if (query?.id) {
       let {match, value} = parseMatcher(query.id);
