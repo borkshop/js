@@ -326,7 +326,7 @@ export class TileGrid {
         case '*':
           return {match: s[0], value: s.slice(1)};
         default:
-          return {match: '', value: s.slice(1)};
+          return {match: '', value: s};
       }
     };
 
