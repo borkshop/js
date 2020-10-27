@@ -36,6 +36,7 @@
       "@snowpack/plugin-typescript"
     ],
     "exclude": [
+      "**/build/**/*",
       "**/node_modules/**/*",
       "**/__tests__/*",
       "**/*.@(spec|test).@(js|mjs)",
