@@ -23,7 +23,7 @@
  * @prop {string} [id] - matches tile element ID strings
  * @prop {Object<string, string>} [data] - matches tile dataset attributes
  *
- * NOTE: tile datasets are encoded as JSON
+ * NOTE: non-string tile data are encoded as JSON
  * NOTE: id and data matcher strings may start with ^ $ or * to encode a
  *       startsWith/endsWith/contains match
  */
@@ -267,8 +267,10 @@ export class TileGrid {
       for (const [name, value] of Object.entries(spec.data))
         if (value === null || value === undefined)
           delete tile.dataset[name];
+        else if (typeof value === 'string')
+          tile.dataset[name] = value;
         else
-          tile.dataset[name] = JSON.stringify(spec.data[name]);
+          tile.dataset[name] = JSON.stringify(value);
     }
     return tile;
   }
@@ -374,13 +376,13 @@ export class TileGrid {
    * @return {any}
    */
   getTileData(tile, name) {
-    const sval = tile?.dataset[name];
-    if (!sval) return null;
+    const val = tile?.dataset[name];
+    if (!val) return null;
     try {
-      return JSON.parse(sval);
+      return JSON.parse(val);
     } catch(e) {
+      return val;
     }
-    return null;
   }
 
   /**
@@ -393,8 +395,9 @@ export class TileGrid {
    */
   setTileData(tile, name, value) {
     if (!tile) return;
-    if (value === null) delete tile.dataset[name];
-    else                       tile.dataset[name] = JSON.stringify(value);
+    if (typeof value === 'string') tile.dataset[name] = value;
+    else if (value === null || value === undefined) delete tile.dataset[name];
+    else tile.dataset[name] = JSON.stringify(value);
   }
 
   /**
