@@ -108,6 +108,7 @@ export class DOMgeon extends EventTarget {
     this.dispatchEvent(new Event('stop'));
     this.keys.counting = false;
     this.ui.classList.toggle('running', false);
+    this.running = false;
   }
 
   processInput() {
