@@ -1,4 +1,4 @@
-# 2020-10-26
+# 2020-10-27
 
 ## TODO
 
@@ -20,7 +20,18 @@
 
 ## WIP
 
+<https://www.sagejenson.com/physarum>
+- TODO read the original <https://uwe-repository.worktribe.com/output/980579>
+
 ## Done
+
+# 2020-10-26
+
+Started a local/uncommitted Physarum prototype: got diffusion and decay
+working, before getting hung up on heading trig vs coordinate system bugs.
+Will continue and piece out progress tomorrow.
+
+### Flatter and more tooling agnostic
 
 Prompted by @kris, inspired by [properjs.org](http://properjs.org/), and it
 resonance with [snowpack.dev](https://www.snowpack.dev/)'s design philosophy:
@@ -33,29 +44,31 @@ resonance with [snowpack.dev](https://www.snowpack.dev/)'s design philosophy:
 - moved away from using the node module system to structure out monorepo,
   instead relying on snowpack mounts, symlinks, and typescript's "classic"
   module resolution order, which is basically "retry in the parent directory"
-- did however choose to not take the tooling since:
-  - consistency in dev tool versions and production builds (e.g. under vercel)
-    is still useful, rather than relying on system-wide `tsc` and friends
-  - `file:///` or "just run `http-server`" aren't really a good dev xp
-  - don't want to go all the way back to `Makefile`s for project orchestration,
-    and there is value that yarn et al provide there, let alone network effects
-  - there's still use for file transformations, like markdown rendering and
-    sprite sheet assembly, and maybe even a DSL, or at least JSON/CSV use case
-    for game rule/data inclusion
-  - snowpack serves as a useful / minimal dev server and build tool so far, in
-    particular things I'd miss at this point:
-    - dev server uncaught exception overlay
-    - live reloading, no matter what fate HMR, rather than mashing refresh
-    - the ability to still fold in `.ts` files and consume 3rd party node
-      modules without any additional effort
-  - now, having decided to keep `tsc` and `snowpack` in the mix, we still have
-    a need for each project/site root within the monorepo to contain a
-    `package.json` and a `tsconfig.json`; however I was able to inline the
-    snowpack config itself into `package.json`, so one less file; also we can
-    get away with a mere symlink for `tsconfig.json`, but must have one because
-    reasons... alos I was unable to get `jsconfig.json` to work, especially
-    under how the snowpack typescript plugin invokes tsc; that may be
-    configurable, but I had to draw the line somewhere, and get to done...
+
+Did however choose to not take the tooling since:
+
+- consistency in dev tool versions and production builds (e.g. under vercel)
+  is still useful, rather than relying on system-wide `tsc` and friends
+- `file:///` or "just run `http-server`" aren't really a good dev xp
+- don't want to go all the way back to `Makefile`s for project orchestration,
+  and there is value that yarn et al provide there, let alone network effects
+- there's still use for file transformations, like markdown rendering and
+  sprite sheet assembly, and maybe even a DSL, or at least JSON/CSV use case
+  for game rule/data inclusion
+- snowpack serves as a useful / minimal dev server and build tool so far, in
+  particular things I'd miss at this point:
+  - dev server uncaught exception overlay
+  - live reloading, no matter what fate HMR, rather than mashing refresh
+  - the ability to still fold in `.ts` files and consume 3rd party node
+    modules without any additional effort
+- now, having decided to keep `tsc` and `snowpack` in the mix, we still have
+  a need for each project/site root within the monorepo to contain a
+  `package.json` and a `tsconfig.json`; however I was able to inline the
+  snowpack config itself into `package.json`, so one less file; also we can
+  get away with a mere symlink for `tsconfig.json`, but must have one because
+  reasons... alos I was unable to get `jsconfig.json` to work, especially
+  under how the snowpack typescript plugin invokes tsc; that may be
+  configurable, but I had to draw the line somewhere, and get to done...
 
 So in summary, what we now have:
 
