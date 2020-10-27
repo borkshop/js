@@ -428,8 +428,13 @@ const keyCodeMap = {
   },
   'Space': (ev:KeyboardEvent) => {
     const enabled = ev.type === 'keydown';
-    if (state.inspector) state.inspector.enabled = enabled;
     if (state.grid) {
+      if (state.inspector) {
+        if (enabled)
+          state.grid.el.addEventListener('mousemove', state.inspector);
+        else
+          state.grid.el.removeEventListener('mousemove', state.inspector);
+      }
       state.grid.el.classList.toggle('inspectable', enabled && !!state.inspector);
       state.grid.el.classList.toggle('retro', enabled);
     }
@@ -441,10 +446,8 @@ export function init(bind:Bindings) {
 
   if (bound.grid) {
     state.grid = new TileGrid(bound.grid);
-    if (bound.inspector) {
+    if (bound.inspector)
       state.inspector = new TileInspector(state.grid, onInsepcted);
-      state.inspector.enabled = false;
-    }
   }
 
   if (bound.keys) {

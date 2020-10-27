@@ -152,8 +152,15 @@ export class DOMgeonInspector extends TileInspector {
 
     this.el = el;
     this.dmg = dmg;
-    this.dmg.addEventListener('stop', () => this.dmg.grid.el.classList.toggle('inspectable', true));
-    this.dmg.addEventListener('start', () => this.dmg.grid.el.classList.toggle('inspectable', false));
+    this.dmg.addEventListener('stop', () => {
+      this.dmg.grid.el.classList.toggle('inspectable', true);
+      this.dmg.grid.el.addEventListener('mousemove', this);
+    });
+    this.dmg.addEventListener('start', () => {
+      this.dmg.grid.el.classList.toggle('inspectable', false);
+      this.dmg.grid.el.removeEventListener('mousemove', this);
+    });
     this.dmg.grid.el.classList.toggle('inspectable', !this.dmg.running);
+    if (!this.dmg.running) this.dmg.grid.el.addEventListener('mousemove', this);
   }
 }

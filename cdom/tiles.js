@@ -496,30 +496,6 @@ export class TileInspector {
   constructor(grid, handler) {
     this.grid = grid;
     this.handler = handler;
-    this.enabled = true;
-  }
-
-  // TODO drop this enabled noise
-
-  /** @type {boolean} */
-  #enabled = false
-
-  /** @return {boolean} */
-  get enabled() {
-    return this.#enabled
-  }
-
-  /** @param {boolean} is */
-  set enabled(is) {
-    if (is) {
-      if (this.#enabled) return;
-      this.grid.el.addEventListener('mousemove', this);
-    } else {
-      if (!this.#enabled) return;
-      this.grid.el.removeEventListener('mousemove', this);
-    }
-    this.#lastHandlid = '';
-    this.handler({pos: {x: NaN, y: NaN}, tiles: []});
   }
 
   /**
