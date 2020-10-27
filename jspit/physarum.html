@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="index.css" />
+    <title>jspit: Physarum Inpired demo</title>
+  </head>
+  <body>
+
+    <header>
+    </header>
+
+    <main>
+      <aside class="menu modal">
+        <noscript>
+          <section>
+            <h3 class="error">Insufficient JavaScript to evolve...</h3>
+          </section>
+        </noscript>
+
+        <section>
+          <h1>
+            Physarum Inspired Demo
+          </h1>
+
+          Inspired by <a href="//www.sagejenson.com/physarum">Physarum blog post by Sage Jenson</a>
+
+          <p>
+          TODO: expose more settings, and explain what's going on better, in short:
+          </p>
+
+          <ul>
+            <li>particles have a heading</li>
+            <li>particles have a sensor array</li>
+            <li>particles make turning decisions based on the sensed values</li>
+            <li>particles deposit some amount in their outgoing cell when moving</li>
+            <li>the world undergoes diffusion and exponential decay</li>
+          </ul>
+
+        </section>
+
+        <fieldset><legend>Settings</legend><dl>
+
+          <dt>Colors</dt>
+          <dd><label for="trail-hue">
+            Trail:
+            <input id="trail-hue" type="range" min="0" max="360" step="1" />
+          </label></dd>
+
+        </dl></fieldset>
+
+        <section class="buttonbar">
+          <span style="float: right">Press <code>&lt;Escape&gt;</code> to run simulation</span>
+
+          <label for="singleStep"><input id="singleStep" type="checkbox" /> SingleStep</label>
+          <button id="reset">Reset</button>
+        </section>
+
+        <section style="float: right">
+          <h3><a href="index.html">Back to Welcome screen</a></h3>
+        </section>
+
+      </aside>
+      <div class="grid">
+      </div>
+      <style>
+        .tile.trail {
+          z-index: 0;
+          --trail-hue: 240;
+          color:            hsl(var(--trail-hue), 80%, var(--value, 50%));
+          background-color: hsl(var(--trail-hue), 50%, var(--value, 50%));
+        }
+        .tile.sense {
+          border: 0.1em solid var(--magenta);
+          color: var(--magenta);
+          background-color: rgba(var(--magenta-rgb), var(--sensed, 0%));
+        }
+        .tile.ghost {
+          display: none;
+        }
+        .tile.particle.live {
+          z-index: 10;
+          --particle-hue: 120;
+          color:            hsl(var(--particle-hue), 80%, 50%);
+          /* background-color: hsl(var(--particle-hue), 50%, 50%); */
+          transform: rotate(calc(var(--heading) - 0.5turn));
+        }
+        body.running .tile.particle.live,
+        body.running .tile.sense {
+          display: none;
+        }
+        label[for="trail-hue"] {
+          color: var(--black);
+          padding: 0 2em;
+          background-color: hsl(240, 50%, 50%);
+        }
+      </style>
+    </main>
+
+    <footer>
+    </footer>
+
+    <script type="module">
+      import Physarum from './physarum';
+      import {readHashVar, setHashVar} from './state';
+      import {DOMgeon} from 'cdom/domgeon';
+      import {bindProp, bindCSSVar} from './config';
+
+      const getInput = (name) => document.querySelector(`input#${name}`);
+      const getSelect = (name) => document.querySelector(`select#${name}`);
+
+      const gridSheet = document.querySelector('main style').sheet;
+
+      for (const {selectorText, style} of gridSheet.cssRules)
+        if (selectorText === '.tile.trail')
+          bindCSSVar({style, name: 'trail-hue', getInput, getSelect});
+
+      const dmg = window.dmg = new DOMgeon({
+        ui: document.body,
+        keys: document.body,
+        grid: document.querySelector('main .grid'),
+      });
+
+      const status = document.querySelector('footer');
+      const sim = window.sim = new Physarum(dmg, status);
+
+      document.querySelector('#singleStep')
+
+      bindProp({obj: sim, name: 'singleStep', getInput, getSelect});
+
+      document.querySelector('#reset').addEventListener('click', () => { sim.reset(); })
+    </script>
+  </body>
+
+</html>
+<!-- vim:set ts=2 sw=2 expandtab -->
