@@ -6,7 +6,7 @@ export function stepParticles({
   update,
   handle,
   ordinalMoves = false,
-  stepLimit = 1000,
+  stepLimit = 0,
   ghostSpec = {
     className: ['ghost'],
   },
@@ -61,7 +61,7 @@ export function stepParticles({
 
     if (!handle || handle(grid, p, pos, to)) {
       grid.moveTileTo(p, to);
-      if (steps >= stepLimit)
+      if (stepLimit && steps >= stepLimit)
         grid.updateTile(p, ghostSpec);
     }
   }
