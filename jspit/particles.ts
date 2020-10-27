@@ -1,5 +1,17 @@
 import type {Point, TileGrid, TileQuery, TileSpec} from 'cdom/tiles';
 
+/**
+ * @param {Point} pos
+ * @param {number} θ
+ * @param {number} [r]
+ * @return {Point}
+ */
+export function atHeading({x, y}, θ, r=1) {
+  x += r * Math.cos(θ);
+  y += r * Math.sin(θ);
+  return {x, y};
+}
+
 export function stepParticles({
   grid,
   query = {className: ['particle', 'live']},
@@ -36,8 +48,7 @@ export function stepParticles({
     // move along heaading... somehow
     let heading = grid.getTileData(p, 'heading');
     if (typeof heading !== 'number') heading = 0;
-    let dx = Math.cos(heading);
-    let dy = Math.sin(heading);
+    let {x: dx, y: dy} = atHeading({x:0, y:0}, heading);
     const to = {x: pos.x, y: pos.y};
     if (!ordinalMoves) {
       // movement clamped to cardinal directions, with optional tracking of
