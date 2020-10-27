@@ -34,7 +34,7 @@ html {
 
 .grid .tile.particle.live {
   color: var(--red);
-  transform: rotate(calc(var(--heading) + 0.75turn));
+  transform: rotate(calc(var(--heading) - 0.5turn));
 }
 
 .grid.retro { background-color: var(--black); }

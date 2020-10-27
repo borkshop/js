@@ -8,8 +8,8 @@ import {toRad, parseAngle} from './units';
  * @return {Point}
  */
 export function atHeading({x, y}, θ, r=1) {
-  x += r * Math.cos(θ);
-  y += r * Math.sin(θ);
+  x -= r * Math.sin(θ);
+  y += r * Math.cos(θ);
   return {x, y};
 }
 

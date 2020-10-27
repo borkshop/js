@@ -169,7 +169,7 @@ export class DLA {
       const
         r = Math.random() * Math.sqrt(Math.pow(bounds.w, 2) + Math.pow(bounds.h, 2)),
         θ = Math.random() * 2 * Math.PI,
-        pos = {x: Math.cos(θ) * r, y: Math.sin(θ) * r};
+        pos = {x: Math.sin(θ) * r, y: Math.cos(θ) * r};
 
       const at = this.grid.tilesAt(pos, 'particle')
         .filter(t => !t.classList.contains('live'));
