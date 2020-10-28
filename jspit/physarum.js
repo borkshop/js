@@ -19,9 +19,13 @@ export default class {
   status
 
   nParticles = 0.6
+
   depositAmt = 0.2
+
   decay = 0.01
+
   ordinalMoves = true
+
   diffuse = [
     {x:  0, y:  0},
     {x:  0, y:  1},
@@ -35,7 +39,9 @@ export default class {
   ]
 
   sense = [-Math.PI/4, 0, Math.PI/4]
+
   quant = 0.3333
+
   showSensors = false
 
   bounce = [-Math.PI/4, Math.PI/4]
@@ -65,7 +71,9 @@ export default class {
   }
 
   tick = NaN
+
   rate = 100
+
   singleStep = false
 
   /**
@@ -258,7 +266,7 @@ export default class {
           return false;
         }
 
-        // deposit in outgoin cell
+        // deposit in outgoing cell
         const cell = grid.tileAt(pos, 'trail');
         if (cell) {
           let value = parseTrailValue(grid.getTileData(cell, 'value'));
@@ -269,11 +277,32 @@ export default class {
         return true;
       },
     });
-    diffuse({
-      grid: this.grid,
-      stencil: this.diffuse,
-      decay: this.decay,
-    });
+
+    // gather prior values
+    const cells = this.grid.queryTiles({className: 'trail'});
+    const posi = cells.map(cell => this.grid.getTilePosition(cell));
+    /** @type {Map<number, number>} */
+    const at = new Map();
+    for (let i = 0; i < cells.length; ++i) {
+      const cell = cells[i];
+      const key = mortonKey(posi[i]);
+      const val = parseTrailValue(this.grid.getTileData(cell, 'value'));
+      if (!isNaN(val)) at.set(key, val);
+    }
+
+    const mul = 1 - this.decay;
+    for (let i = 0; i < cells.length; ++i) {
+      const pos = posi[i];
+      let t=0, n=0;
+      for (const {x: dx, y: dy} of this.diffuse) {
+        const key = mortonKey({x: pos.x+dx, y: pos.y+dy});
+        const val = at.get(key);
+        if (typeof val === 'number' && !isNaN(val)) t+=val, n++;
+      }
+      const cell = cells[i];
+      this.grid.setTileData(cell, 'value', `${mul * t/n * 100}%`);
+    }
+
     this.status.innerText = `${notes.join(' ')}`;
   }
 }
@@ -287,55 +316,4 @@ function parseTrailValue(value) {
   if (typeof value === 'string') return parsePercent(value);
   else if (typeof value === 'number') return value;
   return NaN;
-}
-
-/**
- * @param {Object} options
- * @param {TileGrid} options.grid
- * @param {Point[]} [options.stencil]
- * @param {number} [options.decay]
- * @param {string} [options.className]
- * @param {string} [options.valueName]
- */
-export function diffuse({
-  grid,
-  stencil = [
-    {x:  0, y:  0},
-    {x:  0, y:  1},
-    {x:  1, y:  1},
-    {x:  1, y:  0},
-    {x:  1, y: -1},
-    {x:  0, y: -1},
-    {x: -1, y: -1},
-    {x: -1, y:  0},
-    {x: -1, y:  1},
-  ],
-  decay = 0,
-  className = 'trail',
-}) {
-  const cells = grid.queryTiles({className});
-  const posi = cells.map(cell => grid.getTilePosition(cell));
-  const vals = cells.map(cell => parseTrailValue(grid.getTileData(cell, 'value')));
-
-  // gather prior values
-  /** @type {Map<number, number>} */
-  const at = new Map();
-  for (let i = 0; i < cells.length; ++i) {
-    const key = mortonKey(posi[i]);
-    const val = vals[i];
-    if (!isNaN(val)) at.set(key, val);
-  }
-
-  const mul = 1 - decay;
-  for (let i = 0; i < cells.length; ++i) {
-    const {x, y} = posi[i];
-    let t=0, n=0;
-    for (const {x: dx, y: dy} of stencil) {
-      const key = mortonKey({x: x+dx, y: y+dy});
-      const val = at.get(key);
-      if (typeof val === 'number' && !isNaN(val)) t+=val, n++;
-    }
-    const cell = cells[i];
-    grid.setTileData(cell, 'value', `${mul * t/n * 100}%`);
-  }
 }
