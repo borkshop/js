@@ -18,7 +18,7 @@ export default class {
   /** @type {HTMLElement} */
   status
 
-  nParticles = -1
+  nParticles = 0.6
   depositAmt = 0.2
   decay = 0.01
   ordinalMoves = true
@@ -92,7 +92,6 @@ export default class {
       id: 'sizeTest',
       text: 'X',
     });
-    this.grid.viewPoint = {x: 0, y: 0};
     const rect = this.grid.viewport;
     if (!isFinite(rect.w) || !isFinite(rect.h)) {
       throw new Error('unable to determine grid tile/viewport size');
@@ -103,7 +102,10 @@ export default class {
 
     // fill trail cells randomly
     // TODO something more like a uniform distribution ala catan
-    const {x, y, w, h} = rect;
+    const x = Math.floor(rect.x)-1;
+    const y = Math.floor(rect.y)-1;
+    const w = Math.ceil(rect.w)+1;
+    const h = Math.ceil(rect.h)+1;
     const oldTrail = this.grid.queryTiles({className: 'trail'});
     for (let ax=x, i=0; i<w; ax++, i++) for (let ay=y, j=0; j<h; ay++, j++) {
       const pos = {x: ax, y: ay};
@@ -123,15 +125,25 @@ export default class {
       if (tile) tile.parentNode?.removeChild(tile);
     }
 
+    const center = this.grid.viewPoint = {
+      x: x + w/2,
+      y: y + h/2,
+    };
+
     // kill all prior particles and spawn new ones
     for (const p of this.grid.queryTiles({
       className: ['particle', 'live'],
     })) this.grid.updateTile(p, {className: 'ghost'});
-    const r = Math.min(w, h) / 2;
-    let nParticles = Math.floor(r * Math.PI);
+    const r = Math.round(Math.min(w-4, h-4) / 2);
+    let nParticles = this.nParticles;
+    if (nParticles < 0) {
+      nParticles = Math.floor(r * 2 * Math.PI);
+    } else if (nParticles < 1) {
+      nParticles = Math.floor(r * 2 * Math.PI * nParticles);
+    }
     for (let i = 0; i < nParticles; ++i) {
       const θ = i / nParticles * 2 * Math.PI;
-      const {x, y} = atHeading({x:0, y:0}, θ, r);
+      const {x, y} = atHeading(center, θ, r);
       const h = θ - Math.PI;
       /** @type {TileSpec} */
       const spec = {
