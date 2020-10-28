@@ -38,34 +38,34 @@ export default class {
     {x: -1, y:  1},
   ]
 
-  sense = [-Math.PI/4, 0, Math.PI/4]
+  sense = [-Math.PI/2, 0, Math.PI/2]
 
   quant = 0.3333
 
   showSensors = false
 
-  bounce = [-Math.PI/4, Math.PI/4]
+  bounce = [-Math.PI/2, Math.PI/2]
 
   /** @type {Object<string, number|number[]>} */
   turns = {
     // turn left if better
-    '1,0,0': -Math.PI/4,
+    '1,0,0': -Math.PI/8,
     '2,0,0': -Math.PI/4,
     '2,0,1': -Math.PI/4,
     '2,1,0': -Math.PI/4,
-    '2,1,1': -Math.PI/4,
+    '2,1,1': -Math.PI/8,
 
     // turn right if better
-    '0,0,1': Math.PI/4,
+    '0,0,1': Math.PI/8,
     '0,0,2': Math.PI/4,
     '0,1,2': Math.PI/4,
     '1,0,2': Math.PI/4,
-    '1,1,2': Math.PI/4,
+    '1,1,2': Math.PI/8,
 
     // turn randomly if straight is worse
-    '1,0,1': [-Math.PI/4, Math.PI/4],
-    '2,1,2': [-Math.PI/4, Math.PI/4],
-    '2,0,2': [-Math.PI/4, Math.PI/4],
+    '1,0,1': [-Math.PI/8, Math.PI/8],
+    '2,1,2': [-Math.PI/8, Math.PI/8],
+    '2,0,2': [-Math.PI/8, Math.PI/8],
 
     // default to straight ahead
   }
@@ -162,10 +162,9 @@ export default class {
         data: {heading: `${h}rad`},
       };
       const ghost = this.grid.queryTile({className: 'ghost'});
-      const tile = ghost
-        ? this.grid.updateTile(ghost, spec)
-        : this.grid.createTile(spec);
-      tile.title = `#${tile.id} from origin: ${θ/Math.PI}π heading ${h/Math.PI}π`
+      if (ghost) this.grid.updateTile(ghost, spec);
+      else this.grid.createTile(spec);
+      // tile.title = `#${tile.id} from origin: ${θ/Math.PI}π heading ${h/Math.PI}π`
     }
 
     // create particle sensor displays
