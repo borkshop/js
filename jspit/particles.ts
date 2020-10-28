@@ -28,6 +28,8 @@ export function stepParticles({
     let steps = grid.getTileData(p, 'steps');
     if (typeof steps !== 'number') steps = 0;
     grid.setTileData(p, 'steps', ++steps);
+    if (stepLimit && steps >= stepLimit)
+      grid.updateTile(p, ghostSpec);
 
     const pos = grid.getTilePosition(p);
 
@@ -59,11 +61,7 @@ export function stepParticles({
       to.y += dy;
     }
 
-    if (!handle || handle(grid, p, pos, to)) {
-      grid.moveTileTo(p, to);
-      if (stepLimit && steps >= stepLimit)
-        grid.updateTile(p, ghostSpec);
-    }
+    if (!handle || handle(grid, p, pos, to)) grid.moveTileTo(p, to);
   }
   return !!ps.length;
 }
