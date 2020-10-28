@@ -54,11 +54,11 @@ export function stepParticles({
         if (typeof debt.y === 'number') dy += debt.y;
       }
       if (Math.abs(dy) > Math.abs(dx)) {
-        if (dy < 0) to.y++, dy++;
-        else        to.y--, dy--;
+        if (dy < 0) to.y--, dy++;
+        else        to.y++, dy--;
       } else {
-        if (dx < 0) to.x++, dx++;
-        else        to.x--, dx--;
+        if (dx < 0) to.x--, dx++;
+        else        to.x++, dx--;
       }
       grid.setTileData(p, 'cardinalMoveDebt', {x: dx, y: dy});
     } else {
