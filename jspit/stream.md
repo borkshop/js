@@ -20,10 +20,13 @@
 
 ## WIP
 
-<https://www.sagejenson.com/physarum>
-- TODO read the original <https://uwe-repository.worktribe.com/output/980579>
-
 ## Done
+
+- completed workin Physarum sim, which proved to be a really useful bicycle to
+  improve TileGrid all around; still have some finishing to do, like exposing
+  settings for exploration
+  - TODO read the original <https://uwe-repository.worktribe.com/output/980579>
+    for more ideas
 
 # 2020-10-26
 
