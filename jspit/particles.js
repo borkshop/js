@@ -1,31 +1,50 @@
-import type {Point, TileGrid, TileQuery, TileSpec} from 'cdom/tiles';
 import {toRad, parseAngle} from './units';
 
-export function atHeading({x, y}:Point, θ:number, r:number=1):Point {
+/**
+ * @typedef {import('cdom/tiles').Point} Point
+ * @typedef {import('cdom/tiles').TileGrid} TileGrid
+ * @typedef {import('cdom/tiles').TileQuery} TileQuery
+ * @typedef {import('cdom/tiles').TileSpec} TileSpec
+ */
+
+/**
+ * @param {Point} pos
+ * @param {number} θ
+ * @param {number} r
+ * @return {Point}
+ */
+export function atHeading({x, y}, θ, r=1) {
   x -= r * Math.sin(θ);
   y += r * Math.cos(θ);
   return {x, y};
 }
 
+/**
+ * @typedef {(grid: TileGrid, ps: HTMLElement[])=>void} ParticleUpdater
+ * @typedef {(grid: TileGrid, p: HTMLElement, pos: Point, to: Point)=>boolean} ParticleMover
+ *
+ * @param {object} params
+ * @param {TileGrid} params.grid
+ * @param {TileQuery} [params.query]
+ * @param {ParticleUpdater} [params.update]
+ * @param {ParticleMover} [params.move]
+ * @param {boolean} [params.ordinalMoves]
+ * @param {number} [params.stepLimit]
+ * @param {TileSpec} [params.ghostSpec]
+ * @return {boolean}
+ *
+ * TODO support Object<string, ParticleUpdater> under params.update
+ * TODO reconcile params.move with domgeon movers
+ */
 export function stepParticles({
   grid,
   query = {className: ['particle', 'live']},
   update,
-  handle,
+  move,
   ordinalMoves = false,
   stepLimit = 0,
-  ghostSpec = {
-    className: ['ghost'],
-  },
-}:{
-  grid: TileGrid,
-  query?: TileQuery,
-  update?: (grid: TileGrid, ps: HTMLElement[])=>void,
-  handle?: (grid: TileGrid, p: HTMLElement, pos: Point, to: Point)=>boolean,
-  ordinalMoves?: boolean,
-  stepLimit?: number,
-  ghostSpec?: TileSpec,
-}):boolean {
+  ghostSpec = {className: ['ghost']},
+}) {
   if (typeof update === 'function') {
     update(grid, grid.queryTiles(query))
   }
@@ -67,7 +86,7 @@ export function stepParticles({
       to.y += dy;
     }
 
-    if (!handle || handle(grid, p, pos, to)) grid.moveTileTo(p, to);
+    if (!move || move(grid, p, pos, to)) grid.moveTileTo(p, to);
   }
   return !!ps.length;
 }

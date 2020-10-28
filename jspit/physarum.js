@@ -235,7 +235,7 @@ export default class {
           // notes.push(p.title = `#${p.id}(${note})`);
         }
       },
-      handle: (grid, p, pos, to) => {
+      move: (grid, p, pos, to) => {
         // must stay on trail support
         if (!grid.tileAt(to, 'trail')) {
           let h = toRad(parseAngle(grid.getTileData(p, 'heading')));
