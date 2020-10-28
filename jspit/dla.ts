@@ -252,7 +252,7 @@ export class DLA {
 
     const spec = {
       pos,
-      text: '*',
+      text: '🌲',
       className: ['particle', 'live', kind],
       data: {
         heading: `${heading}rad`,

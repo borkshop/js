@@ -32,7 +32,10 @@ html {
 
 .grid .tile.ghost { visibility: hidden }
 
-.grid .tile.particle.live { color: var(--red); }
+.grid .tile.particle.live {
+  color: var(--red);
+  transform: rotate(calc(var(--heading) + 0.75turn));
+}
 
 .grid.retro { background-color: var(--black); }
 
