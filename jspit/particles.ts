@@ -1,13 +1,7 @@
 import type {Point, TileGrid, TileQuery, TileSpec} from 'cdom/tiles';
 import {toRad, parseAngle} from './units';
 
-/**
- * @param {Point} pos
- * @param {number} θ
- * @param {number} [r]
- * @return {Point}
- */
-export function atHeading({x, y}, θ, r=1) {
+export function atHeading({x, y}:Point, θ:number, r:number=1):Point {
   x -= r * Math.sin(θ);
   y += r * Math.cos(θ);
   return {x, y};
