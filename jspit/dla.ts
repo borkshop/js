@@ -5,6 +5,7 @@ import {
 } from 'cdom/tiles';
 import {KeyCtl, coalesceMoves} from 'cdom/input';
 import {everyFrame, schedule} from 'cdom/anim';
+import {toRad, parseAngle} from './units';
 
 import {bindVars} from './config';
 import {stepParticles} from './particles';
@@ -253,7 +254,9 @@ export class DLA {
       pos,
       text: '*',
       className: ['particle', 'live', kind],
-      data: {heading},
+      data: {
+        heading: `${heading}rad`,
+      },
     };
     if (ghost)
       return this.grid.updateTile(ghost, spec);
@@ -288,12 +291,11 @@ export class DLA {
       grid: this.grid,
       update: (grid, ps) => {
         for (const p of ps) {
-          let heading = grid.getTileData(p, 'heading');
-          if (typeof heading !== 'number') heading = 0;
+          let heading = toRad(parseAngle(grid.getTileData(p, 'heading')));
           const adj = Math.random() * (turnLeft + turnRight) - turnLeft;
           heading += Math.PI * adj;
           heading %= 2 * Math.PI;
-          grid.setTileData(p, 'heading', heading);
+          grid.setTileData(p, 'heading', `${heading}rad`);
         }
       },
       handle: (grid:TileGrid, p, pos, to) => {

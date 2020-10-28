@@ -1,4 +1,5 @@
 import type {Point, TileGrid, TileQuery, TileSpec} from 'cdom/tiles';
+import {toRad, parseAngle} from './units';
 
 /**
  * @param {Point} pos
@@ -46,8 +47,8 @@ export function stepParticles({
     const pos = grid.getTilePosition(p);
 
     // move along heaading... somehow
-    let heading = grid.getTileData(p, 'heading');
-    if (typeof heading !== 'number') heading = 0;
+    let heading = toRad(parseAngle(grid.getTileData(p, 'heading')));
+    if (isNaN(heading)) heading = 0;
     let {x: dx, y: dy} = atHeading({x:0, y:0}, heading);
     const to = {x: pos.x, y: pos.y};
     if (!ordinalMoves) {
