@@ -265,12 +265,14 @@ export class TileGrid {
     if (spec.style) Object.assign(tile.style, spec.style);
     if (spec.data) {
       for (const [name, value] of Object.entries(spec.data))
-        if (value === null || value === undefined)
+        if (value === null || value === undefined) {
           delete tile.dataset[name];
-        else if (typeof value === 'string')
-          tile.dataset[name] = value;
-        else
-          tile.dataset[name] = JSON.stringify(value);
+          tile.style.removeProperty(`--${name}`);
+        } else {
+          const dval = typeof value === 'string' ? value : JSON.stringify(value);
+          tile.dataset[name] = dval;
+          tile.style.setProperty(`--${name}`, dval);
+        }
     }
     return tile;
   }
@@ -395,9 +397,14 @@ export class TileGrid {
    */
   setTileData(tile, name, value) {
     if (!tile) return;
-    if (typeof value === 'string') tile.dataset[name] = value;
-    else if (value === null || value === undefined) delete tile.dataset[name];
-    else tile.dataset[name] = JSON.stringify(value);
+    if (value === null || value === undefined) {
+      delete tile.dataset[name];
+      tile.style.removeProperty(`--${name}`);
+    } else {
+      const dval = typeof value === 'string' ? value : JSON.stringify(value);
+      tile.dataset[name] = dval;
+      tile.style.setProperty(`--${name}`, dval);
+    }
   }
 
   /**
