@@ -107,14 +107,16 @@
       import {DOMgeon} from 'cdom/domgeon';
       import {bindProp, bindCSSVar} from './config';
 
-      const getInput = (name) => document.querySelector(`input#${name}`);
-      const getSelect = (name) => document.querySelector(`select#${name}`);
+      const ctx = {
+        getInput: (name) => document.querySelector(`input#${name}`),
+        getSelect: (name) => document.querySelector(`select#${name}`),
+      };
 
       const gridSheet = document.querySelector('main style').sheet;
 
       for (const {selectorText, style} of gridSheet.cssRules)
         if (selectorText === '.tile.trail')
-          bindCSSVar({style, name: 'trail-hue', getInput, getSelect});
+          bindCSSVar({style, name: 'trail-hue', ctx});
 
       const dmg = window.dmg = new DOMgeon({
         ui: document.body,
@@ -127,7 +129,7 @@
 
       document.querySelector('#singleStep')
 
-      bindProp({obj: sim, name: 'singleStep', getInput, getSelect});
+      bindProp({obj: sim, name: 'singleStep', ctx});
 
       document.querySelector('#reset').addEventListener('click', () => { sim.reset(); })
     </script>

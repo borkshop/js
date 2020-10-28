@@ -468,9 +468,11 @@ export function init(bind:Bindings) {
   });
 
   bindVars({
+    ctx: {
+      getInput: (name:string) => bound.menu?.querySelector(`input[name="${name}"]`) || null,
+      getSelect: (name:string) => bound.menu?.querySelector(`select[name="${name}"]`) || null,
+    },
     data: DLA.config,
-    getInput: (name:string) => bound.menu?.querySelector(`input[name="${name}"]`) || null,
-    getSelect: (name:string) => bound.menu?.querySelector(`select[name="${name}"]`) || null,
   });
   toggleUI();
 }
