@@ -89,10 +89,10 @@ export function mortonKey(p) {
 
 class TileMortonIndex {
   /** @type {Map<number, Set<string>>} */
-  #fore = new Map();
+  _fore = new Map();
 
   /** @type {Map<string, number>} */
-  #back = new Map();
+  _back = new Map();
 
   /**
    * @param {string[]} ids
@@ -103,12 +103,12 @@ class TileMortonIndex {
     for (let i = 0; i < ids.length; ++i) {
       const id = ids[i];
       const key = mortonKey(pos[i]);
-      const prior = this.#back.get(id);
-      if (prior !== undefined) this.#fore.get(prior)?.delete(id);
-      const at = this.#fore.get(key);
+      const prior = this._back.get(id);
+      if (prior !== undefined) this._fore.get(prior)?.delete(id);
+      const at = this._fore.get(key);
       if (at) at.add(id);
-      else this.#fore.set(key, new Set([id]));
-      this.#back.set(id, key);
+      else this._fore.set(key, new Set([id]));
+      this._back.set(id, key);
     }
   }
 
@@ -117,7 +117,7 @@ class TileMortonIndex {
    * @return {Set<string>|undefined}
    */
   tilesAt(at) {
-    return this.#fore.get(mortonKey(at));
+    return this._fore.get(mortonKey(at));
   }
 }
 
@@ -129,15 +129,15 @@ export class TileGrid {
   idspace = 'tile' // TODO autogen this
 
   /** @type {ResizeObserver} */
-  #obs
+  _obs
 
   /**
    * @param {HTMLElement} el
    */
   constructor(el) {
     this.el = el;
-    this.#obs = new ResizeObserver(() => this._updateSize());
-    this.#obs.observe(this.el);
+    this._obs = new ResizeObserver(() => this._updateSize());
+    this._obs.observe(this.el);
     const tiles = this.queryTiles();
     this.spatialIndex.update(
       tiles.map(tile => tile.id),
@@ -182,7 +182,7 @@ export class TileGrid {
   }
 
   /** @type {?Point} */
-  #viewPoint = null
+  _viewPoint = null
 
   /** @return {Point} */
   get viewPoint() {
@@ -195,13 +195,13 @@ export class TileGrid {
   set viewPoint(p) {
     const {x, y} = p;
     if (isNaN(x) || isNaN(y)) return;
-    this.#viewPoint = {x, y};
+    this._viewPoint = {x, y};
     this._updateSize();
   }
 
   _updateSize() {
-    if (!this.#viewPoint) return;
-    const {x, y} = this.#viewPoint;
+    if (!this._viewPoint) return;
+    const {x, y} = this._viewPoint;
     const {w, h} = this.viewSize;
     this.viewOffset = {x: x - w / 2, y: y - h / 2};
   }
@@ -218,7 +218,7 @@ export class TileGrid {
   }
 
   /** @type Map<string, number> */
-  #kindid = new Map()
+  _kindid = new Map()
 
   /**
    * Creates a new tile element from a given specification, returning it.
@@ -236,9 +236,9 @@ export class TileGrid {
         let kind = '';
         if (typeof spec.className === 'string') kind = spec.className;
         else if (Array.isArray(spec.className)) kind = spec.className[0];
-        let n = this.#kindid.get(kind) || 0;
+        let n = this._kindid.get(kind) || 0;
         id = `${kind}${kind ? '-' : ''}${++n}`;
-        this.#kindid.set(kind, n);
+        this._kindid.set(kind, n);
       }
       tile.id = this.tileID(id)
     }
@@ -522,7 +522,7 @@ export class TileInspector {
   }
 
   /** @type {string} */
-  #lastHandlid = ''
+  _lastHandlid = ''
 
   /**
    * @param {Point} pos
@@ -531,8 +531,8 @@ export class TileInspector {
   update(pos) {
     const tiles = this.grid.tilesAt(pos);
     const handlid = `${pos.x},${pos.y}[${tiles.map(({id}) => id).join(';')}]`;
-    if (this.#lastHandlid !== handlid) {
-      this.#lastHandlid = handlid;
+    if (this._lastHandlid !== handlid) {
+      this._lastHandlid = handlid;
       this.handler({pos, tiles});
     }
   }
