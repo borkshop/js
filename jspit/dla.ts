@@ -461,7 +461,6 @@ export function init(bind:Bindings) {
   });
   bound.dropPlayer?.addEventListener('click', () => {
     if (state.world) {
-      if (bound.dropPlayer) bound.dropPlayer.disabled = true;
       state.world.dropPlayer();
     }
   });
@@ -523,6 +522,8 @@ async function start() {
     () => {
       if (bound.particleID)
         bound.particleID.innerText = world.particleID.toString();
+      if (bound.dropPlayer)
+        bound.dropPlayer.disabled = !!state.grid?.queryTile({className: ['mover', 'input']});
       return true;
     },
   ));
