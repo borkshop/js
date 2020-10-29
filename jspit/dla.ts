@@ -382,8 +382,12 @@ export class DLA {
       return {x: (c.x + p.x)/2, y: (c.y + p.y)/2};
     }, {x: NaN, y: NaN});
     if (!isNaN(c.x) && !isNaN(c.y)) {
-      const {x: vx, y: vy, w, h} = this.grid.viewport;
-      if (c.x <= vx || c.y <= vy || c.x+1 >= vx + w || c.y+1 >= vy + h)
+      const vx = Math.ceil(this.grid.viewport.x);
+      const vy = Math.ceil(this.grid.viewport.y);
+      const vw = Math.floor(this.grid.viewport.w);
+      const vh = Math.floor(this.grid.viewport.h);
+      const ax = c.x - vx, ay = c.y - vy;
+      if (ax <= 1 || ay <= 1 || ax >= vw-1 || ay >= vh-1)
         this.grid.viewPoint = c;
     }
   }
