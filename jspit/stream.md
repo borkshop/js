@@ -1,4 +1,4 @@
-# 2020-10-27
+# 2020-10-29
 
 ## TODO
 
@@ -22,7 +22,25 @@
 
 ## Done
 
-- completed workin Physarum sim, which proved to be a really useful bicycle to
+- improved DLA's player viewport scrolling
+- fixed initial overly eager input capture
+
+# 2020-10-28
+
+- spent a lot of time watching and tuning physarim settings: found that if you
+  widen the sensor spread, but tighten its turning range, it presents much more
+  potential to congeal into blobs and form flow streams. Still 
+- still mostly on dev branch iteration, but am speculating about further
+  changes to the setup, like: a variable deacy function to discourage edge
+  clumping or dropping decay entirely in lieu of a conservation-basde
+  movement/deposition scheme
+- translated jspit `particels` and `config` modules to proper js
+
+# 2020-10-27
+
+- dropped ultra-modern private `#field` notation for better compatibility with
+  things like FireFox
+- completed working Physarum sim, which proved to be a really useful bicycle to
   improve TileGrid all around; still have some finishing to do, like exposing
   settings for exploration
   - TODO read the original <https://uwe-repository.worktribe.com/output/980579>
