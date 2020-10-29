@@ -52,7 +52,7 @@ export class KeyCtl extends Map {
    *
    * @type {boolean}
    */
-  counting = true
+  counting = false
 
   /** @param {Event} event */
   handleEvent(event) {
