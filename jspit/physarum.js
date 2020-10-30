@@ -220,7 +220,7 @@ export default class {
           const svs = this.sense.map(dh => {
             const cell = grid.tileAt(atHeading(pos, h + dh), 'trail');
             if (!cell) return 0;
-            const value = parseTrailValue(this.grid.getTileData(cell, 'value'));
+            const value = parsePercent(this.grid.getTileData(cell, 'value'));
             return Math.floor(value / this.quant);
           });
 
@@ -268,7 +268,7 @@ export default class {
         // deposit in outgoing cell
         const cell = grid.tileAt(pos, 'trail');
         if (cell) {
-          let value = parseTrailValue(grid.getTileData(cell, 'value'));
+          let value = parsePercent(grid.getTileData(cell, 'value'));
           value = Math.min(1, value + this.depositAmt);
           grid.setTileData(cell, 'value', `${value * 100}%`);
         }
@@ -285,7 +285,7 @@ export default class {
     for (let i = 0; i < cells.length; ++i) {
       const cell = cells[i];
       const key = mortonKey(posi[i]);
-      const val = parseTrailValue(this.grid.getTileData(cell, 'value'));
+      const val = parsePercent(this.grid.getTileData(cell, 'value'));
       if (!isNaN(val)) at.set(key, val);
     }
 
@@ -304,15 +304,4 @@ export default class {
 
     this.status.innerText = `${notes.join(' ')}`;
   }
-}
-
-/**
- * @param {any} value
- * @return {number}
- */
-function parseTrailValue(value) {
-  if (!value) return 0;
-  if (typeof value === 'string') return parsePercent(value);
-  else if (typeof value === 'number') return value;
-  return NaN;
 }
