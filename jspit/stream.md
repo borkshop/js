@@ -1,4 +1,4 @@
-# 2020-10-29
+# 2020-10-30
 
 ## TODO
 
@@ -22,6 +22,12 @@
 
 ## Done
 
+# 2020-10-29
+
+- explored further options in physarum design space, like a variable decay
+  field, but decided to set that line of polish work aside for now
+  - did however decide to release the blob-ified settings, and a few minor code
+    improvements made
 - improved DLA's player viewport scrolling
 - fixed initial overly eager input capture
 
@@ -565,6 +571,25 @@ I'd wanted to take this further to include such things as:
     spawn particles
   - terminate particles more aggresively (e.g. if have moved away from bounds
     for N turns)
+- Physarum
+  - decay function
+  - value conservation mode
+    - no decay
+    - particles can consume upto X from current cell
+    - moving spends Y by ejecting it behind
+    - likewise turning spends Z ejected at an opposite angle to the turn
+    - particles have an intrinsic value (weight)
+    - plus a carrying capacity
+    - cannot move once expended
+    - may be consumed by other particles
+    - will need a respawning mechanic, at least cheesed, if not reproductive
+    - maybe this is a "survival" mode vs the o.g. "creative" one
+    - or maybe this is a new deal not called "physarum"
+  - towards level gen
+    - set a value threshold/range of what's "passable"
+    - flood fill floor tiles, edging with wall
+    - TBD online model and threshold choice
+
 
 # Resources
 
