@@ -46,28 +46,32 @@ export default class {
 
   bounce = [-Math.PI/2, Math.PI/2]
 
-  /** @type {Object<string, number|number[]>} */
-  turns = {
-    // turn left if better
-    '1,0,0': -Math.PI/8,
-    '2,0,0': -Math.PI/4,
-    '2,0,1': -Math.PI/4,
-    '2,1,0': -Math.PI/4,
-    '2,1,1': -Math.PI/8,
+  /** @type {(svs:number[]) => number|number[]} */
+  turns = (svs) => {
+    /** @type {Object<string, number|number[]>} */
+    const lut = {
+      // turn left if better
+      '1,0,0': -Math.PI/8,
+      '2,0,0': -Math.PI/4,
+      '2,0,1': -Math.PI/4,
+      '2,1,0': -Math.PI/4,
+      '2,1,1': -Math.PI/8,
 
-    // turn right if better
-    '0,0,1': Math.PI/8,
-    '0,0,2': Math.PI/4,
-    '0,1,2': Math.PI/4,
-    '1,0,2': Math.PI/4,
-    '1,1,2': Math.PI/8,
+      // turn right if better
+      '0,0,1': Math.PI/8,
+      '0,0,2': Math.PI/4,
+      '0,1,2': Math.PI/4,
+      '1,0,2': Math.PI/4,
+      '1,1,2': Math.PI/8,
 
-    // turn randomly if straight is worse
-    '1,0,1': [-Math.PI/8, Math.PI/8],
-    '2,1,2': [-Math.PI/8, Math.PI/8],
-    '2,0,2': [-Math.PI/8, Math.PI/8],
+      // turn randomly if straight is worse
+      '1,0,1': [-Math.PI/8, Math.PI/8],
+      '2,1,2': [-Math.PI/8, Math.PI/8],
+      '2,0,2': [-Math.PI/8, Math.PI/8],
 
-    // default to straight ahead
+      // default to straight ahead
+    };
+    return lut[svs.join(',')];
   }
 
   tick = NaN
@@ -224,9 +228,7 @@ export default class {
             return Math.floor(value / this.quant);
           });
 
-          const turnKey = svs.join(',');
-          // note = `${note} sense=${turnKey}`;
-          let turn = this.turns[turnKey];
+          let turn = this.turns(svs);
           if (Array.isArray(turn)) turn = turn[Math.floor(Math.random()*turn.length)];
           if (typeof turn === 'number') {
             // note = `${note} turn=${Math.round(turn/Math.PI *100)/100}π`
