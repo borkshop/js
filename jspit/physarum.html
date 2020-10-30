@@ -68,9 +68,12 @@
         .tile.trail {
           z-index: 0;
           --trail-hue: 240;
-          color:            hsl(var(--trail-hue), 80%, var(--value, 50%));
-          background-color: hsl(var(--trail-hue), 50%, var(--value, 50%));
+          color:            hsl(var(--trail-hue), 80%, var(--light, 50%));
+          background-color: hsl(var(--trail-hue), 50%, var(--light, 50%));
         }
+
+        .tile.trail { --light: var(--value) }
+
         .tile.sense {
           border: 0.1em solid var(--magenta);
           color: var(--magenta);
