@@ -10,6 +10,7 @@ import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 
 /** @typedef { import("./tiles").TileMoverProc } TileMoverProc */
+/** @typedef { import("./tiles").TileSpec } TileSpec */
 
 /** @typedef {Object} DOMgeonOptions
  *
@@ -19,8 +20,61 @@ import {everyFrame, schedule} from './anim';
  * @prop {number} [inputRate=100] - how often to process key events, defaults to 100ms or 10hz
  */
 
+/**
+ * @param {TileGrid} grid
+ * @param {HTMLElement[]} interacts
+ * @param {HTMLElement} subject
+ * @returns {boolean}
+ */
+export function procInteraction(grid, interacts, subject) {
+  if (!interacts.length) return false;
+  // TODO interaction loop to choose
+  if (interacts.length > 1) return false;
+  const interact = interacts[0];
+
+  applyMorph(grid, interact, grid.getTileData(interact, 'morph_target'));
+  applyMorph(grid, subject, grid.getTileData(interact, 'morph_subject'));
+
+  return true;
+}
+
+/**
+ * @typedef {object} classMut
+ * @prop {string} [toggle]
+ * @prop {string} [remove]
+ * @prop {string} [add]
+ */
+
+/**
+ * @param {TileGrid} grid
+ * @param {HTMLElement} tile
+ * @param {any} morph
+ * @returns {void}
+ */
+function applyMorph(grid, tile, morph) {
+  if (Array.isArray(morph)) {
+    for (const m of morph) applyMorph(grid, tile, m);
+    return;
+  }
+  if (typeof morph === 'string') {
+    const form = grid.getTileData(tile, `morph_form_${morph}`);
+    if (form) morph = form;
+  }
+  if (typeof morph !== 'object') return;
+  if (!morph) return;
+  /** @type {{ classList: (classMut|classMut[]) }&TileSpec} */
+  let {classList, ...spec} = morph;
+  classList = Array.isArray(classList) ? classList : [classList];
+  for (const {toggle, add, remove} of classList) {
+    if (toggle) tile.classList.toggle(toggle);
+    if (remove) tile.classList.remove(remove);
+    if (add) tile.classList.add(add);
+  }
+  grid.updateTile(tile, spec);
+}
+
 /** @type {TileMoverProc} */
-export function solidMoverProc({at}) {
+export function solidMoverProc({grid, to, at, mover}) {
   // can only move there if have particle support
   if (!at.some(h => h.classList.contains('floor'))) return false;
 
@@ -28,6 +82,15 @@ export function solidMoverProc({at}) {
   const solids = at.filter(h => h.classList.contains('solid'));
   if (!solids.length) return true;
 
+  // may interact with another solid...
+  const interacts = solids.filter(h => h.classList.contains('interact'));
+  if (interacts.length) {
+    if (!procInteraction(grid, interacts, mover)) return false;
+    // ...then maybe allowed to pass if no longer occupied
+    if (!grid.tilesAt(to, 'solid').length) return true;
+  }
+
+  // (still) occupied
   return false;
 }
 
