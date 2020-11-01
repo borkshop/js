@@ -230,7 +230,6 @@ export class DOMgeonInspector extends TileInspector {
    * @param {TileInspectEvent} ev
    */
   inspect({pos: {x, y}, tiles}) {
-    x = Math.floor(x), y = Math.floor(y);
     this.grid.updateTile(this.cur, {pos: {x, y}});
     this.cur.classList.toggle('pinned', this.pinned);
     const at = /** @type {HTMLElement|null} */ (this.el.querySelector('[data-for="pos"]'));
