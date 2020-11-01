@@ -158,9 +158,9 @@ export class TileGrid {
   /** @return {Point} */
   get tileSize() {
     // TODO use an invisible measurement tile? cache?
-    for (const tile of this.el.querySelectorAll('.tile')) {
-      const x = tile.clientWidth;
-      const y = tile.clientHeight;
+    for (const tile of /** @type {NodeListOf<HTMLElement>} */ (this.el.querySelectorAll('.tile'))) {
+      const x = tile.offsetWidth;
+      const y = tile.offsetHeight;
       return {x, y};
     }
     return {x: 0, y: 0};
