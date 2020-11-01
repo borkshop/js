@@ -229,19 +229,20 @@ export class DOMgeonInspector extends TileInspector {
   /**
    * @param {TileInspectEvent} ev
    */
-  inspect({pos: {x, y}, tiles}) {
+  inspect({pos: {x, y}, tiles, pinned}) {
     this.grid.updateTile(this.cur, {pos: {x, y}});
-    this.cur.classList.toggle('pinned', this.pinned);
+    this.cur.classList.toggle('pinned', pinned);
     const at = /** @type {HTMLElement|null} */ (this.el.querySelector('[data-for="pos"]'));
     if (at) at.innerText = `${isNaN(x) ? 'X' : x},${isNaN(y) ? 'Y' : y}`;
     const txt = this.el.querySelector('textarea');
-    if (txt) dumpTiles({tiles, into: txt, detail: this.pinned});
+    if (txt) dumpTiles({tiles, into: txt, detail: pinned});
   }
 
   enable() {
     this.dmg.grid.el.classList.toggle('inspectable', true);
     for (const type of ['mousemove', 'click'])
       this.dmg.grid.el.addEventListener(type, this);
+    this.refresh();
   }
 
   disable() {

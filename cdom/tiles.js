@@ -538,8 +538,8 @@ export class TileInspector {
     this.handler = handler;
   }
 
-  /** @type {boolean} */
-  pinned = false
+  /** @type {Point|null} */
+  pinned = null
 
   /** @type {TileFilter} */
   filter = _ => true
@@ -558,12 +558,21 @@ export class TileInspector {
     const tiles = this.grid.tilesAt(pos).filter(t => this.filter(t, this.grid));
     switch (ev.type) {
     case 'click':
-      this.pinned = tiles.length > 0;
+      this.pinned = tiles.length > 0 ? pos : null;
       this.update(pos, tiles);
       break;
     case 'mousemove':
-      if (!this.pinned) this.update(pos, tiles);
+      if (this.pinned === null) this.update(pos, tiles);
     }
+  }
+
+  refresh() {
+    if (!this.pinned) return;
+    const pos = this.pinned;
+    const tiles = this.grid.tilesAt(pos).filter(t => this.filter(t, this.grid));
+    const pinned = !!this.pinned;
+    this._lastHandlid = `pinned:${pinned};${pos.x},${pos.y}[${tiles.map(({id}) => id).join(';')}]`;
+    this.handler({pos, tiles, pinned});
   }
 
   /** @type {string} */
@@ -575,7 +584,7 @@ export class TileInspector {
    * @return void
    */
   update(pos, tiles) {
-    const pinned = this.pinned;
+    const pinned = !!this.pinned;
     const handlid = `pinned:${pinned};${pos.x},${pos.y}[${tiles.map(({id}) => id).join(';')}]`;
     if (this._lastHandlid !== handlid) {
       this._lastHandlid = handlid;
