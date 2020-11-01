@@ -234,7 +234,7 @@ export class DOMgeonInspector extends TileInspector {
     const at = /** @type {HTMLElement|null} */ (this.el.querySelector('[data-for="pos"]'));
     if (at) at.innerText = `${isNaN(x) ? 'X' : x},${isNaN(y) ? 'Y' : y}`;
     const txt = this.el.querySelector('textarea');
-    if (txt) dumpTiles({tiles, into: txt});
+    if (txt) dumpTiles({tiles, into: txt, detail: this.pinned});
   }
 
   enable() {
