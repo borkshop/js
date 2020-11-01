@@ -67,11 +67,13 @@ function applyMorph(grid, tile, morph) {
   if (!morph) return;
   /** @type {{ classList: (classMut|classMut[]) }&TileSpec} */
   let {classList, ...spec} = morph;
-  classList = Array.isArray(classList) ? classList : [classList];
-  for (const {toggle, add, remove} of classList) {
-    if (toggle) tile.classList.toggle(toggle);
-    if (remove) tile.classList.remove(remove);
-    if (add) tile.classList.add(add);
+  if (classList) {
+    classList = Array.isArray(classList) ? classList : [classList];
+    for (const {toggle, add, remove} of classList) {
+      if (toggle) tile.classList.toggle(toggle);
+      if (remove) tile.classList.remove(remove);
+      if (add) tile.classList.add(add);
+    }
   }
   grid.updateTile(tile, spec);
 }
