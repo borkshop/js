@@ -121,6 +121,16 @@ class TileMortonIndex {
   }
 }
 
+/**
+ * @param {TileSpec} spec
+ * @returns {string}
+ */
+function specKind(spec) {
+  if (typeof spec.className === 'string') return spec.className;
+  if (Array.isArray(spec.className)) return spec.className[0];
+  return '';
+}
+
 export class TileGrid {
   /** @type {HTMLElement} */
   el
@@ -221,6 +231,20 @@ export class TileGrid {
   _kindid = new Map()
 
   /**
+   * @param {TileSpec} spec
+   * @returns {HTMLElement}
+   */
+  buildTile(spec) {
+    const kind = specKind(spec);
+    if (spec.pos) {
+      const tile = this.tileAt(spec.pos, kind);
+      if (tile) return this.updateTile(tile, spec);
+    }
+    // TODO garbage re-use
+    return this.createTile(spec);
+  }
+
+  /**
    * Creates a new tile element from a given specification, returning it.
    *
    * @param {{id?: string}&TileSpec} idSpec
@@ -233,9 +257,7 @@ export class TileGrid {
       tile = this.el.ownerDocument.createElement('div');
       this.el.appendChild(tile)
       if (!id) {
-        let kind = '';
-        if (typeof spec.className === 'string') kind = spec.className;
-        else if (Array.isArray(spec.className)) kind = spec.className[0];
+        const kind = specKind(spec);
         let n = this._kindid.get(kind) || 0;
         id = `${kind}${kind ? '-' : ''}${++n}`;
         this._kindid.set(kind, n);
