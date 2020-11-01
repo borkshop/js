@@ -1,4 +1,4 @@
-# Week Ending 2020-10-31
+# 2020-11-01
 
 ## TODO
 
@@ -28,6 +28,10 @@
 ## WIP
 
 ## Done
+
+- improved the domgeon inspector to support click-to-pin with details
+
+# Week Ending 2020-10-31
 
 Dialed beck the level of tooling artifice:
 - mostly switching away from directly written TypeScript, to ts-check annotated
