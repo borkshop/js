@@ -565,14 +565,16 @@ export function dumpTiles({tiles, into, dump}) {
 
 // TODO support grouped resolution and/or priority...
 
-/** @typedef {(req:{
- *   grid: TileGrid,
- *   mover: HTMLElement,
- *   at: HTMLElement[],
- *   pos: Point,
- *   to: Point,
- * }) => boolean} TileMoverProc
+/**
+ * @typedef {object} TileMove
+ * @prop {TileGrid} grid
+ * @prop {HTMLElement} mover
+ * @prop {HTMLElement[]} at
+ * @prop {Point} pos
+ * @prop {Point} to
  */
+
+/** @typedef {(req:TileMove) => boolean} TileMoverProc */
 
 /**
  * @param {Object} options
