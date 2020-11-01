@@ -49,12 +49,17 @@
       <style>
         /* tile stacking priorities */
         .tile.floor { z-index:  0 }
+        .tile       { z-index:  5 }
         .tile.wall  { z-index: 10 }
         .tile.mover { z-index: 20 }
         .tile.input { z-index: 50 }
 
+        .tile.floor { color: var(--dark-grey) }
+
         /* wall should occlude floor */
         .tile.wall { background-color: var(--darker-grey) }
+
+        .tile.mover { color: var(--orange); }
       </style>
       <div class="grid">
       </div>
@@ -66,6 +71,7 @@
 
     <script type="module">
       import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
+      import {fillRect, roomShader, borderShader, openable} from 'cdom/builder';
       const dmg = window.dmg = new DOMgeon({
         ui: document.body,
         keys: document.body,
@@ -73,27 +79,63 @@
       });
       new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
-      // TODO probably a DOMgeonBuilder would be nice
-      const w=13, h=8;
+      /// walls default to '#'
+      /// rogue classic style with '-' top/bottom and '|' left/right
+      // walls: borderShader(
+      //   {className: ['wall', 'solid'], text: '-'},
+      //   {className: ['wall', 'solid'], text: '|'},
+      // ),
+      /// demo pattern
+      // walls: borderShader(
+      //   {className: ['wall', 'solid'], text: 'T'},
+      //   {className: ['wall', 'solid'], text: 'R'},
+      //   {className: ['wall', 'solid'], text: 'B'},
+      //   {className: ['wall', 'solid'], text: 'L'},
+      // ),
 
-      const pos = {x: Math.floor(w/2), y: Math.floor(h/2)};
+      /// floors default to '·'
+
+      /// doors default to '+'
+      // doors: openable({
+      //   className: ['door', 'solid', 'interact'],
+      //   text: '+',
+      // }, '-'),
+
+      fillRect(dmg.grid, {x: 0, y: 0, w: 13, h: 8}, roomShader({
+        doors: openable('+', '-'),
+        doorsAt: (pos, rect) => 
+          pos.x === rect.x + Math.floor(rect.w/2),
+      }));
+
+      fillRect(dmg.grid, {x: 5, y: -5, w: 3, h: 5}, roomShader({
+        walls: borderShader(
+          null,
+          {text: '#', className: ['wall', 'solid']},
+        ),
+      }));
+
+      fillRect(dmg.grid, {x: 4, y: -10, w: 5, h: 5}, roomShader({
+        doors: openable('+', '-'),
+        doorsAt: (pos, rect) => 
+          pos.x === rect.x + Math.floor(rect.w/2) &&
+          pos.y === rect.y + rect.h-1,
+      }));
+
+      dmg.grid.createTile({
+        pos: {x: 6, y: -8},
+        className: ['interact'],
+        text: 'V',
+        style: {color: 'var(--purple)'},
+        data: {
+          morph_subject: {
+            classList: {remove: 'solid'},
+          },
+        },
+      });
+
+      const pos = {x: 6, y: 4};
       dmg.grid.createTile({pos, className: ['input', 'mover', 'solid'], text: '@'});
       dmg.grid.viewPoint = pos;
-
-      for (let x=0; x<w; x++) for (let y=0; y<h; y++)
-        dmg.grid.createTile({pos: {x, y}, className: 'floor', text: '·'});
-      for (let x=0; x<w; x++)
-        if (x === Math.floor(w/2)) {
-          dmg.grid.createTile({pos: {x, y:   0}, className: ['door', 'solid'], text: '+'});
-          dmg.grid.createTile({pos: {x, y: h-1}, className: ['door', 'solid'], text: '+'});
-        } else {
-          dmg.grid.createTile({pos: {x, y:   0}, className: ['wall', 'solid'], text: '-'});
-          dmg.grid.createTile({pos: {x, y: h-1}, className: ['wall', 'solid'], text: '-'});
-        }
-      for (let y=1; y<h-1; y++) {
-        dmg.grid.createTile({pos: {x:   0, y}, className: ['wall', 'solid'], text: '|'});
-        dmg.grid.createTile({pos: {x: w-1, y}, className: ['wall', 'solid'], text: '|'});
-      }
 
     </script>
   </body>
