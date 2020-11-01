@@ -588,21 +588,44 @@ export class TileInspector {
  * @param {Object} options
  * @param {HTMLElement[]} options.tiles
  * @param {HTMLTextAreaElement} options.into
- * @param {(tile: HTMLElement)=>string} [options.dump]
+ * @param {boolean} [options.detail]
  * @return void
  */
-export function dumpTiles({tiles, into, dump}) {
-  if (!dump) dump = t => {
+export function dumpTiles({tiles, into, detail}) {
+  /** @param {HTMLElement} t */
+  const dumpIDC = t => {
     let line = `id=${t.id}`
     line += ` class=[${Array.from(t.classList).filter(n => n !== 'tile').join(', ')}]`;
     return line;
   };
 
+  /** @param {HTMLElement} t */
+  const dumpWithSpec = t => {
+    const lines = [dumpIDC(t)];
+    // TODO something like grid.getTileSpec(t)
+    lines.push(`* text: ${JSON.stringify(t.innerText)}`);
+    for (const [name, sval] of Object.entries(t.dataset)) {
+      let valLines = [sval];
+      if (sval) {
+        try {
+          const val = JSON.parse(sval);
+          valLines = JSON.stringify(val, null, '  ').split("\n");
+        } catch (e) {}
+      }
+      lines.push(`* data[${JSON.stringify(name)}]: ${valLines.shift()}`);
+      lines.push(...valLines.map(l => `  ${l}`));
+    }
+    lines.push('');
+    return lines;
+  };
+
+  const dump = detail ? dumpWithSpec : dumpIDC;
+
   if (!tiles.length) {
     into.style.display = 'none';
   } else {
     into.style.display = '';
-    const lines = tiles.map(dump);
+    const lines = tiles.flatMap(dump);
     into.value = lines.join('\n');
     into.rows = lines.length;
     into.cols = lines.reduce((max, line) => Math.max(max, line.length), 0);
