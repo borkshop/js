@@ -9,6 +9,8 @@ import {
 import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 
+/** @typedef { import("./tiles").TileMoverProc } TileMoverProc */
+
 /** @typedef {Object} DOMgeonOptions
  *
  * @prop {HTMLElement} grid - document element to place tiles within
@@ -16,6 +18,18 @@ import {everyFrame, schedule} from './anim';
  * @prop {HTMLElement} [keys] - document element to listen for key events upon
  * @prop {number} [inputRate=100] - how often to process key events, defaults to 100ms or 10hz
  */
+
+/** @type {TileMoverProc} */
+export function solidMoverProc({at}) {
+  // can only move there if have particle support
+  if (!at.some(h => h.classList.contains('floor'))) return false;
+
+  // may move if not occupied
+  const solids = at.filter(h => h.classList.contains('solid'));
+  if (!solids.length) return true;
+
+  return false;
+}
 
 export class DOMgeon extends EventTarget {
   /** @type {TileGrid} */
@@ -33,22 +47,9 @@ export class DOMgeon extends EventTarget {
   /** @type {boolean} */
   running = false
 
-
-
-  /**
-   * @typedef { import("./tiles").TileMoverProc } TileMoverProc
-   * @type {Object<string, TileMoverProc>}
-   */
-  moveProcs  = {
-    solid: ({at}) => {
-      // can only move there if have particle support
-      if (!at.some(h => h.classList.contains('floor'))) return false;
-
-      // may not move there if occupied by another solid
-      if (at.some(h => h.classList.contains('solid'))) return false;
-
-      return true;
-    },
+  /** @type {Object<string, TileMoverProc>} */
+  moveProcs = {
+    solid: solidMoverProc,
   }
 
   /**
