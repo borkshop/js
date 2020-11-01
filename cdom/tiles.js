@@ -28,6 +28,13 @@
  *       startsWith/endsWith/contains match
  */
 
+/**
+ * @callback TileFilter
+ * @param {HTMLElement} tile
+ * @param {TileGrid} grid
+ * @returns {boolean}
+ */
+
 /*** @typedef {Object<string,TileDatum>} TileData */
 /*** @typedef {string|number|TileDatum[]|TileData} TileDatum */
 
@@ -534,6 +541,9 @@ export class TileInspector {
   /** @type {boolean} */
   pinned = false
 
+  /** @type {TileFilter} */
+  filter = _ => true
+
   /**
    * @param {MouseEvent} ev
    * @return {void}
@@ -545,7 +555,7 @@ export class TileInspector {
     x += (ev.clientX - gridRect.left) / w;
     y += (ev.clientY - gridRect.top) / h;
     const pos = {x, y};
-    const tiles = this.grid.tilesAt(pos);
+    const tiles = this.grid.tilesAt(pos).filter(t => this.filter(t, this.grid));
     switch (ev.type) {
     case 'click':
       this.pinned = tiles.length > 0;
