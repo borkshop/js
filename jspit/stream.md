@@ -1,26 +1,76 @@
-# 2020-10-31
+# Week Ending 2020-10-31
 
 ## TODO
 
-- domgeon:
-  - player inventorty/ability system; good initial use cases includ a digging
+- domgeon
+  - FOV ala <https://www.albertford.com/shadowcasting>
+  - interaction with adjacent tiles and/or the current tile
+  - player inventorty/ability system; good initial use cases include a digging
     item, floor tile creator, a particle gun, or void walking boots
-  - visibility ala <https://www.albertford.com/shadowcasting>
-  - interactable tiles like doors and runes
-  - a builder based on common patterns like rectangld draw/fill
+  - move and other interaction animations
+
+- builder
+  - a more adept hallway builder
+  - Line
+  - Circle
+  - Polygon / Path
+  - TBD fill v stroke variants and reconciling with the current `fillRect` /
+    `strokeRect` pair
 
 - tiles
   - watch for any spatial index bugs, once saw a zombie particle at incorrect
     location, which allowed the player to step into the void in the DLA demo
   - TileGrid
-    - custom shader funcs, or at least some affordance for stepped css classes
-    - animations like boop and particles
-    - save/load ; initial state
-    - masking?
+    - save/loading of tile state
+    - masking/visibility/lighting ; after implementing FOV if domgeon, there
+      may be some core part at the tile grid level
 
 ## WIP
 
 ## Done
+
+Dialed beck the level of tooling artifice:
+- mostly switching away from directly written TypeScript, to ts-check annotated
+  modern JavaScript.
+- flattened the repository layout, dispensing with the node module system as a
+  way to structure borkshop code; instead rely on browser native modules,
+  assisted by snowpack during dev and for production build; keeping snowpack
+  leaves us an escape hatch for using 3rd party deps and progressive
+  transpiling where appropriate.
+- dropped ultra-modern private `#field` notation for better compatibility with
+  things like FireFox
+
+Shaped up the `jspit/config` module further, now useful for one-off bindings to
+JS or CSS variables; may hoist it into `cdom` space soon.
+
+Added an initial take at a "morphic interaction" system (builtin to
+`cdom/domgeon`), where tiles may morph themselves or a subject actor tile:
+- initial use case is for doors that morph between a closed solid form and an
+  open passable one
+- currently only triggered by movement (solid) collision, but with plan to add
+  other methods of discovery and interaction
+- the subject morph should allow for things like simple teleporters, or tiles
+  that grant an ability to the player; the ColorBoop demo could now be redone
+  with zero code using subject morph data definitions
+
+Added an initial take at a tile shader oriented `cdom/builder` module:
+- a shader is basically a `(grid, pos) => ...` function that is expected to
+  call `grid.buildTile` one or more times; it also receives an third `shape`
+  parameter that is specific to a draw operation
+- basic drawing routines for filled/stroked rectangles; TODO add more shapes
+- many layers of shader builders, culminating with `roomShader` that lays down
+  floor, wall, and door tiles
+
+Wrote another particle-based simulation, this time hybridized with a cell grid,
+called Physarum:
+- while performance isn't really feasible at present, it did serve as a useful
+  smoke/stress test of the base `TileGrid`, which is much improved for the
+  process
+- cutoff development before getting it to as "done" a state as the DLA demo tho
+- but it may provide a useful procgen setting eventually, especially if
+  iterated infrequently, or out-of-dom for better performance
+
+# 2020-10-31
 
 - finished initial cut of "morphic interaction" system:
   - tiles may now be tagged `.interact` and carry `"morph_target"` and
