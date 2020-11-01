@@ -508,6 +508,7 @@ export class TileGrid {
  * @typedef {Object} TileInspectEvent
  * @prop {Point} pos
  * @prop {HTMLElement[]} tiles
+ * @prop {boolean} pinned
  */
 
 /**
@@ -530,6 +531,9 @@ export class TileInspector {
     this.handler = handler;
   }
 
+  /** @type {boolean} */
+  pinned = false
+
   /**
    * @param {MouseEvent} ev
    * @return {void}
@@ -540,7 +544,16 @@ export class TileInspector {
     const {x: w, y: h} = this.grid.tileSize;
     x += (ev.clientX - gridRect.left) / w;
     y += (ev.clientY - gridRect.top) / h;
-    this.update({x, y});
+    const pos = {x, y};
+    const tiles = this.grid.tilesAt(pos);
+    switch (ev.type) {
+    case 'click':
+      this.pinned = tiles.length > 0;
+      this.update(pos, tiles);
+      break;
+    case 'mousemove':
+      if (!this.pinned) this.update(pos, tiles);
+    }
   }
 
   /** @type {string} */
@@ -548,14 +561,15 @@ export class TileInspector {
 
   /**
    * @param {Point} pos
+   * @param {HTMLElement[]} tiles
    * @return void
    */
-  update(pos) {
-    const tiles = this.grid.tilesAt(pos);
-    const handlid = `${pos.x},${pos.y}[${tiles.map(({id}) => id).join(';')}]`;
+  update(pos, tiles) {
+    const pinned = this.pinned;
+    const handlid = `pinned:${pinned};${pos.x},${pos.y}[${tiles.map(({id}) => id).join(';')}]`;
     if (this._lastHandlid !== handlid) {
       this._lastHandlid = handlid;
-      this.handler({pos, tiles});
+      this.handler({pos, tiles, pinned});
     }
   }
 }
