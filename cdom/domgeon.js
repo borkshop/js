@@ -9,8 +9,11 @@ import {
 import {KeyCtl, coalesceMoves} from './input';
 import {everyFrame, schedule} from './anim';
 
+/** @typedef { import("./tiles").Point } Point */
+/** @typedef { import("./tiles").TileFilter } TileFilter */
 /** @typedef { import("./tiles").TileMoverProc } TileMoverProc */
 /** @typedef { import("./tiles").TileSpec } TileSpec */
+/** @typedef { import("./tiles").TileInspectEvent } TileInspectEvent */
 
 /** @typedef {Object} DOMgeonOptions
  *
@@ -202,29 +205,47 @@ export class DOMgeonInspector extends TileInspector {
   /** @type {DOMgeon} */
   dmg
 
+  /** @type {HTMLElement} */
+  cur
+
   /**
    * @param {DOMgeon} dmg
    * @param {HTMLElement} el
    */
   constructor(dmg, el) {
-    const txt = el.querySelector('textarea');
-    const at = /** @type {HTMLElement|null} */ (el.querySelector('[data-for="pos"]'));
-    super(dmg.grid, ({pos: {x, y}, tiles}) => {
-      if (at) at.innerText = `${isNaN(x) ? 'X' : Math.floor(x)},${isNaN(y) ? 'Y' : Math.floor(y)}`;
-      if (txt) dumpTiles({tiles, into: txt});
-    });
-
+    super(dmg.grid, (ev) => this.inspect(ev));
+    /** @type {TileFilter} */
+    this.filter = t => !t.classList.contains('inspect-cursor');
     this.el = el;
     this.dmg = dmg;
-    this.dmg.addEventListener('stop', () => {
-      this.dmg.grid.el.classList.toggle('inspectable', true);
-      this.dmg.grid.el.addEventListener('mousemove', this);
-    });
-    this.dmg.addEventListener('start', () => {
-      this.dmg.grid.el.classList.toggle('inspectable', false);
-      this.dmg.grid.el.removeEventListener('mousemove', this);
-    });
-    this.dmg.grid.el.classList.toggle('inspectable', !this.dmg.running);
-    if (!this.dmg.running) this.dmg.grid.el.addEventListener('mousemove', this);
+    this.cur = dmg.grid.createTile({className: 'inspect-cursor'});
+    this.dmg.addEventListener('stop', _ => this.enable());
+    this.dmg.addEventListener('start', _ => this.disable());
+    if (!this.dmg.running) this.enable();
+  }
+
+  /**
+   * @param {TileInspectEvent} ev
+   */
+  inspect({pos: {x, y}, tiles}) {
+    x = Math.floor(x), y = Math.floor(y);
+    this.grid.updateTile(this.cur, {pos: {x, y}});
+    this.cur.classList.toggle('pinned', this.pinned);
+    const at = /** @type {HTMLElement|null} */ (this.el.querySelector('[data-for="pos"]'));
+    if (at) at.innerText = `${isNaN(x) ? 'X' : x},${isNaN(y) ? 'Y' : y}`;
+    const txt = this.el.querySelector('textarea');
+    if (txt) dumpTiles({tiles, into: txt});
+  }
+
+  enable() {
+    this.dmg.grid.el.classList.toggle('inspectable', true);
+    for (const type of ['mousemove', 'click'])
+      this.dmg.grid.el.addEventListener(type, this);
+  }
+
+  disable() {
+    this.dmg.grid.el.classList.toggle('inspectable', false);
+    for (const type of ['mousemove', 'click'])
+      this.dmg.grid.el.removeEventListener(type, this);
   }
 }
