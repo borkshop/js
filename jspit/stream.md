@@ -1,4 +1,4 @@
-# 2020-10-30
+# 2020-10-31
 
 ## TODO
 
@@ -21,6 +21,25 @@
 ## WIP
 
 ## Done
+
+- finished initial cut of "morphic interaction" system:
+  - tiles may now be tagged `.interact` and carry `"morph_target"` and
+    `"morph_subject"` data that will be used to update themselves and/or an
+    interacting subject tile (e.g. the player moved tile)
+  - morph values are currently limited to a slight extended `TileSpec` shape,
+    or a string name that will be resolved to another `"morph_form_NAME"` field
+    (to break data circularity, e.g. a door that morphs open and back to
+    closed)
+  - see the current cdom-template door demo, which leans heavily on the new
+    builder module, for an example
+  - likely will need to add full-fledged custom behavior functions at
+    somepoint, but this gets basic things working for now
+- finished initial tile shader oriented builder module, now used to build build
+  two rooms connect by a hallway and doors
+
+# 2020-10-30
+
+- started development of door interaction and room buiilder code
 
 # 2020-10-29
 
