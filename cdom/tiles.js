@@ -558,7 +558,10 @@ export class TileInspector {
     const tiles = this.grid.tilesAt(pos).filter(t => this.filter(t, this.grid));
     switch (ev.type) {
     case 'click':
-      this.pinned = tiles.length > 0 ? pos : null;
+      if (!tiles.length) this.pinned = null;
+      else if (!this.pinned) this.pinned = pos;
+      else if (this.pinned.x === pos.x && this.pinned.y === pos.y) this.pinned = null;
+      else this.pinned = pos;
       this.update(pos, tiles);
       break;
     case 'mousemove':
