@@ -448,6 +448,23 @@ export class TileGrid {
   }
 
   /**
+   * Get a tiles "kind": it's first non-generic class name.
+   *
+   * @param {HTMLElement} tile
+   * @param {string[]} ignore - additional class names that the caller
+   * considers generic, and should be ignored in addition to the builtin "tile"
+   * class name
+   * @returns {string} - the tile's kind or the empty string if the tile only
+   * has generic class names
+   */
+  getTileKind(tile, ...ignore) {
+    for (const k of tile.classList)
+      if (k !== 'tile' && ignore.every(s => s !== k))
+        return k;
+    return '';
+  }
+
+  /**
    * Move a tile to a given position in tile coordinate space, returning it for
    * convenience.
    *
