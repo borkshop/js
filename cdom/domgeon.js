@@ -207,8 +207,8 @@ export class DOMgeonInspector extends TileInspector {
   /** @type {DOMgeon} */
   dmg
 
-  /** @type {HTMLElement} */
-  cur
+  /** @type {HTMLElement|null} */
+  cur = null
 
   /**
    * @param {DOMgeon} dmg
@@ -220,7 +220,6 @@ export class DOMgeonInspector extends TileInspector {
     this.filter = t => !t.classList.contains('inspect-cursor');
     this.el = el;
     this.dmg = dmg;
-    this.cur = dmg.grid.createTile({className: 'inspect-cursor'});
     this.dmg.addEventListener('stop', _ => this.enable());
     this.dmg.addEventListener('start', _ => this.disable());
     if (!this.dmg.running) this.enable();
@@ -230,6 +229,8 @@ export class DOMgeonInspector extends TileInspector {
    * @param {TileInspectEvent} ev
    */
   inspect({pos: {x, y}, tiles, pinned}) {
+    if (!this.cur?.parentNode)
+      this.cur = this.dmg.grid.createTile({className: 'inspect-cursor'});
     this.grid.updateTile(this.cur, {pos: {x, y}});
     this.cur.classList.toggle('pinned', pinned);
     const at = /** @type {HTMLElement|null} */ (this.el.querySelector('[data-for="pos"]'));
