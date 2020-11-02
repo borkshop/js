@@ -134,12 +134,12 @@ export class DOMgeon extends EventTarget {
       // element bindings
       grid,
 
-      // TODO should the default be more like ownerDocument.body?
-      keys = grid,
-
       // TODO this should be wholly optional or dropped entirely now that we
       // provide start/stop events
       ui = grid,
+
+      // TODO should the default be more like ownerDocument.body?
+      keys = ui,
 
       // config
       inputRate = 100,
