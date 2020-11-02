@@ -184,9 +184,11 @@ export class DOMgeon extends EventTarget {
   }
 
   processInput() {
-    let {have, move} = coalesceMoves(this.keys.consume());
-    if (have) for (const mover of this.grid.queryTiles({className: ['mover', 'input']})) {
-      this.grid.setTileData(mover, 'move', move);
+    let move = coalesceMoves(this.keys.consume());
+    if (move) {
+      const actors = this.grid.queryTiles({className: ['mover', 'input']});
+      for (const mover of actors)
+        this.grid.setTileData(mover, 'move', move);
     }
 
     moveTiles({grid: this.grid, kinds: this.moveProcs});

@@ -115,7 +115,7 @@ export class KeyCtl extends Map {
  * Parses common arrow keys plus "." to not move.
  *
  * @param {string}key
- * @return {?Move}
+ * @return {Move|null}
  */
 export function parseCommmonKeys(key) {
   switch (key) {
@@ -129,15 +129,16 @@ export function parseCommmonKeys(key) {
 }
 
 /**
- * @param {Move} a
- * @param {Move} b
- * @return {Move}
+ * @param {Move|null} a
+ * @param {Move|null} b
+ * @return {Move|null}
  */
 export function mergeMoves(a, b) {
   // TODO afford domain specific action-aware merge, e.g. at least a priority
   // (partial) ordering
-  if (a.action) return a;
-  if (b.action) return b;
+  if (!a && !b) return null;
+  if (!b || a?.action) return a;
+  if (!a || b?.action) return b;
   return {x: a.x + b.x, y: a.y + b.y};
 }
 
@@ -153,13 +154,5 @@ export function coalesceMoves(presses) {
   // TODO currently this erases any action string
   return presses
     .map(([key, _count]) => parseCommmonKeys(key))
-    .reduce((acc, move) => {
-      if (!move) return acc;
-      acc.move = mergeMoves(acc.move, move);
-      acc.have = true
-      return acc;
-    }, {
-      have: false,
-      move: {x: 0, y: 0},
-    });
+    .reduce(mergeMoves, null);
 }
