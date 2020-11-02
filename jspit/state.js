@@ -1,17 +1,28 @@
-export function readHashFrag():string|null {
+/**
+ * @returns {string|null}
+ */
+export function readHashFrag() {
   const parts = window.location.hash.split(';');
   const frag = parts.shift();
   return frag ? frag.replace(/^#+/, '') : null;
 }
 
-export function setHashFrag(frag:string) {
+/**
+ * @param {string} frag
+ * @returns {void}
+ */
+export function setHashFrag(frag) {
   const parts = window.location.hash.split(';');
   const expected = '#' + frag;
   if (parts.length && parts[0] === expected) return;
   window.location.hash = expected;
 }
 
-export function readHashVar(name:string):string|null {
+/**
+ * @param {string} name
+ * @returns {string|null}
+ */
+export function readHashVar(name) {
   const parts = window.location.hash.split(';');
   parts.shift();
   const prefix = name + '=';
@@ -20,7 +31,12 @@ export function readHashVar(name:string):string|null {
   return null;
 }
 
-export function setHashVar(name:string, value:string|null) {
+/**
+ * @param {string} name
+ * @param {string|null} value
+ * @returns {void}
+ */
+export function setHashVar(name, value) {
   const parts = window.location.hash.split(';');
   const frag = parts.shift() || '#;';
   const prefix = name + '=';
