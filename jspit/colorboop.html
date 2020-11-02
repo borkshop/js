@@ -29,6 +29,13 @@
           </p>
         </section>
 
+        <fieldset id="inspector">
+          <legend>
+            <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
+          </legend>
+          <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
+        </fieldset>
+
         <section>
           <h3>
             <a href="index.html">Back to Welcome screen</a>
@@ -44,18 +51,83 @@
     </footer>
 
     <script type="module">
-      import {init} from './colorboop';
-      init({
-        ui:    document.body,
-        head:  document.querySelector('header'),
-        foot:  document.querySelector('footer'),
-        main:  document.querySelector('main'),
-        menu:  document.querySelector('main .modal'),
-        grid:  document.querySelector('main .grid'),
-        keys:  document.body,
-        run:   document.querySelector('#run'),
-        reset: document.querySelector('#reset'),
+      import {fillRect} from 'cdom/builder';
+
+      function reset(grid) {
+        const colors = [
+          'black',
+          'darker-grey',
+          'dark-grey',
+          'grey',
+          'light-grey',
+          'lighter-grey',
+          'white',
+          'dark-white',
+          'blue',
+          'bright-purple',
+          'cyan',
+          'dark-orange',
+          'dark-sea-green',
+          'green',
+          'light-cyan',
+          'magenta',
+          'orange',
+          'purple',
+          'red',
+          'red-orange',
+          'yellow',
+          'yellow-orange',
+        ];
+
+        grid.clear();
+
+        const pos = {x: 10, y: 10};
+        grid.createTile({pos, className: ['input', 'mover', 'solid'], text: '@'});
+        grid.viewPoint = pos;
+
+        colors.forEach((color, i) => {
+          grid.createTile({
+            pos: {x: 5, y: i},
+            className: ['swatch', 'interact', 'solid'],
+            text: '$',
+            style: {color: `var(--${color})`},
+            data: {
+              morph_subject: {
+                style: {color: `var(--${color})`},
+              },
+            },
+          });
+          grid.createTile({
+            pos: {x: 15, y: i},
+            className: ['swatch', 'interact', 'solid'],
+            text: '$',
+            style: {backgroundColor: `var(--${color})`},
+            data: {
+              morph_subject: {
+                style: {backgroundColor: `var(--${color})`},
+              },
+            },
+          });
+        });
+
+        fillRect(grid, {x: 0, y: -5, w: 20, h: 10 + colors.length}, {
+          className: 'floor',
+          text: '·',
+        });
+
+
+      }
+
+      import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
+      const dmg = window.dmg = new DOMgeon({
+        ui: document.body,
+        grid: document.querySelector('main .grid'),
       });
+      new DOMgeonInspector(dmg, document.querySelector('#inspector'));
+
+      document.querySelector('#reset').addEventListener('click', () => { reset(dmg.grid) });
+      document.querySelector('#run').addEventListener('click', () => { dmg.start() });
+      reset(dmg.grid);
     </script>
   </body>
 
