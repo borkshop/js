@@ -1,13 +1,14 @@
-# 2020-11-01
+# 2020-11-02
 
 ## TODO
 
 - domgeon
   - FOV ala <https://www.albertford.com/shadowcasting>
-  - interaction with adjacent tiles and/or the current tile
   - player inventorty/ability system; good initial use cases include a digging
     item, floor tile creator, a particle gun, or void walking boots
   - move and other interaction animations
+  - selection of current actor from all `.mover.input`
+  - auto viewPoint to `.mover.input`
 
 - builder
   - a more adept hallway builder
@@ -21,14 +22,27 @@
   - watch for any spatial index bugs, once saw a zombie particle at incorrect
     location, which allowed the player to step into the void in the DLA demo
   - TileGrid
+    - how about default classes keyed by text; would
+      simplify much building code
     - save/loading of tile state
     - masking/visibility/lighting ; after implementing FOV if domgeon, there
       may be some core part at the tile grid level
 
 ## WIP
 
+- domgeon
+  - interaction with adjacent tiles and/or the current
+    tile: working prototypen, need to realize latent Move
+    actions, parsing, and all that
+
 ## Done
 
+- ported colorboop to domgeon morphs interactions, eliminating its external
+  (type)script, further exercising higher level cdom code
+
+# 2020-11-01
+
+- prototyped actionbar based interaction
 - improved the domgeon inspector to support click-to-pin with details
 
 # Week Ending 2020-10-31
