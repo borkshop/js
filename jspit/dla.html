@@ -135,7 +135,7 @@
 
           <div class="buttonbar">
             <button id="run">Run</button>
-            <button id="reset" disabled>Reset</button>
+            <button id="reset">Reset</button>
             <br style="clear: both" />
           </div>
 
@@ -168,9 +168,9 @@
       <div class="grid">
         <fieldset id="inspector">
           <legend>
-            <label for="inspector-ids">Tiles @<span id="inspector-at">X,Y</span>:</label>
+            <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
           </legend>
-          <textarea id="inspector-ids" readonly></textarea>
+          <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
         </fieldset>
       </div>
 
@@ -184,19 +184,42 @@
     </footer>
 
     <script type="module">
-      import {init} from './dla';
-      init({
+      import DLA from './dla'; // TODO default
+      import {bindVars} from './config';
+      import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
+
+      const ctx = {
+        getInput: (name) => document.querySelector(`.menu input[name="${name}"]`) || null,
+        getSelect: (name) => document.querySelector(`.menu select[name="${name}"]`) || null,
+      };
+      bindVars({ctx, data: DLA.config});
+
+      const dmg = window.dmg = new DOMgeon({
         ui: document.body,
-        menu: document.querySelector('main .menu'),
-        grid: document.querySelector('main .grid '),
         keys: document.body,
-        run: document.querySelector('#run'),
-        reset: document.querySelector('#reset'),
-        dropPlayer: document.querySelector('#dropPlayer'),
-        inspector: document.querySelector('#inspector-ids'),
-        inspectorAt: document.querySelector('#inspector-at'),
-        particleID: document.querySelector('#particleID'),
+        grid: document.querySelector('main .grid'),
       });
+      const inspector = new DOMgeonInspector(dmg, document.querySelector('#inspector'));
+
+      dmg.keys.on.code['Space'] = (ev) => {
+        const enabled = ev.type === 'keydown';
+        dmg.grid.el.classList.toggle('inspectable', enabled);
+        dmg.grid.el.classList.toggle('retro', enabled);
+        if (enabled) dmg.grid.el.addEventListener('mousemove', inspector);
+        else dmg.grid.el.removeEventListener('mousemove', inspector);
+      };
+
+      const dropPlayer = document.querySelector('#dropPlayer');
+      const world = new DLA(dmg);
+      dmg.animParts.push(_ => {
+        if (dropPlayer) dropPlayer.disabled = !!dmg.grid.queryTile({className: ['input', 'mover']});
+        if (particleID) particleID.innerText = world.particleID.toString();
+        return true;
+      });
+
+      dropPlayer?.addEventListener('click', () => world.dropPlayer());
+      document.querySelector('#reset')?.addEventListener('click', () => world.reset());
+      document.querySelector('#run')?.addEventListener('click', () => dmg.start());
     </script>
   </body>
 

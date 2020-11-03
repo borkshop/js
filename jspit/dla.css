@@ -6,7 +6,6 @@ html {
 
 .grid #inspector {
   float: left;
-  visibility: hidden;
   padding: 0;
   z-index: 1000;
 }
@@ -17,9 +16,8 @@ html {
   user-select: all;
 }
 
-.grid.retro #inspector {
-  visibility: visible;
-}
+.running .grid #inspector { visibility: hidden }
+.grid.retro    #inspector { visibility: visible }
 
 .grid .mover.input {
   color: var(--dla-player);
