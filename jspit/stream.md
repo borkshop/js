@@ -37,8 +37,10 @@
 
 ## Done
 
-- ported colorboop to domgeon morphs interactions, eliminating its external
-  (type)script, further exercising higher level cdom code
+- jspit
+  - ported DLA to also use DOMgeon, and translated it from TS to JS
+  - ported colorboop to domgeon morphs interactions, eliminating its external
+    (type)script, further exercising higher level cdom code
 
 # 2020-11-01
 
