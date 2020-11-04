@@ -35,6 +35,13 @@ export function procInteraction(grid, interacts, subject) {
   if (interacts.length > 1) return false;
   const interact = interacts[0];
 
+  const pos = grid.getTilePosition(subject);
+  const at = grid.getTilePosition(interact);
+  if (Math.sqrt(
+    Math.pow(at.x - pos.x, 2) +
+    Math.pow(at.y - pos.y, 2)
+  ) >= 2) return false;
+
   applyMorph(grid, interact, grid.getTileData(interact, 'morph_target'));
   applyMorph(grid, subject, grid.getTileData(interact, 'morph_subject'));
 
