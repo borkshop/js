@@ -35,6 +35,11 @@ export function procInteraction(grid, interacts, subject) {
   if (interacts.length > 1) return false;
   const interact = interacts[0];
 
+  if (subject.dataset['plane'] !== interact.dataset['plane']) {
+    // TODO cross planar capability
+    return false;
+  }
+
   const pos = grid.getTilePosition(subject);
   const at = grid.getTilePosition(interact);
   if (Math.sqrt(
@@ -159,6 +164,13 @@ export class DOMgeon extends EventTarget {
     this.grid.viewPoint = centroid(this.grid.queryTiles({className: ['mover', 'input']})
       .map(input => this.grid.getTilePosition(input)));
 
+    const updateTile = this.grid.updateTile;
+    this.grid.updateTile = (tile, spec) => {
+      updateTile.call(this.grid, tile, spec);
+      tile.dataset['plane'] = this.tilePlane(tile);
+      return tile;
+    };
+
     this.keys = new KeyCtl(keys);
     this.keys.on.code['Escape'] = (ev) => {
       if (ev.type !== 'keyup') return;
@@ -166,6 +178,17 @@ export class DOMgeon extends EventTarget {
     };
 
     this.ui.classList.toggle('showUI', true);
+  }
+
+  /**
+   * @param {HTMLElement} tile
+   * @returns {string}
+   */
+  tilePlane (tile) {
+    for (const kind in this.moveProcs)
+      if (kind && tile.classList.contains(kind))
+        return kind;
+    return '';
   }
 
   stop() {
