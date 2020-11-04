@@ -84,7 +84,7 @@ export function solidMoverProc({grid, to, at, mover}) {
   if (!at.some(h => h.classList.contains('floor'))) return false;
 
   // may move if not occupied
-  const solids = at.filter(h => h.classList.contains('solid'));
+  let solids = at.filter(h => h.classList.contains('solid'));
   if (!solids.length) return true;
 
   // may interact with another solid...
@@ -92,11 +92,12 @@ export function solidMoverProc({grid, to, at, mover}) {
   if (interacts.length) {
     if (!procInteraction(grid, interacts, mover)) return false;
     // ...then maybe allowed to pass if no longer occupied
-    if (!grid.tilesAt(to, 'solid').length) return true;
+    solids = grid.tilesAt(to, 'solid');
+    if (!solids.length) return true;
   }
 
-  // (still) occupied
-  return false;
+  // may pass is marked .passable
+  return solids.every(h => h.classList.contains('passable'));
 }
 
 export class DOMgeon extends EventTarget {
