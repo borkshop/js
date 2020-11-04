@@ -6,7 +6,7 @@ import {
   moveTiles,
   centroid,
 } from './tiles';
-import {KeyCtl, coalesceMoves} from './input';
+import {KeyCtl} from './input';
 import {everyFrame, schedule} from './anim';
 
 /** @typedef { import("./tiles").Point } Point */
@@ -112,6 +112,17 @@ export function solidMoverProc({grid, to, at, mover}) {
   return solids.every(h => h.classList.contains('passable'));
 }
 
+/**
+ * A move has a spatial component and an optional action string.
+ * The action string may be used to define custom extensions or to otherwise
+ * change the semantics of the x,y spatial component.
+ *
+ * @typedef {Object} Move
+ * @prop {number} x
+ * @prop {number} y
+ * @prop {string} [action]
+ */
+
 export class DOMgeon extends EventTarget {
   /** @type {TileGrid} */
   grid
@@ -214,14 +225,37 @@ export class DOMgeon extends EventTarget {
     this.running = false;
   }
 
+  /**
+   * @param {string} key
+   * @returns {Move|null}
+   */
+  parseMoveKey(key) {
+    switch (key) {
+      case 'ArrowUp':    return {x:  0, y: -1};
+      case 'ArrowRight': return {x:  1, y:  0};
+      case 'ArrowDown':  return {x:  0, y:  1};
+      case 'ArrowLeft':  return {x: -1, y:  0};
+      case '.':          return {x:  0, y:  0};
+    }
+    return null;
+  }
+
   processInput() {
-    let move = coalesceMoves(this.keys.consume());
+    let move = this.keys.consume()
+      .map(([key, _count]) => this.parseMoveKey(key))
+      .reduce((a, b) => {
+        // TODO afford action-aware merge, e.g. a priority (partial) ordering
+        if (!a && !b) return null;
+        if (!b || a?.action) return a;
+        if (!a || b?.action) return b;
+        return {x: a.x + b.x, y: a.y + b.y};
+      }, null);
+
     if (move) {
       const actors = this.grid.queryTiles({className: ['mover', 'input']});
       for (const mover of actors)
         this.grid.setTileData(mover, 'move', move);
     }
-
     moveTiles({grid: this.grid, kinds: this.moveProcs});
 
     // ensure viewport centered on player input(s)
