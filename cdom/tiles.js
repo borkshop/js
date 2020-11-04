@@ -142,9 +142,6 @@ export class TileGrid {
   /** @type {HTMLElement} */
   el
 
-  /** @type {string} */
-  idspace = 'tile' // TODO autogen this
-
   /** @type {ResizeObserver} */
   _obs
 
@@ -223,16 +220,7 @@ export class TileGrid {
     this.viewOffset = {x: x - w / 2, y: y - h / 2};
   }
 
-  /**
-   * maps a specified id string (see TileSpec) into the grid's namespace,
-   * attempting to keep tile ids unique within the owning document.
-   *
-   * @param {string} id
-   * @return {string}
-   */
-  tileID(id) {
-    return `${this.el.id}${this.el.id ? '-': ''}${this.idspace}-${id}`;
-  }
+  idPrefix() { return `${this.el.id}${this.el.id ? '-': ''}tile-`; }
 
   /** @type Map<string, number> */
   _kindid = new Map()
@@ -269,7 +257,7 @@ export class TileGrid {
         id = `${kind}${kind ? '-' : ''}${++n}`;
         this._kindid.set(kind, n);
       }
-      tile.id = this.tileID(id)
+      tile.id = this.idPrefix() + id;
     }
     if (!spec.pos) spec.pos = {x: 0, y: 0};
     return this.updateTile(tile, spec);
@@ -314,7 +302,7 @@ export class TileGrid {
    */
   getTile(id) {
     if (typeof id === 'string') {
-      return this.el.querySelector('#' + this.tileID(id));
+      return this.el.querySelector(`#${this.idPrefix()}${id}`);
     }
     return id;
   }
@@ -376,7 +364,7 @@ export class TileGrid {
 
     if (query?.id) {
       let {match, value} = parseMatcher(query.id);
-      if (!match || match === '^') value = `${this.idspace}-${value}`;
+      if (!match || match === '^') value = this.idPrefix() + value;
       addAttr('id', match, value);
     }
 
@@ -434,6 +422,17 @@ export class TileGrid {
       tile.dataset[name] = dval;
       tile.style.setProperty(`--${name}`, dval);
     }
+  }
+
+  /**
+   * @param {HTMLElement} tile
+   * @returns {string} - un-prefixed id string that may be passed back to getTile
+   */
+  getTileID(tile) {
+    const prefix = this.idPrefix();
+    return tile.id.startsWith(prefix)
+      ? tile.id.slice(prefix.length)
+      : tile.id;
   }
 
   /**
