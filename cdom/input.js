@@ -18,7 +18,7 @@ function mappedKeyName(ev) {
 /**
  * @extends {Map<string, number>}
  */
-export class KeyCtl extends Map {
+export default class KeyCtl extends Map {
   /**
    * @param {?EventTarget} target
    */

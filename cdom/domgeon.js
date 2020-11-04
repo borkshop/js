@@ -6,7 +6,7 @@ import {
   moveTiles,
   centroid,
 } from './tiles';
-import {KeyCtl} from './input';
+import KeyCtl from './input';
 import {everyFrame, schedule} from './anim';
 
 /** @typedef { import("./tiles").Point } Point */
