@@ -649,9 +649,10 @@ export function dumpTiles({tiles, into, detail}) {
  * @typedef {object} TileMove
  * @prop {TileGrid} grid
  * @prop {HTMLElement} mover
- * @prop {HTMLElement[]} at
  * @prop {Point} pos
+ * @prop {string|null} action
  * @prop {Point} to
+ * @prop {HTMLElement[]} at
  */
 
 /** @typedef {(req:TileMove) => boolean} TileMoverProc */
@@ -688,14 +689,18 @@ export function moveTileClass({grid, moverClass='mover', kind='', may}) {
   })) {
     const move = grid.getTileData(mover, 'move');
     if (!move || typeof move !== 'object') continue;
-    if (!(
-      'x' in move && typeof move.x === 'number' &&
-      'y' in move && typeof move.y === 'number'
+    if (move.action !== undefined) {
+      if (typeof move.x !== 'number') move.x = NaN;
+      if (typeof move.y !== 'number') move.y = NaN;
+    } else if (!(
+      typeof move.x === 'number' &&
+      typeof move.y === 'number'
     )) continue;
+    const action = typeof move.action === 'string' ? move.action : null;
     const pos = grid.getTilePosition(mover);
     const to = {x: pos.x + move.x, y: pos.y + move.y};
     const at = grid.tilesAt(to);
-    if (!may || may({grid, mover, at, pos, to}))
+    if (!may || may({grid, mover, pos, action, to, at}))
       grid.moveTileTo(mover, to);
     grid.setTileData(mover, 'move', null);
   }
