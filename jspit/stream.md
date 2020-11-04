@@ -1,4 +1,4 @@
-# 2020-11-02
+# 2020-11-04
 
 ## TODO
 
@@ -31,11 +31,41 @@
 ## WIP
 
 - domgeon
+  - generalize "support" concept ala "floor" prior hardcode
   - interaction with adjacent tiles and/or the current
     tile: working prototypen, need to realize latent Move
     actions, parsing, and all that
 
 ## Done
+
+# 2020-11-03
+
+Had realization that `<button>` elements may suffice for input configuration:
+user can add buttons, domgeon can create add defaults if none exist, either way
+user can change data attributes to remap keys. (Inter)Action buttons are then
+just dynamic version of those static (basic movement) buttons; may need to
+eventually add ghost buttons to support (re)configuration of those dynamic keys
+regardless of whether present.
+
+- towards that, working prototype, unlocked latent `Move.action` support in the
+  underlying tiles module, and simplified the input module "have" state away
+  into a simpler "nullabe Move"
+- added additional restrictions to the interaction core logic:
+  - actor must be on the same "plane" and spatially near (less than 2 cell
+    distance so that diagonals count
+  - planes are defined by the movement category, so "solid" in the default
+    config; this prevents discorporated entities from open/closing doors, once
+    the new action buttons are added
+  - added explicit `.passable`ility to the movement system, so that an entity like a
+    door may remain "solid" when open, while not blocking movement
+- subsumed input parsing into the domgeon module, simplifying the input module
+  down to just event handling
+
+Will likely do something something similar to `.passable` to generalize the
+space-defining nature of floor tiles, instead making them `.support` for their
+plane.
+
+# 2020-11-02
 
 - jspit
   - ported DLA to also use DOMgeon, and translated it from TS to JS
