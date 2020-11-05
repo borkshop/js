@@ -19,6 +19,7 @@ import {everyFrame, schedule} from './anim';
  *
  * @prop {HTMLElement} grid - document element to place tiles within
  * @prop {HTMLElement} [moveBar] - element under which to place move buttons
+ * @prop {HTMLElement} [actionBar] - element under which to add action buttons
  * @prop {HTMLElement} [ui] - document element to toggle UI state classes upon
  * @prop {HTMLElement} [keys] - document element to listen for key events upon
  * @prop {number} [inputRate=100] - how often to process key events, defaults to 100ms or 10hz
@@ -145,6 +146,29 @@ function createButton({cont, handler, key, label, legend, title}) {
 }
 
 /**
+ * @param {HTMLElement} button
+ * @param {object} params
+ * @param {string} [params.label]
+ * @param {string} [params.legend]
+ * @param {string} [params.title]
+ * @returns {void}
+ */
+function updateButton(button, {label, legend, title}) {
+  const key = button.dataset['key'];
+  if (label) button.innerText = label;
+  button.dataset['legend'] = '';
+  if (key) {
+    const K = key.toUpperCase();
+    if (!label)
+      button.innerText = K;
+    else if (key.length === 1 && K !== label)
+      button.dataset['legend'] = K;
+  }
+  if (legend && legend !== label) button.dataset['legend'] = legend;
+  if (title) button.title = title;
+}
+
+/**
  * A move has a spatial component and an optional action string.
  * The action string may be used to define custom extensions or to otherwise
  * change the semantics of the x,y spatial component.
@@ -161,6 +185,9 @@ export class DOMgeon extends EventTarget {
 
   /** @type {HTMLElement|null} */
   moveBar
+
+  /** @type {HTMLElement|null} */
+  actionBar
 
   /** @type {HTMLElement} */
   ui
@@ -193,6 +220,7 @@ export class DOMgeon extends EventTarget {
       // element bindings
       grid,
 
+      actionBar,
       moveBar,
 
       // TODO this should be wholly optional or dropped entirely now that we
@@ -205,6 +233,7 @@ export class DOMgeon extends EventTarget {
       // config
       inputRate = 100,
     } = options;
+    this.actionBar = actionBar || null;
     this.moveBar = moveBar || null;
     this.ui = ui;
     this.inputRate = inputRate;
@@ -286,7 +315,7 @@ export class DOMgeon extends EventTarget {
       missing.delete(movedir);
       if (!button.dataset['key']) button.dataset['key'] = defaultMoveKeys[movedir]
     }
-    const cont = this.moveBar || this.ui;
+    const cont = this.moveBar || this.actionBar || this.ui;
     for (const movedir of missing) {
       const key = defaultMoveKeys[movedir];
       const button = createButton({
@@ -336,6 +365,17 @@ export class DOMgeon extends EventTarget {
   }
 
   /**
+   * @param {HTMLElement} interact
+   * @returns {string}
+   */
+  actionLabel(interact) {
+    const kind = this.grid.getTileKind(interact, 'interact') || 'interact';
+    const name = this.grid.getTileData(interact, 'name') || kind;
+    const action = this.grid.getTileData(interact, 'action');
+    return `${action || 'use'} ${name}`;
+  }
+
+  /**
    * @param {string} key
    * @returns {Move|null}
    */
@@ -353,6 +393,9 @@ export class DOMgeon extends EventTarget {
           move.x = parseFloat(parts[0]);
           move.y = parseFloat(parts[1]);
         }
+
+        const action = button.dataset['action'];
+        if (action) move.action = action;
 
         return move;
       }
@@ -385,6 +428,58 @@ export class DOMgeon extends EventTarget {
     const {x: vx, y: vy, w, h} = this.grid.viewport;
     if (c.x <= vx || c.y <= vy || c.x+1 >= vx + w || c.y+1 >= vy + h)
       this.grid.viewPoint = c;
+
+    // update dynamic action buttons
+    if (this.actionBar) {
+      const interacts = this.grid
+        .queryTiles({className: ['mover', 'input']})
+        .map(mover => this.grid.getTilePosition(mover))
+        .flatMap(pos => [ // TODO make this stencil configurable
+          {x:  0, y:  0},
+          {x:  0, y:  1},
+          {x:  1, y:  1},
+          {x:  1, y:  0},
+          {x:  1, y: -1},
+          {x:  0, y: -1},
+          {x: -1, y: -1},
+          {x: -1, y:  0},
+          {x: -1, y:  1},
+        ].flatMap(({x: dx, y: dy}) => {
+          const at = {x: pos.x + dx, y: pos.y + dy};
+          return this.grid.tilesAt(at, 'interact');
+        }))
+        .map(tile => ( {tile, pos: this.grid.getTilePosition(tile)} ))
+        .sort(({pos: apos}, {pos: bpos}) => bpos.y - apos.y || bpos.x - apos.x)
+        .map(({tile}) => tile);
+
+      /** @type {NodeListOf<HTMLButtonElement>} */
+      const buttons = this.actionBar.querySelectorAll('button[data-action^="interact:"]');
+
+      const labels = interacts.map(interact => this.actionLabel(interact));
+      // TODO directional de-dupe: e.g. open door x2 ... W / E, or Left / Right
+
+      for (let i=0; i<buttons.length || i<labels.length; i++) {
+        let button = buttons[i];
+        const label = labels[i];
+        if (label === undefined) {
+          button.parentNode?.removeChild(button);
+          continue;
+        }
+        const tileID = this.grid.getTileID(interacts[i]);
+
+        if (button === undefined) {
+          button = createButton({
+            cont: this.actionBar,
+            handler: this.keys,
+            key: i < 10 ? `${i+1}` : undefined,
+            label,
+          });
+        } else if (button.dataset['interact'] !== tileID || button.innerText !== label) {
+          updateButton(button, {label});
+        } else continue;
+        button.dataset['action'] = `interact:tile:${tileID}`;
+      }
+    }
   }
 }
 
