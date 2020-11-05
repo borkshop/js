@@ -388,15 +388,19 @@ export class TileGrid {
   }
 
   /**
-   * Load JSON encoded data from tile's dataset.
+   * Load tile data, first from the tile's dataset, falling back to a computed
+   * CSS --name variable.
    *
    * @param {HTMLElement} tile
    * @param {string} name
    * @return {any}
    */
   getTileData(tile, name) {
-    const val = tile?.dataset[name];
-    if (!val) return null;
+    let val = tile?.dataset[name];
+    if (val === undefined || val === '')
+      val = getComputedStyle(tile).getPropertyValue(`--${name}`);
+    if (val === undefined) return null;
+    if (val === '') return '';
     try {
       return JSON.parse(val);
     } catch(e) {
