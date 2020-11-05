@@ -18,6 +18,7 @@ import {everyFrame, schedule} from './anim';
 /** @typedef {Object} DOMgeonOptions
  *
  * @prop {HTMLElement} grid - document element to place tiles within
+ * @prop {HTMLElement} [moveBar] - element under which to place move buttons
  * @prop {HTMLElement} [ui] - document element to toggle UI state classes upon
  * @prop {HTMLElement} [keys] - document element to listen for key events upon
  * @prop {number} [inputRate=100] - how often to process key events, defaults to 100ms or 10hz
@@ -116,6 +117,34 @@ export function solidMoverProc({grid, to, at, mover}) {
 }
 
 /**
+ * @param {object} params
+ * @param {HTMLElement} params.cont
+ * @param {EventListenerOrEventListenerObject} params.handler
+ * @param {string} [params.key]
+ * @param {string} [params.label]
+ * @param {string} [params.legend]
+ * @param {string} [params.title]
+ * @returns {HTMLButtonElement}
+ */
+function createButton({cont, handler, key, label, legend, title}) {
+  const button = cont.ownerDocument.createElement('button');
+  if (key) button.dataset['key'] = key;
+  if (label) button.innerText = label;
+  if (key) {
+    const K = key.toUpperCase();
+    if (!label)
+      button.innerText = K;
+    else if (key.length === 1 && K !== label)
+      button.dataset['legend'] = K;
+  }
+  if (legend && legend !== label) button.dataset['legend'] = legend;
+  if (title) button.title = title;
+  button.addEventListener('click', handler);
+  cont.appendChild(button);
+  return button;
+}
+
+/**
  * A move has a spatial component and an optional action string.
  * The action string may be used to define custom extensions or to otherwise
  * change the semantics of the x,y spatial component.
@@ -129,6 +158,9 @@ export function solidMoverProc({grid, to, at, mover}) {
 export class DOMgeon extends EventTarget {
   /** @type {TileGrid} */
   grid
+
+  /** @type {HTMLElement|null} */
+  moveBar
 
   /** @type {HTMLElement} */
   ui
@@ -161,6 +193,8 @@ export class DOMgeon extends EventTarget {
       // element bindings
       grid,
 
+      moveBar,
+
       // TODO this should be wholly optional or dropped entirely now that we
       // provide start/stop events
       ui = grid,
@@ -171,6 +205,7 @@ export class DOMgeon extends EventTarget {
       // config
       inputRate = 100,
     } = options;
+    this.moveBar = moveBar || null;
     this.ui = ui;
     this.inputRate = inputRate;
 
@@ -192,6 +227,78 @@ export class DOMgeon extends EventTarget {
     };
 
     this.ui.classList.toggle('showUI', true);
+
+    /** @type {Object<string, string>} */
+    const keyLegends = {
+      'ArrowLeft': '←',
+      'ArrowDown': '↓',
+      'ArrowUp': '↑',
+      'ArrowRight': '→',
+    };
+
+    /** @type {Object<string, string>} */
+    const moveLabels = {
+      '-1,0': '←',
+      '0,1': '↓',
+      '0,-1': '↑',
+      '1,0': '→',
+      '0,0': '⊙',
+    };
+
+    /** @type {Object<string, string>} */
+    const moveTitles = {
+      '-1,0': 'Move Left',
+      '0,1': 'Move Down',
+      '0,-1': 'Move Up',
+      '1,0': 'Move Right',
+      '0,0': 'Stay (no move)',
+    };
+
+    /** @type {Object<string, string>} */
+    const defaultMoveKeys = {
+
+      // '-1,0': 'ArrowLeft',
+      // '0,1': 'ArrowDown',
+      // '0,-1': 'ArrowUp',
+      // '1,0': 'ArrowRight',
+      // '0,0': '.',
+
+      '0,-1': 'w',
+      '-1,0': 'a',
+      '0,1': 's',
+      '1,0': 'd',
+      // '0,0': 'r',
+
+      // '-1,0': 'h',
+      // '0,1': 'j',
+      // '0,-1': 'k',
+      // '1,0': 'l',
+      // '0,0': '.',
+
+    };
+
+    const missing = new Set(Object.keys(defaultMoveKeys));
+    /** @type {NodeListOf<HTMLButtonElement>} */
+    const buttons = this.ui.querySelectorAll('button[data-movedir]');
+    for (const button of buttons) {
+      const movedir = button.dataset['movedir'];
+      if (!movedir) continue;
+      missing.delete(movedir);
+      if (!button.dataset['key']) button.dataset['key'] = defaultMoveKeys[movedir]
+    }
+    const cont = this.moveBar || this.ui;
+    for (const movedir of missing) {
+      const key = defaultMoveKeys[movedir];
+      const button = createButton({
+        cont,
+        handler: this.keys,
+        key,
+        label: moveLabels[movedir],
+        legend: keyLegends[key],
+        title: moveTitles[movedir],
+      });
+      button.dataset['movedir'] = movedir;
+    }
   }
 
   /**
@@ -232,20 +339,30 @@ export class DOMgeon extends EventTarget {
    * @param {string} key
    * @returns {Move|null}
    */
-  parseMoveKey(key) {
-    switch (key) {
-      case 'ArrowUp':    return {x:  0, y: -1};
-      case 'ArrowRight': return {x:  1, y:  0};
-      case 'ArrowDown':  return {x:  0, y:  1};
-      case 'ArrowLeft':  return {x: -1, y:  0};
-      case '.':          return {x:  0, y:  0};
+  parseButtonKey(key) {
+    /** @type {NodeListOf<HTMLButtonElement>} */
+    const buttons = this.ui.querySelectorAll('button[data-key]');
+    for (const button of buttons) {
+      if (key === button.dataset['key']) {
+        /** @type {Move} */
+        const move = {x: NaN, y: NaN};
+
+        const dir = button.dataset['movedir'];
+        if (dir) {
+          const parts = dir.split(',');
+          move.x = parseFloat(parts[0]);
+          move.y = parseFloat(parts[1]);
+        }
+
+        return move;
+      }
     }
     return null;
   }
 
   processInput() {
     let move = this.keys.consume()
-      .map(([key, _count]) => this.parseMoveKey(key))
+      .map(([key, _count]) => this.parseButtonKey(key))
       .reduce((a, b) => {
         // TODO afford action-aware merge, e.g. a priority (partial) ordering
         if (!b) return a;
