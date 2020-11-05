@@ -248,9 +248,10 @@ export class DOMgeon extends EventTarget {
       .map(([key, _count]) => this.parseMoveKey(key))
       .reduce((a, b) => {
         // TODO afford action-aware merge, e.g. a priority (partial) ordering
-        if (!a && !b) return null;
-        if (!b || a?.action) return a;
-        if (!a || b?.action) return b;
+        if (!b) return a;
+        if (!a) return b;
+        if (a.action) return a;
+        if (b.action) return b;
         return {x: a.x + b.x, y: a.y + b.y};
       }, null);
 
