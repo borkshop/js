@@ -405,7 +405,9 @@ export class TileGrid {
   }
 
   /**
-   * Save data to tile's dataset in JSON encoded form.
+   * Save tile data: strings and numbers are stored directly, all else is JSON
+   * encoded. Data is stored both into the element's dataset and to a CSS
+   * --name variable on its inline style declaration.
    *
    * @param {HTMLElement} tile
    * @param {string} name
@@ -418,7 +420,12 @@ export class TileGrid {
       delete tile.dataset[name];
       tile.style.removeProperty(`--${name}`);
     } else {
-      const dval = typeof value === 'string' ? value : JSON.stringify(value);
+      const dval =
+        typeof value === 'string'
+        ? value
+        : typeof value === 'number'
+        ? value.toString()
+        : JSON.stringify(value);
       tile.dataset[name] = dval;
       tile.style.setProperty(`--${name}`, dval);
     }
