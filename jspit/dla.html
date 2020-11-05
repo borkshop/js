@@ -133,7 +133,7 @@
             <code>&lt;Escape&gt;</code> to show/hide this menu at any time<br />
           </p>
 
-          <div class="buttonbar">
+          <div>
             <button id="run">Run</button>
             <button id="reset">Reset</button>
             <br style="clear: both" />
@@ -176,12 +176,16 @@
 
     </main>
 
-    <footer>
+    <div class="buttonbar left" style="display: none"></div>
+    <div class="buttonbar right float"></div>
+
+    <footer style="margin: 0 auto; width: 33%">
       <label for="particleID">
         Particles:
         <span id="particleID" class="value">0</span>
       </label>
     </footer>
+
 
     <script type="module">
       import DLA from './dla'; // TODO default
@@ -194,10 +198,13 @@
       };
       bindVars({ctx, data: DLA.config});
 
+      const moveBar = document.querySelector('.buttonbar.left');
       const dmg = window.dmg = new DOMgeon({
         ui: document.body,
         keys: document.body,
         grid: document.querySelector('main .grid'),
+        moveBar,
+        actionBar: document.querySelector('.buttonbar.right'),
       });
       const inspector = new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
@@ -212,12 +219,17 @@
       const dropPlayer = document.querySelector('#dropPlayer');
       const world = new DLA(dmg);
       dmg.animParts.push(_ => {
-        if (dropPlayer) dropPlayer.disabled = !!dmg.grid.queryTile({className: ['input', 'mover']});
+        const playing = !!dmg.grid.queryTile({className: ['input', 'mover']});
+        if (dropPlayer) dropPlayer.disabled = playing;
+        if (moveBar) moveBar.style.display = playing ? '' : 'none';
         if (particleID) particleID.innerText = world.particleID.toString();
         return true;
       });
 
-      dropPlayer?.addEventListener('click', () => world.dropPlayer());
+      dropPlayer?.addEventListener('click', () => {
+        world.dropPlayer();
+        if (moveBar) moveBar.style.display = '';
+      });
       document.querySelector('#reset')?.addEventListener('click', () => world.reset());
       document.querySelector('#run')?.addEventListener('click', () => dmg.start());
     </script>
