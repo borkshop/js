@@ -100,7 +100,10 @@ export function solidMoverProc({grid, to, at, mover}) {
   if (!solids.length) return true;
 
   // may interact with another solid...
-  const interacts = solids.filter(h => h.classList.contains('interact'));
+  const interacts = solids.filter(h =>
+    !h.classList.contains('passable') &&
+    h.classList.contains('interact')
+  );
   if (interacts.length) {
     if (!procInteraction(grid, interacts, mover)) return false;
     // ...then maybe allowed to pass if no longer occupied
