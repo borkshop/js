@@ -42,12 +42,15 @@ export default class KeyCtl extends Map {
    * to actions.
    *
    * @typedef {Object<string, EventHandler<KeyboardEvent>>} KeyHandlers
+   * @typedef {Object<string, EventHandler<MouseEvent>>} MouseHandlers
    */
   on = {
     /** @type {KeyHandlers} */
     code: {},
     /** @type {KeyHandlers} */
     key: {},
+    /** @type {MouseHandlers} */
+    click: {},
   }
 
   /**
@@ -60,6 +63,33 @@ export default class KeyCtl extends Map {
 
   /** @param {Event} event */
   handleEvent(event) {
+    if (event instanceof MouseEvent) {
+      const {type, target} = event;
+      if (type === 'click' && target instanceof HTMLElement) {
+        const key = target.dataset['key'];
+        const action = target.dataset['action'];
+        const name = key || action;
+        if (!name) return;
+
+        const handler = this.on.click[name] || this.on.click[`#${target.id}`];
+        if (handler) {
+          handler(event);
+          event.stopPropagation();
+          event.preventDefault();
+          return;
+        }
+
+        if (this.counting) {
+          const n = this.get(name) || 0;
+          this.set(name, n+2);
+          event.stopPropagation();
+          event.preventDefault();
+          return;
+        }
+      }
+      return;
+    }
+
     if (event instanceof KeyboardEvent) {
       const {type, key, code} = event;
 
