@@ -66,8 +66,8 @@
 
     </main>
 
-    <footer>
-    </footer>
+    <div class="buttonbar left"></div>
+    <div class="buttonbar right float"></div>
 
     <script type="module">
       import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
@@ -76,6 +76,8 @@
         ui: document.body,
         keys: document.body,
         grid: document.querySelector('main .grid'),
+        moveBar: document.querySelector('.buttonbar.left'),
+        actionBar: document.querySelector('.buttonbar.right'),
       });
       new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 

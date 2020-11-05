@@ -110,8 +110,8 @@ a:focus   { color: var(--action-focus-color); text-decoration: underline }
 a:active  { color: var(--acting-color); }
 
 header, footer {
+  height: 1.5em; 
   position: absolute;
-  height: 1.5em;
   left: 0;
   right: 0;
   background-color: var(--content-bg);
@@ -119,8 +119,35 @@ header, footer {
   padding: 0 0.5em;
 }
 
-header { top: 0; }
-footer { bottom: 0; }
+header { top: 0 }
+footer { bottom: 0 }
+
+.buttonbar.left {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.buttonbar.right {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+.buttonbar.left.float button { float: left; clear: left; }
+.buttonbar.right.float button { float: right; clear: right; }
+
+.buttonbar button,
+footer button {
+  min-width: 2em;
+  font-size: 2em;
+}
+
+button[data-legend]::after {
+  font-size: 0.5em;
+  content: "[" attr(data-legend) "]";
+  color: var(--ui-fg);
+}
 
 main {
   position: absolute;
