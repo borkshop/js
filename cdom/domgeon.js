@@ -93,7 +93,33 @@ function applyMorph(grid, tile, morph) {
 }
 
 /** @type {TileMoverProc} */
-export function solidMoverProc({grid, to, at, mover}) {
+export function procMoveAction({grid, mover, action}) {
+  if (!action) return true;
+
+  // interact with target tile
+  if (action.startsWith('interact:')) {
+    const target = action.slice(9);
+    if (target.startsWith('tile:')) {
+      const interact = grid.getTile(target.slice(5));
+      if (interact) procInteraction(grid, [interact], mover)
+    }
+    // no need for intrinsic spatial move
+    return false;
+  }
+
+  // TODO intrinsic (cap)abilities
+
+  // unknown action, allow intrinsic move
+  return true;
+}
+
+/** @type {TileMoverProc} */
+export function solidMoverProc(move) {
+  // process non-spatial move
+  if (move.action) return procMoveAction(move);
+
+  const {grid, mover, to, at} = move;
+
   // can only move there if have particle support
   if (!at.some(h => h.classList.contains('floor'))) return false;
 
@@ -204,6 +230,7 @@ export class DOMgeon extends EventTarget {
   /** @type {Object<string, TileMoverProc>} */
   moveProcs = {
     solid: solidMoverProc,
+    '': procMoveAction,
   }
 
   /**
