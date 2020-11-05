@@ -31,13 +31,17 @@ export default class KeyCtl extends Map {
   }
 
   /**
+   * @template E
+   * @typedef {(event:E)=>void} EventHandler<E>
+   */
+
+  /**
    * Registry for custom key event handlers that take priority over counting.
    *
    * Useful for handling things like an Escape menu, or to dispatch number keys
    * to actions.
    *
-   * @typedef {(keyEvent:KeyboardEvent)=>void} KeyHandler
-   * @typedef {Object<string, KeyHandler>} KeyHandlers
+   * @typedef {Object<string, EventHandler<KeyboardEvent>>} KeyHandlers
    */
   on = {
     /** @type {KeyHandlers} */
@@ -56,25 +60,27 @@ export default class KeyCtl extends Map {
 
   /** @param {Event} event */
   handleEvent(event) {
-    if (!(event instanceof KeyboardEvent) ||
-        event.type !== 'keyup' && event.type !== 'keydown') return;
+    if (event instanceof KeyboardEvent) {
+      const {type, key, code} = event;
 
-    // consume the key event if a custom handler has been defined for it
-    const on = this.on.code[event.code] || this.on.key[event.key];
-    if (on) {
-      on(event);
-      event.stopPropagation();
-      event.preventDefault();
+      // consume the key event if a custom handler has been defined for it
+      const on = this.on.code[code] || this.on.key[key];
+      if (on) {
+        on(event);
+        event.stopPropagation();
+        event.preventDefault();
+        return;
+      }
+
+      // consume the key up/downs event if we're counting
+      if (this.counting && (type === 'keyup' || type === 'keydown')) {
+        const name = mappedKeyName(event);
+        const n = this.get(name) || 0;
+        this.set(name, n+1);
+        event.stopPropagation();
+        event.preventDefault();
+      }
       return;
-    }
-
-    // consume the key event if we're counting
-    if (this.counting) {
-      const name = mappedKeyName(event);
-      const n = this.get(name) || 0;
-      this.set(name, n+1);
-      event.stopPropagation();
-      event.preventDefault();
     }
   }
 
