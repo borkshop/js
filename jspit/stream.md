@@ -31,12 +31,26 @@
 ## WIP
 
 - domgeon
+  - dialog support to inform / hint the user
   - generalize "support" concept ala "floor" prior hardcode
-  - interaction with adjacent tiles and/or the current
-    tile: working prototypen, need to realize latent Move
-    actions, parsing, and all that
 
 ## Done
+
+Completed rework of input handling to be defined by, and accept clicks of,
+button elements. Movement is now defined by a set of static buttons, with
+default WASD creation of no elements pre-existed. Any interactable tiles
+available to the player are presented in a dynamic set of numeric-keyed action
+buttons. This also gives a good place to add skill/ability buttons into going
+forward.
+
+Other future ideas:
+- teach `KeyCtl` how to process more mouse events, maybe even grow up into a
+  mobile friend d-pad with diagonal blending
+- targetable abilities, like a ranged spell, could be done by chording their
+  action button/key with a movement button/key, similar to the current diagonal
+  key chording
+- could eventually support clicking of more than just buttons, like say
+  directly clicking a tile to move
 
 # 2020-11-03
 
