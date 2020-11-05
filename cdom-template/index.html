@@ -79,30 +79,18 @@
       });
       new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
-      /// walls default to '#'
-      /// rogue classic style with '-' top/bottom and '|' left/right
-      // walls: borderShader(
-      //   {className: ['wall', 'solid'], text: '-'},
-      //   {className: ['wall', 'solid'], text: '|'},
-      // ),
-      /// demo pattern
-      // walls: borderShader(
-      //   {className: ['wall', 'solid'], text: 'T'},
-      //   {className: ['wall', 'solid'], text: 'R'},
-      //   {className: ['wall', 'solid'], text: 'B'},
-      //   {className: ['wall', 'solid'], text: 'L'},
-      // ),
-
-      /// floors default to '·'
-
-      /// doors default to '+'
-      // doors: openable({
-      //   className: ['door', 'solid', 'interact'],
-      //   text: '+',
-      // }, '-'),
+      const doorShader = openable({
+        text: '+',
+        className: ['door', 'interact', 'solid'],
+        data: {action: 'open'},
+      }, {
+        text: '-',
+        className: ['door', 'interact', 'solid', 'passable'],
+        data: {action: 'close'},
+      });
 
       fillRect(dmg.grid, {x: 0, y: 0, w: 13, h: 8}, roomShader({
-        doors: openable('+', '-'),
+        doors: doorShader,
         doorsAt: (pos, rect) => 
           pos.x === rect.x + Math.floor(rect.w/2),
       }));
@@ -115,7 +103,7 @@
       }));
 
       fillRect(dmg.grid, {x: 4, y: -10, w: 5, h: 5}, roomShader({
-        doors: openable('+', '-'),
+        doors: doorShader,
         doorsAt: (pos, rect) => 
           pos.x === rect.x + Math.floor(rect.w/2) &&
           pos.y === rect.y + rect.h-1,
