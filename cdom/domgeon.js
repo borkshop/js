@@ -372,8 +372,14 @@ function mergeMoves(a, b) {
   // TODO afford action-aware merge, e.g. a priority (partial) ordering
   if (!b) return a;
   if (!a) return b;
-  if (a.action) return a;
-  if (b.action) return b;
+  if (a.action) {
+    // TODO directed actions if (isNaN(a.x) && isNaN(a.y)) a.x = b.x, a.y = b.y;
+    return a;
+  }
+  if (b.action) {
+    // TODO directed actions if (isNaN(b.x) && isNaN(b.y)) b.x = a.x, b.y = a.y;
+    return b;
+  }
   return {action: '', x: a.x + b.x, y: a.y + b.y};
 }
 
