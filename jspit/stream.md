@@ -1,4 +1,4 @@
-# 2020-11-04
+# 2020-11-05
 
 ## TODO
 
@@ -35,6 +35,33 @@
   - generalize "support" concept ala "floor" prior hardcode
 
 ## Done
+
+Now with even more use of CSS
+
+Reworked moement and interaction to be planar, no longer hardcoded to "solids"
+or "floors". This immediately simplified the colorboop and DLA demos a bit.
+
+Lofted domgeon's more specific `classList` mutation logic into `TileGrid`, and
+completely walked away from fully (usually over) specifying `className`
+entirely. There may still be use cases that need to fully stomp `className`,
+but the support has been dropped for now at least, in lieu of micro
+add/remove/toggle-class commands.
+
+Pivoted much functionality into CSS rule carried variables, in particular doors
+and other morphic interactions are no longer built procedurally, but defined
+purely in CSS rules.
+
+In particular, doors are now just tiles that toggle their `passable` class;
+even the text label is carried on pseduo content attached to class.
+
+The first scene of the tutorial is now 90% complete: the player can walk to the
+`V` rune, get void walking ability (self-supporting movement), and the proceed
+to walk out the door to nowhere... and on!
+
+Oh the "void rune" is now literally drawn on to a floor tile, not its own
+separate tile, to demonstrate that possibility.
+
+# 2020-11-04
 
 Completed rework of input handling to be defined by, and accept clicks of,
 button elements. Movement is now defined by a set of static buttons, with
