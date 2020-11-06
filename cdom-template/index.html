@@ -26,7 +26,9 @@
         <fieldset>
           <legend>TODO:</legend>
           <ul>
-            <li>less cheese void rune; through the other door</li>
+            <li>the void should be an other plane...</li>
+            <li>things to find and do there</li>
+            <li>...how to return back to the solid plane?</li>
             <li>visibility ala <a ref="https://www.albertford.com/shadowcasting">shadow casting</a></li>
             <li>maybe inventory and items</li>
           </ul>
@@ -70,6 +72,7 @@
         .tile.door.passable { --action: "close" }
         .tile.door.passable::before { content: "-" }
 
+        .tile.rune { color: var(--purple) }
       </style>
       <div class="grid">
       </div>
@@ -119,14 +122,11 @@
 
       dmg.grid.createTile({
         pos: {x: 6, y: -8},
-        className: ['interact', 'solid', 'passable'],
+        className: ['rune', 'interact', 'solid', 'passable'],
         text: 'V',
-        style: {color: 'var(--purple)'},
         data: {
           name: 'void rune',
-          morph_subject: {
-            classList: {remove: 'solid'},
-          },
+          morph_subject: "+support",
         },
       });
 
