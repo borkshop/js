@@ -120,10 +120,10 @@
           pos.y === rect.y + rect.h-1,
       }));
 
-      dmg.grid.createTile({
+      dmg.grid.buildTile({
         pos: {x: 6, y: -8},
-        kind: 'rune',
-        classList: ['interact', 'solid', 'passable'],
+        kind: 'floor',
+        classList: ['rune', 'interact'],
         text: 'V',
         data: {
           name: 'void rune',
