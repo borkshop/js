@@ -8,7 +8,7 @@
  * A shader is a function that gets called over many points, and is expected to
  * build tiles at each point.
  *
- * The simplest shader will call grid.buildTile({pos` ...}) once;
+ * The simplest shader will call grid.buildTile({pos, kind, ...}) once;
  * however a shader may:
  * - query for and destroy any prior tiles
  * - create many stacked tiles
@@ -37,24 +37,26 @@
  *
  * @template {any} C
  * @param {string|TileSpec|Shader<C>|null|undefined} shader
- * @param {string[]} defaultClasses
+ * @param {string} [defaultKind]
  * @returns {Shader<C>}
  */
-export function toShader(shader, ...defaultClasses) {
+export function toShader(shader, defaultKind) {
   if (typeof shader === 'function') return shader;
-  const spec = toSpec(shader, ...defaultClasses);
+  const spec = toSpec(shader, defaultKind);
   if (!spec) return _ => {};
   return (grid, pos) => grid.buildTile({pos, ...spec});
 }
 
 /**
  * @param {string|TileSpec|null|undefined} spec
- * @param {string[]} defaultClasses
+ * @param {string} [defaultKind]
  * @returns {TileSpec|null|undefined}
  */
-export function toSpec(spec, ...defaultClasses) {
+export function toSpec(spec, defaultKind) {
   return typeof spec === 'string'
-    ? {text: spec, className: defaultClasses}
+    ? spec.startsWith('.')
+    ? {kind: spec.slice(1)}
+    : defaultKind ? {text: spec, kind: defaultKind} : null
     : spec;
 }
 
@@ -131,8 +133,8 @@ export function borderShader(top, right, bottom, left) {
 }
 
 /**
- * Creates a rectangular room shader, that will build floors, solid walls, and
- * optionally solid doors.
+ * Creates a rectangular room shader, that will build floors, walls, and
+ * optionally doors.
  *
  * @param {object} [params]
  * @param {string|TileSpec|Shader<Rect>} [params.floors]
@@ -151,8 +153,8 @@ export function roomShader(params) {
     doorsAt,
   } = params || {};
   const floorShader = toShader(floors, 'floor');
-  const wallShader = toShader(walls, 'wall', 'solid');
-  const doorShader = maskedShader(doorsAt, toShader(doors ? doors : doorsAt ? '+' : undefined, 'door', 'solid'));
+  const wallShader = toShader(walls, 'wall');
+  const doorShader = maskedShader(doorsAt, toShader(doors ? doors : doorsAt ? '+' : undefined, 'door'));
   const spy = new buildSpy();
 
   return (grid, pos, rect) => {

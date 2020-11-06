@@ -43,7 +43,7 @@ export function stepParticles({
   move,
   ordinalMoves = false,
   stepLimit = 0,
-  ghostSpec = {className: ['ghost']},
+  ghostSpec = {classList: ['ghost', '-live', '-passable', '-support']}, // FIXME =ghost
 }) {
   if (typeof update === 'function') {
     update(grid, grid.queryTiles(query))

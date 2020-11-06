@@ -56,45 +56,18 @@ export function procInteraction(grid, interacts, subject) {
 }
 
 /**
- * @typedef {object} classMut
- * @prop {string} [toggle]
- * @prop {string} [remove]
- * @prop {string} [add]
- */
-
-/**
  * @param {TileGrid} grid
  * @param {HTMLElement} tile
  * @param {any} morph
  * @returns {void}
  */
 function applyMorph(grid, tile, morph) {
-  if (Array.isArray(morph)) {
-    for (const m of morph) applyMorph(grid, tile, m);
-    return;
-  }
-  if (typeof morph === 'string') {
-    if      (morph.startsWith('!')) morph = {classList: {toggle: morph.slice(1)}};
-    else if (morph.startsWith('-')) morph = {classList: {remove: morph.slice(1)}};
-    else if (morph.startsWith('+')) morph = {classList: {add: morph.slice(1)}};
-    else {
-      const form = grid.getTileData(tile, `morph_form_${morph}`);
-      if (form) morph = form;
-    }
-  }
-  if (typeof morph !== 'object') return;
-  if (!morph) return;
-  /** @type {{ classList: (classMut|classMut[]) }&TileSpec} */
-  let {classList, ...spec} = morph;
-  if (classList) {
-    classList = Array.isArray(classList) ? classList : [classList];
-    for (const {toggle, add, remove} of classList) {
-      if (toggle) tile.classList.toggle(toggle);
-      if (remove) tile.classList.remove(remove);
-      if (add) tile.classList.add(add);
-    }
-  }
-  grid.updateTile(tile, spec);
+  if (Array.isArray(morph))
+    for (const m of morph) grid.updateTile(tile, {classList: m});
+  else if (typeof morph === 'string')
+    grid.updateTile(tile, {classList: morph});
+  else
+    grid.updateTile(tile, morph);
 }
 
 /** @type {TileMoverProc} */
@@ -528,13 +501,16 @@ export class DOMgeonInspector extends TileInspector {
   /**
    * @param {TileInspectEvent} ev
    */
-  inspect({pos: {x, y}, tiles, pinned}) {
+  inspect({pos, tiles, pinned}) {
     if (!this.cur?.parentNode)
-      this.cur = this.dmg.grid.createTile({className: 'inspect-cursor'});
-    this.grid.updateTile(this.cur, {pos: {x, y}});
+      this.cur = this.dmg.grid.createTile({kind: 'inspect-cursor'});
+    this.grid.moveTileTo(this.cur, pos);
     this.cur.classList.toggle('pinned', pinned);
     const at = /** @type {HTMLElement|null} */ (this.el.querySelector('[data-for="pos"]'));
-    if (at) at.innerText = `${isNaN(x) ? 'X' : x},${isNaN(y) ? 'Y' : y}`;
+    if (at) {
+      const {x, y} = pos;
+      at.innerText = `${isNaN(x) ? 'X' : x},${isNaN(y) ? 'Y' : y}`;
+    }
     const txt = this.el.querySelector('textarea');
     if (txt) dumpTiles({tiles, into: txt, detail: pinned});
   }

@@ -94,9 +94,9 @@
       });
       new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
-      const floorShader = {className: ['floor', 'support', 'passable'], text: '·'};
-      const wallShader = {className: ['wall'], text: '#'};
-      const doorShader = {className: ['door', 'interact', 'solid']};
+      const floorShader = {kind: 'floor', classList: ['support', 'passable'], text: '·'};
+      const wallShader = {kind: 'wall', text: '#'};
+      const doorShader = {kind: 'door', classList: ['interact']};
 
       fillRect(dmg.grid, {x: 0, y: 0, w: 13, h: 8}, roomShader({
         floors: floorShader,
@@ -122,7 +122,8 @@
 
       dmg.grid.createTile({
         pos: {x: 6, y: -8},
-        className: ['rune', 'interact', 'solid', 'passable'],
+        kind: 'rune',
+        classList: ['interact', 'solid', 'passable'],
         text: 'V',
         data: {
           name: 'void rune',
@@ -131,7 +132,7 @@
       });
 
       const pos = {x: 6, y: 4};
-      dmg.grid.createTile({pos, className: ['input', 'mover', 'solid'], text: '@'});
+      dmg.grid.createTile({pos, kind: 'char', classList: ['mover', 'solid', 'input'], text: '@'});
       dmg.grid.viewPoint = pos;
 
     </script>

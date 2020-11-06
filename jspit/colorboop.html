@@ -81,13 +81,14 @@
         grid.clear();
 
         const pos = {x: 10, y: 10};
-        grid.createTile({pos, className: ['input', 'mover', 'support'], text: '@'});
+        grid.createTile({pos, kind: 'mover', classList: ['input', 'support'], text: '@'});
         grid.viewPoint = pos;
 
         colors.forEach((color, i) => {
           grid.createTile({
             pos: {x: 5, y: i},
-            className: ['swatch', 'interact'],
+            kind: 'swatch',
+            classList: 'interact',
             text: '$',
             style: {color: `var(--${color})`},
             data: {
@@ -99,7 +100,8 @@
           });
           grid.createTile({
             pos: {x: 15, y: i},
-            className: ['swatch', 'interact'],
+            kind: 'swatch',
+            classList: 'interact',
             text: '$',
             style: {backgroundColor: `var(--${color})`},
             data: {

@@ -39,9 +39,20 @@
 /*** @typedef {string|number|TileDatum[]|TileData} TileDatum */
 
 /**
+ * @typedef {object} classMut
+ * @prop {string} [toggle]
+ * @prop {string} [remove]
+ * @prop {string} [add]
+ */
+
+/**
  * @typedef TileSpec
  * @prop {Point} [pos] - specifies new tile location within tile coordinate space
- * @prop {string|string[]} [className] - specifies new tile class name or list of names
+ * @prop {string} [kind] - primary tile class name
+ * @prop {string|string[]|classMut|classMut[]} [classList] - specifies more
+ * limited classList mutations, rather than full className syncing; string args
+ * may start with + - or ! to add, remove, or toggle the string remaining
+ * string class name, defaulting to add behavior.
  * @prop {string} [text] - specifies new tile innerText content
  * @prop {Partial<CSSStyleDeclaration>} [style] - specifies new tile inline styles
  * @prop {Object<string,any>} [data] - specifies new tile dataset attributes
@@ -126,16 +137,6 @@ class TileMortonIndex {
   tilesAt(at) {
     return this._fore.get(mortonKey(at));
   }
-}
-
-/**
- * @param {TileSpec} spec
- * @returns {string}
- */
-function specKind(spec) {
-  if (typeof spec.className === 'string') return spec.className;
-  if (Array.isArray(spec.className)) return spec.className[0];
-  return '';
 }
 
 export class TileGrid {
@@ -226,13 +227,12 @@ export class TileGrid {
   _kindid = new Map()
 
   /**
-   * @param {TileSpec} spec
+   * @param {{kind: string}&TileSpec} spec
    * @returns {HTMLElement}
    */
   buildTile(spec) {
-    const kind = specKind(spec);
     if (spec.pos) {
-      const tile = this.tileAt(spec.pos, kind);
+      const tile = this.tileAt(spec.pos, spec.kind);
       if (tile) return this.updateTile(tile, spec);
     }
     // TODO garbage re-use
@@ -242,7 +242,7 @@ export class TileGrid {
   /**
    * Creates a new tile element from a given specification, returning it.
    *
-   * @param {{id?: string}&TileSpec} idSpec
+   * @param {{id?: string, kind: string}&TileSpec} idSpec
    * @return {HTMLElement}
    */
   createTile({id, ...spec}) {
@@ -252,13 +252,15 @@ export class TileGrid {
       tile = this.el.ownerDocument.createElement('div');
       this.el.appendChild(tile)
       if (!id) {
-        const kind = specKind(spec);
+        const kind = spec.kind;
         let n = this._kindid.get(kind) || 0;
         id = `${kind}${kind ? '-' : ''}${++n}`;
         this._kindid.set(kind, n);
       }
       tile.id = this.idPrefix() + id;
     }
+    tile.classList.add('tile');
+    tile.classList.add(spec.kind);
     if (!spec.pos) spec.pos = {x: 0, y: 0};
     return this.updateTile(tile, spec);
   }
@@ -273,12 +275,21 @@ export class TileGrid {
   updateTile(tile, spec) {
     if (spec.pos) this.moveTileTo(tile, spec.pos);
     if (spec.text) tile.innerText = spec.text;
-    if (spec.className) {
-      tile.className = 'tile';
-      if (typeof spec.className === 'string') tile.classList.add(spec.className);
-      else if (Array.isArray(spec.className))
-        for (const name of spec.className) tile.classList.add(name);
-    } else if (!tile.className) tile.className = 'tile';
+    if (spec.classList) {
+      const classList = Array.isArray(spec.classList) ? spec.classList : [spec.classList];
+      for (const mut of classList) {
+        if (typeof mut === 'string') {
+          if      (mut.startsWith('!')) tile.classList.toggle(mut.slice(1));
+          else if (mut.startsWith('-')) tile.classList.remove(mut.slice(1));
+          else if (mut.startsWith('+')) tile.classList.add(mut.slice(1));
+          else                          tile.classList.add(mut);
+        } else {
+          if (mut.toggle) tile.classList.toggle(mut.toggle);
+          if (mut.remove) tile.classList.remove(mut.remove);
+          if (mut.add)    tile.classList.add(mut.add);
+        }
+      }
+    }
     if (spec.style) Object.assign(tile.style, spec.style);
     if (spec.data) {
       for (const [name, value] of Object.entries(spec.data))
@@ -530,7 +541,7 @@ export class TileGrid {
       const el = /** @type{HTMLElement|null} */(this.el.querySelector(`#${id}`));
       if (!el) continue;
       if (className.length &&
-          !className.every(name => el.classList.contains(name)))
+          !className.every(name => !name || el.classList.contains(name)))
         continue;
       tiles.push((el));
     }

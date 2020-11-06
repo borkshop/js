@@ -112,7 +112,8 @@ export default class DLA {
 
     for (const pos of this.config.seeds) this.dmg.grid.createTile({
       id: `particle-${++this.particleID}`,
-      className: ['particle', 'init', 'support', 'passable'],
+      kind: 'particle',
+      classList: ['init', 'support', 'passable'],
       pos,
       text: '·',
     });
@@ -147,7 +148,8 @@ export default class DLA {
 
   dropPlayer() {
     this.dmg.grid.createTile({
-      className: ['input', 'mover'],
+      kind: 'mover',
+      classList: 'input',
       pos: this.config.seeds[0],
       text: '@',
     });
@@ -272,8 +274,10 @@ export default class DLA {
     const spec = {
       pos,
       text: '🌲',
-      className: ['particle', 'live', kind],
+      kind: 'particle',
+      classList: [kind, 'live', '-ghost', 'support'],
       data: {
+        steps: 0,
         heading: `${heading}rad`,
       },
     };
@@ -343,7 +347,7 @@ export default class DLA {
           grid.updateTile(p, {
             pos: toCell,
             text: '·',
-            className: ['particle', 'prime', 'support', 'passable'],
+            classList: ['-live', 'prime', '-void', 'passable', 'support'],
           });
           return false;
         }
@@ -367,7 +371,7 @@ export default class DLA {
           grid.updateTile(p, {
             pos: posCell,
             text: '·',
-            className: ['particle', 'void', 'support', 'passable'],
+            classList: ['-live', 'void', '-prime', 'passable', 'support'],
           });
           return false;
         }

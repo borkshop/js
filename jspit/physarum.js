@@ -103,6 +103,7 @@ export default class {
     const test = this.grid.createTile({
       id: 'sizeTest',
       text: 'X',
+      kind: 'internal',
     });
     const rect = this.grid.viewport;
     if (!isFinite(rect.w) || !isFinite(rect.h)) {
@@ -121,10 +122,9 @@ export default class {
     const oldTrail = this.grid.queryTiles({className: 'trail'});
     for (let ax=x, i=0; i<w; ax++, i++) for (let ay=y, j=0; j<h; ay++, j++) {
       const pos = {x: ax, y: ay};
-      /** @type {TileSpec} */
       const spec = {
-        className: 'trail',
         pos,
+        kind: 'trail',
         text: '·',
         data: {value: `${Math.random() * 100}%`}
       };
@@ -145,7 +145,7 @@ export default class {
     // kill all prior particles and spawn new ones
     for (const p of this.grid.queryTiles({
       className: ['particle', 'live'],
-    })) this.grid.updateTile(p, {className: 'ghost'});
+    })) this.grid.updateTile(p, {classList: ['ghost', '-live']});
     const r = Math.round(Math.min(w-4, h-4) / 2);
     let nParticles = this.nParticles;
     if (nParticles < 0) {
@@ -157,10 +157,10 @@ export default class {
       const θ = i / nParticles * 2 * Math.PI;
       const {x, y} = atHeading(center, θ, r);
       const h = θ - Math.PI;
-      /** @type {TileSpec} */
       const spec = {
         pos: {x, y},
-        className: ['particle', 'live'],
+        kind: 'particle',
+        classList: ['live', '-ghost'],
         // text: '↑',
         text: '🌲',
         data: {heading: `${h}rad`},
@@ -184,10 +184,9 @@ export default class {
         for (const [i, dh] of Object.entries(this.sense)) {
           const θ = h+dh;
           const at = atHeading(pos, θ)
-          /** @type {TileSpec} */
           const spec = {
             pos: at,
-            className: 'sense',
+            kind: 'sense',
             text: `${i}`,
             data: {'for': p.id, sensed: null},
           };
