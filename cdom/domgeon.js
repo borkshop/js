@@ -37,7 +37,7 @@ export function procInteraction(grid, interacts, subject) {
   if (interacts.length > 1) return false;
   const interact = interacts[0];
 
-  if (subject.dataset['plane'] !== interact.dataset['plane']) {
+  if (grid.getTileData(subject, 'plane') !== grid.getTileData(interact, 'plane')) {
     // TODO cross planar capability
     return false;
   }
@@ -119,33 +119,37 @@ export function procMoveAction({grid, mover, action}) {
 }
 
 /** @type {TileMoverProc} */
-export function solidMoverProc(move) {
+function procMove(move) {
   // process non-spatial move
   if (move.action) return procMoveAction(move);
 
   const {grid, mover, to, at} = move;
+  const plane = grid.getTileData(mover, 'plane');
 
-  // can only move there if have particle support
-  if (!at.some(h => h.classList.contains('floor'))) return false;
+  // interact with any co-planar tiles present
+  let present = plane ? at.filter(h => h.classList.contains(plane)) : at;
 
-  // may move if not occupied
-  let solids = at.filter(h => h.classList.contains('solid'));
-  if (!solids.length) return true;
-
-  // may interact with another solid...
-  const interacts = solids.filter(h =>
-    !h.classList.contains('passable') &&
-    h.classList.contains('interact')
+  // boop-interact with first present .tile.interact:not(.passable)
+  const interacts = present.filter(h =>
+    h.classList.contains('interact') &&
+    !h.classList.contains('passable')
   );
   if (interacts.length) {
     if (!procInteraction(grid, interacts, mover)) return false;
-    // ...then maybe allowed to pass if no longer occupied
-    solids = grid.tilesAt(to, 'solid');
-    if (!solids.length) return true;
+    // re-query over any interaction updates
+    present = plane ? grid.tilesAt(to, plane) : grid.tilesAt(to);
   }
 
-  // may pass is marked .passable
-  return solids.every(h => h.classList.contains('passable'));
+  // blocked by any present .tile:not(.passable)
+  if (present.some(h => !h.classList.contains('passable'))) return false;
+
+  // move must be supported:
+
+  // mover is self-supported ( #wedontneedroads )
+  if (mover.classList.contains('support')) return true;
+
+  // otherwise there must present a .tile.support (e.g. a "floor")
+  return present.some(h => h.classList.contains('support'));
 }
 
 /**
@@ -234,8 +238,7 @@ export class DOMgeon extends EventTarget {
 
   /** @type {Object<string, TileMoverProc>} */
   moveProcs = {
-    solid: solidMoverProc,
-    '': procMoveAction,
+    '': procMove,
   }
 
   /**
@@ -273,13 +276,6 @@ export class DOMgeon extends EventTarget {
     this.grid = new TileGrid(grid);
     this.grid.viewPoint = centroid(this.grid.queryTiles({className: ['mover', 'input']})
       .map(input => this.grid.getTilePosition(input)));
-
-    const updateTile = this.grid.updateTile;
-    this.grid.updateTile = (tile, spec) => {
-      updateTile.call(this.grid, tile, spec);
-      tile.dataset['plane'] = this.tilePlane(tile);
-      return tile;
-    };
 
     this.keys = new KeyCtl(keys);
     this.keys.on.code['Escape'] = (ev) => {
@@ -360,17 +356,6 @@ export class DOMgeon extends EventTarget {
       });
       button.dataset['movedir'] = movedir;
     }
-  }
-
-  /**
-   * @param {HTMLElement} tile
-   * @returns {string}
-   */
-  tilePlane (tile) {
-    for (const kind in this.moveProcs)
-      if (kind && tile.classList.contains(kind))
-        return kind;
-    return '';
   }
 
   stop() {
