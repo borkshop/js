@@ -1,58 +1,48 @@
 // @ts-check
 
-/**
- * @return {Promise<number>}
- */
-function animationFrame() {
-  return new Promise(resolve => requestAnimationFrame(resolve));
-}
-
-/**
- * @template T
- * @typedef {{
- *   promise: Promise<T>,
- *   resolve: (value:T) => void,
- *   reject: (reason:Error) => void
- * }} Deferred
- */
-
-/*
- * @template T
- * @return {Deferred<T>}
- */
-function defer() {
-  let resolve, reject;
-  const promise = new Promise((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  if (resolve === undefined || reject === undefined) {
-    throw new Error('The type system, it deceived us!');
-  }
-  /** @type {Deferred<T>} */
-  return { promise, resolve, reject };
-}
-
-/**
- * @param {number} ms
- * @return {Promise<void>}
- */
-function delay(ms) {
-  return new Promise(resolve => {
-    setTimeout(resolve, ms);
-  });
-}
+import './types.js';
+import { animationFrame, defer, delay } from './async.js';
 
 const inputPeriod = 200;
 const turnPeriod = 100;
 
+/** @type {number} */
+let agent;
+/** @type {number[]} */
+const startXs = [];
+/** @type {number[]} */
+const startYs = [];
+/** @type {number[]} */
+const endXs = [];
+/** @type {number[]} */
+const endYs = [];
+/** @type {HTMLElement[]} */
+const elements = [];
+/** @type {Transition[]} */
+const transitions = [];
+
 /** @type {Object<string, string>} */
 const aliases = {
+  h: 'west',
+  H: 'west',
+  j: 'south',
+  J: 'south',
+  k: 'north',
+  K: 'north',
+  l: 'east',
+  L: 'east',
+  8: 'north',
+  4: 'west',
+  6: 'east',
+  2: 'south',
   ArrowLeft: 'west',
   ArrowUp: 'north',
   ArrowDown: 'south',
   ArrowRight: 'east',
 };
+
+const agentTemplate = /** @type{HTMLElement} */(document.querySelector('#agentTemplate'));
+const viewport = /** @type{HTMLElement} */(document.querySelector('#viewport'));
 
 async function main() {
 
@@ -109,36 +99,53 @@ async function main() {
     }
   }
 
-  /**
-   * @param {number} v0
-   * @param {number} v1
-   * @param {number} t
-   * @return {number}
-   */
+  /** @type {Transition} */
   function lerp(v0, v1, t) {
     return v0 * (1 - t) + v1 * t;
   }
 
-  const x1s = [0];
-  const y1s = [0];
-  const x2s = [0];
-  const y2s = [0];
-  const agent = document.getElementById('agent');
-  if (agent === null) {
-    throw new Error('Agent must exist in the document');
+  /**
+   * @param {number} entity
+   * @param {number} x
+   * @param {number} y
+   */
+  function teleport(entity, x, y) {
+    startXs[entity] = x;
+    endXs[entity] = x;
+    startYs[entity] = y;
+    endYs[entity] = y;
   }
-  const elements = [agent];
-  const transitions = [lerp];
+
+  /**
+   * @param {number} x
+   * @param {number} y
+   * @param {string} moji
+   * @return {number}
+   */
+  function addMoji(x, y, moji) {
+    const entity = elements.length;
+    teleport(entity, x, y);
+    const element = agentTemplate.cloneNode(true);
+    element.textContent = moji;
+    elements[entity] = /** @type HTMLElement */(element);
+    transitions[entity] = lerp;
+    viewport.appendChild(element);
+    return entity;
+  }
+
+  agent = addMoji(0, 0, '🙂');
+  addMoji(-5, -4, '🔗');
 
   /**
    * @param {number} x
    * @param {number} y
    */
   function move(x, y) {
-    x1s[0] = x2s[0];
-    y1s[0] = y2s[0];
-    x2s[0] = x1s[0] + x;
-    y2s[0] = y1s[0] + y;
+    startXs[agent] = endXs[agent];
+    startYs[agent] = endYs[agent];
+    endXs[agent] = startXs[agent] + x;
+    endYs[agent] = startYs[agent] + y;
+    transitions[agent] = lerp;
   }
 
   /** @type {Object<string, () => void>} */
@@ -181,15 +188,53 @@ async function main() {
 
   let start = performance.now() - turnPeriod;
 
+  /**
+   * @param {number} entity
+   * @param {number} time
+   * @return {number}
+   */
+  function locateX(entity, time) {
+    const transition = transitions[entity];
+    return transition(startXs[entity], endXs[entity], time);
+  }
+
+  /**
+   * @param {number} entity
+   * @param {number} time
+   * @return {number}
+   */
+  function locateY(entity, time) {
+    const transition = transitions[entity];
+    return transition(startYs[entity], endYs[entity], time);
+  }
+
+  const center = {x: 0, y: 0};
+  const radius = 5;
+
+  /**
+   * @param {number} t time since beginning of transition
+   * @param {number} dt time since last animation
+   */
+  function chase(t, dt) {
+    center.x = lerp(center.x, locateX(agent, t), 1 - Math.pow(0.995, dt));
+    center.y = lerp(center.y, locateY(agent, t), 1 - Math.pow(0.995, dt));
+    viewport.setAttribute('viewBox', `${center.x - radius} ${center.y - radius} ${radius * 2} ${radius * 2}`);
+  }
+
   async function animationLoop() {
+    let last = performance.now();
     while (true) {
       const now = await animationFrame();
-      for (let i = 0; i < elements.length; i++) {
-        const element = elements[i];
-        const transition = transitions[i];
-        const t = Math.max(0, Math.min(1, (now - start) / turnPeriod));
-        element.setAttribute('x', String(transition(x1s[i], x2s[i], t)));
-        element.setAttribute('y', String(transition(y1s[i], y2s[i], t)));
+      const t = Math.max(0, Math.min(1, (now - start) / turnPeriod));
+      const dt = now - last;
+      last = now;
+
+      chase(t, dt);
+
+      for (let entity = 0; entity < elements.length; entity++) {
+        const element = elements[entity];
+        element.setAttribute('x', String(locateX(entity, t)));
+        element.setAttribute('y', String(locateY(entity, t)));
       }
     }
   }
