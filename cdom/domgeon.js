@@ -74,8 +74,13 @@ function applyMorph(grid, tile, morph) {
     return;
   }
   if (typeof morph === 'string') {
-    const form = grid.getTileData(tile, `morph_form_${morph}`);
-    if (form) morph = form;
+    if      (morph.startsWith('!')) morph = {classList: {toggle: morph.slice(1)}};
+    else if (morph.startsWith('-')) morph = {classList: {remove: morph.slice(1)}};
+    else if (morph.startsWith('+')) morph = {classList: {add: morph.slice(1)}};
+    else {
+      const form = grid.getTileData(tile, `morph_form_${morph}`);
+      if (form) morph = form;
+    }
   }
   if (typeof morph !== 'object') return;
   if (!morph) return;
