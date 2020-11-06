@@ -274,35 +274,3 @@ class buildSpy {
 // TODO polygon
 // TODO circle
 // TODO flood
-
-/**
- * @param {string|TileSpec} closed
- * @param {string|TileSpec} opened
- * @returns {TileSpec}
- */
-export function openable(closed, opened) {
-  const clSpec =
-    typeof closed === 'string'
-    ? {text: closed, className: ['interact', 'solid']}
-    : closed;
-  const opSpec =
-    typeof opened === 'string'
-    ? {text: opened}
-    : opened;
-  if (!opSpec.className) opSpec.className = (
-    Array.isArray(clSpec.className) ? clSpec.className : clSpec.className ? [clSpec.className] : []
-  ).filter(n => n !== 'solid');
-  if (!clSpec.data) clSpec.data = {};
-  if (!opSpec.data) opSpec.data = {};
-  clSpec.data['morph_target'] = 'open';
-  opSpec.data['morph_target'] = 'close';
-  const {data, ...spec} = clSpec;
-  return {
-    data: {
-      'morph_form_open': opSpec,
-      'morph_form_close': clSpec,
-      ...data
-    },
-    ...spec
-  };
-}

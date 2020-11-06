@@ -60,6 +60,16 @@
         .tile.wall { background-color: var(--darker-grey) }
 
         .tile.mover { color: var(--orange); }
+
+        .tile.door {
+          --action: "open";
+          --morph_target: "!passable";
+        }
+        .tile.door::before { content: "+" }
+
+        .tile.door.passable { --action: "close" }
+        .tile.door.passable::before { content: "-" }
+
       </style>
       <div class="grid">
       </div>
@@ -71,7 +81,7 @@
 
     <script type="module">
       import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
-      import {fillRect, roomShader, borderShader, openable} from 'cdom/builder';
+      import {fillRect, roomShader, borderShader} from 'cdom/builder';
       const dmg = window.dmg = new DOMgeon({
         ui: document.body,
         keys: document.body,
@@ -83,15 +93,7 @@
 
       const floorShader = {className: ['floor', 'support', 'passable'], text: '·'};
       const wallShader = {className: ['wall'], text: '#'};
-      const doorShader = openable({
-        text: '+',
-        className: ['door', 'interact', 'solid'],
-        data: {action: 'open'},
-      }, {
-        text: '-',
-        className: ['door', 'interact', 'solid', 'passable'],
-        data: {action: 'close'},
-      });
+      const doorShader = {className: ['door', 'interact', 'solid']};
 
       fillRect(dmg.grid, {x: 0, y: 0, w: 13, h: 8}, roomShader({
         floors: floorShader,
