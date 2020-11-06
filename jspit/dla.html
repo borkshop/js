@@ -182,8 +182,8 @@
 
     </main>
 
-    <div class="buttonbar left" style="display: none"></div>
-    <div class="buttonbar right float"></div>
+    <div class="buttonbar moves left" style="display: none"></div>
+    <div class="buttonbar actions right float"></div>
 
     <footer style="margin: 0 auto; width: 33%">
       <label for="particleID">
@@ -204,13 +204,13 @@
       };
       bindVars({ctx, data: DLA.config});
 
-      const moveBar = document.querySelector('.buttonbar.left');
+      const moveBar = document.querySelector('.buttonbar.moves');
       const dmg = window.dmg = new DOMgeon({
         ui: document.body,
         keys: document.body,
         grid: document.querySelector('main .grid'),
         moveBar,
-        actionBar: document.querySelector('.buttonbar.right'),
+        actionBar: document.querySelector('.buttonbar.actions'),
       });
       const inspector = new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 

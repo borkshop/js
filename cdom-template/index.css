@@ -137,10 +137,14 @@ footer { bottom: 0 }
 .buttonbar.left.float button { float: left; clear: left; }
 .buttonbar.right.float button { float: right; clear: right; }
 
-.buttonbar button,
-footer button {
+.buttonbar.moves button {
   min-width: 2em;
   font-size: 2em;
+}
+
+.buttonbar.actions button {
+  min-width: 1em;
+  font-size: 1em;
 }
 
 button[data-legend]::after {

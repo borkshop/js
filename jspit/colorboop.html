@@ -46,8 +46,8 @@
       <div class="grid"></div>
     </main>
 
-    <div class="buttonbar left"></div>
-    <div class="buttonbar right float"></div>
+    <div class="buttonbar moves left"></div>
+    <div class="buttonbar actions right float"></div>
 
     <script type="module">
       import {fillRect} from 'cdom/builder';
@@ -118,8 +118,8 @@
       const dmg = window.dmg = new DOMgeon({
         ui: document.body,
         grid: document.querySelector('main .grid'),
-        moveBar: document.querySelector('.buttonbar.left'),
-        actionBar: document.querySelector('.buttonbar.right'),
+        moveBar: document.querySelector('.buttonbar.moves'),
+        actionBar: document.querySelector('.buttonbar.actions'),
       });
       new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
