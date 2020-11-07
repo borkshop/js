@@ -60,7 +60,9 @@
         /* wall should occlude floor */
         .tile.wall { background-color: var(--darker-grey) }
 
-        .tile.mover { color: var(--orange); }
+        .tile.mover             { color: var(--red-orange); }
+        .tile.mover.input       { color: var(--dark-orange); }
+        .tile.mover.input.focus { color: var(--orange); }
 
         .tile.door {
           --action: "open";
