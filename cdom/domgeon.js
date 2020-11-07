@@ -445,41 +445,18 @@ export class DOMgeon extends EventTarget {
 
     // update dynamic action buttons
     if (this.actionBar) {
-      const interacts = this.grid
-        .queryTiles({className: ['mover', 'input']})
-        .map(mover => this.grid.getTilePosition(mover))
-        .flatMap(pos => [ // TODO make this stencil configurable
-          {x:  0, y:  0},
-          {x:  0, y:  1},
-          {x:  1, y:  1},
-          {x:  1, y:  0},
-          {x:  1, y: -1},
-          {x:  0, y: -1},
-          {x: -1, y: -1},
-          {x: -1, y:  0},
-          {x: -1, y:  1},
-        ].flatMap(({x: dx, y: dy}) => {
-          const at = {x: pos.x + dx, y: pos.y + dy};
-          return this.grid.tilesAt(at, 'interact');
-        }))
-        .map(tile => ( {tile, pos: this.grid.getTilePosition(tile)} ))
-        .sort(({pos: apos}, {pos: bpos}) => bpos.y - apos.y || bpos.x - apos.x)
-        .map(({tile}) => tile);
+      const actions = this.collectActions();
 
       /** @type {NodeListOf<HTMLButtonElement>} */
-      const buttons = this.actionBar.querySelectorAll('button[data-action^="interact:"]');
+      const buttons = this.actionBar.querySelectorAll('button[data-action]');
 
-      const labels = interacts.map(interact => this.actionLabel(interact));
-      // TODO directional de-dupe: e.g. open door x2 ... W / E, or Left / Right
-
-      for (let i=0; i<buttons.length || i<labels.length; i++) {
+      for (let i=0; i<buttons.length || i<actions.length; i++) {
         let button = buttons[i];
-        const label = labels[i];
-        if (label === undefined) {
+        if (actions[i] === undefined) {
           button.parentNode?.removeChild(button);
           continue;
         }
-        const tileID = this.grid.getTileID(interacts[i]);
+        const {action, label} = actions[i];
 
         if (button === undefined) {
           button = createButton({
@@ -488,12 +465,49 @@ export class DOMgeon extends EventTarget {
             key: i < 10 ? `${i+1}` : undefined,
             label,
           });
-        } else if (button.dataset['interact'] !== tileID || button.innerText !== label) {
+        } else if (button.dataset['action'] !== action || button.innerText !== label) {
           updateButton(button, {label});
         } else continue;
-        button.dataset['action'] = `interact:tile:${tileID}`;
+        button.dataset['action'] = action;
       }
     }
+  }
+
+  collectActions() {
+    /** @type {{action:string, label:string}[]} */
+    const actions = [];
+
+    const interacts = this.grid
+      .queryTiles({className: ['mover', 'input']})
+      .map(mover => this.grid.getTilePosition(mover))
+      .flatMap(pos => [ // TODO make this stencil configurable
+        {x:  0, y:  0},
+        {x:  0, y:  1},
+        {x:  1, y:  1},
+        {x:  1, y:  0},
+        {x:  1, y: -1},
+        {x:  0, y: -1},
+        {x: -1, y: -1},
+        {x: -1, y:  0},
+        {x: -1, y:  1},
+      ].flatMap(({x: dx, y: dy}) => {
+        const at = {x: pos.x + dx, y: pos.y + dy};
+        return this.grid.tilesAt(at, 'interact');
+      }))
+      .map(tile => ( {tile, pos: this.grid.getTilePosition(tile)} ))
+      .sort(({pos: apos}, {pos: bpos}) => bpos.y - apos.y || bpos.x - apos.x)
+      .map(({tile}) => tile);
+
+    // TODO directional de-dupe: e.g. open door x2 ... W / E, or Left / Right
+
+    actions.push(...interacts.map(interact => {
+      const label = this.actionLabel(interact);
+      const tileID = this.grid.getTileID(interact);
+      const action = `interact:tile:${tileID}`;
+      return {action, label};
+    }));
+
+    return actions;
   }
 }
 
