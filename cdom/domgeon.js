@@ -477,10 +477,12 @@ export class DOMgeon extends EventTarget {
     /** @type {{action:string, label:string}[]} */
     const actions = [];
 
-    const interacts = this.grid
-      .queryTiles({className: ['mover', 'input']})
-      .map(mover => this.grid.getTilePosition(mover))
-      .flatMap(pos => [ // TODO make this stencil configurable
+    const actors = this.grid.queryTiles({className: ['mover', 'input']});
+
+    const actor = actors.filter(actor => actor.classList.contains('focus')).shift();
+    if (actor) {
+      const pos = this.grid.getTilePosition(actor);
+      const interacts = [ // TODO make this stencil configurable
         {x:  0, y:  0},
         {x:  0, y:  1},
         {x:  1, y:  1},
@@ -490,22 +492,24 @@ export class DOMgeon extends EventTarget {
         {x: -1, y: -1},
         {x: -1, y:  0},
         {x: -1, y:  1},
-      ].flatMap(({x: dx, y: dy}) => {
-        const at = {x: pos.x + dx, y: pos.y + dy};
-        return this.grid.tilesAt(at, 'interact');
-      }))
-      .map(tile => ( {tile, pos: this.grid.getTilePosition(tile)} ))
-      .sort(({pos: apos}, {pos: bpos}) => bpos.y - apos.y || bpos.x - apos.x)
-      .map(({tile}) => tile);
+      ]
+        .flatMap(({x: dx, y: dy}) => {
+          const at = {x: pos.x + dx, y: pos.y + dy};
+          return this.grid.tilesAt(at, 'interact');
+        })
+        .map(tile => ( {tile, pos: this.grid.getTilePosition(tile)} ))
+        .sort(({pos: apos}, {pos: bpos}) => bpos.y - apos.y || bpos.x - apos.x)
+        .map(({tile}) => tile);
 
-    // TODO directional de-dupe: e.g. open door x2 ... W / E, or Left / Right
+      // TODO directional de-dupe: e.g. open door x2 ... W / E, or Left / Right
 
-    actions.push(...interacts.map(interact => {
-      const label = this.actionLabel(interact);
-      const tileID = this.grid.getTileID(interact);
-      const action = `interact:tile:${tileID}`;
-      return {action, label};
-    }));
+      actions.push(...interacts.map(interact => {
+        const label = this.actionLabel(interact);
+        const tileID = this.grid.getTileID(interact);
+        const action = `interact:tile:${tileID}`;
+        return {action, label};
+      }));
+    }
 
     return actions;
   }
