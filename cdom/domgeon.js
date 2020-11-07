@@ -438,7 +438,8 @@ export class DOMgeon extends EventTarget {
 
       // ensure viewport contains the active active player input
       const {x: vx, y: vy, w, h} = this.grid.viewport;
-      if (pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
+      if (!this.grid.hasFixedViewPoint() ||
+          pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
         this.grid.viewPoint = pos;
     }
 

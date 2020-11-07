@@ -206,6 +206,10 @@ export class TileGrid {
     return {x, y};
   }
 
+  hasFixedViewPoint() {
+    return this._viewPoint !== null;
+  }
+
   /** @param {Point} p */
   set viewPoint(p) {
     const {x, y} = p;
