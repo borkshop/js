@@ -66,6 +66,8 @@ export function setElData(el, name, value) {
  * @typedef {Point&Size} Rect
  */
 
+// TODO probably drop TileQuery
+
 /**
  * @typedef {Object} TileQuery
  *
