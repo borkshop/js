@@ -29,7 +29,6 @@
             <li>the void should be an other plane...</li>
             <li>things to find and do there</li>
             <li>...how to return back to the solid plane?</li>
-            <li>visibility ala <a ref="https://www.albertford.com/shadowcasting">shadow casting</a></li>
             <li>maybe inventory and items</li>
           </ul>
         </fieldset>
@@ -78,6 +77,13 @@
           text-decoration: underline;
           text-decoration-style: dotted;
         }
+
+        .tile.solid[data-light] {
+          visibility: visible;
+          opacity: var(--light);
+        }
+        .tile.solid:not([data-light]) { visibility: hidden; }
+
       </style>
       <div class="grid">
       </div>
@@ -99,9 +105,9 @@
       });
       new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
-      const floorShader = {kind: 'floor', classList: ['support', 'passable'], text: '·'};
-      const wallShader = {kind: 'wall', text: '#'};
-      const doorShader = {kind: 'door', classList: ['interact']};
+      const floorShader = {kind: 'floor', classList: ['solid', 'support', 'passable'], text: '·'};
+      const wallShader = {kind: 'wall', classList: 'solid', text: '#'};
+      const doorShader = {kind: 'door', classList: ['solid', 'interact']};
 
       fillRect(dmg.grid, {x: 0, y: 0, w: 13, h: 8}, roomShader({
         floors: floorShader,
