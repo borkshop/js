@@ -50,6 +50,12 @@ export function procInteraction(grid, interacts, subject) {
     Math.pow(at.y - pos.y, 2)
   ) >= 2) return false;
 
+  const spawn = grid.getTileData(interact, 'morph_spawn');
+  if (spawn) {
+    const kind = grid.getTileKind(interact);
+    grid.createTile({pos: at, kind, ...spawn});
+  }
+
   applyMorph(grid, interact, grid.getTileData(interact, 'morph_target'));
   applyMorph(grid, subject, grid.getTileData(interact, 'morph_subject'));
 
