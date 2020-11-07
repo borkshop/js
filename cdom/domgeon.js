@@ -401,6 +401,24 @@ export class DOMgeon extends EventTarget {
     return null;
   }
 
+  /**
+   * @param {object} params
+   * @param {HTMLElement} [params.actor]
+   * @returns {void}
+   */
+  updateLighting({
+    actor = this.grid.queryTile({className: ['mover', 'input', 'focus']}) || undefined,
+  }) {
+    if (!actor) return; // TODO should we clear any prior?
+
+    const origin = this.grid.getTilePosition(actor);
+    updatePlayerFOV({
+      grid: this.grid,
+      origin,
+      lightInit: this.grid.getTileData(actor, 'lightInit') || 8,
+    });
+  }
+
   processInput() {
     let move = this.keys.consume()
       .map(([key, _count]) => this.parseButtonKey(key))
@@ -434,20 +452,12 @@ export class DOMgeon extends EventTarget {
         this.grid.setTileData(actor, 'move', move);
         moveTiles({grid: this.grid, kinds: this.moveProcs});
       }
-
-      const pos = this.grid.getTilePosition(actor);
-
-      // update FOV lighting
-      if (move || this.grid.getTileData(actor, 'light') === null) {
-        updatePlayerFOV({
-          grid: this.grid,
-          origin: pos,
-          lightInit: this.grid.getTileData(actor, 'lightInit') || 8,
-        });
-      }
+      if (move || this.grid.getTileData(actor, 'light') === null)
+        this.updateLighting({actor});
 
       // ensure viewport contains the active active player input
       const {x: vx, y: vy, w, h} = this.grid.viewport;
+      const pos = this.grid.getTilePosition(actor);
       if (!this.grid.hasFixedViewPoint() ||
           pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
         this.grid.viewPoint = pos;
