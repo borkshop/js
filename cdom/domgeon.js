@@ -413,9 +413,7 @@ export class DOMgeon extends EventTarget {
 
     const origin = this.grid.getTilePosition(actor);
     updatePlayerFOV({
-      grid: this.grid,
-      origin,
-      lightInit: this.grid.getTileData(actor, 'lightInit') || 8,
+      grid: this.grid, origin, source: actor,
     });
   }
 

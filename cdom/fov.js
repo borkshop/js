@@ -7,6 +7,7 @@
  * @param {object} params
  * @param {TileGrid} params.grid
  * @param {Point} params.origin
+ * @param {HTMLElement} [params.source]
  * @param {number} [params.lightInit] - initial lighting value, defaults to 8
  * @param {number} [params.lightMax] - upper lighting clamp
  * @param {number} [params.lightLimit] - light visibility threshold
@@ -14,10 +15,11 @@
  * @returns {void}
  */
 export function updatePlayerFOV({
-  grid, origin, filter,
-  lightInit=8.0,
+  grid, origin, source,
+  lightInit=(source && grid.getTileData(source, 'lightInit')) || 8,
   lightMax=1.0,
   lightLimit=0.000001,
+  filter,
 }) {
   /** @type {NodeListOf<HTMLElement>} */
   const priors = grid.el.querySelectorAll('.tile[data-light]');
