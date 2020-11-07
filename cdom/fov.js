@@ -18,9 +18,11 @@ export function updatePlayerFOV({
   grid, origin, source,
   lightInit=(source && grid.getTileData(source, 'lightInit')) || 8,
   lightMax=1.0,
-  lightLimit=0.000001,
+  lightLimit=0.00001,
   filter,
 }) {
+  const depthLimit = Math.sqrt(lightMax/lightLimit);
+
   /** @type {NodeListOf<HTMLElement>} */
   const priors = grid.el.querySelectorAll('.tile[data-light]');
   for (const tile of priors)
@@ -28,6 +30,7 @@ export function updatePlayerFOV({
       grid.setTileData(tile, 'light', null);
   computeFOV({
     origin,
+    depthLimit,
     query: (pos) => {
       const tiles = grid.tilesAt(pos);
       const present = filter ? tiles.filter(filter) : tiles;
