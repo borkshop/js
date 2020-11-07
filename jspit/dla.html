@@ -178,6 +178,13 @@
         .tile.particle      { z-index: 10 }
         .tile.particle.live { z-index: 100 }
         .tile.input         { z-index: 1000 }
+
+        .grid.playing .tile.particle[data-light] {
+          visibility: visible;
+          opacity: var(--light);
+        }
+        .grid.playing .tile.particle:not([data-light]) { visibility: hidden; }
+
       </style>
 
     </main>
@@ -226,6 +233,7 @@
       const world = new DLA(dmg);
       dmg.animParts.push(_ => {
         const playing = !!dmg.grid.queryTile({className: ['input', 'mover']});
+        dmg.grid.el.classList.toggle('playing', playing);
         if (dropPlayer) dropPlayer.disabled = playing;
         if (moveBar) moveBar.style.display = playing ? '' : 'none';
         if (particleID) particleID.innerText = world.particleID.toString();
