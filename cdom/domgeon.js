@@ -62,6 +62,7 @@ export function procInteraction(grid, interacts, subject) {
  * @returns {void}
  */
 function applyMorph(grid, tile, morph) {
+  if (!morph) return;
   if (Array.isArray(morph))
     for (const m of morph) grid.updateTile(tile, {classList: m});
   else if (typeof morph === 'string')

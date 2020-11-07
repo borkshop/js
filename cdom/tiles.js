@@ -408,8 +408,10 @@ export class TileGrid {
    */
   getTileData(tile, name) {
     let val = tile?.dataset[name];
-    if (val === undefined || val === '')
+    if (val === undefined || val === '') {
       val = getComputedStyle(tile).getPropertyValue(`--${name}`);
+      if (val === '') return null;
+    }
     if (val === undefined) return null;
     if (val === '') return '';
     try {
