@@ -418,6 +418,16 @@ export class DOMgeon extends EventTarget {
       actor = this.grid.queryTile({className: ['mover', 'input']});
       if (actor) actor.classList.add('focus');
     }
+    if (move && move.action?.startsWith('actor:')) {
+      const actorID = move.action.slice(6);
+      const newActor = this.grid.getTile(actorID);
+      if (newActor) {
+        newActor.classList.add('focus');
+        if (actor) actor.classList.remove('focus');
+        actor = newActor;
+      }
+      move = null;
+    }
 
     if (actor) {
       if (move) {
@@ -478,6 +488,17 @@ export class DOMgeon extends EventTarget {
     const actions = [];
 
     const actors = this.grid.queryTiles({className: ['mover', 'input']});
+    actions.push(...actors
+      .filter(actor => !actor.classList.contains('focus'))
+      .map(actor => {
+        const pos = this.grid.getTilePosition(actor);
+        const text = actor.innerText;
+        const actorID = this.grid.getTileID(actor);
+        return {
+          label: `Focus: ${text} <${pos.x},${pos.y}>`,
+          action: `actor:${actorID}`,
+        };
+      }));
 
     const actor = actors.filter(actor => actor.classList.contains('focus')).shift();
     if (actor) {
