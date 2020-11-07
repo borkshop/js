@@ -39,13 +39,12 @@ export function updatePlayerFOV({
       return {supported, blocked: !passable};
     },
     update: (pos, depth) => {
+      const light = Math.min(lightMax, lightInit/(depth*depth));
       const tiles = grid.tilesAt(pos);
       const present = filter ? tiles.filter(filter) : tiles;
-      for (const tile of present) {
-        const light = Math.min(lightMax, lightInit/(depth*depth));
+      for (const tile of present)
         if (light >= lightLimit)
           grid.setTileData(tile, 'light', light);
-      }
     },
   });
 }
