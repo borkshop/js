@@ -134,11 +134,12 @@
       dmg.grid.buildTile({
         pos: {x: 6, y: -8},
         kind: 'floor',
-        classList: ['rune', 'interact'],
+        classList: ['rune', 'interact', '-passable'],
         text: 'V',
         data: {
           name: 'void rune',
-          morph_subject: "+support",
+          morph_spawn: {kind: 'char', classList: ['mover', 'solid', 'input', 'support', 'focus'], text: '*'},
+          morph_subject: '-focus',
         },
       });
 
