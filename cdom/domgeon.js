@@ -410,8 +410,8 @@ export class DOMgeon extends EventTarget {
       const actors = this.grid.queryTiles({className: ['mover', 'input']});
       for (const mover of actors)
         this.grid.setTileData(mover, 'move', move);
+      moveTiles({grid: this.grid, kinds: this.moveProcs});
     }
-    moveTiles({grid: this.grid, kinds: this.moveProcs});
 
     // ensure viewport centered on player input(s)
     const c = centroid(this.grid.queryTiles({className: ['mover', 'input']})
