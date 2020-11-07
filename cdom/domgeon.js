@@ -436,6 +436,7 @@ export class DOMgeon extends EventTarget {
       actor = this.grid.queryTile({className: ['mover', 'input']});
       if (actor) actor.classList.add('focus');
     }
+    const moved = !!move;
     if (move && move.action?.startsWith('actor:')) {
       const actorID = move.action.slice(6);
       const newActor = this.grid.getTile(actorID);
@@ -452,7 +453,7 @@ export class DOMgeon extends EventTarget {
         this.grid.setTileData(actor, 'move', move);
         moveTiles({grid: this.grid, kinds: this.moveProcs});
       }
-      if (move || this.grid.getTileData(actor, 'light') === null)
+      if (moved || this.grid.getTileData(actor, 'light') === null)
         this.updateLighting({actor});
 
       // ensure viewport contains the active active player input
