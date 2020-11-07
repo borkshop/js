@@ -413,15 +413,18 @@ export class DOMgeon extends EventTarget {
         return {x: a.x + b.x, y: a.y + b.y};
       }, null);
 
-    const actors = this.grid.queryTiles({className: ['mover', 'input']});
-    const actor = actors[0]; // TODO actor selection
-
-    if (move) {
-      this.grid.setTileData(actor, 'move', move);
-      moveTiles({grid: this.grid, kinds: this.moveProcs});
+    let actor = this.grid.queryTile({className: ['mover', 'input', 'focus']});
+    if (!actor) {
+      actor = this.grid.queryTile({className: ['mover', 'input']});
+      if (actor) actor.classList.add('focus');
     }
 
     if (actor) {
+      if (move) {
+        this.grid.setTileData(actor, 'move', move);
+        moveTiles({grid: this.grid, kinds: this.moveProcs});
+      }
+
       const pos = this.grid.getTilePosition(actor);
 
       // update FOV lighting
