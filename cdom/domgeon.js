@@ -8,6 +8,7 @@ import {
 } from './tiles';
 import KeyCtl from './input';
 import {everyFrame, schedule} from './anim';
+import {updatePlayerFOV} from './fov';
 
 /** @typedef { import("./tiles").Point } Point */
 /** @typedef { import("./tiles").TileFilter } TileFilter */
@@ -416,6 +417,14 @@ export class DOMgeon extends EventTarget {
 
     if (actor) {
       const pos = this.grid.getTilePosition(actor);
+
+      // update FOV lighting
+      if (move || this.grid.getTileData(actor, 'light') === null) {
+        updatePlayerFOV({
+          grid: this.grid,
+          origin: pos,
+        });
+      }
 
       // ensure viewport contains the active active player input
       const {x: vx, y: vy, w, h} = this.grid.viewport;

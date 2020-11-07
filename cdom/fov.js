@@ -17,7 +17,7 @@ export function updatePlayerFOV({
   grid, origin, filter,
   lightInit=8.0,
   lightMax=1.0,
-  lightLimit=0.0001,
+  lightLimit=0.000001,
 }) {
   /** @type {NodeListOf<HTMLElement>} */
   const priors = grid.el.querySelectorAll('.tile[data-light]');
