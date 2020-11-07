@@ -1,4 +1,4 @@
-# 2020-11-05
+# 2020-11-06
 
 ## TODO
 
@@ -36,9 +36,27 @@
 
 ## Done
 
+Added basic player-centric FOV lighting, using the Symmetric Shadowcasting
+technique presented at 2020 roguecel: after every move, lighting gets
+recomputed into a `--light` variable on all visibly tiles from the player.
+Lighting diminishes using the inverse square rule, and starts 8x over-saturated
+to keep a 3-cell radius bright around the player.
+
+The FOV computation core can eventually be re-used for more lighting
+computation, like from environmental sources, with only a bit of TODO
+modification, and elaboration/integration around it.
+
+Other possibilities for next include:
+- using the FOV-lit cells to update player memory tiles that become visible if
+  not occluded by any currently visible tile
+- allowing light to transmit through the void when originating from a
+  self-supported tile (e.g. the void walking player)
+
+# 2020-11-05
+
 Now with even more use of CSS
 
-Reworked moement and interaction to be planar, no longer hardcoded to "solids"
+Reworked movement and interaction to be planar, no longer hardcoded to "solids"
 or "floors". This immediately simplified the colorboop and DLA demos a bit.
 
 Lofted domgeon's more specific `classList` mutation logic into `TileGrid`, and
@@ -55,7 +73,7 @@ In particular, doors are now just tiles that toggle their `passable` class;
 even the text label is carried on pseduo content attached to class.
 
 The first scene of the tutorial is now 90% complete: the player can walk to the
-`V` rune, get void walking ability (self-supporting movement), and the proceed
+`V` rune, get void walking ability (self-supporting movement), and then proceed
 to walk out the door to nowhere... and on!
 
 Oh the "void rune" is now literally drawn on to a floor tile, not its own
