@@ -406,19 +406,22 @@ export class DOMgeon extends EventTarget {
         return {x: a.x + b.x, y: a.y + b.y};
       }, null);
 
+    const actors = this.grid.queryTiles({className: ['mover', 'input']});
+    const actor = actors[0]; // TODO actor selection
+
     if (move) {
-      const actors = this.grid.queryTiles({className: ['mover', 'input']});
-      for (const mover of actors)
-        this.grid.setTileData(mover, 'move', move);
+      this.grid.setTileData(actor, 'move', move);
       moveTiles({grid: this.grid, kinds: this.moveProcs});
     }
 
-    // ensure viewport centered on player input(s)
-    const c = centroid(this.grid.queryTiles({className: ['mover', 'input']})
-      .map(input => this.grid.getTilePosition(input)));
-    const {x: vx, y: vy, w, h} = this.grid.viewport;
-    if (c.x <= vx || c.y <= vy || c.x+1 >= vx + w || c.y+1 >= vy + h)
-      this.grid.viewPoint = c;
+    if (actor) {
+      const pos = this.grid.getTilePosition(actor);
+
+      // ensure viewport contains the active active player input
+      const {x: vx, y: vy, w, h} = this.grid.viewport;
+      if (pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
+        this.grid.viewPoint = pos;
+    }
 
     // update dynamic action buttons
     if (this.actionBar) {
