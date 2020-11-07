@@ -36,6 +36,9 @@
 
 ## Done
 
+The FOV has rolled in: now used in both the DLA demo (when playing) and in the
+cdom template.
+
 Added basic player-centric FOV lighting, using the Symmetric Shadowcasting
 technique presented at 2020 roguecel: after every move, lighting gets
 recomputed into a `--light` variable on all visibly tiles from the player.
