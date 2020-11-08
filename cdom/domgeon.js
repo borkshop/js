@@ -377,15 +377,15 @@ export class DOMgeon extends EventTarget {
     this.ui.classList.toggle('running', true);
     this.keys.counting = true;
     this.dispatchEvent(new Event('start'));
+
+    const actor = this.focusedActor();
+    if (actor) this.updateActorView(actor);
+
     await everyFrame(schedule(
       () => !!this.running,
       {every: this.inputRate, then: () => {
         const actor = this.processInput();
-        if (actor) {
-          this.updateLighting({actor});
-          if (this.actionBar)
-            updateActionButtons(this.actionBar, this.collectActions(), this.keys);
-        }
+        if (actor) this.updateActorView(actor);
         return true;
       }},
       ...this.animParts
@@ -394,6 +394,21 @@ export class DOMgeon extends EventTarget {
     this.keys.counting = false;
     this.ui.classList.toggle('running', false);
     this.running = false;
+  }
+
+  /**
+   * @param {HTMLElement} actor
+   * @returns {void}
+   */
+  updateActorView(actor) {
+    const {x: vx, y: vy, w, h} = this.grid.viewport;
+    const pos = this.grid.getTilePosition(actor);
+    if (!this.grid.hasFixedViewPoint() ||
+        pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
+      this.grid.viewPoint = pos;
+    this.updateLighting({actor});
+    if (this.actionBar)
+      updateActionButtons(this.actionBar, this.collectActions(), this.keys);
   }
 
   /** @returns {HTMLElement|null} */
@@ -494,13 +509,6 @@ export class DOMgeon extends EventTarget {
       this.grid.setTileData(actor, 'move', move);
       moveTiles({grid: this.grid, kinds: this.moveProcs});
     }
-
-    // ensure viewport contains the active active player input
-    const {x: vx, y: vy, w, h} = this.grid.viewport;
-    const pos = this.grid.getTilePosition(actor);
-    if (!this.grid.hasFixedViewPoint() ||
-        pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
-      this.grid.viewPoint = pos;
 
     return actor;
   }
