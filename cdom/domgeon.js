@@ -52,7 +52,8 @@ export function procInteraction(grid, interacts, subject) {
   const spawn = grid.getTileData(interact, 'morph_spawn');
   if (spawn) {
     const kind = grid.getTileKind(interact);
-    grid.createTile({pos: at, kind, ...spawn});
+    const tile = grid.buildTile({pos: at, kind, ...spawn});
+    if (tile.id === subject.id) return true;
   }
 
   applyMorph(grid, interact, grid.getTileData(interact, 'morph_target'));
