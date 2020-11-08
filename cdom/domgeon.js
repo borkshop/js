@@ -362,6 +362,16 @@ export class DOMgeon extends EventTarget {
     this.running = false;
   }
 
+  /** @returns {HTMLElement|null} */
+  focusedActor() {
+    let actor = this.grid.queryTile({className: ['mover', 'input', 'focus']});
+    if (!actor) {
+      actor = this.grid.queryTile({className: ['mover', 'input']});
+      if (actor) actor.classList.add('focus');
+    }
+    return actor;
+  }
+
   /**
    * @param {HTMLElement} interact
    * @returns {string}
@@ -429,11 +439,7 @@ export class DOMgeon extends EventTarget {
         return {x: a.x + b.x, y: a.y + b.y};
       }, null);
 
-    let actor = this.grid.queryTile({className: ['mover', 'input', 'focus']});
-    if (!actor) {
-      actor = this.grid.queryTile({className: ['mover', 'input']});
-      if (actor) actor.classList.add('focus');
-    }
+    let actor = this.focusedActor();
     const moved = !!move;
     if (move && move.action?.startsWith('actor:')) {
       const actorID = move.action.slice(6);
