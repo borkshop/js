@@ -185,6 +185,32 @@ function updateButton(button, {label, legend, title}) {
 }
 
 /**
+ * @param {HTMLElement} cont
+ * @param {{action:string, label:string}[]} actions
+ * @param {EventListenerOrEventListenerObject} handler
+ * @returns {void}
+ */
+function updateActionButtons(cont, actions, handler) {
+  /** @type {NodeListOf<HTMLButtonElement>} */
+  const buttons = cont.querySelectorAll('button[data-action]');
+  for (let i=0; i<buttons.length || i<actions.length; i++) {
+    let button = buttons[i];
+    if (actions[i] === undefined) {
+      button.parentNode?.removeChild(button);
+      continue;
+    }
+    const {action, label} = actions[i];
+    if (button === undefined) {
+      const key = i < 10 ? `${i+1}` : undefined;
+      button = createButton({cont, handler, key, label});
+    } else if (button.dataset['action'] !== action || button.innerText !== label) {
+      updateButton(button, {label});
+    } else continue;
+    button.dataset['action'] = action;
+  }
+}
+
+/**
  * A move has a spatial component and an optional action string.
  * The action string may be used to define custom extensions or to otherwise
  * change the semantics of the x,y spatial component.
@@ -353,7 +379,15 @@ export class DOMgeon extends EventTarget {
     this.dispatchEvent(new Event('start'));
     await everyFrame(schedule(
       () => !!this.running,
-      {every: this.inputRate, then: () => { this.processInput(); return true }},
+      {every: this.inputRate, then: () => {
+        const actor = this.processInput();
+        if (actor) {
+          this.updateLighting({actor});
+          if (this.actionBar)
+            updateActionButtons(this.actionBar, this.collectActions(), this.keys);
+        }
+        return true;
+      }},
       ...this.animParts
     ));
     this.dispatchEvent(new Event('stop'));
@@ -427,6 +461,9 @@ export class DOMgeon extends EventTarget {
     });
   }
 
+  /**
+   * @returns {null|HTMLElement}
+   */
   processInput() {
     let move = this.keys.consume()
       .map(([key, _count]) => this.parseButtonKey(key))
@@ -438,7 +475,7 @@ export class DOMgeon extends EventTarget {
         if (b.action) return b;
         return {x: a.x + b.x, y: a.y + b.y};
       }, null);
-    if (!move) return;
+    if (!move) return null;
 
     let actor = this.focusedActor();
     if (move && move.action?.startsWith('actor:')) {
@@ -451,7 +488,7 @@ export class DOMgeon extends EventTarget {
       }
       move = null;
     }
-    if (!actor) return;
+    if (!actor) return null;
 
     if (move) {
       this.grid.setTileData(actor, 'move', move);
@@ -462,39 +499,10 @@ export class DOMgeon extends EventTarget {
     const {x: vx, y: vy, w, h} = this.grid.viewport;
     const pos = this.grid.getTilePosition(actor);
     if (!this.grid.hasFixedViewPoint() ||
-      pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
+        pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
       this.grid.viewPoint = pos;
 
-    this.updateLighting({actor});
-
-    // update dynamic action buttons
-    if (this.actionBar) {
-      const actions = this.collectActions();
-
-      /** @type {NodeListOf<HTMLButtonElement>} */
-      const buttons = this.actionBar.querySelectorAll('button[data-action]');
-
-      for (let i=0; i<buttons.length || i<actions.length; i++) {
-        let button = buttons[i];
-        if (actions[i] === undefined) {
-          button.parentNode?.removeChild(button);
-          continue;
-        }
-        const {action, label} = actions[i];
-
-        if (button === undefined) {
-          button = createButton({
-            cont: this.actionBar,
-            handler: this.keys,
-            key: i < 10 ? `${i+1}` : undefined,
-            label,
-          });
-        } else if (button.dataset['action'] !== action || button.innerText !== label) {
-          updateButton(button, {label});
-        } else continue;
-        button.dataset['action'] = action;
-      }
-    }
+    return actor;
   }
 
   collectActions() {
