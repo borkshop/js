@@ -100,7 +100,11 @@ export default class DLA {
     this.dmg = dmg;
     dmg.animParts.push({
       every: () => this.stepRate(),
-      then: n => { this.stepN(n); return true },
+      then: n => {
+        this.stepN(n);
+        this.dmg.updateLighting();
+        return true;
+      },
     });
     this.reset();
   }
@@ -147,12 +151,13 @@ export default class DLA {
   }
 
   dropPlayer() {
-    this.dmg.grid.createTile({
+    const actor = this.dmg.grid.createTile({
       kind: 'mover',
       classList: 'input',
       pos: this.config.seeds[0],
       text: '@',
     });
+    this.dmg.updateLighting({actor});
   }
 
   *chooseVoid() {
