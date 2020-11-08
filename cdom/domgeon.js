@@ -11,6 +11,7 @@ import {everyFrame, schedule} from './anim';
 import {updatePlayerFOV} from './fov';
 
 /** @typedef { import("./tiles").Point } Point */
+/** @typedef { import("./tiles").Rect } Rect */
 /** @typedef { import("./tiles").TileFilter } TileFilter */
 /** @typedef { import("./tiles").TileMoverProc } TileMoverProc */
 /** @typedef { import("./tiles").TileSpec } TileSpec */
@@ -426,15 +427,31 @@ export class DOMgeon extends EventTarget {
   }
 
   /**
+   * Computes any newly desired grid viewPoint to (re)-center upon given the
+   * position of the currently focused actor. The default nudges the view just
+   * in time so that all adjacent cells are within view. May be overridden with
+   * something as simple as `pos => pos` to constantly re-center on the current
+   * actor.
+   *
+   * @param {Point} pos - position of the currently focused actor
+   * @param {Rect} viewport - current viewport rectangle in tile space
+   * @returns {null|Point} - null for no change, or a new viewPoint
+   */
+  wantedViewPoint(pos, {x: vx, y: vy, w, h}) {
+    if (pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
+      return pos;
+    return null;
+  }
+
+  /**
    * @param {HTMLElement} actor
    * @returns {void}
    */
   updateActorView(actor) {
-    const {x: vx, y: vy, w, h} = this.grid.viewport;
     const pos = this.grid.getTilePosition(actor);
-    if (!this.grid.hasFixedViewPoint() ||
-        pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
-      this.grid.viewPoint = pos;
+    const wanted = this.wantedViewPoint(pos, this.grid.viewport);
+    if (wanted) this.grid.viewPoint = wanted;
+    else if (this.grid.hasFixedViewPoint()) = this.grid.viewPoint = pos;
     this.updateLighting({actor});
     if (this.actionBar)
       updateActionButtons(this.actionBar, this.collectActions(), this.keys);
