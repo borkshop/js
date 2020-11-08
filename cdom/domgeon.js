@@ -402,6 +402,45 @@ export class DOMgeon extends EventTarget {
   /** @type {import('./anim').SchedulePart[]} */
   animParts = []
 
+  /**
+   * Sets a goal point for viewport animation to re-center upon, superceding
+   * any previous goal point. The animation takes plaec over the next t time,
+   * defaulting to 100ms.
+   *
+   * @param {Point} to - new grid viewPoint
+   * @param {number} t - how long the animation should take
+   * @returns {void}
+   */
+  viewTo(to, t=100) {
+    if (this.grid.hasFixedViewPoint()) {
+      const at = this.grid.viewPoint;
+      if (at.x === to.x && at.y === to.y) return;
+    }
+    this._viewAnim = {t, to};
+  }
+
+  /** @type {null|{t:number,to:Point}} */
+  _viewAnim = null
+
+  /**
+   * @param {number} dt
+   * @returns {void}
+   */
+  _animView(dt) {
+    if (!this._viewAnim) return;
+    const {t, to} = this._viewAnim;
+    let p = dt/t;
+    if (p >= 1) {
+      p = 1;
+      this._viewAnim = null;
+    }
+    const at = this.grid.viewPoint;
+    this.grid.viewPoint = {
+      x: at.x * (1 - p) + p * to.x,
+      y: at.y * (1 - p) + p * to.y,
+    };
+  }
+
   async start() {
     this.running = true;
     this.ui.classList.toggle('running', true);
@@ -416,6 +455,10 @@ export class DOMgeon extends EventTarget {
       () => {
         const actor = this.processInput();
         if (actor) this.updateActorView(actor);
+        return true;
+      },
+      (dt) => {
+        this._animView(dt);
         return true;
       },
       ...this.animParts,
@@ -450,8 +493,8 @@ export class DOMgeon extends EventTarget {
   updateActorView(actor) {
     const pos = this.grid.getTilePosition(actor);
     const wanted = this.wantedViewPoint(pos, this.grid.viewport);
-    if (wanted) this.grid.viewPoint = wanted;
-    else if (this.grid.hasFixedViewPoint()) = this.grid.viewPoint = pos;
+    if (wanted) this.viewTo(wanted);
+    else if (!this.grid.hasFixedViewPoint()) this.viewTo(pos);
     this.updateLighting({actor});
     if (this.actionBar)
       updateActionButtons(this.actionBar, this.collectActions(), this.keys);
