@@ -23,7 +23,6 @@ import {updatePlayerFOV} from './fov';
  * @prop {HTMLElement} [actionBar] - element under which to add action buttons
  * @prop {HTMLElement} [ui] - document element to toggle UI state classes upon
  * @prop {HTMLElement} [keys] - document element to listen for key events upon
- * @prop {number} [inputRate=100] - how often to process key events, defaults to 100ms or 10hz
  */
 
 /**
@@ -237,9 +236,6 @@ export class DOMgeon extends EventTarget {
   /** @type {KeyCtl} */
   keys
 
-  /** @type {number} */
-  inputRate
-
   /** @type {boolean} */
   running = false
 
@@ -271,14 +267,10 @@ export class DOMgeon extends EventTarget {
 
       // TODO should the default be more like ownerDocument.body?
       keys = ui,
-
-      // config
-      inputRate = 100,
     } = options;
     this.actionBar = actionBar || null;
     this.moveBar = moveBar || null;
     this.ui = ui;
-    this.inputRate = inputRate;
 
     this.grid = new TileGrid(grid);
     this.grid.viewPoint = centroid(this.grid.queryTiles({className: ['mover', 'input']})
@@ -383,12 +375,12 @@ export class DOMgeon extends EventTarget {
 
     await everyFrame(schedule(
       () => !!this.running,
-      {every: this.inputRate, then: () => {
+      () => {
         const actor = this.processInput();
         if (actor) this.updateActorView(actor);
         return true;
-      }},
-      ...this.animParts
+      },
+      ...this.animParts,
     ));
     this.dispatchEvent(new Event('stop'));
     this.keys.counting = false;
@@ -480,8 +472,8 @@ export class DOMgeon extends EventTarget {
    * @returns {null|HTMLElement}
    */
   processInput() {
-    let move = this.keys.consume()
-      .map(([key, _count]) => this.parseButtonKey(key))
+    let move = Array.from(this.keys.consume() || [])
+      .map(key => this.parseButtonKey(key))
       .reduce((a, b) => {
         // TODO afford action-aware merge, e.g. a priority (partial) ordering
         if (!b) return a;

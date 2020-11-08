@@ -15,15 +15,15 @@ function mappedKeyName(ev) {
     key}`;
 }
 
-/**
- * @extends {Map<string, number>}
- */
-export default class KeyCtl extends Map {
+export default class KeyCtl {
+  held = new Set()
+  chord = new Set()
+  clicked = new Set()
+
   /**
    * @param {?EventTarget} target
    */
   constructor(target=null) {
-    super();
     if (target) {
       target.addEventListener('keydown', this);
       target.addEventListener('keyup', this);
@@ -80,8 +80,7 @@ export default class KeyCtl extends Map {
         }
 
         if (this.counting) {
-          const n = this.get(name) || 0;
-          this.set(name, n+2);
+          this.clicked.add(name);
           event.stopPropagation();
           event.preventDefault();
           return;
@@ -103,12 +102,25 @@ export default class KeyCtl extends Map {
       }
 
       // consume the key up/downs event if we're counting
-      if (this.counting && (type === 'keyup' || type === 'keydown')) {
+      if (this.counting) {
         const name = mappedKeyName(event);
-        const n = this.get(name) || 0;
-        this.set(name, n+1);
-        event.stopPropagation();
-        event.preventDefault();
+        switch (type) {
+
+        case 'keyup':
+          this.held.delete(name);
+          this.chord.add(name);
+          event.stopPropagation();
+          event.preventDefault();
+          break;
+
+        case 'keydown':
+          this.chord.clear();
+          this.held.add(name);
+          event.stopPropagation();
+          event.preventDefault();
+          break;
+
+        }
       }
       return;
     }
@@ -118,21 +130,14 @@ export default class KeyCtl extends Map {
    * Consumes whole key presses, returning a list of unique keys pressed since
    * last consume(), along with a >=1 count.
    *
-   * @typedef {Array<[string, number]>} Presses
-   * @return {Presses}
+   * @return {null|Set<string>}
    */
   consume() {
-    /** @type Presses */
-    const presses = [];
-    for (const [name, count] of Array.from(this.entries())) {
-      const n = Math.floor(count / 2);
-      if (n > 0) {
-        const d = count % 2;
-        if (d == 0) this.delete(name);
-        else        this.set(name, 1);
-        presses.push([name, n]);
-      }
-    }
-    return presses;
+    if (this.held.size) return null;
+    if (!(this.chord.size + this.clicked.size)) return null;
+    const chord = new Set([...this.chord, ...this.clicked]);
+    this.chord.clear();
+    this.clicked.clear();
+    return chord;
   }
 }
