@@ -1,4 +1,4 @@
-# 2020-11-06
+# 2020-11-07
 
 ## TODO
 
@@ -32,9 +32,53 @@
 
 - domgeon
   - dialog support to inform / hint the user
-  - generalize "support" concept ala "floor" prior hardcode
 
 ## Done
+
+Many actors, Such input
+
+Solidified the latent support for multiple input-tagged movers (player actors):
+one is tagged with `.focus`, controlled by movement input, and is the anchor
+for adjacent interactions. The others get additional "Focus Me" actions,
+allowing the player to cycle between them.
+
+To exercise this, added added spawning support to the morphic interaction deal:
+now an interactable tile may react by spawning a new tile upon itself. So now
+the demo `V` tile works by: spawning a new focused actor, and removing focus
+from the subject actor that triggered it. These new actors are tagged as self
+supporting `*`s which can venture forth into the void, while the original
+player `@` remains safe in the rune room.
+
+After sharing with the RL dev discord, @ddmills pointed out how laggy the input
+felt. While at first I chalked it up to "eh, their machine must be slow?", that
+didn't seem quite right... I later realized (while out on a walk, like you do)
+that it was due to the old static 10hz input consumption / key counting
+mechanism.
+
+Now, the old 10hz key counter was already slated for reconsideration, since it
+had terrible trailing edge behavior (when two key releases would race for, and
+sometimes straddle a 100ms interval)...
+
+But it was only on this fateful walk that I realized: "can you just track the
+held button set, and trigger a chord after the last one is released? And reset
+the chord set upon key down, to allow for amendments after the first held key?"
+
+Try it out:
+- hold `Up`, press `Left` -- the pending chord is now `UpLeft`, but does not
+  yet trigger because `Up` is still held
+- ... press `Right` -- the pending chord is now `UpRight`, but still does not
+  trigger until:
+- ... release `Up` -- now now key is held, so flush and process the chord
+
+This turns out to be immediately more responsive and accurate for ADOM style
+diagonal moves. Some points to look into going forward:
+- cancel when an annihilator key is pressed `Esc` or the "stay" key
+- how about non movement chording? e.g. directional shooting?
+- how about non keyboard ui, like mobile? how bad would it be to make the
+  `<button>`s sticky, so they stay depressed until tapped again, synthesizing
+  our own up/down scheme?
+
+# 2020-11-06
 
 The FOV has rolled in: now used in both the DLA demo (when playing) and in the
 cdom template.
