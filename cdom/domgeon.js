@@ -454,13 +454,13 @@ export class DOMgeon extends EventTarget {
   }
 
   /**
-   * @param {object} params
+   * @param {object} [params]
    * @param {HTMLElement} [params.actor]
    * @returns {void}
    */
   updateLighting({
     actor = this.grid.queryTile({className: ['mover', 'input', 'focus']}) || undefined,
-  }) {
+  }={}) {
     if (!actor) return; // TODO should we clear any prior?
 
     const origin = this.grid.getTilePosition(actor);
