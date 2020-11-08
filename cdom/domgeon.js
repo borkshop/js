@@ -211,6 +211,42 @@ function updateActionButtons(cont, actions, handler) {
 }
 
 /**
+ * @param {string} key
+ * @param {NodeListOf<HTMLButtonElement>} buttons
+ * @returns {null|Move}
+ */
+function parseButtonKey(key, buttons) {
+  for (const button of buttons) {
+    if (key === button.dataset['key']) {
+      /** @type {Move} */
+      const move = {x: NaN, y: NaN};
+      const dir = button.dataset['movedir'];
+      if (dir) {
+        const parts = dir.split(',');
+        move.x = parseFloat(parts[0]);
+        move.y = parseFloat(parts[1]);
+      }
+      const action = button.dataset['action'];
+      if (action) move.action = action;
+      return move;
+    }
+  }
+  return null;
+}
+
+/**
+ * @param {TileGrid} grid
+ * @param {HTMLElement} tile
+ * @returns {string}
+ */
+function actionLabel(grid, tile) {
+  const kind = grid.getTileKind(tile, 'interact') || 'interact';
+  const name = grid.getTileData(tile, 'name') || kind;
+  const action = grid.getTileData(tile, 'action');
+  return `${action || 'use'} ${name}`;
+}
+
+/**
  * A move has a spatial component and an optional action string.
  * The action string may be used to define custom extensions or to otherwise
  * change the semantics of the x,y spatial component.
@@ -415,45 +451,6 @@ export class DOMgeon extends EventTarget {
   }
 
   /**
-   * @param {HTMLElement} interact
-   * @returns {string}
-   */
-  actionLabel(interact) {
-    const kind = this.grid.getTileKind(interact, 'interact') || 'interact';
-    const name = this.grid.getTileData(interact, 'name') || kind;
-    const action = this.grid.getTileData(interact, 'action');
-    return `${action || 'use'} ${name}`;
-  }
-
-  /**
-   * @param {string} key
-   * @returns {Move|null}
-   */
-  parseButtonKey(key) {
-    /** @type {NodeListOf<HTMLButtonElement>} */
-    const buttons = this.ui.querySelectorAll('button[data-key]');
-    for (const button of buttons) {
-      if (key === button.dataset['key']) {
-        /** @type {Move} */
-        const move = {x: NaN, y: NaN};
-
-        const dir = button.dataset['movedir'];
-        if (dir) {
-          const parts = dir.split(',');
-          move.x = parseFloat(parts[0]);
-          move.y = parseFloat(parts[1]);
-        }
-
-        const action = button.dataset['action'];
-        if (action) move.action = action;
-
-        return move;
-      }
-    }
-    return null;
-  }
-
-  /**
    * @param {object} [params]
    * @param {HTMLElement} [params.actor]
    * @returns {void}
@@ -474,7 +471,11 @@ export class DOMgeon extends EventTarget {
    */
   processInput() {
     let move = Array.from(this.keys.consume() || [])
-      .map(key => this.parseButtonKey(key))
+      .map(key => {
+        /** @type {NodeListOf<HTMLButtonElement>} */
+        const buttons = this.ui.querySelectorAll('button[data-key]');
+        return parseButtonKey(key, buttons);
+      })
       .reduce((a, b) => {
         // TODO afford action-aware merge, e.g. a priority (partial) ordering
         if (!b) return a;
@@ -548,9 +549,9 @@ export class DOMgeon extends EventTarget {
       // TODO directional de-dupe: e.g. open door x2 ... W / E, or Left / Right
 
       actions.push(...interacts.map(interact => {
-        const label = this.actionLabel(interact);
         const tileID = this.grid.getTileID(interact);
         const action = `interact:tile:${tileID}`;
+        const label = actionLabel(this.grid, interact);
         return {action, label};
       }));
     }
