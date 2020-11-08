@@ -1,20 +1,5 @@
 // @ts-check
 
-/**
- * @param {KeyboardEvent} ev
- * @return {string} - a string representing a key event with A- C- M- and S-
- * prefixes for alt, control, meta, and shift modifiers.
- */
-function mappedKeyName(ev) {
-  const {altKey, ctrlKey, metaKey, shiftKey, key} = ev;
-  return `${
-    altKey ? 'A-' : ''}${
-    ctrlKey ? 'C-' : ''}${
-    metaKey ? 'M-' : ''}${
-    shiftKey ? 'S-' : ''}${
-    key}`;
-}
-
 export default class KeyCtl {
   held = new Set()
   chord = new Set()
@@ -103,19 +88,21 @@ export default class KeyCtl {
 
       // consume the key up/downs event if we're counting
       if (this.counting) {
-        const name = mappedKeyName(event);
-        switch (type) {
+        if (['control', 'shift', 'alt', 'meta'].includes(key.toLowerCase())) {
+          event.stopPropagation();
+          event.preventDefault();
+        } else switch (type) {
 
         case 'keyup':
-          this.held.delete(name);
-          this.chord.add(name);
+          this.held.delete(key);
+          this.chord.add(key);
           event.stopPropagation();
           event.preventDefault();
           break;
 
         case 'keydown':
           this.chord.clear();
-          this.held.add(name);
+          this.held.add(key);
           event.stopPropagation();
           event.preventDefault();
           break;
