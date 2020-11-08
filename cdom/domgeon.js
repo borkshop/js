@@ -438,9 +438,9 @@ export class DOMgeon extends EventTarget {
         if (b.action) return b;
         return {x: a.x + b.x, y: a.y + b.y};
       }, null);
+    if (!move) return;
 
     let actor = this.focusedActor();
-    const moved = !!move;
     if (move && move.action?.startsWith('actor:')) {
       const actorID = move.action.slice(6);
       const newActor = this.grid.getTile(actorID);
@@ -451,22 +451,21 @@ export class DOMgeon extends EventTarget {
       }
       move = null;
     }
+    if (!actor) return;
 
-    if (actor) {
-      if (move) {
-        this.grid.setTileData(actor, 'move', move);
-        moveTiles({grid: this.grid, kinds: this.moveProcs});
-      }
-      if (moved || this.grid.getTileData(actor, 'light') === null)
-        this.updateLighting({actor});
-
-      // ensure viewport contains the active active player input
-      const {x: vx, y: vy, w, h} = this.grid.viewport;
-      const pos = this.grid.getTilePosition(actor);
-      if (!this.grid.hasFixedViewPoint() ||
-          pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
-        this.grid.viewPoint = pos;
+    if (move) {
+      this.grid.setTileData(actor, 'move', move);
+      moveTiles({grid: this.grid, kinds: this.moveProcs});
     }
+
+    // ensure viewport contains the active active player input
+    const {x: vx, y: vy, w, h} = this.grid.viewport;
+    const pos = this.grid.getTilePosition(actor);
+    if (!this.grid.hasFixedViewPoint() ||
+      pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
+      this.grid.viewPoint = pos;
+
+    this.updateLighting({actor});
 
     // update dynamic action buttons
     if (this.actionBar) {
