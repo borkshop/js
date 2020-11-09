@@ -1,4 +1,4 @@
-# 2020-11-08
+# 2020-11-09
 
 ## TODO
 
@@ -34,6 +34,11 @@
   - dialog support to inform / hint the user
 
 ## Done
+
+- fixed overly jumpy `DOMgeon` viewport animations by dropping the floor from
+  `TileGrid.viewOffset` updates
+
+# 2020-11-08
 
 Viewport animation and extension points
 
