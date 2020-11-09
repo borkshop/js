@@ -1,4 +1,4 @@
-# 2020-11-07
+# 2020-11-08
 
 ## TODO
 
@@ -34,6 +34,47 @@
   - dialog support to inform / hint the user
 
 ## Done
+
+Viewport animation and extension points
+
+Inspired by Sunday borkshop congress, made it so that moves of the domgeon
+viewport are animated (simple LERP for now). Also factored out the viewport
+recentering logic into a method that can be easily overridden by a DM.
+
+Added two other DM extension points:
+- a `"move"` event that fires after player input has been registered, but
+  before it's processed, giving an AI system a chance to register other moves;
+  this won't suit for a multiplayer system, since an event handler cannot block
+  movement application until other moves are available, but it should do for
+  locally computable movement choices
+- a "view" event that fires right after the grid view has just been update
+  (e.g. after lighting update and any viewport re-centering); this hook could
+  be used to update other custom systems, and should be able to serve as the
+  basis for an infinite-space procgen to build tiles right before the viewport
+  shifts
+
+# Week Ending 2020-11-07
+
+- added ability for interactable tiles to spawn a new tile
+- added focus control when multiple actors are present
+- reworked the input system to be button-oriented, encompassing clicks, and to
+  process chords of keys upon final key release, rather than the prior 10hz
+  static processing rate
+- added player-centric FOV lighting based on shadowcasting
+- keyctl now processes mouse events
+- input chording
+- input handling defined by buttons
+- buttons: move bar and action bar
+- generalized movement and interaction semantics, no more hardcoded concept of
+  a "floor"
+- interactions can now be purely coded in CSS variables, doors exhibit this via
+  stylesheet rules, and the void runes exhibits it via inline styles
+- ported remnant jspit DLA and colorboop demos to use domgeon directly,
+  reducing externally used cdom surface area for refactoring, and further
+  simplifying the demos
+- added click-to-pin behavior to the domgeon inspector
+
+## 2020-11-07
 
 Many actors, Such input
 
@@ -78,7 +119,7 @@ diagonal moves. Some points to look into going forward:
   `<button>`s sticky, so they stay depressed until tapped again, synthesizing
   our own up/down scheme?
 
-# 2020-11-06
+## 2020-11-06
 
 The FOV has rolled in: now used in both the DLA demo (when playing) and in the
 cdom template.
@@ -99,7 +140,7 @@ Other possibilities for next include:
 - allowing light to transmit through the void when originating from a
   self-supported tile (e.g. the void walking player)
 
-# 2020-11-05
+## 2020-11-05
 
 Now with even more use of CSS
 
@@ -126,7 +167,7 @@ to walk out the door to nowhere... and on!
 Oh the "void rune" is now literally drawn on to a floor tile, not its own
 separate tile, to demonstrate that possibility.
 
-# 2020-11-04
+## 2020-11-04
 
 Completed rework of input handling to be defined by, and accept clicks of,
 button elements. Movement is now defined by a set of static buttons, with
@@ -144,7 +185,7 @@ Other future ideas:
 - could eventually support clicking of more than just buttons, like say
   directly clicking a tile to move
 
-# 2020-11-03
+## 2020-11-03
 
 Had realization that `<button>` elements may suffice for input configuration:
 user can add buttons, domgeon can create add defaults if none exist, either way
@@ -171,14 +212,14 @@ Will likely do something something similar to `.passable` to generalize the
 space-defining nature of floor tiles, instead making them `.support` for their
 plane.
 
-# 2020-11-02
+## 2020-11-02
 
 - jspit
   - ported DLA to also use DOMgeon, and translated it from TS to JS
   - ported colorboop to domgeon morphs interactions, eliminating its external
     (type)script, further exercising higher level cdom code
 
-# 2020-11-01
+## 2020-11-01
 
 - prototyped actionbar based interaction
 - improved the domgeon inspector to support click-to-pin with details
@@ -226,7 +267,7 @@ called Physarum:
 - but it may provide a useful procgen setting eventually, especially if
   iterated infrequently, or out-of-dom for better performance
 
-# 2020-10-31
+## 2020-10-31
 
 - finished initial cut of "morphic interaction" system:
   - tiles may now be tagged `.interact` and carry `"morph_target"` and
@@ -243,11 +284,11 @@ called Physarum:
 - finished initial tile shader oriented builder module, now used to build build
   two rooms connect by a hallway and doors
 
-# 2020-10-30
+## 2020-10-30
 
 - started development of door interaction and room buiilder code
 
-# 2020-10-29
+## 2020-10-29
 
 - explored further options in physarum design space, like a variable decay
   field, but decided to set that line of polish work aside for now
@@ -256,7 +297,7 @@ called Physarum:
 - improved DLA's player viewport scrolling
 - fixed initial overly eager input capture
 
-# 2020-10-28
+## 2020-10-28
 
 - spent a lot of time watching and tuning physarim settings: found that if you
   widen the sensor spread, but tighten its turning range, it presents much more
@@ -267,7 +308,7 @@ called Physarum:
   movement/deposition scheme
 - translated jspit `particels` and `config` modules to proper js
 
-# 2020-10-27
+## 2020-10-27
 
 - dropped ultra-modern private `#field` notation for better compatibility with
   things like FireFox
@@ -277,7 +318,7 @@ called Physarum:
   - TODO read the original <https://uwe-repository.worktribe.com/output/980579>
     for more ideas
 
-# 2020-10-26
+## 2020-10-26
 
 Started a local/uncommitted Physarum prototype: got diffusion and decay
 working, before getting hung up on heading trig vs coordinate system bugs.
@@ -435,13 +476,13 @@ So in summary, what we now have:
     can eventually accrete things like: spawning routines adapted from the DLA
     demo and aceelerated/out-of-DOM versions for procgen
 
-# 2020-10-24
+## 2020-10-24
 
 - wrote a weekly stream summary
 - stored the jspit "game" TODOs down in a new stream Basement section; calling
   DLA "done for now ™"
 
-# 2020-10-23
+## 2020-10-23
 
 - domgeon
   - reified everything to expose an object off which custom DM logic may hang
@@ -449,7 +490,7 @@ So in summary, what we now have:
 - tiles
   - provide auto generated tile ids, easing domgeon inline creation scripts
 
-# 2020-10-22
+## 2020-10-22
 
 - wrote a small domgeon skeleton with a hardcoded 5x5 room
 - added `TileGrid` support for pre-existing tiles
@@ -461,7 +502,7 @@ So in summary, what we now have:
 - tried a last few tricks for initial DLA void point selection, without much
   result other than a `mortonCompact1` function
 
-# 2020-10-21
+## 2020-10-21
 
 - factored out particles module with the core underlying update logic from the
   DLA demo
@@ -473,7 +514,7 @@ So in summary, what we now have:
   - refactored viewport management, reducing surface are, and adding resize
     handling to keep the requested point centered
 
-# 2020-10-20
+## 2020-10-20
 
 - moved deployment to vercel, dropping version display for now
 - dropped lit-html dependency; generalized dla's inspector dumping, but decided
@@ -484,7 +525,7 @@ So in summary, what we now have:
 - factored out general move processing routine into tiles module
 - de-objectified ColorBoop
 
-# 2020-10-19
+## 2020-10-19
 
 - TileGrid
   - expanded inspector so that it can be toggled on and off after creation
@@ -499,7 +540,9 @@ So in summary, what we now have:
     particles would drag down that side's final count
   - dropped toroidal topology in lieu of just step-expiring  particles
 
-# 2020-10-17
+# Pre history
+
+## 2020-10-17
 
 - added latest verion detection and link display to all pages
 - read <http://paulbourke.net/fractals/dla/> for more background and
@@ -534,13 +577,13 @@ We can:
   0.9100805259796224
 ```
 
-# 2020-10-16
+## 2020-10-16
 
 - fixed DLA demo to actually do DLA, preserving the random walker behavior as
   well
 - revamped and generalized settings module
 
-# 2020-10-15
+## 2020-10-15
 
 - added initial heading controls for DLA particles
 - fixed DLA particle movement: particels now take on fractional positions, but
@@ -550,7 +593,7 @@ We can:
 - Sketched a new page-module pattern around bindings and state
 - Improved menu system, no longer just modal, with a shared ui bindings module
 
-# 2020-10-14
+## 2020-10-14
 
 - fully erased the `Sim` abstraction from `ColorBoop`; TODO follow through with
   DLA tomorrow, then drop the `sim` module
@@ -559,19 +602,19 @@ We can:
 - started disaggregating modules, broke out `input`, `tiles`, `anim`, `state`,
   `sim`, `dla`, and `colorboop` modules
 
-# 2020-10-13
+## 2020-10-13
 
 - refactored `Sim` plumbing to decouple from the multi-Scenario demo use case
 - revamped `DLA` settings, now persisted through location hash
 
-# 2020-10-12
+## 2020-10-12
 
 - emptied out old jcorbin rep with a notice, stil publishing built game to
   jcorbin github pages
 - switched fully to snowpack and ESNext standards
 - moved into brave new borkshop monorepo
 
-# 2020-10-09
+## 2020-10-09
 
 - added player drop and dig to DLA demo
 - improved DLA turning arc: dual ended control
@@ -579,7 +622,7 @@ We can:
 - added a morton-curve spatial index to TileGrid
 - added tile inspection support to Sim/Scenario, example use in ColorBoop
 
-# 2020-10-08
+## 2020-10-08
 
 - wrote a DLA demo, which was a great way to furher experiment with modal UI,
   and also quickly hit the limits of the current brute force spatial query (guess)
@@ -591,7 +634,7 @@ We can:
 - factored out TileGrid to reify the grid sketched yesterday
 - sorted out details for building and pushing to github pages
 
-# 2020-10-07
+## 2020-10-07
 
 - NOTE: current plan is to code from the bottom-up or outside-in, while
   continuing to ruminate on and expand design thoughts here in markdown land.
@@ -606,7 +649,7 @@ We can:
   <https://eager.io/blog/communicating-between-javascript-and-css-with-css-variables/>
   via @kris, built a minimal infinite-scrolling CSS tile grid
 
-# 2020-10-06
+## 2020-10-06
 
 - more ecs and other lore research
   - NOTE ape-ecs seems designed around a mono world... `world.registerCopmonet`
@@ -616,7 +659,7 @@ We can:
 - starting collecting resources at top
 - digested thoughts on ape-ecs below
 
-# 2020-10-05
+## 2020-10-05
 
 - wrote down some scant design notes into ios note app
 
