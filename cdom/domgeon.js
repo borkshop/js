@@ -498,6 +498,7 @@ export class DOMgeon extends EventTarget {
     this.updateLighting({actor});
     if (this.actionBar)
       updateActionButtons(this.actionBar, this.collectActions(), this.keys);
+    this.dispatchEvent(new Event('view'));
   }
 
   /** @returns {HTMLElement|null} */
