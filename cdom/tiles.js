@@ -180,8 +180,8 @@ export class TileGrid {
 
   /** @param {Point} p */
   set viewOffset(p) {
-    this.el.style.setProperty('--xlate-x', Math.floor(p.x).toString());
-    this.el.style.setProperty('--xlate-y', Math.floor(p.y).toString());
+    this.el.style.setProperty('--xlate-x', p.x.toString());
+    this.el.style.setProperty('--xlate-y', p.y.toString());
   }
 
   /** @return {Size} */
