@@ -562,6 +562,7 @@ export class DOMgeon extends EventTarget {
 
     if (move) {
       this.grid.setTileData(actor, 'move', move);
+      this.dispatchEvent(new Event('move'));
       moveTiles({grid: this.grid, kinds: this.moveProcs});
     }
 
