@@ -1,4 +1,4 @@
-# 2020-11-09
+# 2020-11-10
 
 ## TODO
 
@@ -35,8 +35,25 @@
 
 ## Done
 
-- fixed overly jumpy `DOMgeon` viewport animations by dropping the floor from
-  `TileGrid.viewOffset` updates
+Finished out planar isolation feature, since lack of it was further
+complicating compounding debug of lighting: FOV is now constrained to a plane,
+so that it's not accidentally blocked by debug tiles or the inspector cursor.
+
+Fixed a tile inspector bug introduced by yesterday's `TileGrid.viewOffset`
+un-flooring, by re-introducing the floor withing tile inspector positioning.
+
+# 2020-11-09
+
+Improved viewport movement
+
+Replaced the accidentally "zeno eased" movement with explicitly bounded and
+eased movement. Went with circular in/out easing over 1s, as it feels especially
+interesting when chained: as the player keeps moving, the ease-out keeps
+getting restarted, meaning that the viewport stays more in place over a lot of
+quick movements, and then catches up when the player stops moving.
+
+Dropped the floor from `TileGrid.viewOffset` updates, as otherwise animating
+with sub-tile accuracy isn't feasible.
 
 # 2020-11-08
 
