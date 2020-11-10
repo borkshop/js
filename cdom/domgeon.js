@@ -678,13 +678,17 @@ export class DOMgeonInspector extends TileInspector {
       this.cur = this.dmg.grid.createTile({kind: 'inspect-cursor'});
     this.grid.moveTileTo(this.cur, pos);
     this.cur.classList.toggle('pinned', pinned);
+    const {x, y} = pos;
+    const atText = `${isNaN(x) ? 'X' : x},${isNaN(y) ? 'Y' : y}`;
     const at = /** @type {HTMLElement|null} */ (this.el.querySelector('[data-for="pos"]'));
-    if (at) {
-      const {x, y} = pos;
-      at.innerText = `${isNaN(x) ? 'X' : x},${isNaN(y) ? 'Y' : y}`;
-    }
+    if (at) at.innerText = atText;
     const txt = this.el.querySelector('textarea');
     if (txt) dumpTiles({tiles, into: txt, detail: pinned});
+    if (pinned) {
+      console.groupCollapsed(`tiles @${atText}`);
+      for (const tile of tiles) console.log(tile);
+      console.groupEnd();
+    }
   }
 
   enable() {
