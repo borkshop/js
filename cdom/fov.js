@@ -18,7 +18,7 @@ export function updatePlayerFOV({
   grid, origin, source,
   lightInit=(source && grid.getTileData(source, 'lightInit')) || 8,
   lightMax=1.0,
-  lightLimit=0.00001,
+  lightLimit=0.0001,
   filter,
 }) {
   const depthLimit = Math.sqrt(lightMax/lightLimit);
@@ -28,13 +28,16 @@ export function updatePlayerFOV({
   for (const tile of priors)
     if (!filter || filter(tile))
       grid.setTileData(tile, 'light', null);
+
+  const selfSupported = !!source?.classList.contains('support');
+
   computeFOV({
     origin,
     depthLimit,
     query: (pos) => {
       const tiles = grid.tilesAt(pos);
       const present = filter ? tiles.filter(filter) : tiles;
-      const supported = present.some(t => t.classList.contains('support'));
+      const supported = selfSupported || present.some(t => t.classList.contains('support'));
       const passable = supported && present.every(t => t.classList.contains('passable'));
       return {supported, blocked: !passable};
     },
@@ -80,7 +83,10 @@ export function computeFOV({origin, query, update, depthLimit=1000}) {
     (row, col) => ({x: ox - row, y: oy + col}), // west  quadrant
   ];
 
-  /** @type {{depth:number, startSlope:number, endSlope:number}[]} */       
+  /**
+   * @typedef {{depth:number, startSlope:number, endSlope:number}} Row
+   * @type {Row[]}
+   */
   const rows = [];
   for (const quadrant of quadrants) {
     // iterate (sub-)row arcs within each quadrant
