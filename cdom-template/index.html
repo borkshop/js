@@ -136,10 +136,6 @@
           pos.y === rect.y + rect.h-1,
       }));
 
-      // // uncomment this to get immediate viewport re-centering after player
-      // // moves; default is to recenter as the player is about to step outside
-      // dmg.wantedViewPoint = pos => pos;
-
       dmg.grid.buildTile({
         pos: {x: 6, y: -8},
         kind: 'floor',

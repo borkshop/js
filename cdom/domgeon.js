@@ -486,19 +486,25 @@ export class DOMgeon extends EventTarget {
 
   /**
    * Computes any newly desired grid viewPoint to (re)-center upon given the
-   * position of the currently focused actor. The default nudges the view just
-   * in time so that all adjacent cells are within view. May be overridden with
-   * something as simple as `pos => pos` to constantly re-center on the current
-   * actor.
+   * position of the currently focused actor.
+   *
+   * The default simply returns pos so that we alway follow the new player
+   * location. If instead you only want to move the viewport when the player
+   * tries to go outside of it, override with something like:
+   *
+   *   (pos, {x: vx, y: vy, w: vw, h: vh}) => (
+   *       pos.x   <= vx      ? pos
+   *     : pos.y   <= vy      ? pos
+   *     : pos.x+1 >= vx + vw ? pos
+   *     : pos.y+1 >= vy + vh ? pos
+   *     : null);
    *
    * @param {Point} pos - position of the currently focused actor
-   * @param {Rect} viewport - current viewport rectangle in tile space
+   * @param {Rect} _viewport - current viewport rectangle in tile space
    * @returns {null|Point} - null for no change, or a new viewPoint
    */
-  wantedViewPoint(pos, {x: vx, y: vy, w, h}) {
-    if (pos.x <= vx || pos.y <= vy || pos.x+1 >= vx + w || pos.y+1 >= vy + h)
-      return pos;
-    return null;
+  wantedViewPoint(pos, _viewport) {
+    return pos;
   }
 
   /**
