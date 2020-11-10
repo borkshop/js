@@ -109,7 +109,7 @@ function procMove(move) {
   const plane = grid.getTileData(mover, 'plane');
 
   // interact with any co-planar tiles present
-  let present = plane ? at.filter(h => h.classList.contains(plane)) : at;
+  let present = at.filter(h => grid.getTileData(h, 'plane') === plane);
 
   // boop-interact with first present .tile.interact:not(.passable)
   const interacts = present.filter(h =>
@@ -119,7 +119,7 @@ function procMove(move) {
   if (interacts.length) {
     if (!procInteraction(grid, interacts, mover)) return false;
     // re-query over any interaction updates
-    present = plane ? grid.tilesAt(to, plane) : grid.tilesAt(to);
+    present = grid.tilesAt(to).filter(h => grid.getTileData(h, 'plane') === plane);
   }
 
   // blocked by any present .tile:not(.passable)
