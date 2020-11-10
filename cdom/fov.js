@@ -38,8 +38,8 @@ export function updatePlayerFOV({
       const tiles = grid.tilesAt(pos);
       const present = filter ? tiles.filter(filter) : tiles;
       const supported = selfSupported || present.some(t => t.classList.contains('support'));
-      const passable = supported && present.every(t => t.classList.contains('passable'));
-      return {supported, blocked: !passable};
+      const blocked = !supported || present.some(t => !t.classList.contains('passable'));
+      return {supported, blocked};
     },
     update: (pos, depth) => {
       const light = Math.min(lightMax, lightInit/(depth*depth));
