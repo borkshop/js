@@ -543,8 +543,10 @@ export class DOMgeon extends EventTarget {
     if (!actor) return; // TODO should we clear any prior?
 
     const origin = this.grid.getTilePosition(actor);
+    const plane = this.grid.getTileData(actor, 'plane');
     updatePlayerFOV({
       grid: this.grid, origin, source: actor,
+      filter: t => this.grid.getTileData(t, 'plane') === plane,
     });
   }
 
