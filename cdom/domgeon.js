@@ -403,6 +403,22 @@ export class DOMgeon extends EventTarget {
   animParts = []
 
   /**
+   * How long viewport move animations should take; default 1s.
+   */
+  viewAnimTime = 1000
+
+  /**
+   * @param {number} p - animation progress proportion
+   * @returns {number} - eased animation progress proportion
+   */
+  viewAnimEase(p) {
+    // circular ease in/out
+    return p < 0.5
+      ? (1 - Math.sqrt(1 - Math.pow( 2 * p,     2)))     / 2
+      : (    Math.sqrt(1 - Math.pow(-2 * p + 2, 2)) + 1) / 2;
+  }
+
+  /**
    * Sets a goal point for viewport animation to re-center upon, superceding
    * any previous goal point. The animation takes plaec over the next t time,
    * defaulting to 100ms.
@@ -411,15 +427,15 @@ export class DOMgeon extends EventTarget {
    * @param {number} t - how long the animation should take
    * @returns {void}
    */
-  viewTo(to, t=100) {
+  viewTo(to, t=this.viewAnimTime) {
+    const at = this.grid.viewPoint;
     if (this.grid.hasFixedViewPoint()) {
-      const at = this.grid.viewPoint;
       if (at.x === to.x && at.y === to.y) return;
     }
-    this._viewAnim = {t, to};
+    this._viewAnim = {t, et: 0, from: at, to};
   }
 
-  /** @type {null|{t:number,to:Point}} */
+  /** @type {null|{t:number,et:number,from:Point,to:Point}} */
   _viewAnim = null
 
   /**
@@ -428,16 +444,15 @@ export class DOMgeon extends EventTarget {
    */
   _animView(dt) {
     if (!this._viewAnim) return;
-    const {t, to} = this._viewAnim;
-    let p = dt/t;
-    if (p >= 1) {
-      p = 1;
-      this._viewAnim = null;
-    }
-    const at = this.grid.viewPoint;
+    let {t, et, from, to} = this._viewAnim;
+    et += dt;
+    let p = et/t;
+    if (p >= 1) this._viewAnim = null;
+    else this._viewAnim.et = et;
+
     this.grid.viewPoint = {
-      x: at.x * (1 - p) + p * to.x,
-      y: at.y * (1 - p) + p * to.y,
+      x: from.x * (1 - p) + p * to.x,
+      y: from.y * (1 - p) + p * to.y,
     };
   }
 
