@@ -675,7 +675,10 @@ export class DOMgeonInspector extends TileInspector {
    */
   inspect({pos, tiles, pinned}) {
     if (!this.cur?.parentNode)
-      this.cur = this.dmg.grid.createTile({kind: 'inspect-cursor'});
+      this.cur = this.dmg.grid.createTile({
+        kind: 'inspect-cursor',
+        data: {plane: 'domgeon-inspect'},
+      });
     this.grid.moveTileTo(this.cur, pos);
     this.cur.classList.toggle('pinned', pinned);
     const {x, y} = pos;
