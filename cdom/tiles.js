@@ -596,8 +596,8 @@ export class TileInspector {
     let {x, y} = this.grid.viewOffset;
     const gridRect = this.grid.el.getBoundingClientRect();
     const {x: w, y: h} = this.grid.tileSize;
-    x += Math.floor((ev.clientX - gridRect.left) / w);
-    y += Math.floor((ev.clientY - gridRect.top) / h);
+    x = Math.floor(x + (ev.clientX - gridRect.left) / w);
+    y = Math.floor(y + (ev.clientY - gridRect.top) / h);
     const pos = {x, y};
     const tiles = this.grid.tilesAt(pos).filter(t => this.filter(t, this.grid));
     switch (ev.type) {
