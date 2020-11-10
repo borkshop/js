@@ -65,6 +65,9 @@
         .tile.mover.input       { color: var(--dark-orange); }
         .tile.mover.input.focus { color: var(--orange); }
 
+        .tile.solid       { --plane: "solid" }
+        .tile:not(.solid) { --plane: "void" }
+
         .tile.door {
           --action: "open";
           --morph_target: "!passable";
