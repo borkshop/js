@@ -38,10 +38,8 @@ export function procInteraction(grid, interacts, subject) {
   if (interacts.length > 1) return false;
   const interact = interacts[0];
 
-  if (grid.getTileData(subject, 'plane') !== grid.getTileData(interact, 'plane')) {
-    // TODO cross planar capability
-    return false;
-  }
+  // TODO cross planar capability
+  if (grid.getTileData(subject, 'plane') !== grid.getTileData(interact, 'plane')) return false;
 
   const pos = grid.getTilePosition(subject);
   const at = grid.getTilePosition(interact);
