@@ -35,6 +35,13 @@
 
 ## Done
 
+Lighting Inspection
+
+Reworked FOV and made lighting blend between actors on focus change.
+
+Added self-supported light so that walking around in the void can be as lit
+as supported interior.
+
 Finished out planar isolation feature, since lack of it was further
 complicating compounding debug of lighting: FOV is now constrained to a plane,
 so that it's not accidentally blocked by debug tiles or the inspector cursor.
