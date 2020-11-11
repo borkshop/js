@@ -623,6 +623,11 @@ export class DOMgeon extends EventTarget {
       // clear prior light
       scheme.clear();
 
+      // skip plane if its lightScale isn't below threshold; this happens on
+      // the last tick of the fade out animation, and makes it so that we leave
+      // the light values cleared within a just-exited plane
+      if (litPlane.lightScale < scheme.lightLimit) continue;
+
       // add actor light fields
       for (const {actor, lightScale} of litPlane.actors)
         scheme.addField(actor, {lightScale});
