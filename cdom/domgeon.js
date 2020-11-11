@@ -569,34 +569,64 @@ export class DOMgeon extends EventTarget {
    */
   _runLightAnim(dt) {
     const scheme = new GridLighting(this.grid);
-    scheme.clear();
+
+    /**
+     * @typedef {object} LitActor
+     * @prop {HTMLElement} actor
+     * @prop {number} lightScale
+     */
+
+    /**
+     * @typedef {object} LitPlane
+     * @prop {number} lightScale
+     * @prop {LitActor[]} actors
+     */
+
+    /** @type {Map<string, LitPlane>} */
+    const litPlanes = new Map();
 
     /**
      * @param {string} id
      * @param {number} lightScale
      */
-    const lightActor = (id, lightScale=1) => {
+    const collectActor = (id, lightScale=1) => {
       const actor = /** @type {null|HTMLElement} */ (this.grid.el.querySelector(`#${id}`));
       if (!actor) return;
       const plane = this.grid.getTileData(actor, 'plane');
-      scheme.addField(actor, {
-        filter: t => this.grid.getTileData(t, 'plane') === plane,
-        lightScale,
+      let litPlane = litPlanes.get(plane);
+      if (litPlane === undefined) litPlanes.set(plane, litPlane = {
+        lightScale: 0,
+        actors: [],
       });
+      if (litPlane.lightScale < lightScale) litPlane.lightScale = lightScale;
+      litPlane.actors.push({actor, lightScale});
     };
 
-    // light actors
+    // collect lit actors, advancing any animation times
     if (this._lightAnim.length) {
       for (let i = 0; i < this._lightAnim.length; ++i) {
         this._lightAnim[i].et += dt;
         const {id, et, t, from, to} = this._lightAnim[i];
         const p = this.viewAnimEase(et/t);
         const v = (1 - p)*from + p*to;
-        lightActor(id, v);
+        collectActor(id, v);
       }
       this._lightAnim = this._lightAnim.filter(({et, t}) => et < t);
     } else if (this._litActorID) {
-      lightActor(this._litActorID);
+      collectActor(this._litActorID);
+    }
+
+    // light each involved plane
+    for (const [plane, litPlane] of litPlanes.entries()) {
+      /** @param {HTMLElement} tile */
+      const filter = tile => this.grid.getTileData(tile, 'plane') === plane;
+
+      // clear prior light
+      scheme.clear(filter);
+
+      // add actor light fields
+      for (const {actor, lightScale} of litPlane.actors)
+        scheme.addField(actor, {filter, lightScale});
     }
   }
 
