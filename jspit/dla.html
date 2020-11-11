@@ -179,11 +179,11 @@
         .tile.particle.live { z-index: 100 }
         .tile.input         { z-index: 1000 }
 
-        .grid.playing .tile.particle[data-light] {
+        .grid.playing .tile.particle[data-fov] {
           visibility: visible;
           opacity: var(--light);
         }
-        .grid.playing .tile.particle:not([data-light]) { visibility: hidden; }
+        .grid.playing .tile.particle:not([data-fov]) { visibility: hidden; }
 
         .tile.particle      { --lightAmbient: 0.2; }
         .tile.particle.live { --lightInit:    4.0; }
