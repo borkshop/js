@@ -2,35 +2,41 @@
 /** @typedef { import("./tiles").Point } Point */
 
 /**
- * Implements easy to integrate player-centric lighting.
- *
  * @param {object} params
  * @param {TileGrid} params.grid
- * @param {Point} params.origin
- * @param {HTMLElement} [params.source]
- * @param {number} [params.lightInit] - initial lighting value, defaults to 8
- * @param {number} [params.lightMax] - upper lighting clamp
- * @param {number} [params.lightLimit] - light visibility threshold
- * @param {(tile:HTMLElement)=>boolean} [params.filter] - used by the default update and query implementations
+ * @param {(tile:HTMLElement)=>boolean} [params.filter]
  * @returns {void}
  */
-export function updatePlayerFOV({
-  grid, origin, source,
-  lightInit=(source && grid.getTileData(source, 'lightInit')) || 8,
-  lightMax=1.0,
-  lightLimit=0.0001,
-  filter,
-}) {
-  const depthLimit = Math.sqrt(lightMax/lightLimit);
-
+export function clearGridLight({grid, filter}) {
   /** @type {NodeListOf<HTMLElement>} */
   const priors = grid.el.querySelectorAll('.tile[data-light]');
   for (const tile of priors)
     if (!filter || filter(tile))
       grid.setTileData(tile, 'light', null);
+}
 
-  const selfSupported = !!source?.classList.contains('support');
-
+/**
+ * @param {object} params
+ * @param {TileGrid} params.grid
+ * @param {HTMLElement} params.source
+ * @param {number} [params.lightScale]
+ * @param {number} [params.lightInit] - initial lighting value, defaults to 8
+ * @param {number} [params.lightMax] - upper lighting clamp
+ * @param {number} [params.lightLimit] - light visibility threshold
+ * @param {(tile:HTMLElement)=>boolean} [params.filter]
+ * @returns {void}
+ */
+export function addGridLight({
+  grid, source,
+  lightInit=(source && grid.getTileData(source, 'lightInit')) || 8,
+  lightScale=1,
+  lightMax=1.0,
+  lightLimit=0.0001,
+  filter,
+}) {
+  const depthLimit = Math.sqrt(lightMax/lightLimit);
+  const origin = grid.getTilePosition(source);
+  const selfSupported = !!source.classList.contains('support');
   computeFOV({
     origin,
     depthLimit,
@@ -42,12 +48,14 @@ export function updatePlayerFOV({
       return {supported, blocked};
     },
     update: (pos, depth) => {
-      const light = Math.min(lightMax, lightInit/(depth*depth));
+      const light = Math.min(lightMax, lightScale*lightInit/(depth*depth));
       const tiles = grid.tilesAt(pos);
       const present = filter ? tiles.filter(filter) : tiles;
-      for (const tile of present)
-        if (light >= lightLimit)
-          grid.setTileData(tile, 'light', light);
+      for (const tile of present) if (light >= lightLimit) {
+        const prior = grid.getTileData(tile, 'light');
+        const value = Math.min(lightMax, typeof prior === 'number' ? prior + light : light);
+        grid.setTileData(tile, 'light', value);
+      }
     },
   });
 }

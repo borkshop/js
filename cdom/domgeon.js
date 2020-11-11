@@ -8,7 +8,7 @@ import {
 } from './tiles';
 import KeyCtl from './input';
 import {everyFrame, schedule} from './anim';
-import {updatePlayerFOV} from './fov';
+import {clearGridLight, addGridLight} from './fov';
 
 /** @typedef { import("./tiles").Point } Point */
 /** @typedef { import("./tiles").Rect } Rect */
@@ -16,6 +16,15 @@ import {updatePlayerFOV} from './fov';
 /** @typedef { import("./tiles").TileMoverProc } TileMoverProc */
 /** @typedef { import("./tiles").TileSpec } TileSpec */
 /** @typedef { import("./tiles").TileInspectEvent } TileInspectEvent */
+
+/**
+ * @template T
+ * @typedef {object} Anim
+ * @prop {number} t
+ * @prop {number} et
+ * @prop {T} from
+ * @prop {T} to
+ */
 
 /** @typedef {Object} DOMgeonOptions
  *
@@ -433,7 +442,7 @@ export class DOMgeon extends EventTarget {
     this._viewAnim = {t, et: 0, from: at, to};
   }
 
-  /** @type {null|{t:number,et:number,from:Point,to:Point}} */
+  /** @type {null|Anim<Point>} */
   _viewAnim = null
 
   /**
@@ -472,6 +481,7 @@ export class DOMgeon extends EventTarget {
       },
       (dt) => {
         this._animView(dt);
+        this._runLightAnim(dt);
         return true;
       },
       ...this.animParts,
@@ -530,6 +540,65 @@ export class DOMgeon extends EventTarget {
     return actor;
   }
 
+  _litActorID = ''
+
+  /** @type {({id:string}&Anim<number>)[]} */
+  _lightAnim = []
+
+  /**
+   * @param {string} id
+   * @param {number} from
+   * @param {number} to
+   */
+  _updateLightAnim(id, from, to) {
+    for (let i = 0; i < this._lightAnim.length; ++i) {
+      const anim = this._lightAnim[i];
+      if (anim.id === id) {
+        const p = anim.et / anim.t;
+        const v = anim.from*(1 - p) + anim.to*p;
+        this._lightAnim[i] = {id, t: p*this.viewAnimTime, et: 0, from: v, to};
+        return;
+      }
+    }
+    this._lightAnim.push({id, t: this.viewAnimTime, et: 0, from, to})
+  }
+
+  /**
+   * @param {number} dt
+   */
+  _runLightAnim(dt) {
+    clearGridLight({grid: this.grid});
+    if (!this._lightAnim.length) {
+      if (this._litActorID) this._updateLight(this._litActorID);
+      return;
+    }
+    for (let i = 0; i < this._lightAnim.length; ++i) {
+      this._lightAnim[i].et += dt;
+      const {id, et, t, from, to} = this._lightAnim[i];
+      const p = this.viewAnimEase(et/t);
+      const v = (1 - p)*from + p*to;
+      this._updateLight(id, v);
+    }
+    this._lightAnim = this._lightAnim.filter(({et, t}) => et < t);
+  }
+
+  /**
+   * @param {string} id
+   * @param {number} scale
+   * @returns {void}
+   */
+  _updateLight(id, scale=1) {
+    const actor = /** @type {null|HTMLElement} */ (this.grid.el.querySelector(`#${id}`));
+    if (!actor) return;
+    const plane = this.grid.getTileData(actor, 'plane');
+    addGridLight({
+      grid: this.grid,
+      source: actor,
+      filter: t => this.grid.getTileData(t, 'plane') === plane,
+      lightScale: scale,
+    });
+  };
+
   /**
    * @param {object} [params]
    * @param {HTMLElement} [params.actor]
@@ -540,12 +609,15 @@ export class DOMgeon extends EventTarget {
   }={}) {
     if (!actor) return; // TODO should we clear any prior?
 
-    const origin = this.grid.getTilePosition(actor);
-    const plane = this.grid.getTileData(actor, 'plane');
-    updatePlayerFOV({
-      grid: this.grid, origin, source: actor,
-      filter: t => this.grid.getTileData(t, 'plane') === plane,
-    });
+    // TODO environmental sources
+
+    if (actor.id !== this._litActorID) {
+      this._updateLightAnim(actor.id, 0, 1);
+      if (this._litActorID)
+        this._updateLightAnim(this._litActorID, 1, 0);
+      this._litActorID = actor.id;
+    }
+    this._runLightAnim(0);
   }
 
   /**
