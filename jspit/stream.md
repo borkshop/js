@@ -35,8 +35,9 @@
 
 ## Done
 
-More lighting reworks to separate FOV revelation from light casting, further
-setting the stage for environmental light sources.
+Further reworked lighting to separate FOV revelation from light casting, then
+added ambient and non-actor light sources. Demonstrated best by an update to
+the DLA demo.
 
 # 2020-11-10
 
