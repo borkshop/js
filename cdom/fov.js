@@ -3,63 +3,83 @@ import {mortonKey} from './tiles';
 /** @typedef { import("./tiles").TileGrid } TileGrid */
 /** @typedef { import("./tiles").Point } Point */
 
-/**
- * @param {object} params
- * @param {TileGrid} params.grid
- * @param {(tile:HTMLElement)=>boolean} [params.filter]
- * @returns {void}
- */
-export function clearGridLight({grid, filter}) {
-  /** @type {NodeListOf<HTMLElement>} */
-  const priors = grid.el.querySelectorAll('.tile[data-light]');
-  for (const tile of priors)
-    if (!filter || filter(tile))
-      grid.setTileData(tile, 'light', null);
-}
+export class GridLighting {
+  /** @type {TileGrid} */
+  grid
+  lightVar = 'light'
+  lightMax = 1.0
+  lightLimit = 0.0001
 
-/**
- * @param {object} params
- * @param {TileGrid} params.grid
- * @param {HTMLElement} params.source
- * @param {number} [params.lightScale]
- * @param {number} [params.lightInit] - initial lighting value, defaults to 8
- * @param {number} [params.lightMax] - upper lighting clamp
- * @param {number} [params.lightLimit] - light visibility threshold
- * @param {(tile:HTMLElement)=>boolean} [params.filter]
- * @returns {void}
- */
-export function addGridLight({
-  grid, source,
-  lightInit=(source && grid.getTileData(source, 'lightInit')) || 8,
-  lightScale=1,
-  lightMax=1.0,
-  lightLimit=0.0001,
-  filter,
-}) {
-  const depthLimit = Math.sqrt(lightMax/lightLimit);
-  const origin = grid.getTilePosition(source);
-  const selfSupported = !!source.classList.contains('support');
-  computeFOV({
-    origin,
-    depthLimit,
-    query: (pos) => {
-      const tiles = grid.tilesAt(pos);
-      const present = filter ? tiles.filter(filter) : tiles;
-      const supported = selfSupported || present.some(t => t.classList.contains('support'));
-      const blocked = !supported || present.some(t => !t.classList.contains('passable'));
-      return {supported, blocked};
-    },
-    update: (pos, depth) => {
-      const light = Math.min(lightMax, lightScale*lightInit/(depth ? depth*depth : 1));
-      const tiles = grid.tilesAt(pos);
-      const present = filter ? tiles.filter(filter) : tiles;
-      for (const tile of present) if (light >= lightLimit) {
-        const prior = grid.getTileData(tile, 'light');
-        const value = Math.min(lightMax, typeof prior === 'number' ? prior + light : light);
-        grid.setTileData(tile, 'light', value);
-      }
-    },
-  });
+  /**
+   * @param {TileGrid} grid
+   */
+  constructor(grid) {
+    this.grid = grid;
+  }
+
+  get depthLimit() {
+    return Math.sqrt(this.lightMax/this.lightLimit);
+  }
+
+  /**
+   * @param {(tile:HTMLElement)=>boolean} [filter]
+   * @returns {void}
+   */
+  clear(filter) {
+    /** @type {NodeListOf<HTMLElement>} */
+    const priors = this.grid.el.querySelectorAll('.tile[data-light]');
+    for (const tile of priors)
+      if (!filter || filter(tile))
+        this.grid.setTileData(tile, 'light', null);
+  }
+
+  /**
+   * @param {HTMLElement} source
+   * @param {object} params
+   * @param {number} [params.lightScale]
+   * @param {number} [params.lightInit] - initial lighting value, defaults to 8
+   * @param {(tile:HTMLElement)=>boolean} [params.filter]
+   * @returns {void}
+   */
+  addField(source, {
+    lightInit=(source && this.grid.getTileData(source, 'lightInit')) || 8,
+    lightScale=1,
+    filter,
+  }) {
+    const origin = this.grid.getTilePosition(source);
+    const selfSupported = !!source.classList.contains('support');
+    computeFOV({
+      origin,
+      depthLimit: this.depthLimit,
+      query: (pos) => {
+        const tiles = this.grid.tilesAt(pos);
+        const present = filter ? tiles.filter(filter) : tiles;
+        const supported = selfSupported || present.some(t => t.classList.contains('support'));
+        const blocked = !supported || present.some(t => !t.classList.contains('passable'));
+        return {supported, blocked};
+      },
+      update: (pos, depth) => {
+        const light = lightScale*lightInit/(depth ? depth*depth : 1);
+        if (light >= this.lightLimit) {
+          const tiles = this.grid.tilesAt(pos);
+          for (const tile of filter ? tiles.filter(filter) : tiles)
+            this.add(tile, light);
+        }
+      },
+    });
+  }
+
+  /**
+   * @param {HTMLElement} tile
+   * @param {number} light
+   */
+  add(tile, light) {
+    if (light >= this.lightLimit) {
+      const prior = this.grid.getTileData(tile, this.lightVar);
+      this.grid.setTileData(tile, this.lightVar,
+        Math.min(this.lightMax, typeof prior === 'number' ? prior + light : light));
+    }
+  }
 }
 
 /**

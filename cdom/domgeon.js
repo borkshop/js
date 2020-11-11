@@ -8,7 +8,7 @@ import {
 } from './tiles';
 import KeyCtl from './input';
 import {everyFrame, schedule} from './anim';
-import {clearGridLight, addGridLight} from './fov';
+import {GridLighting} from './fov';
 
 /** @typedef { import("./tiles").Point } Point */
 /** @typedef { import("./tiles").Rect } Rect */
@@ -568,9 +568,26 @@ export class DOMgeon extends EventTarget {
    * @param {number} dt
    */
   _runLightAnim(dt) {
-    clearGridLight({grid: this.grid});
+    const scheme = new GridLighting(this.grid);
+    scheme.clear();
+
+    /**
+     * @param {string} id
+     * @param {number} lightScale
+     */
+    const lightActor = (id, lightScale=1) => {
+      const actor = /** @type {null|HTMLElement} */ (this.grid.el.querySelector(`#${id}`));
+      if (!actor) return;
+      const plane = this.grid.getTileData(actor, 'plane');
+      scheme.addField(actor, {
+        filter: t => this.grid.getTileData(t, 'plane') === plane,
+        lightScale,
+      });
+    };
+
+    // light actors
     if (!this._lightAnim.length) {
-      if (this._litActorID) this._updateLight(this._litActorID);
+      if (this._litActorID) lightActor(this._litActorID);
       return;
     }
     for (let i = 0; i < this._lightAnim.length; ++i) {
@@ -578,27 +595,10 @@ export class DOMgeon extends EventTarget {
       const {id, et, t, from, to} = this._lightAnim[i];
       const p = this.viewAnimEase(et/t);
       const v = (1 - p)*from + p*to;
-      this._updateLight(id, v);
+      lightActor(id, v);
     }
     this._lightAnim = this._lightAnim.filter(({et, t}) => et < t);
   }
-
-  /**
-   * @param {string} id
-   * @param {number} scale
-   * @returns {void}
-   */
-  _updateLight(id, scale=1) {
-    const actor = /** @type {null|HTMLElement} */ (this.grid.el.querySelector(`#${id}`));
-    if (!actor) return;
-    const plane = this.grid.getTileData(actor, 'plane');
-    addGridLight({
-      grid: this.grid,
-      source: actor,
-      filter: t => this.grid.getTileData(t, 'plane') === plane,
-      lightScale: scale,
-    });
-  };
 
   /**
    * @param {object} [params]
