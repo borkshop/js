@@ -153,7 +153,7 @@ export class TileGrid {
     this.el = el;
     this._obs = new ResizeObserver(() => this._updateSize());
     this._obs.observe(this.el);
-    const tiles = this.queryTiles();
+    const tiles = Array.from(this.queryTiles());
     this.spatialIndex.update(
       tiles.map(tile => tile.id),
       tiles.map(tile => this.getTilePosition(tile)),
@@ -336,14 +336,11 @@ export class TileGrid {
    * Query tiles returing all that match.
    *
    * @param {TileQuery} [query] - optional, match all tiles if omitted.
-   * @return {HTMLElement[]}
+   * @return {NodeListOf<HTMLElement>}
    */
   queryTiles(query) {
     const els = this.el.querySelectorAll(query ? this.tileQuerySelector(query) : '.tile');
-    const tiles = [];
-    for (const el of els) if (el)
-      tiles.push(/** @type {HTMLElement} */(el));
-    return tiles;
+    return /** @type {NodeListOf<HTMLElement>} */(els);
   }
 
   /**

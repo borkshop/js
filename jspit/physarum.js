@@ -119,7 +119,7 @@ export default class {
     const y = Math.floor(rect.y)-1;
     const w = Math.ceil(rect.w)+1;
     const h = Math.ceil(rect.h)+1;
-    const oldTrail = this.grid.queryTiles({className: 'trail'});
+    const oldTrail = Array.from(this.grid.queryTiles({className: 'trail'}));
     for (let ax=x, i=0; i<w; ax++, i++) for (let ay=y, j=0; j<h; ay++, j++) {
       const pos = {x: ax, y: ay};
       const spec = {
@@ -173,7 +173,7 @@ export default class {
 
     // create particle sensor displays
     if (this.showSensors) {
-      const sensors = this.grid.queryTiles({className: 'sense'});
+      const sensors = Array.from(this.grid.queryTiles({className: 'sense'}));
       for (const p of this.grid.queryTiles({
         className: ['particle', 'live'],
       })) {
@@ -279,7 +279,7 @@ export default class {
     });
 
     // gather prior values
-    const cells = this.grid.queryTiles({className: 'trail'});
+    const cells = Array.from(this.grid.queryTiles({className: 'trail'}));
     const posi = cells.map(cell => this.grid.getTilePosition(cell));
     /** @type {Map<number, number>} */
     const at = new Map();

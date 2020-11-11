@@ -123,7 +123,7 @@ export default class DLA {
     });
 
     this.dmg.grid.viewPoint = centroid(
-      this.dmg.grid.queryTiles({className: ['particle', 'init']})
+      Array.from(this.dmg.grid.queryTiles({className: ['particle', 'init']}))
         .map(p => this.dmg.grid.getTilePosition(p)));
 
     if (!(this.config.bounds.w*this.config.bounds.h)) {
@@ -198,7 +198,7 @@ export default class DLA {
   }
 
   *choosePrior() {
-    const prior = this.dmg.grid.queryTiles({className: 'particle'})
+    const prior = Array.from(this.dmg.grid.queryTiles({className: 'particle'}))
       .filter(t => !t.classList.contains('live'));
     while (true) {
       const tile = prior[Math.floor(Math.random()*prior.length)];

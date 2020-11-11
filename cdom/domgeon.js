@@ -318,8 +318,9 @@ export class DOMgeon extends EventTarget {
     this.ui = ui;
 
     this.grid = new TileGrid(grid);
-    this.grid.viewPoint = centroid(this.grid.queryTiles({className: ['mover', 'input']})
-      .map(input => this.grid.getTilePosition(input)));
+    this.grid.viewPoint = centroid(
+      Array.from(this.grid.queryTiles({className: ['mover', 'input']}))
+        .map(input => this.grid.getTilePosition(input)));
 
     this.keys = new KeyCtl(keys);
     this.keys.on.code['Escape'] = (ev) => {
@@ -666,7 +667,7 @@ export class DOMgeon extends EventTarget {
     /** @type {{action:string, label:string}[]} */
     const actions = [];
 
-    const actors = this.grid.queryTiles({className: ['mover', 'input']});
+    const actors = Array.from(this.grid.queryTiles({className: ['mover', 'input']}));
     actions.push(...actors
       .filter(actor => !actor.classList.contains('focus'))
       .map(actor => {
