@@ -634,6 +634,13 @@ export class DOMgeon extends EventTarget {
       for (const {actor, lightScale} of litPlane.actors)
         scheme.addLightField(actor, {lightScale});
 
+      // add ambient light
+      for (const tile of this.grid.queryTiles({className: plane})) {
+        const lightAmbient = this.grid.getTileData(tile, 'lightAmbient');
+        if (typeof lightAmbient === 'number')
+          scheme.addLight(tile, lightAmbient);
+      }
+
       // set fov depth
       for (const {actor} of litPlane.actors)
         scheme.revealViewField(actor, plane, viewLimit);
