@@ -1,4 +1,4 @@
-# 2020-11-10
+# 2020-11-11
 
 ## TODO
 
@@ -34,6 +34,11 @@
   - dialog support to inform / hint the user
 
 ## Done
+
+More lighting reworks to separate FOV revelation from light casting, further
+setting the stage for environmental light sources.
+
+# 2020-11-10
 
 Lighting Inspection
 
