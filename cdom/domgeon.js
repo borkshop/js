@@ -579,7 +579,7 @@ export class DOMgeon extends EventTarget {
     /**
      * @typedef {object} LitPlane
      * @prop {number} lightScale
-     * @prop {LitActor[]} actors
+     * @prop {Map<string, LitActor>} actors
      */
 
     /** @type {Map<string, LitPlane>} */
@@ -596,10 +596,10 @@ export class DOMgeon extends EventTarget {
       let litPlane = litPlanes.get(plane);
       if (litPlane === undefined) litPlanes.set(plane, litPlane = {
         lightScale: 0,
-        actors: [],
+        actors: new Map(),
       });
       if (litPlane.lightScale < lightScale) litPlane.lightScale = lightScale;
-      litPlane.actors.push({actor, lightScale});
+      litPlane.actors.set(actor.id, {actor, lightScale});
     };
 
     // collect lit actors, advancing any animation times
@@ -630,10 +630,6 @@ export class DOMgeon extends EventTarget {
       // the light values cleared within a just-exited plane
       if (litPlane.lightScale < scheme.lightLimit) continue;
 
-      // add actor light fields
-      for (const {actor, lightScale} of litPlane.actors)
-        scheme.addLightField(actor, {lightScale});
-
       // add ambient light
       for (const tile of this.grid.queryTiles({className: plane})) {
         const lightAmbient = this.grid.getTileData(tile, 'lightAmbient');
@@ -641,9 +637,11 @@ export class DOMgeon extends EventTarget {
           scheme.addLight(tile, lightAmbient);
       }
 
-      // set fov depth
-      for (const {actor} of litPlane.actors)
+      // add actor light fields and reveal FOV
+      for (const {actor, lightScale} of litPlane.actors.values()) {
+        scheme.addLightField(actor, {lightScale});
         scheme.revealViewField(actor, plane, viewLimit);
+      }
     }
   }
 
