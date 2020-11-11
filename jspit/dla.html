@@ -235,11 +235,17 @@
       const dropPlayer = document.querySelector('#dropPlayer');
       const world = new DLA(dmg);
       dmg.animParts.push(_ => {
-        const playing = !!dmg.grid.queryTile({className: ['input', 'mover']});
+        let playing = !!dmg.grid.queryTile({className: ['input', 'mover']});
+        if (particleID) {
+          particleID.innerText = world.particleID.toString();
+          if (!playing && world.particleID >= 0.25*world.config.particleLimit) {
+            world.dropPlayer();
+            playing = true;
+          }
+        }
         dmg.grid.el.classList.toggle('playing', playing);
         if (dropPlayer) dropPlayer.disabled = playing;
         if (moveBar) moveBar.style.display = playing ? '' : 'none';
-        if (particleID) particleID.innerText = world.particleID.toString();
         return true;
       });
 
