@@ -17,16 +17,17 @@ export class GridLighting {
     this.grid = grid;
   }
 
+  /** @type {null|((tile:HTMLElement)=>boolean)} */
+  filter = null
+
   /**
-   * @param {(tile:HTMLElement)=>boolean} [filter]
    * @returns {void}
    */
-  clear(filter) {
+  clear() {
     /** @type {NodeListOf<HTMLElement>} */
     const priors = this.grid.el.querySelectorAll('.tile[data-light]');
-    for (const tile of priors)
-      if (!filter || filter(tile))
-        this.grid.setTileData(tile, 'light', null);
+    for (const tile of priors) if (!this.filter || this.filter(tile))
+      this.grid.setTileData(tile, 'light', null);
   }
 
   /**
@@ -34,13 +35,11 @@ export class GridLighting {
    * @param {object} params
    * @param {number} [params.lightScale]
    * @param {number} [params.lightInit] - initial lighting value, defaults to 8
-   * @param {(tile:HTMLElement)=>boolean} [params.filter]
    * @returns {void}
    */
   addField(source, {
     lightInit=(source && this.grid.getTileData(source, 'lightInit')) || 8,
     lightScale=1,
-    filter,
   }) {
     const depthLimit = Math.sqrt(lightInit/this.lightLimit);
     const origin = this.grid.getTilePosition(source);
@@ -50,7 +49,7 @@ export class GridLighting {
       depthLimit,
       query: (pos) => {
         const tiles = this.grid.tilesAt(pos);
-        const present = filter ? tiles.filter(filter) : tiles;
+        const present = this.filter ? tiles.filter(this.filter) : tiles;
         const supported = selfSupported || present.some(t => t.classList.contains('support'));
         const blocked = !supported || present.some(t => !t.classList.contains('passable'));
         return {supported, blocked};
@@ -59,7 +58,7 @@ export class GridLighting {
         const light = lightScale*lightInit/(depth ? depth*depth : 1);
         if (light >= this.lightLimit) {
           const tiles = this.grid.tilesAt(pos);
-          for (const tile of filter ? tiles.filter(filter) : tiles)
+          for (const tile of this.filter ? tiles.filter(this.filter) : tiles)
             this.add(tile, light);
         }
       },

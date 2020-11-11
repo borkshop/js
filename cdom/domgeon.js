@@ -618,15 +618,14 @@ export class DOMgeon extends EventTarget {
 
     // light each involved plane
     for (const [plane, litPlane] of litPlanes.entries()) {
-      /** @param {HTMLElement} tile */
-      const filter = tile => this.grid.getTileData(tile, 'plane') === plane;
+      scheme.filter = tile => this.grid.getTileData(tile, 'plane') === plane;
 
       // clear prior light
-      scheme.clear(filter);
+      scheme.clear();
 
       // add actor light fields
       for (const {actor, lightScale} of litPlane.actors)
-        scheme.addField(actor, {filter, lightScale});
+        scheme.addField(actor, {lightScale});
     }
   }
 
