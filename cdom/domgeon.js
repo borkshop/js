@@ -617,6 +617,8 @@ export class DOMgeon extends EventTarget {
     }
 
     // light each involved plane
+    const {w: vw, h: vh} = this.grid.viewport;
+    const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh)); // TODO could be tightened wrt actor position
     for (const [plane, litPlane] of litPlanes.entries()) {
       scheme.filter = tile => this.grid.getTileData(tile, 'plane') === plane;
 
@@ -630,7 +632,11 @@ export class DOMgeon extends EventTarget {
 
       // add actor light fields
       for (const {actor, lightScale} of litPlane.actors)
-        scheme.addField(actor, {lightScale});
+        scheme.addLightField(actor, {lightScale});
+
+      // set fov depth
+      for (const {actor} of litPlane.actors)
+        scheme.revealViewField(actor, plane, viewLimit);
     }
   }
 

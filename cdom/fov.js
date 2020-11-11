@@ -6,6 +6,7 @@ import {mortonKey} from './tiles';
 export class GridLighting {
   /** @type {TileGrid} */
   grid
+  fovVar = 'fov'
   lightVar = 'light'
   lightMax = 1.0
   lightLimit = 0.0001
@@ -26,8 +27,10 @@ export class GridLighting {
   clear() {
     /** @type {NodeListOf<HTMLElement>} */
     const priors = this.grid.el.querySelectorAll('.tile[data-light]');
-    for (const tile of priors) if (!this.filter || this.filter(tile))
-      this.grid.setTileData(tile, 'light', null);
+    for (const tile of priors) if (!this.filter || this.filter(tile)) {
+      this.grid.setTileData(tile, this.fovVar, null);
+      this.grid.setTileData(tile, this.lightVar, null);
+    }
   }
 
   /**
@@ -37,14 +40,66 @@ export class GridLighting {
    * @param {number} [params.lightInit] - initial lighting value, defaults to 8
    * @returns {void}
    */
-  addField(source, {
+  addLightField(source, {
     lightInit=(source && this.grid.getTileData(source, 'lightInit')) || 8,
     lightScale=1,
   }) {
     const depthLimit = Math.sqrt(lightInit/this.lightLimit);
+    this.computeField(source, depthLimit, (pos, depth) => {
+      const light = lightScale*lightInit/(depth ? depth*depth : 1);
+      if (light >= this.lightLimit) {
+        const tiles = this.grid.tilesAt(pos);
+        for (const tile of this.filter ? tiles.filter(this.filter) : tiles)
+          this.addLight(tile, light);
+      }
+    });
+  }
+
+  /**
+   * @param {HTMLElement} tile
+   * @param {number} light
+   */
+  addLight(tile, light) {
+    if (light >= this.lightLimit) {
+      const prior = this.grid.getTileData(tile, this.lightVar);
+      this.grid.setTileData(tile, this.lightVar,
+        Math.min(this.lightMax, typeof prior === 'number' ? prior + light : light));
+    }
+  }
+
+  /**
+   * @param {HTMLElement} source
+   * @param {string} className
+   * @param {number} [depthLimit]
+   * @returns {void}
+   */
+  revealViewField(source, className, depthLimit=1000) {
+    this.computeField(source, depthLimit, (pos, depth) => {
+      for (const tile of this.grid.tilesAt(pos, className))
+        this.revealView(tile, depth);
+    });
+  }
+
+  /**
+   * @param {HTMLElement} tile
+   * @param {number} depth
+   */
+  revealView(tile, depth) {
+    const prior = this.grid.getTileData(tile, this.fovVar);
+    this.grid.setTileData(tile, this.fovVar,
+      typeof prior === 'number' ? Math.min(prior, depth) : depth);
+  }
+
+  /**
+   * @param {HTMLElement} source
+   * @param {number} depthLimit
+   * @param {(pos:Point, depth:number) => void} update
+   * @returns {void}
+   */
+  computeField(source, depthLimit, update) {
     const origin = this.grid.getTilePosition(source);
     const selfSupported = !!source.classList.contains('support');
-    computeFOV({
+    computeField({
       origin,
       depthLimit,
       query: (pos) => {
@@ -54,27 +109,8 @@ export class GridLighting {
         const blocked = !supported || present.some(t => !t.classList.contains('passable'));
         return {supported, blocked};
       },
-      update: (pos, depth) => {
-        const light = lightScale*lightInit/(depth ? depth*depth : 1);
-        if (light >= this.lightLimit) {
-          const tiles = this.grid.tilesAt(pos);
-          for (const tile of this.filter ? tiles.filter(this.filter) : tiles)
-            this.add(tile, light);
-        }
-      },
+      update,
     });
-  }
-
-  /**
-   * @param {HTMLElement} tile
-   * @param {number} light
-   */
-  add(tile, light) {
-    if (light >= this.lightLimit) {
-      const prior = this.grid.getTileData(tile, this.lightVar);
-      this.grid.setTileData(tile, this.lightVar,
-        Math.min(this.lightMax, typeof prior === 'number' ? prior + light : light));
-    }
   }
 }
 
@@ -89,7 +125,7 @@ export class GridLighting {
  * @param {number} [params.depthLimit]
  * @returns {void}
  */
-export function computeFOV({origin, query, update, depthLimit=1000}) {
+export function computeField({origin, query, update, depthLimit=1000}) {
   /* TODO support casting from walls:
    * > So here are the modifications for casting field of view from a wall tile:
    * > - Make slopes originate from the edges of the tile instead of the center.
