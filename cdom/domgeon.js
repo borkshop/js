@@ -564,11 +564,25 @@ export class DOMgeon extends EventTarget {
     this._lightAnim.push({id, t: this.viewAnimTime, et: 0, from, to})
   }
 
+  *_findLightSelectors() {
+    for (const styleSheet of this.grid.el.ownerDocument.styleSheets)
+      for (const rule of styleSheet.rules) {
+        const {selectorText, style} = /** @type {CSSStyleRule} */ (rule);
+        if (style.getPropertyValue('--lightInit')) {
+          for (const match of selectorText.matchAll(/(\.tile\.[^\s:#\[]+)/g))
+            yield match[1];
+        }
+      }
+  }
+
   /**
    * @param {number} dt
    */
   _runLightAnim(dt) {
     const scheme = new GridLighting(this.grid);
+
+    // TODO cache and invalidate on (rare) mutation
+    const lightSelectors = Array.from(this._findLightSelectors());
 
     /**
      * @typedef {object} LitActor
@@ -635,6 +649,16 @@ export class DOMgeon extends EventTarget {
         const lightAmbient = this.grid.getTileData(tile, 'lightAmbient');
         if (typeof lightAmbient === 'number')
           scheme.addLight(tile, lightAmbient);
+      }
+
+      // add non-actor light fields
+      for (const lightSelector of lightSelectors) {
+        /** @type {NodeListOf<HTMLElement>} */
+        const tiles = this.grid.el.querySelectorAll(lightSelector);
+        for (const tile of tiles) if (!litPlane.actors.has(tile.id)) {
+          const lightInit = this.grid.getTileData(tile, 'lightInit');
+          scheme.addLightField(tile, {lightInit});
+        }
       }
 
       // add actor light fields and reveal FOV
