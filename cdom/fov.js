@@ -1,3 +1,5 @@
+import {mortonKey} from './tiles';
+
 /** @typedef { import("./tiles").TileGrid } TileGrid */
 /** @typedef { import("./tiles").Point } Point */
 
@@ -48,7 +50,7 @@ export function addGridLight({
       return {supported, blocked};
     },
     update: (pos, depth) => {
-      const light = Math.min(lightMax, lightScale*lightInit/(depth*depth));
+      const light = Math.min(lightMax, lightScale*lightInit/(depth ? depth*depth : 1));
       const tiles = grid.tilesAt(pos);
       const present = filter ? tiles.filter(filter) : tiles;
       for (const tile of present) if (light >= lightLimit) {
@@ -78,7 +80,28 @@ export function computeFOV({origin, query, update, depthLimit=1000}) {
    * > - Change the comparisons in is_symmetric to strict inequalities.
    */
 
-  update(origin, 0);
+  /**
+   * Used to dedupe calls to update so that the caller only sees any position
+   * at most once. Ideally we'd get the quadrant boundary maths below fixed to
+   * not produce duplicates, but for now a visited set prevents visual
+   * artifacts (e.g. so what addGridLight doesn't add to the same cell twice).
+   *
+   * @type {Set<Number>} */
+  const visited = new Set();
+
+  /**
+   * @param {Point} pos
+   * @param {number} depth
+   */
+  function visit(pos, depth) {
+    const key = mortonKey(pos);
+    if (!visited.has(key)) {
+      visited.add(key);
+      update(pos, depth);
+    }
+  }
+
+  visit(origin, 0);
 
   // work in cardinally aligned quadrants around origin; each quadrant is
   // essentially a π/2 section centered around each +/- x/y axis
@@ -119,7 +142,7 @@ export function computeFOV({origin, query, update, depthLimit=1000}) {
         const {supported, blocked} = query(pos);
 
         if (blocked) {
-          if (supported) update(pos, depth);
+          if (supported) visit(pos, depth);
           if (wasBlocked === false) rows.push({
             depth: depth + 1,
             startSlope: restartSlope,
@@ -132,7 +155,7 @@ export function computeFOV({origin, query, update, depthLimit=1000}) {
           if (supported && // isSymmetric
               col >= depth * restartSlope &&
               col <= depth * endSlope)
-            update(pos, depth); // TODO depth based falloff
+            visit(pos, depth); // TODO depth based falloff
           if (wasBlocked) restartSlope = tileSlope;
         }
         wasBlocked = blocked;
