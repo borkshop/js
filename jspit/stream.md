@@ -39,15 +39,18 @@ Lighting Inspection
 
 Reworked FOV and made lighting blend between actors on focus change.
 
-Added self-supported light so that walking around in the void can be as lit
-as supported interior.
+Added self-supported light so that walking around in the void can be as lit as
+supported interior. Fixed a revealed/latent bug in FOV computation where the
+scanning iteration can update quadrant boundary positions twice; this matters
+now that the update is additive.
 
 Finished out planar isolation feature, since lack of it was further
 complicating compounding debug of lighting: FOV is now constrained to a plane,
 so that it's not accidentally blocked by debug tiles or the inspector cursor.
 
 Fixed a tile inspector bug introduced by yesterday's `TileGrid.viewOffset`
-un-flooring, by re-introducing the floor withing tile inspector positioning.
+un-flooring, by re-introducing the floor math within tile inspector
+positioning.
 
 # 2020-11-09
 
