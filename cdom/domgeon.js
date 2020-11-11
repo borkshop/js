@@ -586,18 +586,18 @@ export class DOMgeon extends EventTarget {
     };
 
     // light actors
-    if (!this._lightAnim.length) {
-      if (this._litActorID) lightActor(this._litActorID);
-      return;
+    if (this._lightAnim.length) {
+      for (let i = 0; i < this._lightAnim.length; ++i) {
+        this._lightAnim[i].et += dt;
+        const {id, et, t, from, to} = this._lightAnim[i];
+        const p = this.viewAnimEase(et/t);
+        const v = (1 - p)*from + p*to;
+        lightActor(id, v);
+      }
+      this._lightAnim = this._lightAnim.filter(({et, t}) => et < t);
+    } else if (this._litActorID) {
+      lightActor(this._litActorID);
     }
-    for (let i = 0; i < this._lightAnim.length; ++i) {
-      this._lightAnim[i].et += dt;
-      const {id, et, t, from, to} = this._lightAnim[i];
-      const p = this.viewAnimEase(et/t);
-      const v = (1 - p)*from + p*to;
-      lightActor(id, v);
-    }
-    this._lightAnim = this._lightAnim.filter(({et, t}) => et < t);
   }
 
   /**
