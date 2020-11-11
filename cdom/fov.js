@@ -17,10 +17,6 @@ export class GridLighting {
     this.grid = grid;
   }
 
-  get depthLimit() {
-    return Math.sqrt(this.lightMax/this.lightLimit);
-  }
-
   /**
    * @param {(tile:HTMLElement)=>boolean} [filter]
    * @returns {void}
@@ -46,11 +42,12 @@ export class GridLighting {
     lightScale=1,
     filter,
   }) {
+    const depthLimit = Math.sqrt(lightInit/this.lightLimit);
     const origin = this.grid.getTilePosition(source);
     const selfSupported = !!source.classList.contains('support');
     computeFOV({
       origin,
-      depthLimit: this.depthLimit,
+      depthLimit,
       query: (pos) => {
         const tiles = this.grid.tilesAt(pos);
         const present = filter ? tiles.filter(filter) : tiles;
