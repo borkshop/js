@@ -143,79 +143,58 @@ function procMove(move) {
 }
 
 /**
- * @param {object} params
- * @param {HTMLElement} params.cont
- * @param {EventListenerOrEventListenerObject} params.handler
- * @param {string} [params.key]
- * @param {string} [params.label]
- * @param {string} [params.legend]
- * @param {string} [params.title]
- * @returns {HTMLButtonElement}
+ * @typedef {object} ButtonSpec
+ * @prop {string} label
+ * @prop {string} [key]
+ * @prop {string} [title]
+ * @prop {string} [legend]
  */
-function createButton({cont, handler, key, label, legend, title}) {
-  const button = cont.ownerDocument.createElement('button');
-  if (key) button.dataset['key'] = key;
-  if (label) button.innerText = label;
-  if (key) {
-    const K = key.toUpperCase();
-    if (!label)
-      button.innerText = K;
-    else if (key.length === 1 && K !== label)
-      button.dataset['legend'] = K;
-  }
-  if (legend && legend !== label) button.dataset['legend'] = legend;
-  if (title) button.title = title;
-  button.addEventListener('click', handler);
-  cont.appendChild(button);
-  return button;
-}
 
-/**
- * @param {HTMLElement} button
- * @param {object} params
- * @param {string} [params.label]
- * @param {string} [params.legend]
- * @param {string} [params.title]
- * @returns {void}
- */
-function updateButton(button, {label, legend, title}) {
-  const key = button.dataset['key'];
-  if (label) button.innerText = label;
-  button.dataset['legend'] = '';
-  if (key) {
-    const K = key.toUpperCase();
-    if (!label)
-      button.innerText = K;
-    else if (key.length === 1 && K !== label)
-      button.dataset['legend'] = K;
-  }
-  if (legend && legend !== label) button.dataset['legend'] = legend;
-  if (title) button.title = title;
-}
+/** @typedef {ButtonSpec&Partial<Move>} ActionButtonSpec */
 
 /**
  * @param {HTMLElement} cont
- * @param {{action:string, label:string}[]} actions
  * @param {EventListenerOrEventListenerObject} handler
- * @returns {void}
+ * @param {null|HTMLButtonElement} button
+ * @param {null|ActionButtonSpec} spec
  */
-function updateActionButtons(cont, actions, handler) {
-  /** @type {NodeListOf<HTMLButtonElement>} */
-  const buttons = cont.querySelectorAll('button[data-action]');
-  for (let i=0; i<buttons.length || i<actions.length; i++) {
-    let button = buttons[i];
-    if (actions[i] === undefined) {
-      button.parentNode?.removeChild(button);
-      continue;
-    }
-    const {action, label} = actions[i];
-    if (button === undefined) {
-      const key = i < 10 ? `${i+1}` : undefined;
-      button = createButton({cont, handler, key, label});
-    } else if (button.dataset['action'] !== action || button.innerText !== label) {
-      updateButton(button, {label});
-    } else continue;
+function updateActionButton(cont, handler, button, spec) {
+  if (!spec) {
+    if (button) button.parentNode?.removeChild(button);
+    return;
+  }
+
+  let {label, key, title, legend, action, x, y} = spec;
+
+  if (!button) {
+    button = cont.appendChild(cont.ownerDocument.createElement('button'));
+    button.addEventListener('click', handler);
+  }
+
+  if (!title) title = '';
+  if (button.title !== title) button.title = title;
+
+  if (!key) key = button.dataset['key'];
+  if (!legend && key) {
+    const K = key.toUpperCase();
+    if (!label) label = K;
+    else if (key.length === 1 && K !== label) legend = K;
+  }
+  if (button.dataset['key'] !== key) button.dataset['key'] = key;
+
+  if (!label) label = '';
+  if (button.innerText !== label) button.innerText = label;
+
+  if (button.dataset['legend'] !== legend) button.dataset['legend'] = legend;
+
+  if (button.dataset['action'] !== action)
     button.dataset['action'] = action;
+
+  if (x !== undefined && !isNaN(x) &&
+      y !== undefined && !isNaN(y)) {
+    const val = `${x},${y}`;
+    if (button.dataset['movedir'] !== val)
+      button.dataset['movedir'] = val;
   }
 }
 
@@ -332,69 +311,20 @@ export class DOMgeon extends EventTarget {
       'ArrowUp': '↑',
       'ArrowRight': '→',
     };
-
-    /** @type {Object<string, string>} */
-    const moveLabels = {
-      '-1,0': '←',
-      '0,1': '↓',
-      '0,-1': '↑',
-      '1,0': '→',
-      '0,0': '⊙',
-    };
-
-    /** @type {Object<string, string>} */
-    const moveTitles = {
-      '-1,0': 'Move Left',
-      '0,1': 'Move Down',
-      '0,-1': 'Move Up',
-      '1,0': 'Move Right',
-      '0,0': 'Stay (no move)',
-    };
-
-    /** @type {Object<string, string>} */
-    const defaultMoveKeys = {
-
-      // '-1,0': 'ArrowLeft',
-      // '0,1': 'ArrowDown',
-      // '0,-1': 'ArrowUp',
-      // '1,0': 'ArrowRight',
-      // '0,0': '.',
-
-      '0,-1': 'w',
-      '-1,0': 'a',
-      '0,1': 's',
-      '1,0': 'd',
-      // '0,0': 'r',
-
-      // '-1,0': 'h',
-      // '0,1': 'j',
-      // '0,-1': 'k',
-      // '1,0': 'l',
-      // '0,0': '.',
-
-    };
-
-    const missing = new Set(Object.keys(defaultMoveKeys));
-    /** @type {NodeListOf<HTMLButtonElement>} */
-    const buttons = this.ui.querySelectorAll('button[data-movedir]');
-    for (const button of buttons) {
-      const movedir = button.dataset['movedir'];
-      if (!movedir) continue;
-      missing.delete(movedir);
-      if (!button.dataset['key']) button.dataset['key'] = defaultMoveKeys[movedir]
-    }
-    const cont = this.moveBar || this.actionBar || this.ui;
-    for (const movedir of missing) {
-      const key = defaultMoveKeys[movedir];
-      const button = createButton({
-        cont,
-        handler: this.keys,
-        key,
-        label: moveLabels[movedir],
-        legend: keyLegends[key],
-        title: moveTitles[movedir],
+    if (this.moveBar) for (let {key, label, title, x, y} of [
+      {x: 0, y: -1, key: 'w', title: 'Move Up', label: '↑'},
+      {x: -1, y: 0, key: 'a', title: 'Move Left', label: '←'},
+      {x: 0, y: 1, key: 's', title: 'Move Down', label: '↓'},
+      {x: 1, y: 0, key: 'd', title: 'Move Right', label: '→'},
+      // {x: 0, y: 0, key: 'r', title: 'Stay (no move)', label: '⊙'},
+    ]) {
+      /** @type {null|HTMLButtonElement} */
+      const button = this.moveBar.querySelector(`button[data-movedir="${x},${y}"]`);
+      if (button?.dataset['key']) key = button.dataset['key'];
+      const legend = keyLegends[key];
+      updateActionButton(this.moveBar, this.keys, button, {
+        label, key, title, legend, x, y,
       });
-      button.dataset['movedir'] = movedir;
     }
   }
 
@@ -521,8 +451,16 @@ export class DOMgeon extends EventTarget {
     if (wanted) this.viewTo(wanted);
     else if (!this.grid.hasFixedViewPoint()) this.viewTo(pos);
     this.updateLighting({actor});
-    if (this.actionBar)
-      updateActionButtons(this.actionBar, this.collectActions(), this.keys);
+    if (this.actionBar) {
+      /** @type {NodeListOf<HTMLButtonElement>} */
+      const buttons = this.actionBar.querySelectorAll('button[data-action]');
+      const actions = this.collectActions();
+      for (let i=0; i<buttons.length || i<actions.length; i++) {
+        let action = actions[i];
+        if (i < 10) action = {key: `${i+1}`, ...action};
+        updateActionButton(this.actionBar, this.keys, buttons[i], action);
+      }
+    }
     this.dispatchEvent(new Event('view'));
   }
 
@@ -720,7 +658,7 @@ export class DOMgeon extends EventTarget {
   }
 
   collectActions() {
-    /** @type {{action:string, label:string}[]} */
+    /** @type {ActionButtonSpec[]} */
     const actions = [];
 
     const actors = Array.from(this.grid.queryTiles({className: ['mover', 'input']}));
