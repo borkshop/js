@@ -460,9 +460,10 @@ export class DOMgeon extends EventTarget {
       const buttons = this.actionBar.querySelectorAll('button[data-action]');
       const actions = this.collectActions();
       for (let i=0; i<buttons.length || i<actions.length; i++) {
-        let action = actions[i];
-        if (i < 10) action = {key: `${i+1}`, ...action};
-        updateActionButton(this.actionBar, this.keys, buttons[i], action);
+        const button = buttons[i] || null;
+        let action = actions[i] || null;
+        if (action && i < 10) action = {key: `${i+1}`, ...action};
+        updateActionButton(this.actionBar, this.keys, button, action);
       }
     }
     this.dispatchEvent(new Event('view'));
