@@ -730,21 +730,17 @@ export function moveTileClass({grid, moverClass='mover', kind='', may}) {
     className: kind ? [moverClass, kind] : moverClass,
   })) {
     const move = grid.getTileData(mover, 'move');
+    grid.setTileData(mover, 'move', null);
     if (!move || typeof move !== 'object') continue;
-    if (move.action !== undefined) {
-      if (typeof move.x !== 'number') move.x = NaN;
-      if (typeof move.y !== 'number') move.y = NaN;
-    } else if (!(
-      typeof move.x === 'number' &&
-      typeof move.y === 'number'
-    )) continue;
-    const action = typeof move.action === 'string' ? move.action : null;
+    let {action, x, y} = move;
+    if (typeof action !== 'string') action = '';
+    if (typeof x !== 'number') x = NaN;
+    if (typeof y !== 'number') y = NaN;
     const pos = grid.getTilePosition(mover);
-    const to = {x: pos.x + move.x, y: pos.y + move.y};
+    const to = {x: pos.x + x, y: pos.y + y};
     const at = grid.tilesAt(to);
     if (!may || may({grid, mover, pos, action, to, at}))
       grid.moveTileTo(mover, to);
-    grid.setTileData(mover, 'move', null);
   }
 }
 
