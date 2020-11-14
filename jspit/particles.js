@@ -20,7 +20,7 @@ export function atHeading({x, y}, θ, r=1) {
 }
 
 /**
- * @typedef {(grid: TileGrid, ps: HTMLElement[])=>void} ParticleUpdater
+ * @typedef {(grid: TileGrid, ps: Iterable<HTMLElement>)=>void} ParticleUpdater
  * @typedef {(grid: TileGrid, p: HTMLElement, pos: Point, to: Point)=>boolean} ParticleMover
  *
  * @param {object} params
