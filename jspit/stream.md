@@ -1,4 +1,4 @@
-# 2020-11-13
+# 2020-11-14
 
 ## TODO
 
@@ -86,6 +86,20 @@ So how about expanding the current tile scheme:
   other behaviors
 
 ## Done
+
+TileGrid movement processing is now more general and self-contained: it's now
+up to the proc to do any sort of spatial math, query, and move; provided a
+default proc with the prior behavior. Collapsed and simplifeid DOMgeon's
+move/action procs then, to set the stage for more generalized behaviors.
+
+Validated, debugged, and finished yesterdays's scope into main. Added a
+toplevel npm test script to aid minimal automated type checking, and fixed a
+latent bug from the recent queryTiles refactor.
+
+# 2020-11-13
+
+Refactored most of the way through input/move parsing and handling in dev
+branch, to set the stage for more complicated / general actions.
 
 # 2020-11-12
 
