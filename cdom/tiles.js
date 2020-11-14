@@ -693,6 +693,7 @@ export function dumpTiles({tiles, into, detail}) {
  * @prop {HTMLElement} mover
  * @prop {Point} pos
  * @prop {string|null} action
+ * @prop {Object<string, string|undefined>} [data]
  * @prop {Point} to
  * @prop {HTMLElement[]} at
  */
@@ -708,6 +709,7 @@ export function dumpTiles({tiles, into, detail}) {
  * @prop {string} action
  * @prop {number} x
  * @prop {number} y
+ * @prop {Object<string, string|undefined>} [data]
  */
 
 /**
@@ -743,14 +745,14 @@ export function moveTileClass({grid, moverClass='mover', kind='', may}) {
     const move = grid.getTileData(mover, 'move');
     grid.setTileData(mover, 'move', null);
     if (!move || typeof move !== 'object') continue;
-    let {action, x, y} = move;
+    let {action, x, y, data} = move;
     if (typeof action !== 'string') action = '';
     if (typeof x !== 'number') x = NaN;
     if (typeof y !== 'number') y = NaN;
     const pos = grid.getTilePosition(mover);
     const to = {x: pos.x + x, y: pos.y + y};
     const at = grid.tilesAt(to);
-    if (!may || may({grid, mover, pos, action, to, at}))
+    if (!may || may({grid, mover, pos, action, data, to, at}))
       grid.moveTileTo(mover, to);
   }
 }

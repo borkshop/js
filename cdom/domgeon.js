@@ -88,14 +88,14 @@ function applyMorph(grid, tile, morph) {
 }
 
 /** @type {TileMoverProc} */
-export function procMoveAction({grid, mover, action}) {
+export function procMoveAction({grid, mover, action, data}) {
   if (!action) return true;
 
   // interact with target tile
-  if (action.startsWith('interact:')) {
-    const target = action.slice(9);
-    if (target.startsWith('tile:')) {
-      const interact = grid.getTile(target.slice(5));
+  if (action === 'interact') {
+    const tileID = data?.tileID;
+    if (tileID) {
+      const interact = grid.getTile(tileID);
       if (interact) procInteraction(grid, [interact], mover)
     }
     // no need for intrinsic spatial move
@@ -164,12 +164,16 @@ function updateActionButton(cont, handler, button, spec) {
     return;
   }
 
-  let {label, key, title, legend, action, x, y} = spec;
+  let {label, key, title, legend, action, x, y, data} = spec;
+  if (data?.key) ({key, ...data} = data);
+  if (data?.legend) ({legend, ...data} = data);
 
   if (!button) {
     button = cont.appendChild(cont.ownerDocument.createElement('button'));
     button.addEventListener('click', handler);
   }
+
+  const priorData = new Set(Object.keys(button.dataset));
 
   if (!title) title = '';
   if (button.title !== title) button.title = title;
@@ -181,21 +185,32 @@ function updateActionButton(cont, handler, button, spec) {
     else if (key.length === 1 && K !== label) legend = K;
   }
   if (button.dataset['key'] !== key) button.dataset['key'] = key;
+  priorData.delete('key');
 
   if (!label) label = '';
   if (button.innerText !== label) button.innerText = label;
 
   if (button.dataset['legend'] !== legend) button.dataset['legend'] = legend;
+  priorData.delete('legend');
 
   if (button.dataset['action'] !== action)
     button.dataset['action'] = action;
+  priorData.delete('action');
 
   if (x !== undefined && !isNaN(x) &&
       y !== undefined && !isNaN(y)) {
     const val = `${x},${y}`;
     if (button.dataset['movedir'] !== val)
       button.dataset['movedir'] = val;
+    priorData.delete('movedir');
   }
+  if (data) for (const [prop, val] of Object.entries(data)) if (val !== undefined) {
+    if (button.dataset[prop] !== val)
+      button.dataset[prop] = val;
+    priorData.delete(prop);
+  }
+  for (const prop of priorData)
+    delete button.dataset[prop];
 }
 
 /**
@@ -203,14 +218,14 @@ function updateActionButton(cont, handler, button, spec) {
  * @returns {Move}
  */
 function parseButtonMove(button) {
-  const {action, movedir} = button.dataset;
+  const {action, movedir, ...data} = button.dataset;
   let x = NaN, y = NaN;
   if (movedir) {
     const parts = movedir.split(',');
     x = parseFloat(parts[0]);
     y = parseFloat(parts[1]);
   }
-  return {action: action || '', x, y};
+  return {action: action || '', x, y, data};
 }
 
 /**
@@ -637,9 +652,9 @@ export class DOMgeon extends EventTarget {
       .reduce(mergeMoves, null);
 
     let actor = this.focusedActor();
-    if (move?.action?.startsWith('actor:')) {
-      const actorID = move.action.slice(6);
-      const newActor = this.grid.getTile(actorID);
+    if (move?.action === 'actor') {
+      const actorID = move.data?.actorID;
+      const newActor = actorID && this.grid.getTile(actorID);
       if (newActor) {
         newActor.classList.add('focus');
         if (actor) actor.classList.remove('focus');
@@ -670,7 +685,8 @@ export class DOMgeon extends EventTarget {
         const actorID = this.grid.getTileID(actor);
         return {
           label: `Focus: ${text} <${pos.x},${pos.y}>`,
-          action: `actor:${actorID}`,
+          action: 'actor',
+          data: {actorID},
         };
       }));
 
@@ -700,9 +716,11 @@ export class DOMgeon extends EventTarget {
 
       actions.push(...interacts.map(interact => {
         const tileID = this.grid.getTileID(interact);
-        const action = `interact:tile:${tileID}`;
-        const label = actionLabel(this.grid, interact);
-        return {action, label};
+        return {
+          label: actionLabel(this.grid, interact),
+          action: 'interact',
+          data: {tileID},
+        };
       }));
     }
 
