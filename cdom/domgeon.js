@@ -12,6 +12,7 @@ import {GridLighting} from './fov';
 
 /** @typedef { import("./tiles").Point } Point */
 /** @typedef { import("./tiles").Rect } Rect */
+/** @typedef { import("./tiles").Move } Move */
 /** @typedef { import("./tiles").TileFilter } TileFilter */
 /** @typedef { import("./tiles").TileMoverProc } TileMoverProc */
 /** @typedef { import("./tiles").TileSpec } TileSpec */
@@ -219,27 +220,32 @@ function updateActionButtons(cont, actions, handler) {
 }
 
 /**
- * @param {string} key
- * @param {NodeListOf<HTMLButtonElement>} buttons
- * @returns {null|Move}
+ * @param {HTMLButtonElement} button
+ * @returns {Move}
  */
-function parseButtonKey(key, buttons) {
-  for (const button of buttons) {
-    if (key === button.dataset['key']) {
-      /** @type {Move} */
-      const move = {x: NaN, y: NaN};
-      const dir = button.dataset['movedir'];
-      if (dir) {
-        const parts = dir.split(',');
-        move.x = parseFloat(parts[0]);
-        move.y = parseFloat(parts[1]);
-      }
-      const action = button.dataset['action'];
-      if (action) move.action = action;
-      return move;
-    }
+function parseButtonMove(button) {
+  const {action, movedir} = button.dataset;
+  let x = NaN, y = NaN;
+  if (movedir) {
+    const parts = movedir.split(',');
+    x = parseFloat(parts[0]);
+    y = parseFloat(parts[1]);
   }
-  return null;
+  return {action: action || '', x, y};
+}
+
+/**
+ * @param {Move|null} a
+ * @param {Move|null} b
+ * @returns {Move|null}
+ */
+function mergeMoves(a, b) {
+  // TODO afford action-aware merge, e.g. a priority (partial) ordering
+  if (!b) return a;
+  if (!a) return b;
+  if (a.action) return a;
+  if (b.action) return b;
+  return {action: '', x: a.x + b.x, y: a.y + b.y};
 }
 
 /**
@@ -253,17 +259,6 @@ function actionLabel(grid, tile) {
   const action = grid.getTileData(tile, 'action');
   return `${action || 'use'} ${name}`;
 }
-
-/**
- * A move has a spatial component and an optional action string.
- * The action string may be used to define custom extensions or to otherwise
- * change the semantics of the x,y spatial component.
- *
- * @typedef {Object} Move
- * @prop {number} x
- * @prop {number} y
- * @prop {string} [action]
- */
 
 export class DOMgeon extends EventTarget {
   /** @type {TileGrid} */
@@ -697,22 +692,14 @@ export class DOMgeon extends EventTarget {
   processInput() {
     let move = Array.from(this.keys.consume() || [])
       .map(key => {
-        /** @type {NodeListOf<HTMLButtonElement>} */
-        const buttons = this.ui.querySelectorAll('button[data-key]');
-        return parseButtonKey(key, buttons);
+        /** @type {null|HTMLButtonElement} */
+        const button = this.ui.querySelector(`button[data-key="${key}"]`);
+        return button && parseButtonMove(button);
       })
-      .reduce((a, b) => {
-        // TODO afford action-aware merge, e.g. a priority (partial) ordering
-        if (!b) return a;
-        if (!a) return b;
-        if (a.action) return a;
-        if (b.action) return b;
-        return {x: a.x + b.x, y: a.y + b.y};
-      }, null);
-    if (!move) return null;
+      .reduce(mergeMoves, null);
 
     let actor = this.focusedActor();
-    if (move && move.action?.startsWith('actor:')) {
+    if (move?.action?.startsWith('actor:')) {
       const actorID = move.action.slice(6);
       const newActor = this.grid.getTile(actorID);
       if (newActor) {
@@ -722,9 +709,8 @@ export class DOMgeon extends EventTarget {
       }
       move = null;
     }
-    if (!actor) return null;
 
-    if (move) {
+    if (move && actor) {
       this.grid.setTileData(actor, 'move', move);
       this.dispatchEvent(new Event('move'));
       moveTiles({grid: this.grid, kinds: this.moveProcs});

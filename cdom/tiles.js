@@ -700,6 +700,17 @@ export function dumpTiles({tiles, into, detail}) {
 /** @typedef {(req:TileMove) => boolean} TileMoverProc */
 
 /**
+ * A move has a spatial component and an optional action string.
+ * The action string may be used to define custom extensions or to otherwise
+ * change the semantics of the x,y spatial component.
+ *
+ * @typedef {object} Move
+ * @prop {string} action
+ * @prop {number} x
+ * @prop {number} y
+ */
+
+/**
  * @param {Object} options
  * @param {TileGrid} options.grid
  * @param {string} [options.moverClass]
