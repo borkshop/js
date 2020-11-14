@@ -691,14 +691,10 @@ export function dumpTiles({tiles, into, detail}) {
  * @typedef {object} TileMove
  * @prop {TileGrid} grid
  * @prop {HTMLElement} mover
- * @prop {Point} pos
- * @prop {string|null} action
- * @prop {Object<string, string|undefined>} [data]
- * @prop {Point} to
- * @prop {HTMLElement[]} at
+ * @prop {Move} move
  */
 
-/** @typedef {(req:TileMove) => boolean} TileMoverProc */
+/** @typedef {(req:TileMove) => void} TileMoverProc */
 
 /**
  * A move has a spatial component and an optional action string.
@@ -737,23 +733,27 @@ export function moveTiles({grid, moverClass='mover', kinds}) {
  * @param {TileMoverProc} [options.proc]
  * @return {void}
  */
-export function moveTileClass({grid, moverClass='mover', kind='', proc}) {
+export function moveTileClass({grid, moverClass='mover', kind='', proc=defaultMoverProc}) {
   for (const mover of grid.queryTiles({
     className: kind ? [moverClass, kind] : moverClass,
   })) {
     const move = grid.getTileData(mover, 'move');
     grid.setTileData(mover, 'move', null);
     if (!move || typeof move !== 'object') continue;
-    let {action, x, y, data} = move;
-    if (typeof action !== 'string') action = '';
-    if (typeof x !== 'number') x = NaN;
-    if (typeof y !== 'number') y = NaN;
-    const pos = grid.getTilePosition(mover);
-    const to = {x: pos.x + x, y: pos.y + y};
-    const at = grid.tilesAt(to);
-    if (!proc || proc({grid, mover, pos, action, data, to, at}))
-      grid.moveTileTo(mover, to);
+    proc({grid, mover, move})
   }
+}
+
+/**
+ * @param {TileMove} move
+ */
+function defaultMoverProc({grid, mover, move}) {
+  if (move.action) return;
+  if (typeof move.x !== 'number' || isNaN(move.x)) return;
+  if (typeof move.y !== 'number' || isNaN(move.y)) return;
+  const {x, y} = grid.getTilePosition(mover);
+  const to = {x: x + move.x, y: y + move.y};
+  grid.moveTileTo(mover, to);
 }
 
 /**

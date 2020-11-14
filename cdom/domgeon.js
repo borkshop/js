@@ -88,16 +88,21 @@ function applyMorph(grid, tile, morph) {
 }
 
 /** @type {TileMoverProc} */
-function procMove({grid, mover, action, data, to, at}) {
+function procMove({grid, mover, move}) {
+  const {action, data} = move;
+
   // interact with target tile
   if (action === 'interact') {
     const tileID = data?.tileID;
     const interact = tileID && grid.getTile(tileID);
     if (interact) procInteraction(grid, [interact], mover)
-    return false; // no need for intrinsic spatial move
+    return;
   }
 
   const plane = grid.getTileData(mover, 'plane');
+  const {x, y} = grid.getTilePosition(mover);
+  const to = {x: x + move.x, y: y + move.y};
+  const at = grid.tilesAt(to);
 
   // interact with any co-planar tiles present
   let present = at.filter(h => grid.getTileData(h, 'plane') === plane);
@@ -108,21 +113,22 @@ function procMove({grid, mover, action, data, to, at}) {
     !h.classList.contains('passable')
   );
   if (interacts.length) {
-    if (!procInteraction(grid, interacts, mover)) return false;
+    if (!procInteraction(grid, interacts, mover)) return;
     // re-query over any interaction updates
     present = grid.tilesAt(to).filter(h => grid.getTileData(h, 'plane') === plane);
   }
 
   // blocked by any present .tile:not(.passable)
-  if (present.some(h => !h.classList.contains('passable'))) return false;
+  if (present.some(h => !h.classList.contains('passable'))) return;
 
   // move must be supported:
 
-  // mover is self-supported ( #wedontneedroads )
-  if (mover.classList.contains('support')) return true;
-
-  // otherwise there must present a .tile.support (e.g. a "floor")
-  return present.some(h => h.classList.contains('support'));
+  if (
+    // mover is self-supported ( #wedontneedroads )
+    mover.classList.contains('support') ||
+    // otherwise there must present a .tile.support (e.g. a "floor")
+    present.some(h => h.classList.contains('support'))
+  ) grid.moveTileTo(mover, to);
 }
 
 /**
