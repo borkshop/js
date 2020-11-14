@@ -12,6 +12,11 @@
     "url": "https://github.com/borkshop/js.git"
   },
 
+  "scripts": {
+    "lint": "yarn workspaces run lint",
+    "test": "yarn workspaces run test"
+  },
+
   "workspaces": [
     "cdom-template",
     "jspit"
