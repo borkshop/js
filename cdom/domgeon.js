@@ -42,7 +42,7 @@ import {GridLighting} from './fov';
  * @param {HTMLElement} subject
  * @returns {boolean}
  */
-export function procInteraction(grid, interacts, subject) {
+function procInteraction(grid, interacts, subject) {
   if (!interacts.length) return false;
   // TODO interaction loop to choose
   if (interacts.length > 1) return false;
@@ -88,32 +88,15 @@ function applyMorph(grid, tile, morph) {
 }
 
 /** @type {TileMoverProc} */
-export function procMoveAction({grid, mover, action, data}) {
-  if (!action) return true;
-
+function procMove({grid, mover, action, data, to, at}) {
   // interact with target tile
   if (action === 'interact') {
     const tileID = data?.tileID;
-    if (tileID) {
-      const interact = grid.getTile(tileID);
-      if (interact) procInteraction(grid, [interact], mover)
-    }
-    // no need for intrinsic spatial move
-    return false;
+    const interact = tileID && grid.getTile(tileID);
+    if (interact) procInteraction(grid, [interact], mover)
+    return false; // no need for intrinsic spatial move
   }
 
-  // TODO intrinsic (cap)abilities
-
-  // unknown action, allow intrinsic move
-  return true;
-}
-
-/** @type {TileMoverProc} */
-function procMove(move) {
-  // process non-spatial move
-  if (move.action) return procMoveAction(move);
-
-  const {grid, mover, to, at} = move;
   const plane = grid.getTileData(mover, 'plane');
 
   // interact with any co-planar tiles present
