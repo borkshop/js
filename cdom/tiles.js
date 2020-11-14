@@ -725,20 +725,19 @@ export function moveTiles({grid, moverClass='mover', kinds}) {
     return;
   }
   for (const kind in kinds) if (kind)
-    moveTileClass({grid, moverClass, kind, may: kinds[kind]});
-  moveTileClass({grid, moverClass, may: kinds['']});
+    moveTileClass({grid, moverClass, kind, proc: kinds[kind]});
+  moveTileClass({grid, moverClass, proc: kinds['']});
 }
 
 /**
- *
  * @param {Object} options
  * @param {TileGrid} options.grid
  * @param {string} [options.moverClass]
  * @param {string} [options.kind]
- * @param {TileMoverProc} [options.may]
+ * @param {TileMoverProc} [options.proc]
  * @return {void}
  */
-export function moveTileClass({grid, moverClass='mover', kind='', may}) {
+export function moveTileClass({grid, moverClass='mover', kind='', proc}) {
   for (const mover of grid.queryTiles({
     className: kind ? [moverClass, kind] : moverClass,
   })) {
@@ -752,7 +751,7 @@ export function moveTileClass({grid, moverClass='mover', kind='', may}) {
     const pos = grid.getTilePosition(mover);
     const to = {x: pos.x + x, y: pos.y + y};
     const at = grid.tilesAt(to);
-    if (!may || may({grid, mover, pos, action, data, to, at}))
+    if (!proc || proc({grid, mover, pos, action, data, to, at}))
       grid.moveTileTo(mover, to);
   }
 }
