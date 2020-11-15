@@ -481,14 +481,16 @@ export class DOMgeon extends EventTarget {
   }
 
   /**
-   * @param {HTMLElement} actor
+   * @param {null|HTMLElement} actor
    * @returns {void}
    */
   updateActorView(actor) {
-    const pos = this.grid.getTilePosition(actor);
-    const wanted = this.wantedViewPoint(pos, this.grid.viewport);
-    if (wanted) this.viewTo(wanted);
-    else if (!this.grid.hasFixedViewPoint()) this.viewTo(pos);
+    if (actor) {
+      const pos = this.grid.getTilePosition(actor);
+      const wanted = this.wantedViewPoint(pos, this.grid.viewport);
+      if (wanted) this.viewTo(wanted);
+      else if (!this.grid.hasFixedViewPoint()) this.viewTo(pos);
+    } // else TODO what should view tracK?
     this.updateLighting({actor});
     if (this.actionBar) {
       /** @type {NodeListOf<HTMLButtonElement>} */
@@ -645,21 +647,18 @@ export class DOMgeon extends EventTarget {
 
   /**
    * @param {object} [params]
-   * @param {HTMLElement} [params.actor]
+   * @param {null|HTMLElement} [params.actor]
    * @returns {void}
    */
   updateLighting({
     actor = this.grid.queryTile({className: ['mover', 'input', 'focus']}) || undefined,
   }={}) {
-    if (!actor) return; // TODO should we clear any prior?
-
+    const actorID = actor ? actor.id : '';
     // TODO environmental sources
-
-    if (actor.id !== this._litActorID) {
-      this._updateLightAnim(actor.id, 0, 1);
-      if (this._litActorID)
-        this._updateLightAnim(this._litActorID, 1, 0);
-      this._litActorID = actor.id;
+    if (actorID !== this._litActorID) {
+      if (actorID) this._updateLightAnim(actorID, 0, 1);
+      if (this._litActorID) this._updateLightAnim(this._litActorID, 1, 0);
+      this._litActorID = actorID;
     }
     this._runLightAnim(0);
   }
