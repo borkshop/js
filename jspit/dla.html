@@ -224,7 +224,10 @@
       });
       const inspector = new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
+      const initialDrop = 0.25; // auto-drop player at this proportion of limit particles
+      let dropped = false;
       const dropPlayer = () => {
+        dropped = true;
         const pos = world.config.seeds[0]; // TODO input
         const actor = dmg.grid.createTile({
           kind: 'mover',
@@ -242,7 +245,7 @@
         let playing = !!dmg.grid.queryTile({className: ['input', 'focus', 'mover']});
         if (particleID) {
           particleID.innerText = world.particleID.toString();
-          if (!playing && world.particleID >= 0.25*world.config.particleLimit) {
+          if (!dropped && !playing && world.particleID >= initialDrop*world.config.particleLimit) {
             dropPlayer();
             playing = true;
           }
