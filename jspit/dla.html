@@ -16,6 +16,20 @@
 
     <main>
       <aside class="menu modal">
+        <button
+          class="sticky"
+          style="float: right; font-size: 1.5em"
+          title="Start/Stop Simulation ; Hide/Show Menu"
+          data-legend="Esc"
+          data-keycode="Escape">Run</button>
+
+        <button
+          class="sticky"
+          style="float: right; font-size: 1.5em"
+          title="Reset game world state"
+          data-legend="BS"
+          data-keycode="Backspace">Reset</button>
+
         <noscript>
           <section>
             <h3 class="error">Insufficient JavaScript to diffuse...</h3>
@@ -130,14 +144,7 @@
 
           <p>
             <code>&lt;Space&gt;</code> hold to display hidden cell information<br />
-            <code>&lt;Escape&gt;</code> to show/hide this menu at any time<br />
           </p>
-
-          <div>
-            <button id="run">Run</button>
-            <button id="reset">Reset</button>
-            <br style="clear: both" />
-          </div>
 
           <!-- TODO fieldset and #reset mutex? -->
         </section>
@@ -263,11 +270,10 @@
         return true;
       });
 
+      dmg.onKey.byCode['Backspace'] = () => world.reset();
       dropButton?.addEventListener('click', () => {
         dropPlayer();
       });
-      document.querySelector('#reset')?.addEventListener('click', () => world.reset());
-      document.querySelector('#run')?.addEventListener('click', () => dmg.start());
 
       dmg.onKey.byCode['Space'] = ({type}) => {
         const enabled = type === 'keydown';
