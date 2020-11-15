@@ -149,7 +149,7 @@ footer { bottom: 0 }
 
 button[data-legend]::after {
   font-size: 0.5em;
-  content: "[" attr(data-legend) "]";
+  content: attr(data-legend);
   color: var(--ui-fg);
 }
 
