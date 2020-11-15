@@ -1,4 +1,4 @@
-# 2020-11-14
+# 2020-11-15
 
 ## TODO
 
@@ -87,6 +87,56 @@ So how about expanding the current tile scheme:
 
 ## Done
 
+# Week Ending 2020-11-14
+
+The updated [jspit/DLA](https://jspit.vercel.app/dla.html) demo is the real
+star of the week, best showcasing most of the features; the
+[jspit/domgeon](https://jspit.vercel.app/domgeon.html) demo is worth checking
+out also, especially for actor focus swapping.
+
+- Did a bit of head-dumping into WIP about what we'd like to get out of a
+  further evolved behavior system
+- Made all `<button data-*>` key/values available through input parsing and
+  move processing
+- Refactored `TileGrid` movement processing to further set the stage for less
+  trivial actions beyond mere movement.
+- Decomposed and extended the input system: all buttons now have associated
+  keys, mouse clicking work better than ever, chording is decoupled, and
+  there's even a nice button activation highlight that tracks key state.
+- Separated FOV from lighting, with added support for ambient lighting, and
+  light sources from any tile
+- Finished out planar isolation, so that light does not interact, e.g. between
+  debugging tiles and the game world
+- Added lighting animation, used when swapping actors in addition to viewport
+  movement animation
+- Completed lighting, now with void-cross-ability when emitted by a
+  self-supported tile
+- Added viewport movement animation, with circular easing, and constantly
+  following the currently focused input actor
+- Added event integration points for "about to move" to give AI a chance, and
+  "view" which should be usable for infinite procgen
+
+## 2020-11-14
+
+Decomposed `input.KeyCtl` into:
+- `input.Handlers`: affords easy one-off key handlers, e.g. `Escape` menu
+  toggles
+- `input.KeySynthesizer`: generates synthetic keydown/up events based on clicks
+  of `<button data-key data-keycode>` elements; if such elements have a
+  `--holdable` variable set, then they are toggle buttons, that "hold down" /
+  "pop up" on successive clicks, generating respective keydown/up events
+- `input.KeyChorder` coalesces keydown/up events and dispatches a custom
+  "chordinput" event after the last held key is released
+
+And added an additional `input.KeyHighlighter` that toggles `.held` classes on
+`<button data-key data-keycode>` elements in response to matching keydown/up
+events, which makes for immediately more transparent demo videos.
+
+All of these pieces are now integrated by DOMgeon, with the only
+breaking/visible change that `dmg.keys.on.code` is now written
+`dmg.onKey.byCode`, and that dispatch by ID or action name has been dropped
+(for now at least).
+
 TileGrid movement processing is now more general and self-contained: it's now
 up to the proc to do any sort of spatial math, query, and move; provided a
 default proc with the prior behavior. Collapsed and simplifeid DOMgeon's
@@ -96,23 +146,23 @@ Validated, debugged, and finished yesterdays's scope into main. Added a
 toplevel npm test script to aid minimal automated type checking, and fixed a
 latent bug from the recent queryTiles refactor.
 
-# 2020-11-13
+## 2020-11-13
 
 Refactored most of the way through input/move parsing and handling in dev
 branch, to set the stage for more complicated / general actions.
 
-# 2020-11-12
+## 2020-11-12
 
 Did no coding today, but did assemble some thoughts about behaviors in the
 present WIP section.
 
-# 2020-11-11
+## 2020-11-11
 
 Further reworked lighting to separate FOV revelation from light casting, then
 added ambient and non-actor light sources. Demonstrated best by an update to
 the DLA demo.
 
-# 2020-11-10
+## 2020-11-10
 
 Lighting Inspection
 
@@ -131,7 +181,7 @@ Fixed a tile inspector bug introduced by yesterday's `TileGrid.viewOffset`
 un-flooring, by re-introducing the floor math within tile inspector
 positioning.
 
-# 2020-11-09
+## 2020-11-09
 
 Improved viewport movement
 
@@ -144,7 +194,7 @@ quick movements, and then catches up when the player stops moving.
 Dropped the floor from `TileGrid.viewOffset` updates, as otherwise animating
 with sub-tile accuracy isn't feasible.
 
-# 2020-11-08
+## 2020-11-08
 
 Viewport animation and extension points
 
