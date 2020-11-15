@@ -2,6 +2,7 @@
 
 import {
   Handlers,
+  KeyHighlighter,
   KeySynthesizer,
   KeyChorder,
   KeyChordEvent,
@@ -265,6 +266,9 @@ export class DOMgeon extends EventTarget {
   /** @type {KeySynthesizer} */
   keySynth
 
+  /** @type {KeyHighlighter} */
+  keyShow
+
   /** @type {KeyChorder} */
   keyChord
 
@@ -309,10 +313,13 @@ export class DOMgeon extends EventTarget {
 
     this.onKey = new Handlers();
     this.keySynth = new KeySynthesizer();
+    this.keyShow = new KeyHighlighter();
     this.keyChord = new KeyChorder();
 
     this.ui.addEventListener('click', this.onKey);
     this.ui.addEventListener('click', this.keySynth);
+    this.keys.addEventListener('keyup', this.keyShow);
+    this.keys.addEventListener('keydown', this.keyShow);
     this.keys.addEventListener('keyup', this.onKey);
     this.keys.addEventListener('keydown', this.onKey);
 

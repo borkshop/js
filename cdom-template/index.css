@@ -138,6 +138,7 @@ footer { bottom: 0 }
 .buttonbar.right.float button { float: right; clear: right; }
 
 .buttonbar.moves button {
+  --holdable: true;
   min-width: 2em;
   font-size: 2em;
 }
@@ -286,7 +287,8 @@ select, button {
 }
 
 button:hover, button:focus { color: var(--action-focus-color); border-color: var(--action-focus-color); }
-button:active              { color: var(--acting-color); border-color: var(--acting-color); }
+
+button.held, button:active { color: var(--acting-color); border-color: var(--acting-color); }
 
 button:disabled {
   color: var(--ui-disabled) !important;

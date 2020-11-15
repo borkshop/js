@@ -52,6 +52,34 @@ export class Handlers {
 }
 
 /**
+ * Toggles a CSS class on any <button data-key="KEY" data-keycode="CODE">
+ * element that matches received keydown/keyup events.
+ *
+ * Buttons should have at least one of the data-key or data-keycode attributes.
+ * Any keycode match is preferred to a mere key match.
+ *
+ * @implements {EventListenerObject}
+ */
+export class KeyHighlighter {
+  className = 'held'
+
+  /** @param {Event} event */
+  handleEvent(event) {
+    if (!(event instanceof KeyboardEvent)) return;
+    const {type, key, code, view} = event;
+    const root = view?.document;
+    if (!root) return;
+    /** @type {null|HTMLButtonElement} */
+    const button = root.querySelector(`button[data-keycode="${code}"]`)
+                || root.querySelector(`button[data-key="${key}"]`);
+    if (button) {
+      if      (type === 'keydown') button.classList.toggle('held', true);
+      else if (type === 'keyup')   button.classList.toggle('held', false);
+    }
+  }
+}
+
+/**
  * Dispatches keydown and keyup events synthesized from any mouse clicks events
  * targeted at a <button data-key="KEY" data-keycode="CODE"> element.
  *
