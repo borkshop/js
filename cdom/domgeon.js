@@ -10,7 +10,6 @@ import {
   TileGrid,
   TileInspector, dumpTiles,
   moveTiles,
-  centroid,
 } from './tiles';
 import {everyFrame, schedule} from './anim';
 import {GridLighting} from './fov';
@@ -307,9 +306,6 @@ export class DOMgeon extends EventTarget {
     this.keys = keys;
 
     this.grid = new TileGrid(grid);
-    this.grid.viewPoint = centroid(
-      Array.from(this.grid.queryTiles({className: ['mover', 'input']}))
-        .map(input => this.grid.getTilePosition(input)));
 
     this.onKey = new Handlers();
     this.keySynth = new KeySynthesizer();
