@@ -405,8 +405,11 @@ export class DOMgeon extends EventTarget {
     await everyFrame(schedule(
       () => !!this.running,
       () => {
-        const actor = this.processInput();
-        if (actor) this.updateActorView(actor);
+        const keys = this.keys.consume();
+        if (keys) {
+          const actor = this.processInput(keys);
+          if (actor) this.updateActorView(actor);
+        }
         return true;
       },
       (dt) => {
@@ -630,10 +633,11 @@ export class DOMgeon extends EventTarget {
   }
 
   /**
+   * @param {Iterable<string>} keys
    * @returns {null|HTMLElement}
    */
-  processInput() {
-    let move = Array.from(this.keys.consume() || [])
+  processInput(keys) {
+    let move = Array.from(keys)
       .map(key => {
         /** @type {null|HTMLButtonElement} */
         const button = this.ui.querySelector(`button[data-key="${key}"]`);
