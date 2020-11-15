@@ -67,7 +67,7 @@ export class KeySynthesizer {
       const {type, target, view} = event;
       if (type !== 'click' || !(target instanceof HTMLButtonElement)) return;
       const key = target.dataset['key'];
-      if (key) {
+      if (key && !target.disabled) {
         event.stopPropagation();
         event.preventDefault();
         const holdable = !!view?.getComputedStyle(target).getPropertyValue('--holdable');
@@ -111,7 +111,13 @@ export class KeyChorder extends EventTarget {
   /** @param {Event} event */
   handleEvent(event) {
     if (!(event instanceof KeyboardEvent)) return;
-    const {type, key} = event;
+    const {type, key, code, view} = event;
+    const root = view?.document;
+    if (!root) return;
+    /** @type {null|HTMLButtonElement} */
+    const button = root.querySelector(`button[data-keycode="${code}"]`)
+                || root.querySelector(`button[data-key="${key}"]`);
+    if (button?.disabled) return;
     if (!['control', 'shift', 'alt', 'meta'].includes(key.toLowerCase())) {
       if (type === 'keyup') {
         if (this.held.delete(key)) {
