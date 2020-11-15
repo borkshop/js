@@ -224,25 +224,37 @@
       });
       const inspector = new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
-      const dropPlayer = document.querySelector('#dropPlayer');
+      const dropPlayer = () => {
+        const pos = world.config.seeds[0]; // TODO input
+        const actor = dmg.grid.createTile({
+          kind: 'mover',
+          classList: ['input', 'focus'],
+          pos,
+          text: '@',
+        });
+        dmg.updateActorView(actor);
+      };
+
+      const dropButton = document.querySelector('#dropPlayer');
+
       const world = new DLA(dmg);
       dmg.animParts.push(_ => {
-        let playing = !!dmg.grid.queryTile({className: ['input', 'mover']});
+        let playing = !!dmg.grid.queryTile({className: ['input', 'focus', 'mover']});
         if (particleID) {
           particleID.innerText = world.particleID.toString();
           if (!playing && world.particleID >= 0.25*world.config.particleLimit) {
-            world.dropPlayer();
+            dropPlayer();
             playing = true;
           }
         }
         dmg.grid.el.classList.toggle('playing', playing);
-        if (dropPlayer) dropPlayer.disabled = playing;
+        if (dropButton) dropButton.disabled = playing;
         if (moveBar) moveBar.style.display = playing ? '' : 'none';
         return true;
       });
 
-      dropPlayer?.addEventListener('click', () => {
-        world.dropPlayer();
+      dropButton?.addEventListener('click', () => {
+        dropPlayer();
         if (moveBar) moveBar.style.display = '';
       });
       document.querySelector('#reset')?.addEventListener('click', () => world.reset());

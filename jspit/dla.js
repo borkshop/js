@@ -150,16 +150,6 @@ export default class DLA {
     }
   }
 
-  dropPlayer() {
-    const actor = this.dmg.grid.createTile({
-      kind: 'mover',
-      classList: 'input',
-      pos: this.config.seeds[0],
-      text: '@',
-    });
-    this.dmg.updateLighting({actor});
-  }
-
   *chooseVoid() {
     const {bounds} = this.config;
     while (true) {
@@ -316,7 +306,6 @@ export default class DLA {
    * @returns {void}
    */
   stepN(n) {
-    const havePlayer = !!this.dmg.grid.queryTile({className: ['mover', 'input']});
     const {
       turnLeft, turnRight,
       ordinalMoves,
@@ -385,12 +374,6 @@ export default class DLA {
       },
       ordinalMoves,
       stepLimit,
-    })) {
-      const p = this.spawn();
-      if (!p) {
-        if (!havePlayer) this.dropPlayer();
-        return;
-      }
-    }
+    })) if (!this.spawn()) break;
   }
 }
