@@ -227,14 +227,21 @@
       const initialDrop = 0.25; // auto-drop player at this proportion of limit particles
       let dropped = false;
       const dropPlayer = () => {
-        dropped = true;
-        const pos = world.config.seeds[0]; // TODO input
-        const actor = dmg.grid.createTile({
-          kind: 'mover',
-          classList: ['input', 'focus'],
-          pos,
-          text: '@',
-        });
+        let actor = dmg.grid.queryTile({className: ['input', 'mover']});
+        if (actor) {
+          actor.parentNode?.removeChild(actor);
+          actor = null;
+          // TODO reset view anchor?
+        } else {
+          dropped = true;
+          const pos = world.config.seeds[0]; // TODO input
+          const actor = dmg.grid.createTile({
+            kind: 'mover',
+            classList: ['input', 'focus'],
+            pos,
+            text: '@',
+          });
+        }
         dmg.updateActorView(actor);
       };
 
@@ -258,7 +265,6 @@
 
       dropButton?.addEventListener('click', () => {
         dropPlayer();
-        if (moveBar) moveBar.style.display = '';
       });
       document.querySelector('#reset')?.addEventListener('click', () => world.reset());
       document.querySelector('#run')?.addEventListener('click', () => dmg.start());
