@@ -268,7 +268,11 @@
         return true;
       });
 
-      dmg.onKey.byCode['Backspace'] = () => world.reset();
+      dmg.onKey.byCode['Backspace'] = () => {
+        world.reset();
+        particleID.innerText = '0';
+        dropped = false;
+      };
       dmg.onKey.byKey['@'] = ({type}) => {
         if (type === 'keydown') return;
         dropPlayer();
