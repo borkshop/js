@@ -227,7 +227,7 @@
       const initialDrop = 0.25; // auto-drop player at this proportion of limit particles
       let dropped = false;
       const dropPlayer = () => {
-        let actor = dmg.grid.queryTile({className: ['input', 'mover']});
+        let actor = dmg.grid.queryTile({className: ['input', 'focus', 'mover']});
         if (actor) {
           actor.parentNode?.removeChild(actor);
           actor = null;
