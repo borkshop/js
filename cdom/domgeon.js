@@ -1,12 +1,17 @@
 // @ts-check
 
 import {
+  Handlers,
+  KeySynthesizer,
+  KeyChorder,
+  KeyChordEvent,
+} from './input';
+import {
   TileGrid,
   TileInspector, dumpTiles,
   moveTiles,
   centroid,
 } from './tiles';
-import KeyCtl from './input';
 import {everyFrame, schedule} from './anim';
 import {GridLighting} from './fov';
 
@@ -143,11 +148,10 @@ function procMove({grid, mover, move}) {
 
 /**
  * @param {HTMLElement} cont
- * @param {EventListenerOrEventListenerObject} handler
  * @param {null|HTMLButtonElement} button
  * @param {null|ActionButtonSpec} spec
  */
-function updateActionButton(cont, handler, button, spec) {
+function updateActionButton(cont, button, spec) {
   if (!spec) {
     if (button) button.parentNode?.removeChild(button);
     return;
@@ -157,10 +161,7 @@ function updateActionButton(cont, handler, button, spec) {
   if (data?.key) ({key, ...data} = data);
   if (data?.legend) ({legend, ...data} = data);
 
-  if (!button) {
-    button = cont.appendChild(cont.ownerDocument.createElement('button'));
-    button.addEventListener('click', handler);
-  }
+  if (!button) button = cont.appendChild(cont.ownerDocument.createElement('button'));
 
   const priorData = new Set(Object.keys(button.dataset));
 
@@ -256,8 +257,17 @@ export class DOMgeon extends EventTarget {
   /** @type {HTMLElement} */
   ui
 
-  /** @type {KeyCtl} */
+  /** @type {HTMLElement} */
   keys
+
+  /** @type {Handlers} */
+  onKey
+
+  /** @type {KeySynthesizer} */
+  keySynth
+
+  /** @type {KeyChorder} */
+  keyChord
 
   /** @type {boolean} */
   running = false
@@ -294,15 +304,24 @@ export class DOMgeon extends EventTarget {
     this.actionBar = actionBar || null;
     this.moveBar = moveBar || null;
     this.ui = ui;
+    this.keys = keys;
 
     this.grid = new TileGrid(grid);
     this.grid.viewPoint = centroid(
       Array.from(this.grid.queryTiles({className: ['mover', 'input']}))
         .map(input => this.grid.getTilePosition(input)));
 
-    this.keys = new KeyCtl(keys);
-    this.keys.on.code['Escape'] = (ev) => {
-      if (ev.type !== 'keyup') return;
+    this.onKey = new Handlers();
+    this.keySynth = new KeySynthesizer();
+    this.keyChord = new KeyChorder();
+
+    this.ui.addEventListener('click', this.onKey);
+    this.ui.addEventListener('click', this.keySynth);
+    this.keys.addEventListener('keyup', this.onKey);
+    this.keys.addEventListener('keydown', this.onKey);
+
+    this.onKey.byCode['Escape'] = (ev) => {
+      if (ev.type === 'keydown') return;
       if (this.running) this.stop(); else this.start();
     };
 
@@ -326,7 +345,7 @@ export class DOMgeon extends EventTarget {
       const button = this.moveBar.querySelector(`button[data-movedir="${x},${y}"]`);
       if (button?.dataset['key']) key = button.dataset['key'];
       const legend = keyLegends[key];
-      updateActionButton(this.moveBar, this.keys, button, {
+      updateActionButton(this.moveBar, button, {
         label, key, title, legend, x, y,
       });
     }
@@ -396,7 +415,20 @@ export class DOMgeon extends EventTarget {
   async start() {
     this.running = true;
     this.ui.classList.toggle('running', true);
-    this.keys.counting = true;
+
+    this.keyChord.clear();
+    /** @type {null|Set<string>} */
+    let lastChord = null;
+    /** @param {Event} event */
+    const keepLastKeyChord = (event) => {
+      if (event instanceof KeyChordEvent)
+        lastChord = new Set(event.keys);
+    };
+
+    this.keys.addEventListener('keyup', this.keyChord);
+    this.keys.addEventListener('keydown', this.keyChord);
+    this.keyChord.addEventListener('keychord', keepLastKeyChord);
+
     this.dispatchEvent(new Event('start'));
 
     const actor = this.focusedActor();
@@ -405,10 +437,10 @@ export class DOMgeon extends EventTarget {
     await everyFrame(schedule(
       () => !!this.running,
       () => {
-        const keys = this.keys.consume();
-        if (keys) {
-          const actor = this.processInput(keys);
+        if (lastChord !== null) {
+          const actor = this.processInput(lastChord);
           if (actor) this.updateActorView(actor);
+          lastChord = null;
         }
         return true;
       },
@@ -420,7 +452,11 @@ export class DOMgeon extends EventTarget {
       ...this.animParts,
     ));
     this.dispatchEvent(new Event('stop'));
-    this.keys.counting = false;
+
+    this.keyChord.removeEventListener('keychord', keepLastKeyChord);
+    this.keys.removeEventListener('keyup', this.keyChord);
+    this.keys.removeEventListener('keydown', this.keyChord);
+
     this.ui.classList.toggle('running', false);
     this.running = false;
   }
@@ -466,7 +502,7 @@ export class DOMgeon extends EventTarget {
         const button = buttons[i] || null;
         let action = actions[i] || null;
         if (action && i < 10) action = {key: `${i+1}`, ...action};
-        updateActionButton(this.actionBar, this.keys, button, action);
+        updateActionButton(this.actionBar, button, action);
       }
     }
     this.dispatchEvent(new Event('view'));

@@ -224,14 +224,6 @@
       });
       const inspector = new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
-      dmg.keys.on.code['Space'] = (ev) => {
-        const enabled = ev.type === 'keydown';
-        dmg.grid.el.classList.toggle('inspectable', enabled);
-        dmg.grid.el.classList.toggle('retro', enabled);
-        if (enabled) dmg.grid.el.addEventListener('mousemove', inspector);
-        else dmg.grid.el.removeEventListener('mousemove', inspector);
-      };
-
       const dropPlayer = document.querySelector('#dropPlayer');
       const world = new DLA(dmg);
       dmg.animParts.push(_ => {
@@ -255,6 +247,14 @@
       });
       document.querySelector('#reset')?.addEventListener('click', () => world.reset());
       document.querySelector('#run')?.addEventListener('click', () => dmg.start());
+
+      dmg.onKey.byCode['Space'] = ({type}) => {
+        const enabled = type === 'keydown';
+        dmg.grid.el.classList.toggle('inspectable', enabled);
+        dmg.grid.el.classList.toggle('retro', enabled);
+        if (enabled) dmg.grid.el.addEventListener('mousemove', inspector);
+        else dmg.grid.el.removeEventListener('mousemove', inspector);
+      };
     </script>
   </body>
 

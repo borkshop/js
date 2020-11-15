@@ -1,130 +1,145 @@
 // @ts-check
 
-export default class KeyCtl {
-  held = new Set()
-  chord = new Set()
-  clicked = new Set()
+/**
+ * Allows easy handling of one-off keys, cancelling the triggering event.
+ * Useful for handling things like a modal Escape menu.
+ *
+ * Also supports clicking data-keycode or data-key annotated buttons.
+ *
+ * Prefers to call any byCode handler over any byKey handler.
+ *
+ * @implements {EventListenerObject}
+ */
+export class Handlers {
+  /** @typedef {(event:Event)=>void} EventHandler */
+  /** @typedef {Object<string, EventHandler>} EventHandlers */
+
+  /** @type {EventHandlers} */
+  byCode = {}
+
+  /** @type {EventHandlers} */
+  byKey = {}
 
   /**
-   * @param {?EventTarget} target
+   * @param {Event} event
+   * @returns {null|EventHandler}
    */
-  constructor(target=null) {
-    if (target) {
-      target.addEventListener('keydown', this);
-      target.addEventListener('keyup', this);
+  lookup(event) {
+    if (event instanceof MouseEvent) {
+      const {type, target} = event;
+      if (type === 'click' && target instanceof HTMLButtonElement) {
+        const {key, keycode} = target.dataset;
+        return (keycode && this.byCode[keycode])
+            || (key && this.byKey[key])
+            || null;
+      }
+    } else if (event instanceof KeyboardEvent) {
+      const {key, code} = event;
+      return this.byCode[code] || this.byKey[key] || null;
     }
+    return null;
   }
-
-  /**
-   * @template E
-   * @typedef {(event:E)=>void} EventHandler<E>
-   */
-
-  /**
-   * Registry for custom key event handlers that take priority over counting.
-   *
-   * Useful for handling things like an Escape menu, or to dispatch number keys
-   * to actions.
-   *
-   * @typedef {Object<string, EventHandler<KeyboardEvent>>} KeyHandlers
-   * @typedef {Object<string, EventHandler<MouseEvent>>} MouseHandlers
-   */
-  on = {
-    /** @type {KeyHandlers} */
-    code: {},
-    /** @type {KeyHandlers} */
-    key: {},
-    /** @type {MouseHandlers} */
-    click: {},
-  }
-
-  /**
-   * If set true all key events are consumed and counted by handleEvent() for
-   * later consume() ing by something like a main interaction loop.
-   *
-   * @type {boolean}
-   */
-  counting = false
 
   /** @param {Event} event */
   handleEvent(event) {
-    if (event instanceof MouseEvent) {
-      const {type, target} = event;
-      if (type === 'click' && target instanceof HTMLElement) {
-        const key = target.dataset['key'];
-        const action = target.dataset['action'];
-        const name = key || action;
-        if (!name) return;
-
-        const handler = this.on.click[name] || this.on.click[`#${target.id}`];
-        if (handler) {
-          handler(event);
-          event.stopPropagation();
-          event.preventDefault();
-          return;
-        }
-
-        if (this.counting) {
-          this.clicked.add(name);
-          event.stopPropagation();
-          event.preventDefault();
-          return;
-        }
-      }
-      return;
-    }
-
-    if (event instanceof KeyboardEvent) {
-      const {type, key, code} = event;
-
-      // consume the key event if a custom handler has been defined for it
-      const on = this.on.code[code] || this.on.key[key];
-      if (on) {
-        on(event);
-        event.stopPropagation();
-        event.preventDefault();
-        return;
-      }
-
-      // consume the key up/downs event if we're counting
-      if (this.counting) {
-        if (['control', 'shift', 'alt', 'meta'].includes(key.toLowerCase())) {
-          event.stopPropagation();
-          event.preventDefault();
-        } else switch (type) {
-
-        case 'keyup':
-          this.held.delete(key);
-          this.chord.add(key);
-          event.stopPropagation();
-          event.preventDefault();
-          break;
-
-        case 'keydown':
-          this.chord.clear();
-          this.held.add(key);
-          event.stopPropagation();
-          event.preventDefault();
-          break;
-
-        }
-      }
-      return;
+    const handler = this.lookup(event);
+    if (handler) {
+      event.stopPropagation();
+      event.preventDefault();
+      handler(event);
     }
   }
+}
 
-  /**
-   * Consumes whole key presses, returning a list of unique keys pressed since
-   * last consume(), along with a >=1 count.
-   *
-   * @return {null|Set<string>}
-   */
-  consume() {
-    if (this.held.size) return null;
-    if (!(this.chord.size + this.clicked.size)) return null;
-    const chord = new Set([...this.chord, ...this.clicked]);
+/**
+ * Dispatches keydown and keyup events synthesized from any mouse clicks events
+ * targeted at a <button data-key="KEY" data-keycode="CODE"> element.
+ *
+ * Buttons should at least have the data-key attribute, and may also have a
+ * data-keycode attribute.
+ *
+ * @implements {EventListenerObject}
+ */
+export class KeySynthesizer {
+  /** @param {Event} event */
+  handleEvent(event) {
+    if (event instanceof MouseEvent) {
+      const {type, target, view} = event;
+      if (type !== 'click' || !(target instanceof HTMLButtonElement)) return;
+      const key = target.dataset['key'];
+      if (key) {
+        event.stopPropagation();
+        event.preventDefault();
+        const holdable = !!view?.getComputedStyle(target).getPropertyValue('--holdable');
+        const code = target.dataset['keycode'] || '';
+        /** @type {KeyboardEventInit} */
+        const init = {
+          bubbles: true, cancelable: true, composed: true,
+          view,
+          key, code,
+        };
+        if (!holdable) {
+          target.dispatchEvent(new KeyboardEvent('keydown', init));
+          target.dispatchEvent(new KeyboardEvent('keyup', init));
+        } else if (target.classList.toggle('held')) {
+          target.dispatchEvent(new KeyboardEvent('keydown', init));
+        } else {
+          target.dispatchEvent(new KeyboardEvent('keyup', init));
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Coalesces "chords" of held keys from any received keydown and keyup events.
+ *
+ * Dispatches a "keychord" event on itself, passing a KeyChordEvent to
+ * listeners, after the last held key is released.
+ *
+ * @implements {EventListenerObject}
+ */
+export class KeyChorder extends EventTarget {
+  held = new Set()
+  chord = new Set()
+
+  clear() {
+    this.held.clear();
     this.chord.clear();
-    this.clicked.clear();
-    return chord;
+  }
+
+  /** @param {Event} event */
+  handleEvent(event) {
+    if (!(event instanceof KeyboardEvent)) return;
+    const {type, key} = event;
+    if (!['control', 'shift', 'alt', 'meta'].includes(key.toLowerCase())) {
+      if (type === 'keyup') {
+        if (this.held.delete(key)) {
+          this.chord.add(key);
+          if (!this.held.size) {
+            this.dispatchEvent(new KeyChordEvent(this.chord));
+            this.chord.clear();
+          }
+        }
+      } else if (type === 'keydown') {
+        this.chord.clear();
+        this.held.add(key);
+      } else {
+        return;
+      }
+    }
+    event.stopPropagation();
+    event.preventDefault();
+  }
+}
+
+export class KeyChordEvent extends Event {
+  /** @type {Iterable<string>} */
+  keys
+
+  /** @param {Iterable<string>} keys */
+  constructor(keys) {
+    super('keychord');
+    this.keys = keys;
   }
 }
