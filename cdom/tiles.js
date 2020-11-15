@@ -99,23 +99,48 @@ export function mortonKey(p) {
 }
 
 /**
+ * Abstract interface that any TileGrid spatial index needs to implement.
+ *
  * @typedef {Object} TileSpatialIndex
  * @prop {(ids:string[], pos:Point[]) => void} update
  * @prop {(at:Point) => Set<string>|undefined} tilesAt
  * // TODO range query
  */
 
+/**
+ * Provides fast "get all tiles at a given location" querying, avoiding the
+ * need to loop through all tiles.
+ *
+ * @implements {TileSpatialIndex}
+ */
 class TileMortonIndex {
-  /** @type {Map<number, Set<string>>} */
+  // TODO for a hashmap-based index like this, there's an efficiency tradeoff
+  // between storing single locations and storing coarser granularities, say a
+  // 4x4 patch of locations in one hashmap entry, and then using an inner for
+  // loop over those chunks when querying. However this is likely to be more
+  // material to range queries, than single-point queries, so going with the
+  // finest granularity for now.
+
+  /**
+   * Maps spatial keys to sets of tile IDs; used for point queries.
+   *
+   * @type {Map<number, Set<string>>}
+   */
   _fore = new Map();
 
-  /** @type {Map<string, number>} */
+  /**
+   * Maps tile IDs to last-indexed spatial key; used to remove (invalidate)
+   * prior _fore entry when updated.
+   *
+   * @type {Map<string, number>}
+   */
   _back = new Map();
 
   /**
-   * @param {string[]} ids
-   * @param {Point[]} pos
-   * @return {void}
+   * Updates index mappings when tile locations change.
+   *
+   * @param {string[]} ids - batch of updated tile IDs
+   * @param {Point[]} pos - aligned list of positions for each updated id
    */
   update(ids, pos) {
     for (let i = 0; i < ids.length; ++i) {
@@ -131,8 +156,8 @@ class TileMortonIndex {
   }
 
   /**
-   * @param {Point} at
-   * @return {Set<string>|undefined}
+   * @param {Point} at - query location
+   * @return {Set<string>|undefined} - set of tile IDs present at at
    */
   tilesAt(at) {
     return this._fore.get(mortonKey(at));
