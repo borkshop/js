@@ -10,8 +10,7 @@
   <body>
 
     <header>
-      <!-- TODO make this a slider / toggle button -->
-      <button id="dropPlayer">Drop Player</button>
+      <button data-key="@" title="Drop Player">@</button>
     </header>
 
     <main>
@@ -252,8 +251,6 @@
         dmg.updateActorView(actor);
       };
 
-      const dropButton = document.querySelector('#dropPlayer');
-
       const world = new DLA(dmg);
       dmg.animParts.push(_ => {
         let playing = !!dmg.grid.queryTile({className: ['input', 'focus', 'mover']});
@@ -265,15 +262,17 @@
           }
         }
         dmg.grid.el.classList.toggle('playing', playing);
+        const dropButton = document.querySelector('button[data-key="@"]');
         if (dropButton) dropButton.disabled = playing;
         if (moveBar) moveBar.style.display = playing ? '' : 'none';
         return true;
       });
 
       dmg.onKey.byCode['Backspace'] = () => world.reset();
-      dropButton?.addEventListener('click', () => {
+      dmg.onKey.byKey['@'] = ({type}) => {
+        if (type === 'keydown') return;
         dropPlayer();
-      });
+      };
 
       dmg.onKey.byCode['Space'] = ({type}) => {
         const enabled = type === 'keydown';
