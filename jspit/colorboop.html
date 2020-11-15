@@ -12,6 +12,18 @@
 
     <main>
       <aside class="modal">
+        <button
+          class="sticky"
+          style="float: right; font-size: 1.5em"
+          title="Start/Stop Game ; Hide/Show Menu"
+          data-legend="Esc"
+          data-keycode="Escape">Run</button>
+
+        <button
+          style="float: right; font-size: 1.5em"
+          title="Reset game world state"
+          data-legend="BS"
+          data-keycode="Backspace">Reset</button>
 
         <section>
           <h1 align="center">Welcome traveler</h1>
@@ -23,10 +35,6 @@
           <p>
             This is the first and simplest example of jspit's <code>TileGrid</code>.
           </p>
-          <p>
-            <button id="run">Ok!</button>
-            <button id="reset">Reset</button>
-          </p>
         </section>
 
         <fieldset id="inspector">
@@ -36,11 +44,9 @@
           <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
         </fieldset>
 
-        <section>
-          <h3>
-            <a href="index.html">Back to Welcome screen</a>
-          </h3>
-        </section>
+        <div style="float: right">
+          <h3><a href="index.html">Back to Welcome screen</a></h3>
+        </div>
 
       </aside>
       <div class="grid"></div>
@@ -122,9 +128,7 @@
         actionBar: document.querySelector('.buttonbar.actions'),
       });
       new DOMgeonInspector(dmg, document.querySelector('#inspector'));
-
-      document.querySelector('#reset').addEventListener('click', () => { reset(dmg.grid) });
-      document.querySelector('#run').addEventListener('click', () => { dmg.start() });
+      dmg.onKey.byCode['Backspace'] = () => reset(dmg.grid);
       reset(dmg.grid);
     </script>
   </body>
