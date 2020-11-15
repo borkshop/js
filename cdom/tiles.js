@@ -422,6 +422,8 @@ export class TileGrid {
   clear() {
     for (const tile of this.queryTiles())
       this.el.removeChild(tile);
+    this._viewPoint = null;
+    this._updateSize();
   }
 
   /**
