@@ -716,6 +716,14 @@ export class DOMgeon extends EventTarget {
       .filter(actor => !actor.classList.contains('focus'))
       .map(actor => {
         const pos = this.grid.getTilePosition(actor);
+        const dsq = subjectPos
+          ? Math.pow(pos.x - subjectPos.x, 2) +
+            Math.pow(pos.y - subjectPos.y, 2)
+          : 0;
+        return {actor, pos, dsq};
+      })
+      .sort(({dsq: da}, {dsq: db}) => da - db)
+      .map(({actor, pos}) => {
         const text = actor.textContent;
         const actorID = this.grid.getTileID(actor);
         return {
