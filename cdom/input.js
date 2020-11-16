@@ -72,10 +72,10 @@ export class KeyHighlighter {
     /** @type {null|HTMLButtonElement} */
     const button = root.querySelector(`button[data-keycode="${code}"]`)
                 || root.querySelector(`button[data-key="${key}"]`);
-    if (button) {
-      if      (type === 'keydown') button.classList.toggle('held', true);
-      else if (type === 'keyup')   button.classList.toggle('held', false);
-    }
+    if (!button) return;
+    else if (button.disabled)    button.classList.toggle('held', false);
+    else if (type === 'keydown') button.classList.toggle('held', true);
+    else if (type === 'keyup')   button.classList.toggle('held', false);
   }
 }
 
