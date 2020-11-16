@@ -53,7 +53,7 @@
  * limited classList mutations, rather than full className syncing; string args
  * may start with + - or ! to add, remove, or toggle the string remaining
  * string class name, defaulting to add behavior.
- * @prop {string} [text] - specifies new tile innerText content
+ * @prop {string} [text] - specifies new tile textContent
  * @prop {Partial<CSSStyleDeclaration>} [style] - specifies new tile inline styles
  * @prop {Object<string,any>} [data] - specifies new tile dataset attributes
  */
@@ -303,7 +303,7 @@ export class TileGrid {
    */
   updateTile(tile, spec) {
     if (spec.pos) this.moveTileTo(tile, spec.pos);
-    if (spec.text) tile.innerText = spec.text;
+    if (spec.text) tile.textContent = spec.text;
     if (spec.classList) {
       const classList = Array.isArray(spec.classList) ? spec.classList : [spec.classList];
       for (const mut of classList) {
@@ -683,7 +683,7 @@ export function dumpTiles({tiles, into, detail}) {
   const dumpWithSpec = t => {
     const lines = [dumpIDC(t)];
     // TODO something like grid.getTileSpec(t)
-    lines.push(`* text: ${JSON.stringify(t.innerText)}`);
+    lines.push(`* text: ${JSON.stringify(t.textContent)}`);
     for (const [name, sval] of Object.entries(t.dataset)) {
       let valLines = [sval];
       if (sval) {

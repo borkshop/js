@@ -178,7 +178,7 @@ function updateActionButton(cont, button, spec) {
   priorData.delete('key');
 
   if (!label) label = '';
-  if (button.innerText !== label) button.innerText = label;
+  if (button.textContent !== label) button.textContent = label;
 
   if (button.dataset['legend'] !== legend) button.dataset['legend'] = legend;
   priorData.delete('legend');
@@ -713,7 +713,7 @@ export class DOMgeon extends EventTarget {
       .filter(actor => !actor.classList.contains('focus'))
       .map(actor => {
         const pos = this.grid.getTilePosition(actor);
-        const text = actor.innerText;
+        const text = actor.textContent;
         const actorID = this.grid.getTileID(actor);
         return {
           label: `Focus: ${text} <${pos.x},${pos.y}>`,
@@ -799,7 +799,7 @@ export class DOMgeonInspector extends TileInspector {
     const {x, y} = pos;
     const atText = `${isNaN(x) ? 'X' : x},${isNaN(y) ? 'Y' : y}`;
     const at = /** @type {HTMLElement|null} */ (this.el.querySelector('[data-for="pos"]'));
-    if (at) at.innerText = atText;
+    if (at) at.textContent = atText;
     const txt = this.el.querySelector('textarea');
     if (txt) dumpTiles({tiles, into: txt, detail: pinned});
     if (pinned) {
