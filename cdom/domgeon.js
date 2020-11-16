@@ -709,6 +709,9 @@ export class DOMgeon extends EventTarget {
     const actions = [];
 
     const actors = Array.from(this.grid.queryTiles({className: ['mover', 'input']}));
+    const subject = actors.filter(actor => actor.classList.contains('focus')).shift();
+    const subjectPos = subject && this.grid.getTilePosition(subject);
+
     actions.push(...actors
       .filter(actor => !actor.classList.contains('focus'))
       .map(actor => {
@@ -722,9 +725,8 @@ export class DOMgeon extends EventTarget {
         };
       }));
 
-    const actor = actors.filter(actor => actor.classList.contains('focus')).shift();
-    if (actor) {
-      const pos = this.grid.getTilePosition(actor);
+    if (subjectPos) {
+      const {x, y} = subjectPos;
       const interacts = [ // TODO make this stencil configurable
         {x:  0, y:  0},
         {x:  0, y:  1},
@@ -737,7 +739,7 @@ export class DOMgeon extends EventTarget {
         {x: -1, y:  1},
       ]
         .flatMap(({x: dx, y: dy}) => {
-          const at = {x: pos.x + dx, y: pos.y + dy};
+          const at = {x: x + dx, y: y + dy};
           return this.grid.tilesAt(at, 'interact');
         })
         .map(tile => ( {tile, pos: this.grid.getTilePosition(tile)} ))
