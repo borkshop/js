@@ -10,7 +10,6 @@
   <body>
 
     <header>
-      <button data-key="@" title="Drop Player">@</button>
     </header>
 
     <main>
@@ -196,8 +195,12 @@
 
     </main>
 
-    <div class="buttonbar moves left" style="display: none"></div>
-    <div class="buttonbar actions right float"></div>
+    <div class="buttonbar moves left" style="display: none">
+    </div>
+
+    <div class="buttonbar actions right float">
+      <button data-key="@" title="Drop Player">@</button>
+    </div>
 
     <footer style="margin: 0 auto; width: 33%">
     </footer>
@@ -257,7 +260,6 @@
         }
         dmg.grid.el.classList.toggle('playing', playing);
         const dropButton = document.querySelector('button[data-key="@"]');
-        if (dropButton) dropButton.disabled = playing;
         if (moveBar) moveBar.style.display = playing ? '' : 'none';
         return true;
       });
