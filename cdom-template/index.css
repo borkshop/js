@@ -155,7 +155,7 @@ aside.modal {
   width: 60%;
 }
 
-body.running aside *:not(.sticky) { display: none; }
+body.running aside > *:not(.sticky) { display: none; }
 
 aside section               { margin-top: 1em; }
 aside section:first-of-type { margin-top: 0; }
