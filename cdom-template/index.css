@@ -76,16 +76,6 @@ html {
 html { box-sizing: border-box; }
 *, *:before, *:after { box-sizing: inherit; }
 
-body header,
-body footer {
-  display: none;
-}
-
-body.showUI header,
-body.showUI footer {
-  display: block;
-}
-
 html {
   margin: 0;
   padding: 0;
@@ -109,19 +99,6 @@ a         { color: var(--action-color); text-decoration: none; }
 a:hover,
 a:focus   { color: var(--action-focus-color); text-decoration: underline }
 a:active  { color: var(--acting-color); }
-
-header, footer {
-  height: 1.5em; 
-  position: absolute;
-  left: 0;
-  right: 0;
-  background-color: var(--content-bg);
-  color: var(--content-fg);
-  padding: 0 0.5em;
-}
-
-header { top: 0 }
-footer { bottom: 0 }
 
 .buttonbar.left {
   position: absolute;
@@ -163,27 +140,19 @@ main {
   right: 0;
 }
 
-body.showUI main {
-  top: 1.5em;
-  bottom: 1.5em;
-}
-
 aside {
-  position: absolute;
   overflow: auto;
+  max-height: 100%;
+  position: absolute;
   z-index: 1000;
   top: 0;
-  max-height: 100%;
-}
-
-body:not(.showUI) aside {
-  left: 20%;
-  right: 20%;
-}
-
-body.showUI aside {
   right: 0;
   width: 40%;
+}
+
+aside.modal {
+  left: 20%;
+  width: 60%;
 }
 
 body.running aside *:not(.sticky) { display: none; }

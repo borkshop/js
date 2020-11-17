@@ -328,8 +328,6 @@ export class DOMgeon extends EventTarget {
       if (this.running) this.stop(); else this.start();
     };
 
-    this.ui.classList.toggle('showUI', true);
-
     /** @type {Object<string, string>} */
     const keyLegends = {
       'ArrowLeft': '←',
