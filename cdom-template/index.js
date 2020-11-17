@@ -22,6 +22,14 @@ const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'pass
 const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
 const doorShader = {plane: 'solid', kind: 'door'};
 
+/** @param {Event} ev */
+dmg.onKey.byKey['?'] = ev => {
+  if (ev.type === 'keyup') {
+    dmg.stop();
+    console.log('halp');
+  }
+};
+
 dmg.grid.getPlane('solid').classList.add('lit');
 
 build.fillRect(dmg.grid, {x: 0, y: 0, w: 13, h: 8}, build.roomShader({
