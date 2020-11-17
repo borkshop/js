@@ -14,6 +14,43 @@
     </header>
 
     <main>
+
+      <div class="grid">
+        <noscript>
+          <section>
+            <h3 class="error">Insufficient JavaScript to diffuse...</h3>
+          </section>
+        </noscript>
+
+        <label for="particleID" style="float: left">
+          Particles:
+          <span id="particleID" class="value">0</span>
+        </label>
+
+        <fieldset id="inspector">
+          <legend>
+            <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
+          </legend>
+          <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
+        </fieldset>
+      </div>
+
+      <style>
+        .tile               { z-index: 1 }
+        .tile.particle      { z-index: 10 }
+        .tile.particle.live { z-index: 100 }
+        .tile.input         { z-index: 1000 }
+
+        .grid.playing .tile.particle[data-fov] {
+          visibility: visible;
+          opacity: var(--light);
+        }
+        .grid.playing .tile.particle:not([data-fov]) { visibility: hidden; }
+
+        .tile.particle { --lightAmbient: 0.2; }
+        .tile.particle.prime.live { --lightInit: 4.0; }
+      </style>
+
       <aside class="menu modal">
         <button
           class="sticky"
@@ -28,12 +65,6 @@
           title="Reset game world state"
           data-legend="BS"
           data-keycode="Backspace">Reset</button>
-
-        <noscript>
-          <section>
-            <h3 class="error">Insufficient JavaScript to diffuse...</h3>
-          </section>
-        </noscript>
 
         <section>
           <h1>Diffusion Limited Aggregation</h1>
@@ -166,41 +197,12 @@
 
       </aside>
 
-      <div class="grid">
-        <fieldset id="inspector">
-          <legend>
-            <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
-          </legend>
-          <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
-        </fieldset>
-      </div>
-      <style>
-        .tile               { z-index: 1 }
-        .tile.particle      { z-index: 10 }
-        .tile.particle.live { z-index: 100 }
-        .tile.input         { z-index: 1000 }
-
-        .grid.playing .tile.particle[data-fov] {
-          visibility: visible;
-          opacity: var(--light);
-        }
-        .grid.playing .tile.particle:not([data-fov]) { visibility: hidden; }
-
-        .tile.particle { --lightAmbient: 0.2; }
-        .tile.particle.prime.live { --lightInit: 4.0; }
-
-      </style>
-
     </main>
 
     <div class="buttonbar moves left" style="display: none"></div>
     <div class="buttonbar actions right float"></div>
 
     <footer style="margin: 0 auto; width: 33%">
-      <label for="particleID">
-        Particles:
-        <span id="particleID" class="value">0</span>
-      </label>
     </footer>
 
 
