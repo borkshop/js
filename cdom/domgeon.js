@@ -367,14 +367,14 @@ export class DOMgeon extends EventTarget {
   viewAnimTime = 1000
 
   /**
+   * Consult things like https://easings.net for some likely maths.
+   *
    * @param {number} p - animation progress proportion
    * @returns {number} - eased animation progress proportion
    */
   viewAnimEase(p) {
-    // circular ease in/out
-    return p < 0.5
-      ? (1 - Math.sqrt(1 - Math.pow( 2 * p,     2)))     / 2
-      : (    Math.sqrt(1 - Math.pow(-2 * p + 2, 2)) + 1) / 2;
+    // sine easing in to the animation
+    return 1 - Math.cos((p * Math.PI) / 2);
   }
 
   /**
@@ -406,9 +406,8 @@ export class DOMgeon extends EventTarget {
     let {t, et, from, to} = this._viewAnim;
     et += dt;
     let p = et/t;
-    if (p >= 1) this._viewAnim = null;
-    else this._viewAnim.et = et;
-
+    if (p >= 1) this._viewAnim = null, p = 1
+    else this._viewAnim.et = et, p = this.viewAnimEase(et/t);
     this.grid.viewPoint = {
       x: from.x * (1 - p) + p * to.x,
       y: from.y * (1 - p) + p * to.y,
