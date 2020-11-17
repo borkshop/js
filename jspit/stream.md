@@ -1,15 +1,11 @@
-# 2020-11-16
+# 2020-11-17
 
 ## TODO
 
 - domgeon
-  - FOV ala <https://www.albertford.com/shadowcasting>
   - player inventorty/ability system; good initial use cases include a digging
     item, floor tile creator, a particle gun, or void walking boots
   - move and other interaction animations
-  - selection of current actor from all `.mover.input`
-  - auto viewPoint to `.mover.input`
-
 - builder
   - a more adept hallway builder
   - Line
@@ -17,16 +13,9 @@
   - Polygon / Path
   - TBD fill v stroke variants and reconciling with the current `fillRect` /
     `strokeRect` pair
-
-- tiles
-  - watch for any spatial index bugs, once saw a zombie particle at incorrect
-    location, which allowed the player to step into the void in the DLA demo
-  - TileGrid
-    - how about default classes keyed by text; would
-      simplify much building code
-    - save/loading of tile state
-    - masking/visibility/lighting ; after implementing FOV if domgeon, there
-      may be some core part at the tile grid level
+- TileGrid
+  - how about default classes keyed by text; would simplify much building code
+  - save/loading of tile state
 
 ## WIP
 
@@ -86,6 +75,15 @@ So how about expanding the current tile scheme:
   other behaviors
 
 ## Done
+
+# 2020-11-16
+
+Cleaned up common page structures while fiddling around with flex box, and
+reading large swaths of MDN et al:
+- dropped explicit header/footer elements
+- standardized button conventions
+- move status display out of footer into main grid, which gives it top-left
+  conventional layout for now
 
 # 2020-11-15
 
