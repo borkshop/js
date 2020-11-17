@@ -1,4 +1,4 @@
-# 2020-11-15
+# 2020-11-16
 
 ## TODO
 
@@ -86,6 +86,14 @@ So how about expanding the current tile scheme:
   other behaviors
 
 ## Done
+
+# 2020-11-15
+
+Several minor fixes while exploring / researching next step:
+- view move animation wasn't eased as intended, fixed, and adjusted the easing
+  function
+- don't highlight disabled keys
+- sort actor switch actions by distance so that nearer ones are numbered lower
 
 # Week Ending 2020-11-14
 
