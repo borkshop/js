@@ -23,6 +23,12 @@
       </div>
 
       <aside class="menu modal">
+        <button
+          class="sticky"
+          style="float: right; font-size: 1.5em"
+          title="Start/Stop Simulation ; Hide/Show Menu"
+          data-legend="Esc"
+          data-keycode="Escape">☰</button>
 
         <section>
           <h1>Physarum Inspired Demo</h1>
@@ -55,10 +61,11 @@
         </dl></fieldset>
 
         <section>
-          <span style="float: right">Press <code>&lt;Escape&gt;</code> to run simulation</span>
-
           <label for="singleStep"><input id="singleStep" type="checkbox" /> SingleStep</label>
-          <button id="reset">Reset</button>
+          <button
+            title="Reset game world state"
+            data-keycode="Backspace"
+            data-legend="BS">Reset</button>
         </section>
 
       </aside>
@@ -133,7 +140,7 @@
 
       bindProp({obj: sim, name: 'singleStep', ctx});
 
-      document.querySelector('#reset').addEventListener('click', () => { sim.reset(); })
+      dmg.onKey.byCode['Backspace'] = () => { sim.reset(); };
     </script>
   </body>
 
