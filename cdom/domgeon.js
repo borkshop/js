@@ -521,6 +521,7 @@ export class DOMgeon extends EventTarget {
   }
 
   _litActorID = ''
+  _fovID = ''
 
   /** @type {({id:string}&Anim<number>)[]} */
   _lightAnim = []
@@ -578,6 +579,8 @@ export class DOMgeon extends EventTarget {
     /** @type {Map<string, LitPlane>} */
     const litPlanes = new Map();
 
+    let fovID = '';
+
     /**
      * @param {string} id
      * @param {number} lightScale
@@ -593,6 +596,7 @@ export class DOMgeon extends EventTarget {
       });
       if (litPlane.lightScale < lightScale) litPlane.lightScale = lightScale;
       litPlane.actors.set(actor.id, {actor, lightScale});
+      fovID += `;${plane}:${actor.id}`;
     };
 
     // collect lit actors, advancing any animation times
@@ -609,13 +613,25 @@ export class DOMgeon extends EventTarget {
       collectActor(this._litActorID);
     }
 
+    // recompute FOV
+    if (this._fovID !== fovID) {
+      const {w: vw, h: vh} = this.grid.viewport;
+      const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh)); // TODO could be tightened wrt actor position
+
+      for (const [plane, litPlane] of litPlanes.entries()) {
+        scheme.filter = tile => this.grid.getTileData(tile, 'plane') === plane;
+        scheme.clearView();
+        for (const {actor} of litPlane.actors.values())
+          scheme.revealViewField(actor, viewLimit);
+      }
+
+      this._fovID = fovID;
+    }
+
     // light each involved plane
-    const {w: vw, h: vh} = this.grid.viewport;
-    const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh)); // TODO could be tightened wrt actor position
     for (const [plane, litPlane] of litPlanes.entries()) {
       scheme.filter = tile => this.grid.getTileData(tile, 'plane') === plane;
       scheme.clearLight();
-      scheme.clearView();
 
       // skip plane if its lightScale is below threshold; this happens
       // on the last tick of the fade out animation, and makes it so
@@ -640,11 +656,9 @@ export class DOMgeon extends EventTarget {
         }
       }
 
-      // add actor light fields and reveal FOV
-      for (const {actor, lightScale} of litPlane.actors.values()) {
+      // add actor light fields
+      for (const {actor, lightScale} of litPlane.actors.values())
         scheme.addLightField(actor, {lightScale});
-        scheme.revealViewField(actor, viewLimit);
-      }
     }
   }
 
@@ -695,6 +709,7 @@ export class DOMgeon extends EventTarget {
       this.grid.setTileData(actor, 'move', move);
       this.dispatchEvent(new Event('move'));
       moveTiles({grid: this.grid, kinds: this.moveProcs});
+      this._fovID = ''; // force FOV recompute during next lighting update
     }
 
     return actor;
