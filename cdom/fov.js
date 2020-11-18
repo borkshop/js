@@ -24,13 +24,23 @@ export class GridLighting {
   /**
    * @returns {void}
    */
-  clear() {
+  clearLight() {
     /** @type {NodeListOf<HTMLElement>} */
-    const priors = this.grid.el.querySelectorAll('.tile[data-light]');
-    for (const tile of priors) if (!this.filter || this.filter(tile)) {
-      this.grid.setTileData(tile, this.fovVar, null);
-      this.grid.setTileData(tile, this.lightVar, null);
-    }
+    const priors = this.grid.el.querySelectorAll(`.tile[data-${this.lightVar}]`);
+    for (const tile of priors)
+      if (!this.filter || this.filter(tile))
+        this.grid.setTileData(tile, this.lightVar, null);
+  }
+
+  /**
+   * @returns {void}
+   */
+  clearView() {
+    /** @type {NodeListOf<HTMLElement>} */
+    const priors = this.grid.el.querySelectorAll(`.tile[data-${this.fovVar}]`);
+    for (const tile of priors)
+      if (!this.filter || this.filter(tile))
+        this.grid.setTileData(tile, this.fovVar, null);
   }
 
   /**

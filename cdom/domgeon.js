@@ -614,9 +614,8 @@ export class DOMgeon extends EventTarget {
     const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh)); // TODO could be tightened wrt actor position
     for (const [plane, litPlane] of litPlanes.entries()) {
       scheme.filter = tile => this.grid.getTileData(tile, 'plane') === plane;
-
-      // clear prior light
-      scheme.clear();
+      scheme.clearLight();
+      scheme.clearView();
 
       // skip plane if its lightScale is below threshold; this happens
       // on the last tick of the fade out animation, and makes it so
