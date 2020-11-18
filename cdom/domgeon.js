@@ -600,6 +600,7 @@ export class DOMgeon extends EventTarget {
     };
 
     // collect lit actors, advancing any animation times
+    let animRunning = false;
     if (this._lightAnim.length) {
       for (let i = 0; i < this._lightAnim.length; ++i) {
         this._lightAnim[i].et += dt;
@@ -609,8 +610,10 @@ export class DOMgeon extends EventTarget {
         collectActor(id, v);
       }
       this._lightAnim = this._lightAnim.filter(({et, t}) => et < t);
+      animRunning = true;
     } else if (this._litActorID) {
       collectActor(this._litActorID);
+      // TODO if (have animated sources) animRunning = true;
     }
 
     // recompute FOV
@@ -626,7 +629,11 @@ export class DOMgeon extends EventTarget {
       }
 
       this._fovID = fovID;
+      animRunning = true; // FOV change implies a potential lighting change too
     }
+
+    // only recompute light if animating or changed
+    if (!animRunning) return;
 
     // light each involved plane
     for (const [plane, litPlane] of litPlanes.entries()) {
