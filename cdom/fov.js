@@ -85,16 +85,25 @@ export class GridLighting {
    */
   revealViewField(source, className, depthLimit=1000) {
     this.computeField(source, depthLimit, (pos, depth) => {
-      for (const tile of this.grid.tilesAt(pos, className))
-        this.revealView(tile, depth);
+      const tiles = this.grid.tilesAt(pos, className);
+      this.revealView(tiles, pos, depth);
     });
+  }
+
+  /**
+   * @param {Iterable<HTMLElement>} tiles
+   * @param {Point} _pos
+   * @param {number} depth
+   */
+  revealView(tiles, _pos, depth) {
+    for (const tile of tiles) this.setView(tile, depth);
   }
 
   /**
    * @param {HTMLElement} tile
    * @param {number} depth
    */
-  revealView(tile, depth) {
+  setView(tile, depth) {
     const prior = this.grid.getTileData(tile, this.fovVar);
     this.grid.setTileData(tile, this.fovVar,
       typeof prior === 'number' ? Math.min(prior, depth) : depth);
