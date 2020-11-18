@@ -48,6 +48,8 @@
 /**
  * @typedef TileSpec
  * @prop {Point} [pos] - specifies new tile location within tile coordinate space
+ * @prop {string} [plane] - optional tile plane; if set, tile is appended to a
+ * div.plane element, otherwise directly to the grid element.
  * @prop {string} [kind] - primary tile class name
  * @prop {string|string[]|classMut|classMut[]} [classList] - specifies more
  * limited classList mutations, rather than full className syncing; string args
@@ -279,7 +281,20 @@ export class TileGrid {
     let tile = id ? this.getTile(id) : null;
     if (!tile) {
       tile = this.el.ownerDocument.createElement('div');
-      this.el.appendChild(tile)
+      if (spec.plane) {
+        /** @type {HTMLElement|null} */
+        let plane = this.el.querySelector(`.plane[data-plane="${spec.plane}"]`);
+        if (!plane) {
+          plane = this.el.ownerDocument.createElement('div');
+          plane.className = 'plane';
+          plane.dataset['plane'] = spec.plane;
+          plane.style.setProperty('--plane', spec.plane);
+          this.el.appendChild(plane);
+        }
+        plane.appendChild(tile);
+      } else {
+        this.el.appendChild(tile);
+      }
       if (!id) {
         const kind = spec.kind;
         let n = this._kindid.get(kind) || 0;

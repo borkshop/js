@@ -93,11 +93,11 @@
           text-decoration-style: dotted;
         }
 
-        .tile.solid[data-fov] {
+        .tile[data-fov] {
           visibility: visible;
           opacity: var(--light);
         }
-        .tile.solid:not([data-fov]) { visibility: hidden; }
+        .tile:not([data-fov]) { visibility: hidden; }
 
       </style>
 
@@ -118,9 +118,9 @@
       });
       new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
-      const floorShader = {kind: 'floor', classList: ['solid', 'support', 'passable'], text: '·'};
-      const wallShader = {kind: 'wall', classList: 'solid', text: '#'};
-      const doorShader = {kind: 'door', classList: ['solid', 'interact']};
+      const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: '·'};
+      const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
+      const doorShader = {plane: 'solid', kind: 'door', classList: 'interact'};
 
       fillRect(dmg.grid, {x: 0, y: 0, w: 13, h: 8}, roomShader({
         floors: floorShader,
@@ -146,17 +146,18 @@
 
       dmg.grid.buildTile({
         pos: {x: 6, y: -8},
+        plane: 'solid',
         kind: 'floor',
         classList: ['rune', 'interact', '-passable'],
         text: 'V',
         data: {
           name: 'void rune',
-          morph_spawn: {kind: 'char', classList: ['mover', 'solid', 'input', 'support', 'focus'], text: '*'},
+          morph_spawn: {plane: 'solid', kind: 'char', classList: ['mover', 'input', 'support', 'focus'], text: '*'},
           morph_subject: '-focus',
         },
       });
 
-      dmg.grid.createTile({pos: {x: 6, y: 4}, kind: 'char', classList: ['mover', 'solid', 'input'], text: '@'});
+      dmg.grid.createTile({pos: {x: 6, y: 4}, plane: 'solid', kind: 'char', classList: ['mover', 'input'], text: '@'});
 
     </script>
   </body>
