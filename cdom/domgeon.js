@@ -643,7 +643,7 @@ export class DOMgeon extends EventTarget {
       // add actor light fields and reveal FOV
       for (const {actor, lightScale} of litPlane.actors.values()) {
         scheme.addLightField(actor, {lightScale});
-        scheme.revealViewField(actor, plane, viewLimit);
+        scheme.revealViewField(actor, viewLimit);
       }
     }
   }

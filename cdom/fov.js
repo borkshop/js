@@ -79,14 +79,14 @@ export class GridLighting {
 
   /**
    * @param {HTMLElement} source
-   * @param {string} className
    * @param {number} [depthLimit]
    * @returns {void}
    */
-  revealViewField(source, className, depthLimit=1000) {
+  revealViewField(source, depthLimit=1000) {
     this.computeField(source, depthLimit, (pos, depth) => {
-      const tiles = this.grid.tilesAt(pos, className);
-      this.revealView(tiles, pos, depth);
+      const tiles = this.grid.tilesAt(pos);
+      const present = this.filter ? tiles.filter(this.filter) : tiles;
+      this.revealView(present, pos, depth);
     });
   }
 
