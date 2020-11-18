@@ -54,9 +54,11 @@ export class GridLighting {
     lightInit=(source && this.grid.getTileData(source, 'lightInit')) || 8,
     lightScale=1,
   }) {
+    const origin = this.grid.getTilePosition(source);
     const depthLimit = Math.sqrt(lightInit/this.lightLimit);
-    this.computeField(source, depthLimit, (pos, depth) => {
-      const light = lightScale*lightInit/(depth ? depth*depth : 1);
+    this.computeField(source, depthLimit, (pos) => {
+      const dsq = Math.pow(pos.x - origin.x, 2) + Math.pow(pos.y - origin.y, 2)
+      const light = lightScale*lightInit/dsq;
       if (light >= this.lightLimit) {
         const tiles = this.grid.tilesAt(pos);
         for (const tile of this.filter ? tiles.filter(this.filter) : tiles)
