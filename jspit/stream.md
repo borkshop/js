@@ -1,4 +1,4 @@
-# 2020-11-17
+# 2020-11-18
 
 ## TODO
 
@@ -75,6 +75,22 @@ So how about expanding the current tile scheme:
   other behaviors
 
 ## Done
+
+Finished prep scope from yesterday, FOV recompute now only happes on
+change/move, and lighting recompute stops after the animations are done. Also
+changed light falloff to be circular.
+
+Reified planes into sub-TileGrid elements that contain tiles of their plane,
+this allows things like full-plane occlusion, parallax translation, and z-index
+tiers.
+
+Next up: meme plane(s).
+
+# 2020-11-17
+
+Developing towards a memory layer/plane, fell off a perf cliff due to layout
+churn and force reflow / style recomputes. Left progress in dev for next, but
+prototyped non-text content tiles and meme-tile copying driven by FOV.
 
 # 2020-11-16
 
