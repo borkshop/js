@@ -131,6 +131,7 @@ function procMove({grid, mover, move}) {
  * @typedef {object} ButtonSpec
  * @prop {string} label
  * @prop {string} [key]
+ * @prop {string} [keycode]
  * @prop {string} [title]
  * @prop {string} [legend]
  */
@@ -148,8 +149,9 @@ function updateActionButton(cont, button, spec) {
     return;
   }
 
-  let {label, key, title, legend, action, x, y, data} = spec;
+  let {label, key, keycode, title, legend, action, x, y, data} = spec;
   if (data?.key) ({key, ...data} = data);
+  if (data?.keycode) ({keycode, ...data} = data);
   if (data?.legend) ({legend, ...data} = data);
 
   if (!button) button = cont.appendChild(cont.ownerDocument.createElement('button'));
@@ -160,15 +162,19 @@ function updateActionButton(cont, button, spec) {
   if (button.title !== title) button.title = title;
 
   if (!key) key = button.dataset['key'];
+  if (!keycode) keycode = button.dataset['keycode'];
   if (!legend && key) {
     const K = key.toUpperCase();
     if (!label) label = K;
     else if (key.length === 1 && K !== label) legend = K;
   }
   if (button.dataset['key'] !== key) button.dataset['key'] = key;
+  if (button.dataset['keycode'] !== keycode) button.dataset['keycode'] = keycode;
   priorData.delete('key');
+  priorData.delete('keycode');
 
   if (!label) label = '';
+  else if (legend === label) legend = '';
   if (button.textContent !== label) button.textContent = label;
 
   if (button.dataset['legend'] !== legend) button.dataset['legend'] = legend;
@@ -355,20 +361,28 @@ export class DOMgeon extends EventTarget {
       'ArrowUp': '↑',
       'ArrowRight': '→',
     };
-    if (this.moveBar) for (let {key, label, title, x, y} of [
+
+    const defaultMoveButtons = [
       {x: 0, y: -1, key: 'w', title: 'Move Up', label: '↑'},
       {x: -1, y: 0, key: 'a', title: 'Move Left', label: '←'},
       {x: 0, y: 1, key: 's', title: 'Move Down', label: '↓'},
       {x: 1, y: 0, key: 'd', title: 'Move Right', label: '→'},
       // {x: 0, y: 0, key: 'r', title: 'Stay (no move)', label: '⊙'},
-    ]) {
+    ];
+
+    /** @type {ActionButtonSpec[]} */
+    const moveButtons = defaultMoveButtons;
+
+    if (this.moveBar) for (let moveButton of moveButtons) {
+      let {key, keycode, x, y} = moveButton;
       /** @type {null|HTMLButtonElement} */
       const button = this.moveBar.querySelector(`button[data-movedir="${x},${y}"]`);
       if (button?.dataset['key']) key = button.dataset['key'];
-      const legend = keyLegends[key];
-      updateActionButton(this.moveBar, button, {
-        label, key, title, legend, x, y,
-      });
+      const legend =
+        keycode ? keyLegends[keycode]
+        : key ? keyLegends[key]
+        : undefined;
+      updateActionButton(this.moveBar, button, {legend, ...moveButton});
     }
   }
 
@@ -715,7 +729,9 @@ export class DOMgeon extends EventTarget {
     let move = Array.from(keys)
       .map(key => {
         /** @type {null|HTMLButtonElement} */
-        const button = this.ui.querySelector(`button[data-key="${key}"]`);
+        const button =
+          this.ui.querySelector(`button[data-keycode="${key}"]`) ||
+          this.ui.querySelector(`button[data-key="${key}"]`);
         return button && parseButtonMove(button);
       })
       .reduce(mergeMoves, null);
