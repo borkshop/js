@@ -32,15 +32,6 @@ import {GridLighting} from './fov';
  * @prop {T} to
  */
 
-/** @typedef {Object} DOMgeonOptions
- *
- * @prop {HTMLElement} grid - document element to place tiles within
- * @prop {HTMLElement} [moveBar] - element under which to place move buttons
- * @prop {HTMLElement} [actionBar] - element under which to add action buttons
- * @prop {HTMLElement} [ui] - document element to toggle UI state classes upon
- * @prop {HTMLElement} [keys] - document element to listen for key events upon
- */
-
 /**
  * @param {TileGrid} grid
  * @param {HTMLElement[]} interacts
@@ -279,6 +270,23 @@ export class DOMgeon extends EventTarget {
   moveProcs = {
     '': procMove,
   }
+
+  /**
+   * DOMgeon binding elements
+   *
+   * @typedef {Object} DOMgeonBindings
+   * @prop {HTMLElement} grid - document element to place tiles within
+   * @prop {HTMLElement} [ui] - document element to toggle UI state classes upon
+   * @prop {HTMLElement} [keys] - document element to listen for key events upon
+   * @prop {HTMLElement} [moveBar] - element under which to place move buttons
+   * @prop {HTMLElement} [actionBar] - element under which to add action buttons
+   */
+
+  /**
+   * Options to DOMgeon constructor, must specify a grid binding element.
+   *
+   * @typedef {DOMgeonBindings} DOMgeonOptions
+   */
 
   /**
    * May pass just a grid element if no other option is needed.
