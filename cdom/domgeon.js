@@ -139,6 +139,43 @@ function procMove({grid, mover, move}) {
 /** @typedef {ButtonSpec&Partial<Move>} ActionButtonSpec */
 
 /**
+ * @param {any} btn
+ * @returns {null|ActionButtonSpec}
+ */
+function toActionButtonSpec(btn) {
+  if (typeof btn === 'string') btn = JSON.parse(btn);
+  if (typeof btn !== 'object') return null;
+  // Partial<Move>
+  if (btn.action !== undefined && typeof btn.action !== 'string') return null;
+  if (btn.x !== undefined && typeof btn.x !== 'number') return null;
+  if (btn.y !== undefined && typeof btn.y !== 'number') return null;
+  // ButtonSpec
+  if (typeof btn.label !== 'string') return null;
+  if (btn.key !== undefined && typeof btn.key !== 'string') return null;
+  if (btn.keycode !== undefined && typeof btn.keycode !== 'string') return null;
+  if (btn.title !== undefined && typeof btn.title !== 'string') return null;
+  if (btn.legend !== undefined && typeof btn.legend !== 'string') return null;
+  if (btn.data !== undefined) {
+    if (typeof btn.data !== 'object') return null;
+    if (Object.values(btn.data).some(
+      val => val !== undefined && typeof val !== 'string'
+    )) return null;
+  }
+  return btn;
+}
+
+/**
+ * @param {any} btns
+ * @returns {null|ActionButtonSpec[]}
+ */
+function toActionButtonSpecs(btns) {
+  if (typeof btns === 'string') btns = JSON.parse(btns);
+  if (!Array.isArray(btns)) return null;
+  btns = btns.map(toActionButtonSpec).filter(btn => !!btn);
+  return btns.length ? btns : null;
+}
+
+/**
  * @param {HTMLElement} cont
  * @param {null|HTMLButtonElement} button
  * @param {null|ActionButtonSpec} spec
@@ -371,8 +408,18 @@ export class DOMgeon extends EventTarget {
       if (this.running) this.stop(); else this.start();
     };
 
-    /** @type {ActionButtonSpec[]} */
-    const moveButtons = this.config.moveButtons;
+    /** @type {null|ActionButtonSpec[]} */
+    let moveButtons = toActionButtonSpecs(localStorage.getItem('domgeon.moveButtons'));
+    if (!moveButtons) {
+      moveButtons = [...this.config.moveButtons];
+      localStorage.setItem('domgeon.moveButtons', JSON.stringify(moveButtons));
+    } else {
+      const moves = new Set(moveButtons.map(({x,y}) => `${x},${y}`));
+      if (this.config.moveButtons.some(({x,y}) => !moves.has(`${x},${y}`))) {
+        moveButtons.push(...this.config.moveButtons.filter(({x,y}) => !moves.has(`${x},${y}`)));
+        localStorage.setItem('domgeon.moveButtons', JSON.stringify(moveButtons));
+      }
+    }
 
     if (this.moveBar) for (let moveButton of moveButtons) {
       let {key, keycode, x, y} = moveButton;
