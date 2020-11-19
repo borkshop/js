@@ -281,20 +281,6 @@ export class TileGrid {
     let tile = id ? this.getTile(id) : null;
     if (!tile) {
       tile = this.el.ownerDocument.createElement('div');
-      if (spec.plane) {
-        /** @type {HTMLElement|null} */
-        let plane = this.el.querySelector(`.plane[data-plane="${spec.plane}"]`);
-        if (!plane) {
-          plane = this.el.ownerDocument.createElement('div');
-          plane.className = 'plane';
-          plane.dataset['plane'] = spec.plane;
-          plane.style.setProperty('--plane', spec.plane);
-          this.el.appendChild(plane);
-        }
-        plane.appendChild(tile);
-      } else {
-        this.el.appendChild(tile);
-      }
       if (!id) {
         const kind = spec.kind;
         let n = this._kindid.get(kind) || 0;
@@ -310,6 +296,35 @@ export class TileGrid {
   }
 
   /**
+   * @param {string} name
+   * @returns {HTMLElement}
+   */
+  getPlane(name) {
+    if (!name) return this.el;
+    /** @type {HTMLElement|null} */
+    let plane = this.el.querySelector(`.plane[data-plane="${name}"]`);
+    if (!plane) {
+      plane = this.el.ownerDocument.createElement('div');
+      plane.className = 'plane';
+      plane.dataset['plane'] = name;
+      plane.style.setProperty('--plane', name);
+      this.el.appendChild(plane);
+    }
+    return plane;
+  }
+
+  /**
+   * @param {HTMLElement} tile
+   * @returns {string}
+   */
+  getTilePlane(tile) {
+    const parent = tile.parentNode;
+    if (!parent) return '';
+    if (!(parent instanceof HTMLElement)) return '';
+    return parent.dataset['plane'] || '';
+  }
+
+  /**
    * Updates an existing tile element to match the given specification.
    *
    * @param {HTMLElement} tile
@@ -317,6 +332,11 @@ export class TileGrid {
    * @return {HTMLElement}
    */
   updateTile(tile, spec) {
+    if (!tile.parentNode)
+      this.getPlane(spec.plane || '').appendChild(tile);
+    else if (spec.plane !== undefined && this.getTilePlane(tile) !== spec.plane)
+      this.getPlane(spec.plane).appendChild(
+        tile.parentNode.removeChild(tile));
     if (spec.pos) this.moveTileTo(tile, spec.pos);
     if (spec.text) tile.textContent = spec.text;
     if (spec.classList) {

@@ -45,7 +45,7 @@ function procInteraction(grid, interacts, subject) {
   const interact = interacts[0];
 
   // TODO cross planar capability
-  if (grid.getTileData(subject, 'plane') !== grid.getTileData(interact, 'plane')) return false;
+  if (grid.getTilePlane(subject) !== grid.getTilePlane(interact)) return false;
 
   const pos = grid.getTilePosition(subject);
   const at = grid.getTilePosition(interact);
@@ -95,13 +95,13 @@ function procMove({grid, mover, move}) {
     return;
   }
 
-  const plane = grid.getTileData(mover, 'plane');
+  const plane = grid.getTilePlane(mover);
   const {x, y} = grid.getTilePosition(mover);
   const to = {x: x + move.x, y: y + move.y};
   const at = grid.tilesAt(to);
 
   // interact with any co-planar tiles present
-  let present = at.filter(h => grid.getTileData(h, 'plane') === plane);
+  let present = at.filter(h => grid.getTilePlane(h) === plane);
 
   // boop-interact with first present .tile.interact:not(.passable)
   const interacts = present.filter(h =>
@@ -111,7 +111,7 @@ function procMove({grid, mover, move}) {
   if (interacts.length) {
     if (!procInteraction(grid, interacts, mover)) return;
     // re-query over any interaction updates
-    present = grid.tilesAt(to).filter(h => grid.getTileData(h, 'plane') === plane);
+    present = grid.tilesAt(to).filter(h => grid.getTilePlane(h) === plane);
   }
 
   // blocked by any present .tile:not(.passable)
@@ -670,7 +670,7 @@ export class DOMgeon extends EventTarget {
     const collectActor = (id, lightScale=1) => {
       const actor = /** @type {null|HTMLElement} */ (this.grid.el.querySelector(`#${id}`));
       if (!actor) return;
-      const plane = this.grid.getTileData(actor, 'plane');
+      const plane = this.grid.getTilePlane(actor);
       let litPlane = litPlanes.get(plane);
       if (litPlane === undefined) litPlanes.set(plane, litPlane = {
         lightScale: 0,
@@ -704,7 +704,7 @@ export class DOMgeon extends EventTarget {
       const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh)); // TODO could be tightened wrt actor position
 
       for (const [plane, litPlane] of litPlanes.entries()) {
-        scheme.filter = tile => this.grid.getTileData(tile, 'plane') === plane;
+        scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
         scheme.clearView();
         for (const {actor} of litPlane.actors.values())
           scheme.revealViewField(actor, viewLimit);
@@ -719,7 +719,7 @@ export class DOMgeon extends EventTarget {
 
     // light each involved plane
     for (const [plane, litPlane] of litPlanes.entries()) {
-      scheme.filter = tile => this.grid.getTileData(tile, 'plane') === plane;
+      scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
       scheme.clearLight();
 
       // skip plane if its lightScale is below threshold; this happens

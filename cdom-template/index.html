@@ -68,12 +68,7 @@
         .tile.mover.input       { color: var(--dark-orange); }
         .tile.mover.input.focus { color: var(--orange); }
 
-        .tile:not(.solid) {
-          --plane: "void";
-        }
-
-        .tile.solid {
-          --plane: "solid";
+        .plane[data-plane="solid"] .tile {
           --lightAmbient: 0.2;
         }
 
