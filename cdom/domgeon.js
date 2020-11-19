@@ -235,6 +235,14 @@ function actionLabel(grid, tile) {
   return `${action || 'use'} ${name}`;
 }
 
+/**
+ * Carries config data for a DOMgeon.
+ * See DOMgeon.prototype.config for detailed defaults.
+ * May pass override to DOMgeon.constructor.
+ *
+ * @typedef {Object} DOMgeonConfig
+ */
+
 export class DOMgeon extends EventTarget {
   /** @type {TileGrid} */
   grid
@@ -271,6 +279,10 @@ export class DOMgeon extends EventTarget {
     '': procMove,
   }
 
+  /** @type {DOMgeonConfig} */
+  config = {
+  }
+
   /**
    * DOMgeon binding elements
    *
@@ -283,9 +295,10 @@ export class DOMgeon extends EventTarget {
    */
 
   /**
-   * Options to DOMgeon constructor, must specify a grid binding element.
+   * Options to DOMgeon constructor, must specify a grid binding element, may
+   * specify ancillary elements, and config overrides.
    *
-   * @typedef {DOMgeonBindings} DOMgeonOptions
+   * @typedef {DOMgeonBindings&Partial<DOMgeonConfig>} DOMgeonOptions
    */
 
   /**
