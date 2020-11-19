@@ -247,6 +247,10 @@ function actionLabel(grid, tile) {
  * May pass override to DOMgeon.constructor.
  *
  * @typedef {Object} DOMgeonConfig
+ * @prop {ActionButtonSpec[]} moveButtons - movement button definitions;
+ * defaults to WASD cardinal moves
+ * @prop {Object<string, string>} moveLegends - legends for movement buttons if
+ * not specified in moveButtons; defaults to unicode arrows
  */
 
 export class DOMgeon extends EventTarget {
@@ -287,6 +291,19 @@ export class DOMgeon extends EventTarget {
 
   /** @type {DOMgeonConfig} */
   config = {
+    moveLegends: {
+      'ArrowLeft': '←',
+      'ArrowDown': '↓',
+      'ArrowUp': '↑',
+      'ArrowRight': '→',
+    },
+    moveButtons: [
+      {x: 0, y: -1, key: 'w', title: 'Move Up', label: '↑'},
+      {x: -1, y: 0, key: 'a', title: 'Move Left', label: '←'},
+      {x: 0, y: 1, key: 's', title: 'Move Down', label: '↓'},
+      {x: 1, y: 0, key: 'd', title: 'Move Right', label: '→'},
+      // {x: 0, y: 0, key: 'r', title: 'Stay (no move)', label: '⊙'},
+    ],
   }
 
   /**
@@ -354,24 +371,8 @@ export class DOMgeon extends EventTarget {
       if (this.running) this.stop(); else this.start();
     };
 
-    /** @type {Object<string, string>} */
-    const keyLegends = {
-      'ArrowLeft': '←',
-      'ArrowDown': '↓',
-      'ArrowUp': '↑',
-      'ArrowRight': '→',
-    };
-
-    const defaultMoveButtons = [
-      {x: 0, y: -1, key: 'w', title: 'Move Up', label: '↑'},
-      {x: -1, y: 0, key: 'a', title: 'Move Left', label: '←'},
-      {x: 0, y: 1, key: 's', title: 'Move Down', label: '↓'},
-      {x: 1, y: 0, key: 'd', title: 'Move Right', label: '→'},
-      // {x: 0, y: 0, key: 'r', title: 'Stay (no move)', label: '⊙'},
-    ];
-
     /** @type {ActionButtonSpec[]} */
-    const moveButtons = defaultMoveButtons;
+    const moveButtons = this.config.moveButtons;
 
     if (this.moveBar) for (let moveButton of moveButtons) {
       let {key, keycode, x, y} = moveButton;
@@ -379,8 +380,8 @@ export class DOMgeon extends EventTarget {
       const button = this.moveBar.querySelector(`button[data-movedir="${x},${y}"]`);
       if (button?.dataset['key']) key = button.dataset['key'];
       const legend =
-        keycode ? keyLegends[keycode]
-        : key ? keyLegends[key]
+        keycode ? this.config.moveLegends[keycode]
+        : key ? this.config.moveLegends[key]
         : undefined;
       updateActionButton(this.moveBar, button, {legend, ...moveButton});
     }
