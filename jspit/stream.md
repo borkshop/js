@@ -1,4 +1,4 @@
-# 2020-11-18
+# 2020-11-19
 
 ## TODO
 
@@ -75,6 +75,14 @@ So how about expanding the current tile scheme:
   other behaviors
 
 ## Done
+
+While developing and debugging the new meme plane feature, made movement keys
+configurable from page-level data passed to the `DOMgeon` constructor, and also
+persisted to local storage for user customization. This further revealed that
+movement button input support for keycodes, like for the actual arrow keys, was
+incomplete; fixed as part of the new config driven scheme.
+
+# 2020-11-18
 
 Finished prep scope from yesterday, FOV recompute now only happes on
 change/move, and lighting recompute stops after the animations are done. Also
