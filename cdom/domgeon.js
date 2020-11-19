@@ -276,10 +276,10 @@ export class DOMgeon extends EventTarget {
    *
    * @typedef {Object} DOMgeonBindings
    * @prop {HTMLElement} grid - document element to place tiles within
-   * @prop {HTMLElement} [ui] - document element to toggle UI state classes upon
-   * @prop {HTMLElement} [keys] - document element to listen for key events upon
-   * @prop {HTMLElement} [moveBar] - element under which to place move buttons
-   * @prop {HTMLElement} [actionBar] - element under which to add action buttons
+   * @prop {HTMLElement} [ui] - document element to toggle UI state classes upon; defaults to grid
+   * @prop {HTMLElement} [keys] - document element to listen for key events upon; defaults to ui
+   * @prop {HTMLElement} [moveBar] - element under which to place move buttons; defaults to ui
+   * @prop {HTMLElement} [actionBar] - element under which to add action buttons; defaults to ui
    */
 
   /**
@@ -302,20 +302,19 @@ export class DOMgeon extends EventTarget {
       // element bindings
       grid,
 
-      actionBar,
-      moveBar,
-
       // TODO this should be wholly optional or dropped entirely now that we
       // provide start/stop events
       ui = grid,
 
       // TODO should the default be more like ownerDocument.body?
       keys = ui,
+      actionBar = ui,
+      moveBar = ui,
     } = options;
-    this.actionBar = actionBar || null;
-    this.moveBar = moveBar || null;
     this.ui = ui;
     this.keys = keys;
+    this.actionBar = actionBar;
+    this.moveBar = moveBar;
 
     this.grid = new TileGrid(grid);
 
