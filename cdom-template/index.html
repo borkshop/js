@@ -152,7 +152,8 @@
         },
       });
 
-      dmg.grid.createTile({pos: {x: 6, y: 4}, plane: 'solid', kind: 'char', classList: ['mover', 'input'], text: '@'});
+      const actor = dmg.grid.createTile({pos: {x: 6, y: 4}, plane: 'solid', kind: 'char', classList: ['mover', 'input', 'focus'], text: '@'});
+      dmg.updateActorView(actor);
 
     </script>
   </body>
