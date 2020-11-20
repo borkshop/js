@@ -1,4 +1,4 @@
-# 2020-11-19
+# 2020-11-20
 
 ## TODO
 
@@ -75,6 +75,15 @@ So how about expanding the current tile scheme:
   other behaviors
 
 ## Done
+
+Firmed up tile grid plane API, and fixed planar identity in the domgeon demo
+that had been broken by the pivot to explicit `<div class="pland">` containers
+a couple days ago.
+
+Fixed initial flash of unlit tiles, and made the domgeon demo start out
+centered on the `@` rather than panning in by accident.
+
+# 2020-11-19
 
 While developing and debugging the new meme plane feature, made movement keys
 configurable from page-level data passed to the `DOMgeon` constructor, and also
