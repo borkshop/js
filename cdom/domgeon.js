@@ -700,57 +700,54 @@ export class DOMgeon extends EventTarget {
       collectActor(this._litActorID);
       // TODO if (have animated sources) animRunning = true;
     }
+    const fovChanged = this._fovID !== fovID;
 
-    // recompute FOV
-    if (this._fovID !== fovID) {
+    // only recompute if light or FOV have changed (or are animating)
+    if (fovChanged || animRunning) {
       const {w: vw, h: vh} = this.grid.viewport;
-      const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh)); // TODO could be tightened wrt actor position
+      const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh));
 
-      for (const [plane, litPlane] of litPlanes.entries()) {
+      for (const [plane, {lightScale, actors}] of litPlanes) {
         scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
-        scheme.clearView();
-        for (const {actor} of litPlane.actors.values())
-          scheme.revealViewField(actor, viewLimit);
-      }
+        scheme.clearLight();
 
-      this._fovID = fovID;
-      animRunning = true; // FOV change implies a potential lighting change too
-    }
-
-    // only recompute light if animating or changed
-    if (!animRunning) return;
-
-    // light each involved plane
-    for (const [plane, litPlane] of litPlanes.entries()) {
-      scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
-      scheme.clearLight();
-
-      // skip plane if its lightScale is below threshold; this happens
-      // on the last tick of the fade out animation, and makes it so
-      // that we leave the light values cleared within a just-exited
-      // plane
-      if (litPlane.lightScale < scheme.lightLimit) continue;
-
-      // add ambient light
-      for (const tile of this.grid.queryTiles({className: plane})) {
-        const lightAmbient = this.grid.getTileData(tile, 'lightAmbient');
-        if (typeof lightAmbient === 'number')
-          scheme.addLight(tile, lightAmbient);
-      }
-
-      // add non-actor light fields
-      for (const lightSelector of lightSelectors) {
-        /** @type {NodeListOf<HTMLElement>} */
-        const tiles = this.grid.el.querySelectorAll(lightSelector);
-        for (const tile of tiles) if (!litPlane.actors.has(tile.id)) {
-          const lightInit = this.grid.getTileData(tile, 'lightInit');
-          scheme.addLightField(tile, {lightInit});
+        // recompute FOV
+        if (fovChanged) {
+          scheme.clearView();
+          for (const {actor} of actors.values()) {
+            // TODO compute a tighter viewLimit wrt actor position
+            scheme.revealViewField(actor, viewLimit);
+          }
         }
-      }
 
-      // add actor light fields
-      for (const {actor, lightScale} of litPlane.actors.values())
-        scheme.addLightField(actor, {lightScale});
+        // skip plane if its lightScale is below threshold; this happens
+        // on the last tick of the fade out animation, and makes it so
+        // that we leave the light values cleared within a just-exited
+        // plane
+        if (lightScale < scheme.lightLimit) continue;
+
+        // add ambient light
+        for (const tile of this.grid.queryTiles({plane})) {
+          const lightAmbient = this.grid.getTileData(tile, 'lightAmbient');
+          if (typeof lightAmbient === 'number')
+            scheme.addLight(tile, lightAmbient);
+        }
+
+        // add non-actor light fields
+        for (const lightSelector of lightSelectors) {
+          /** @type {NodeListOf<HTMLElement>} */
+          const tiles = this.grid.el.querySelectorAll(lightSelector);
+          for (const tile of tiles) if (!actors.has(tile.id)) {
+            const lightInit = this.grid.getTileData(tile, 'lightInit');
+            scheme.addLightField(tile, {lightInit});
+          }
+        }
+
+        // add actor light fields
+        for (const {actor, lightScale} of actors.values())
+          scheme.addLightField(actor, {lightScale});
+      }
+      if (fovChanged) this._fovID = fovID;
     }
   }
 
