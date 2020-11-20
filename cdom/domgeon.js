@@ -574,9 +574,12 @@ export class DOMgeon extends EventTarget {
     if (actor) {
       const pos = this.grid.getTilePosition(actor);
       const wanted = this.wantedViewPoint(pos, this.grid.viewport);
-      if (wanted) this.viewTo(wanted);
-      else if (!this.grid.hasFixedViewPoint()) this.viewTo(pos);
-    } // else TODO what should view tracK?
+      const to = wanted || (this.grid.hasFixedViewPoint() ? null : pos);
+      if (to) {
+        if (this.running) this.viewTo(to);
+        else this.grid.viewPoint = to;
+      }
+    } // else TODO what should view track?
     this.updateLighting({actor});
     if (this.actionBar) {
       /** @type {NodeListOf<HTMLButtonElement>} */
