@@ -19,6 +19,7 @@
 /**
  * @typedef {Object} TileQuery
  *
+ * @prop {string} [plane]
  * @prop {(string|string[])} [className] - matches tile element class names
  * @prop {string} [id] - matches tile element ID strings
  * @prop {Object<string, string>} [data] - matches tile dataset attributes
@@ -395,7 +396,8 @@ export class TileGrid {
    * @return {HTMLElement|null}
    */
   queryTile(query) {
-    return this.el.querySelector(this.tileQuerySelector(query));
+    const plane = this.getPlane(query.plane || '');
+    return plane.querySelector(this.tileQuerySelector(query));
   }
 
   /**
@@ -405,7 +407,8 @@ export class TileGrid {
    * @return {NodeListOf<HTMLElement>}
    */
   queryTiles(query) {
-    const els = this.el.querySelectorAll(query ? this.tileQuerySelector(query) : '.tile');
+    const plane = this.getPlane(query?.plane || '');
+    const els = plane.querySelectorAll(query ? this.tileQuerySelector(query) : '.tile');
     return /** @type {NodeListOf<HTMLElement>} */(els);
   }
 
@@ -457,7 +460,8 @@ export class TileGrid {
       ? query?.className.map(t => `.${t}`).join('')
       : '';
 
-    return `.tile${tagClasses}${attrs.map(attr => `[${attr}]`).join('')}`;
+    return `${query?.plane ? `.plane[data-plane="${query.plane}"] `
+    : ''}.tile${tagClasses}${attrs.map(attr => `[${attr}]`).join('')}`;
   }
 
   clear() {
