@@ -815,6 +815,7 @@ export class DOMgeon extends EventTarget {
 
     const actors = Array.from(this.grid.queryTiles({className: ['mover', 'input']}));
     const subject = actors.filter(actor => actor.classList.contains('focus')).shift();
+    const subjectPlane = subject && this.grid.getTilePlane(subject);
     const subjectPos = subject && this.grid.getTilePosition(subject);
 
     actions.push(...actors
@@ -853,7 +854,8 @@ export class DOMgeon extends EventTarget {
       ]
         .flatMap(({x: dx, y: dy}) => {
           const at = {x: x + dx, y: y + dy};
-          return this.grid.tilesAt(at, 'interact');
+          return this.grid.tilesAt(at, 'interact')
+            .filter(tile => this.grid.getTilePlane(tile) === subjectPlane);
         })
         .map(tile => ( {tile, pos: this.grid.getTilePosition(tile)} ))
         .sort(({pos: apos}, {pos: bpos}) => bpos.y - apos.y || bpos.x - apos.x)
