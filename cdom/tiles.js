@@ -51,6 +51,8 @@
  * @prop {string} [plane] - optional tile plane; if set, tile is appended to a
  * div.plane element, otherwise directly to the grid element.
  * @prop {string} [kind] - primary tile class name
+ * @prop {string} [className] - optional, base before any classList mods; need
+ * not contain "tile"
  * @prop {string|string[]|classMut|classMut[]} [classList] - specifies more
  * limited classList mutations, rather than full className syncing; string args
  * may start with + - or ! to add, remove, or toggle the string remaining
@@ -339,6 +341,10 @@ export class TileGrid {
         tile.parentNode.removeChild(tile));
     if (spec.pos) this.moveTileTo(tile, spec.pos);
     if (spec.text) tile.textContent = spec.text;
+    if (spec.className) {
+      tile.className = spec.className;
+      tile.classList.add('tile');
+    }
     if (spec.classList) {
       const classList = Array.isArray(spec.classList) ? spec.classList : [spec.classList];
       for (const mut of classList) {
