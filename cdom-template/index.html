@@ -59,18 +59,20 @@
         .tile.mover { z-index: 20 }
         .tile.input { z-index: 50 }
 
-        .tile.floor { color: var(--dark-grey) }
+        .tile.floor {
+          background-color: var(--darker-grey);
+          color: var(--dark-grey);
+        }
 
         /* wall should occlude floor */
-        .tile.wall { background-color: var(--darker-grey) }
+        .tile.wall {
+          background-color: var(--darker-grey);
+          color: var(--light-grey);
+        }
 
         .tile.mover             { color: var(--red-orange); }
         .tile.mover.input       { color: var(--dark-orange); }
         .tile.mover.input.focus { color: var(--orange); }
-
-        .plane[data-plane="solid"] .tile {
-          --lightAmbient: 0.2;
-        }
 
         .tile.door {
           --action: "open";
@@ -88,15 +90,19 @@
           text-decoration-style: dotted;
         }
 
-        .tile[data-fov] {
+        .plane { display: none }
+        .plane[data-plane="domgeon-inspect"],
+        .plane.lit, .plane.meme { display: initial }
+
+        .plane.lit .tile[data-fov] {
           visibility: visible;
           opacity: var(--light, 0);
         }
-        .tile:not([data-fov]) { visibility: hidden; }
+        .plane.lit .tile:not([data-fov]) { visibility: hidden; }
 
-        .plane[data-plane="solid-meme"] .tile {
+        .plane.meme .tile {
           visibility: visible;
-          opacity: 10%;
+          opacity: 20%;
         }
 
         .plane[data-plane="solid-meme"] { z-index: 1 }
@@ -118,12 +124,15 @@
         grid: document.querySelector('main .grid'),
         moveBar: document.querySelector('.buttonbar.moves'),
         actionBar: document.querySelector('.buttonbar.actions'),
+        lightLimit: 0.2,
       });
       new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
       const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: '·'};
       const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
       const doorShader = {plane: 'solid', kind: 'door', classList: 'interact'};
+
+      dmg.grid.getPlane('solid').classList.add('lit');
 
       fillRect(dmg.grid, {x: 0, y: 0, w: 13, h: 8}, roomShader({
         floors: floorShader,
