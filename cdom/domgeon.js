@@ -961,6 +961,12 @@ export class DOMgeon extends EventTarget {
     /** @type {Map<string, LitPlane>} */
     const litPlanes = new Map();
 
+    // TODO id usable for .input, .focus, and .view
+    // TODO add .view for FOV sourcing
+    // TODO shard TileGrid spatialIndex by plane
+    // TODO _fovID then becomes a Map<viewID:string,actorIDs:string>
+    // TODO mc.memeSpace per-viewID
+
     // TODO support multiple view points
     let fovID = '';
     if (this._litActorID) {
