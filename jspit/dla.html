@@ -37,13 +37,24 @@
         .tile.particle.live { z-index: 100 }
         .tile.input         { z-index: 1000 }
 
+        .plane { display: none }
+        .plane[data-plane="domgeon-inspect"],
+        .plane.lit, .plane.meme { display: initial }
+
         .grid.playing .tile.particle[data-fov] {
           visibility: visible;
-          opacity: var(--light);
+          opacity: var(--light, 0);
         }
         .grid.playing .tile.particle:not([data-fov]) { visibility: hidden; }
 
-        .tile.particle { --lightAmbient: 0.2; }
+        .grid.playing .plane.meme .tile {
+          visibility: visible;
+          opacity: 20%;
+        }
+
+        .plane[data-plane="solid-meme"] { z-index: 1 }
+        .plane[data-plane="solid"]      { z-index: 10 }
+
         .tile.particle.prime.live { --lightInit: 4.0; }
       </style>
 
