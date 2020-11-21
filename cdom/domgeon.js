@@ -22,6 +22,7 @@ import {GridLighting} from './fov';
 /** @typedef { import("./tiles").TileMoverProc } TileMoverProc */
 /** @typedef { import("./tiles").TileSpec } TileSpec */
 /** @typedef { import("./tiles").TileInspectEvent } TileInspectEvent */
+/** @typedef {{kind: string}&TileSpec} TileSpecKind */
 
 /**
  * @template T
@@ -276,6 +277,95 @@ function actionLabel(grid, tile) {
   const name = grid.getTileData(tile, 'name') || kind;
   const action = grid.getTileData(tile, 'action');
   return `${action || 'use'} ${name}`;
+}
+
+class MemeCollector {
+  grid
+  memeSpace
+  ignoreVars = ['x', 'y']
+  ignoreClasses = new Set(['tile', 'input', 'focus'])
+
+  /**
+   * @param {TileGrid} grid
+   * @param {string} [memeSpace]
+   */
+  constructor(grid, memeSpace='meme') {
+    this.grid = grid;
+    this.memeSpace = memeSpace;
+  }
+
+  /** @type {Map<string, HTMLElement>} */
+  staleMemes = new Map()
+
+  /** @type {Map<string, TileSpecKind>} */
+  freshMemes = new Map()
+
+  /**
+   * @param {TileSpec} spec
+   * @returns {TileSpec}
+   */
+  remember(spec) {
+    spec.className = ['tile', 'meme', ...((spec.className || '')
+      .split(/\s+/g)
+      .filter(n => !this.ignoreClasses.has(n))
+    )].join(' ');
+    if (spec.data)
+      for (const ign of this.ignoreVars)
+        delete spec.data[ign];
+    return spec;
+  }
+
+  /**
+   * @param {string} plane
+   * @param {Point} pos
+   * @param {Iterable<HTMLElement>} tiles
+   */
+  collectMemesAt(plane, pos, tiles) {
+    const memePlane = `${plane}-${this.memeSpace}`;
+    for (const meme of this.grid.tilesAt(pos, 'meme'))
+      if (this.grid.getTilePlane(meme) === memePlane) {
+        const id = this.grid.getTileID(meme);
+        if (!this.freshMemes.has(id)) this.staleMemes.set(id, meme);
+      }
+    for (const tile of tiles) {
+      const id = `${this.memeSpace}-${this.grid.getTileID(tile)}`;
+      this.freshMemes.set(id, {
+        plane: memePlane,
+        pos,
+        kind: 'meme',
+        ...this.remember({
+          className: tile.className,
+          text: tile.textContent || undefined,
+          data: {...tile.dataset},
+        }),
+      });
+      this.staleMemes.delete(id);
+    }
+  }
+
+  update() {
+    // TODO better long term storage semantics
+    const store = this.grid.getPlane(`${this.memeSpace}-store`);
+    store.classList.add(this.memeSpace);
+    store.style.display = 'none';
+    const planes = new Set();
+    for (const {plane} of this.freshMemes.values())
+      if (plane) planes.add(plane);
+    for (const name of planes) {
+      const plane = this.grid.getPlane(name);
+      plane.classList.add(this.memeSpace);
+    }
+    for (const [id, kspec] of this.freshMemes)
+      this.grid.createTile({id, ...kspec});
+    this.freshMemes.clear();
+    if (this.staleMemes.size) {
+      for (const meme of this.staleMemes.values())
+        store.appendChild(meme.parentNode
+          ? meme.parentNode.removeChild(meme)
+          : meme);
+      this.staleMemes.clear();
+    }
+  }
 }
 
 /**
@@ -709,6 +799,8 @@ export class DOMgeon extends EventTarget {
     if (fovChanged || animRunning) {
       const {w: vw, h: vh} = this.grid.viewport;
       const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh));
+      const mc = new MemeCollector(this.grid);
+      mc.ignoreVars.push(scheme.lightVar, scheme.fovVar);
 
       for (const [plane, {lightScale, actors}] of litPlanes) {
         scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
@@ -717,6 +809,10 @@ export class DOMgeon extends EventTarget {
         // recompute FOV
         if (fovChanged) {
           scheme.clearView();
+          scheme.revealView = (tiles, pos, depth) => {
+            for (const tile of tiles) scheme.setView(tile, depth);
+            mc.collectMemesAt(plane, pos, tiles);
+          };
           for (const {actor} of actors.values()) {
             // TODO compute a tighter viewLimit wrt actor position
             scheme.revealViewField(actor, viewLimit);
@@ -751,6 +847,7 @@ export class DOMgeon extends EventTarget {
           scheme.addLightField(actor, {lightScale});
       }
       if (fovChanged) this._fovID = fovID;
+      mc.update();
     }
   }
 

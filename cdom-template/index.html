@@ -94,6 +94,14 @@
         }
         .tile:not([data-fov]) { visibility: hidden; }
 
+        .plane[data-plane="solid-meme"] .tile {
+          visibility: visible;
+          opacity: 10%;
+        }
+
+        .plane[data-plane="solid-meme"] { z-index: 1 }
+        .plane[data-plane="solid"]      { z-index: 10 }
+
       </style>
 
     </main>
