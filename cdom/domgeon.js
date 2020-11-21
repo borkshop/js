@@ -288,6 +288,7 @@ function actionLabel(grid, tile) {
  * defaults to WASD cardinal moves
  * @prop {Object<string, string>} moveLegends - legends for movement buttons if
  * not specified in moveButtons; defaults to unicode arrows
+ * @prop {number} lightLimit
  */
 
 export class DOMgeon extends EventTarget {
@@ -341,6 +342,7 @@ export class DOMgeon extends EventTarget {
       {x: 1, y: 0, key: 'd', title: 'Move Right', label: '→'},
       // {x: 0, y: 0, key: 'r', title: 'Stay (no move)', label: '⊙'},
     ],
+    lightLimit: 0.2,
   }
 
   /**
@@ -645,6 +647,7 @@ export class DOMgeon extends EventTarget {
    */
   _runLightAnim(dt) {
     const scheme = new GridLighting(this.grid);
+    scheme.lightLimit = this.config.lightLimit;
 
     // TODO cache and invalidate on (rare) mutation
     const lightSelectors = Array.from(this._findLightSelectors());
