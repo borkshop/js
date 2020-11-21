@@ -76,9 +76,15 @@ So how about expanding the current tile scheme:
 
 ## Done
 
-Firmed up tile grid plane API, and fixed planar identity in the domgeon demo
-that had been broken by the pivot to explicit `<div class="pland">` containers
-a couple days ago.
+Finished initial pass at a subjective plane for the player: FOV update now
+copies tiles into a subjective "meme" plane, which gets composited with the
+objective source plane. Missing meme tiles get moved into a long term store
+plane. While there are many next steps to make it suitable for more than just
+the player's viewport, this works well enough to release for feedback.
+
+Firmed up tile grid plane API, and fixed many minor bugs following from the
+recent pivot to explicit `<div class="plane">` containers a couple days ago;
+filled gaps like inability to query tiles by plane.
 
 Fixed initial flash of unlit tiles, and made the domgeon demo start out
 centered on the `@` rather than panning in by accident.
