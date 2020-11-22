@@ -283,7 +283,7 @@ class MemeCollector {
   grid
   memeSpace
   ignoreVars = ['x', 'y']
-  ignoreClasses = new Set(['tile', 'input', 'focus'])
+  ignoreClasses = new Set(['tile', 'meme', 'input', 'focus'])
 
   /**
    * @param {TileGrid} grid
@@ -304,7 +304,7 @@ class MemeCollector {
    * @param {TileSpec} spec
    * @returns {TileSpec}
    */
-  remember(spec) {
+  sense(spec) {
     spec.className = ['tile', 'meme', ...((spec.className || '')
       .split(/\s+/g)
       .filter(n => !this.ignoreClasses.has(n))
@@ -316,12 +316,19 @@ class MemeCollector {
   }
 
   /**
+   * @param {string} name
+   */
+  memePlane(name) {
+    return `${name}-${this.memeSpace}`;
+  }
+
+  /**
    * @param {string} plane
    * @param {Point} pos
    * @param {Iterable<HTMLElement>} tiles
    */
   collectMemesAt(plane, pos, tiles) {
-    const memePlane = `${plane}-${this.memeSpace}`;
+    const memePlane = this.memePlane(plane);
     for (const meme of this.grid.tilesAt(pos, 'meme'))
       if (this.grid.getTilePlane(meme) === memePlane) {
         const id = this.grid.getTileID(meme);
@@ -333,7 +340,7 @@ class MemeCollector {
         plane: memePlane,
         pos,
         kind: 'meme',
-        ...this.remember({
+        ...this.sense({
           className: tile.className,
           text: tile.textContent || undefined,
           data: {...tile.dataset},
