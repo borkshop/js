@@ -841,13 +841,15 @@ export class DOMgeon extends EventTarget {
       const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh));
 
       const mc = new MemeCollector(this.grid);
-      mc.ignoreVars.push(scheme.lightVar);
       for (const [plane, {actors}] of litPlanes) {
         scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
         scheme.revealView = (tiles, pos) => mc.collectMemesAt(plane, pos, tiles);
         // TODO compute a tighter viewLimit wrt actor position
         for (const {actor} of actors.values())
           scheme.revealViewField(actor, viewLimit);
+        const memePlane = mc.memePlane(plane);
+        scheme.filter = tile => this.grid.getTilePlane(tile) === memePlane;
+        scheme.clearLight();
       }
 
       mc.update();
