@@ -335,9 +335,7 @@ export class TileGrid {
    * @return {HTMLElement}
    */
   updateTile(tile, spec) {
-    if (!tile.parentNode)
-      this.getPlane(spec.plane || '').appendChild(tile);
-    else if (spec.plane !== undefined && this.getTilePlane(tile) !== spec.plane)
+    if (tile.parentNode && spec.plane !== undefined && spec.plane !== this.getTilePlane(tile))
       this.getPlane(spec.plane).appendChild(
         tile.parentNode.removeChild(tile));
     if (spec.pos) this.moveTileTo(tile, spec.pos);
@@ -373,6 +371,8 @@ export class TileGrid {
           tile.style.setProperty(`--${name}`, dval);
         }
     }
+    if (!tile.parentNode)
+      this.getPlane(spec.plane || '').appendChild(tile);
     return tile;
   }
 
