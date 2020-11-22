@@ -183,7 +183,7 @@ export class TileGrid {
     this.el = el;
     this._obs = new ResizeObserver(() => this._updateSize());
     this._obs.observe(this.el);
-    const tiles = Array.from(this.queryTiles());
+    const tiles = Array.from(this.queryTiles()).filter(({id}) => !!id);
     this.spatialIndex.update(
       tiles.map(tile => tile.id),
       tiles.map(tile => this.getTilePosition(tile)),
