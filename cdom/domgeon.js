@@ -804,32 +804,12 @@ export class DOMgeon extends EventTarget {
 
     // only recompute if light or FOV have changed (or are animating)
     if (fovChanged || animRunning) {
-      const {w: vw, h: vh} = this.grid.viewport;
-      const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh));
-      const mc = new MemeCollector(this.grid);
-      mc.ignoreVars.push(scheme.lightVar, scheme.fovVar);
-
       for (const [plane, {lightScale, actors}] of litPlanes) {
         scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
         scheme.clearLight();
 
-        // recompute FOV
-        if (fovChanged) {
-          scheme.clearView();
-          scheme.revealView = (tiles, pos, depth) => {
-            for (const tile of tiles) scheme.setView(tile, depth);
-            mc.collectMemesAt(plane, pos, tiles);
-          };
-          for (const {actor} of actors.values()) {
-            // TODO compute a tighter viewLimit wrt actor position
-            scheme.revealViewField(actor, viewLimit);
-          }
-        }
-
-        // skip plane if its lightScale is below threshold; this happens
-        // on the last tick of the fade out animation, and makes it so
-        // that we leave the light values cleared within a just-exited
-        // plane
+        // skip plane if its lightScale is below threshold; this makes it so
+        // that we leave the light values cleared within a just-exited plane
         if (lightScale < scheme.lightLimit) continue;
 
         // add ambient light
@@ -853,8 +833,29 @@ export class DOMgeon extends EventTarget {
         for (const {actor, lightScale} of actors.values())
           scheme.addLightField(actor, {lightScale});
       }
-      if (fovChanged) this._fovID = fovID;
+    }
+
+    // recompute FOV
+    if (fovChanged) {
+      const {w: vw, h: vh} = this.grid.viewport;
+      const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh));
+
+      const mc = new MemeCollector(this.grid);
+      mc.ignoreVars.push(scheme.lightVar, scheme.fovVar);
+      for (const [plane, {actors}] of litPlanes) {
+        scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
+        scheme.clearView();
+        scheme.revealView = (tiles, pos, depth) => {
+          for (const tile of tiles) scheme.setView(tile, depth);
+          mc.collectMemesAt(plane, pos, tiles);
+        };
+        // TODO compute a tighter viewLimit wrt actor position
+        for (const {actor} of actors.values())
+          scheme.revealViewField(actor, viewLimit);
+      }
+
       mc.update();
+      this._fovID = fovID;
     }
   }
 
