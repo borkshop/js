@@ -176,6 +176,9 @@ export class TileGrid {
   /** @type {ResizeObserver} */
   _obs
 
+  /** @type {HTMLElement} */
+  _ghost
+
   /**
    * @param {HTMLElement} el
    */
@@ -183,6 +186,13 @@ export class TileGrid {
     this.el = el;
     this._obs = new ResizeObserver(() => this._updateSize());
     this._obs.observe(this.el);
+    this._ghost = this.el.ownerDocument.createElement('div');
+    this._ghost.style.display = 'initial';
+    this._ghost.style.visibility = 'hidden';
+    this.updateTile(this._ghost, {
+      className: '_ghost',
+      text: 'X',
+    });
     const tiles = Array.from(this.queryTiles()).filter(({id}) => !!id);
     this.spatialIndex.update(
       tiles.map(tile => tile.id),
