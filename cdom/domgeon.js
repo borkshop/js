@@ -798,8 +798,9 @@ export class DOMgeon extends EventTarget {
         /** @type {Set<string>} */
         const done = new Set();
         for (const lightSelector of lightSelectors) {
+          const el = this.grid.getPlane(plane);
           /** @type {NodeListOf<HTMLElement>} */
-          const tiles = this.grid.el.querySelectorAll(lightSelector);
+          const tiles = el.querySelectorAll(lightSelector);
           for (const tile of tiles) if (!done.has(tile.id)) {
             done.add(tile.id);
             scheme.addLightField(tile, {
