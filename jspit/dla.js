@@ -102,7 +102,7 @@ export default class DLA {
       every: () => this.stepRate(),
       then: n => {
         this.stepN(n);
-        this.dmg.updateLighting();
+        this.dmg.updateActorView(this.dmg.focusedActor());
         return true;
       },
     });

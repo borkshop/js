@@ -688,7 +688,9 @@ export class DOMgeon extends EventTarget {
         else this.grid.viewPoint = to;
       }
     } // else TODO what should view track?
-    this.updateLighting({actor});
+    const actorID = actor?.id || '';
+    if (actorID !== this._litActorID) this._litActorID = actorID;
+    this._runLightAnim(0);
     if (this.actionBar) {
       /** @type {NodeListOf<HTMLButtonElement>} */
       const buttons = this.actionBar.querySelectorAll('button[data-action]');
@@ -713,29 +715,8 @@ export class DOMgeon extends EventTarget {
     return actor;
   }
 
-  _litActorID = ''
-  _fovID = ''
-
-  /** @type {({id:string}&Anim<number>)[]} */
-  _lightAnim = []
-
-  /**
-   * @param {string} id
-   * @param {number} from
-   * @param {number} to
-   */
-  _updateLightAnim(id, from, to) {
-    for (let i = 0; i < this._lightAnim.length; ++i) {
-      const anim = this._lightAnim[i];
-      if (anim.id === id) {
-        const p = anim.et / anim.t;
-        const v = anim.from*(1 - p) + anim.to*p;
-        this._lightAnim[i] = {id, t: p*this.viewAnimTime, et: 0, from: v, to};
-        return;
-      }
-    }
-    this._lightAnim.push({id, t: this.viewAnimTime, et: 0, from, to})
-  }
+  _litActorID = '';
+  _fovID = '';
 
   *_findLightSelectors() {
     for (const styleSheet of this.grid.el.ownerDocument.styleSheets)
@@ -749,9 +730,9 @@ export class DOMgeon extends EventTarget {
   }
 
   /**
-   * @param {number} dt
+   * @param {number} _dt
    */
-  _runLightAnim(dt) {
+  _runLightAnim(_dt) {
     const scheme = new GridLighting(this.grid);
     scheme.lightLimit = this.config.lightLimit;
 
@@ -794,25 +775,18 @@ export class DOMgeon extends EventTarget {
     };
 
     // collect lit actors, advancing any animation times
-    let animRunning = false;
-    if (this._lightAnim.length) {
-      for (let i = 0; i < this._lightAnim.length; ++i) {
-        this._lightAnim[i].et += dt;
-        const {id, et, t, from, to} = this._lightAnim[i];
-        const p = this.viewAnimEase(et/t);
-        const v = (1 - p)*from + p*to;
-        collectActor(id, v);
-      }
-      this._lightAnim = this._lightAnim.filter(({et, t}) => et < t);
-      animRunning = true;
-    } else if (this._litActorID) {
+    if (this._litActorID) {
       collectActor(this._litActorID);
-      // TODO if (have animated sources) animRunning = true;
     }
     const fovChanged = this._fovID !== fovID;
 
-    // only recompute if light or FOV have changed (or are animating)
-    if (fovChanged || animRunning) {
+    // recompute FOV when changed
+    // TODO bring back support for animated light levels
+    if (fovChanged) {
+      const {w: vw, h: vh} = this.grid.viewport;
+      const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh));
+      const mc = new MemeCollector(this.grid);
+
       for (const [plane, {lightScale, actors}] of litPlanes) {
         scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
         scheme.clearLight();
@@ -841,47 +815,22 @@ export class DOMgeon extends EventTarget {
         // add actor light fields
         for (const {actor, lightScale} of actors.values())
           scheme.addLightField(actor, {lightScale});
-      }
-    }
 
-    // recompute FOV
-    if (fovChanged) {
-      const {w: vw, h: vh} = this.grid.viewport;
-      const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh));
-
-      const mc = new MemeCollector(this.grid);
-      for (const [plane, {actors}] of litPlanes) {
-        scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
+        // reveal actor view fields by extracting seen tile data
         scheme.revealView = (tiles, pos) => mc.collectMemesAt(plane, pos, tiles);
         // TODO compute a tighter viewLimit wrt actor position
-        for (const {actor} of actors.values())
-          scheme.revealViewField(actor, viewLimit);
+        for (const {actor} of actors.values()) scheme.revealViewField(actor, viewLimit);
+
+        // clear light withing the actor's subjective plane, to be re-populated
+        // by the copy below
         const memePlane = mc.memePlane(plane);
         scheme.filter = tile => this.grid.getTilePlane(tile) === memePlane;
         scheme.clearLight();
       }
-
+      // copy seen tile data into subjective planes
       mc.update();
       this._fovID = fovID;
     }
-  }
-
-  /**
-   * @param {object} [params]
-   * @param {null|HTMLElement} [params.actor]
-   * @returns {void}
-   */
-  updateLighting({
-    actor = this.grid.queryTile({className: ['mover', 'input', 'focus']}) || undefined,
-  }={}) {
-    const actorID = actor ? actor.id : '';
-    // TODO environmental sources
-    if (actorID !== this._litActorID) {
-      if (actorID) this._updateLightAnim(actorID, 0, 1);
-      if (this._litActorID) this._updateLightAnim(this._litActorID, 1, 0);
-      this._litActorID = actorID;
-    }
-    this._runLightAnim(0);
   }
 
   /**
