@@ -803,10 +803,13 @@ export class DOMgeon extends EventTarget {
         }
 
         // add non-actor light fields
+        /** @type {Set<string>} */
+        const done = new Set();
         for (const lightSelector of lightSelectors) {
           /** @type {NodeListOf<HTMLElement>} */
           const tiles = this.grid.el.querySelectorAll(lightSelector);
-          for (const tile of tiles) if (!actors.has(tile.id)) {
+          for (const tile of tiles) if (!done.has(tile.id) && !actors.has(tile.id)) {
+            done.add(tile.id);
             const lightInit = this.grid.getTileData(tile, 'lightInit');
             scheme.addLightField(tile, {lightInit});
           }
