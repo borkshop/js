@@ -70,9 +70,17 @@
           color: var(--light-grey);
         }
 
-        .tile.mover             { color: var(--red-orange); }
-        .tile.mover.input       { color: var(--dark-orange); }
-        .tile.mover.input.focus { color: var(--orange); }
+        .tile.mover {
+          color: var(--red-orange);
+        }
+        .tile.mover.input,
+        .tile.mover.inputable {
+          color: var(--dark-orange);
+        }
+        .tile.mover.input.focus,
+        .tile.mover.inputable.focused {
+          color: var(--orange);
+        }
 
         .tile.door {
           --action: "open";

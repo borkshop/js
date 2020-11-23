@@ -283,7 +283,12 @@ class MemeCollector {
   grid
   memeSpace
   ignoreVars = ['x', 'y']
-  ignoreClasses = new Set(['tile', 'meme', 'input', 'focus'])
+  ignoreClasses = new Map([
+    ['tile', null],
+    ['meme', null],
+    ['input', 'inputable'],
+    ['focus', 'focused'],
+  ])
 
   /**
    * @param {TileGrid} grid
@@ -307,7 +312,11 @@ class MemeCollector {
   sense(spec) {
     spec.className = ['tile', 'meme', ...((spec.className || '')
       .split(/\s+/g)
-      .filter(n => !this.ignoreClasses.has(n))
+      .map(n => {
+        const ign = this.ignoreClasses.get(n);
+        return ign === undefined ? n : ign;
+      })
+      .filter(n => !!n)
     )].join(' ');
     if (spec.data)
       for (const ign of this.ignoreVars)
