@@ -702,13 +702,12 @@ export class DOMgeon extends EventTarget {
     this.dispatchEvent(new Event('view'));
   }
 
-  /** @returns {HTMLElement|null} */
   focusedActor() {
-    let actor = this.grid.queryTile({className: ['mover', 'input', 'focus']});
-    if (!actor) {
-      actor = this.grid.queryTile({className: ['mover', 'input']});
-      if (actor) actor.classList.add('focus');
-    }
+    /** @type {HTMLElement|null} */
+    let actor = this.grid.el.querySelector('.mover.input.focus');
+    if (actor) return actor;
+    actor = this.grid.el.querySelector('.mover.input');
+    if (actor) actor.classList.add('focus');
     return actor;
   }
 
@@ -868,13 +867,13 @@ export class DOMgeon extends EventTarget {
     /** @type {ActionButtonSpec[]} */
     const actions = [];
 
-    const actors = Array.from(this.grid.queryTiles({className: ['mover', 'input']}));
-    const subject = actors.filter(actor => actor.classList.contains('focus')).shift();
+    const subject = this.focusedActor();
     const subjectPlane = subject && this.grid.getTilePlane(subject);
     const subjectPos = subject && this.grid.getTilePosition(subject);
 
-    actions.push(...actors
-      .filter(actor => !actor.classList.contains('focus'))
+    /** @type {NodeListOf<HTMLElement>} */
+    const actors = this.grid.el.querySelectorAll('.mover.input:not(.focus)');
+    actions.push(...Array.from(actors)
       .map(actor => {
         const pos = this.grid.getTilePosition(actor);
         const dsq = subjectPos
