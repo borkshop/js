@@ -1,4 +1,4 @@
-# 2020-11-20
+# 2020-11-23
 
 ## TODO
 
@@ -76,6 +76,39 @@ So how about expanding the current tile scheme:
 
 ## Done
 
+Finished out sporadic progress made over the last couple days: the demo now
+renders exclusively from the subjective (meme) plane, with light values copied
+in from the objective plane.
+
+Made actor lighting optional and not a special case; now the page stylesheet
+must add a `--lightInit` to movers if desired.
+
+Recolored the template domgeon demo over HSL space, rather than a limited
+discrete palette.
+
+# Week Ending 2020-11-21
+
+Reworked FOV system to work by copying tiles into a subjective plane of "meme"
+tiles, while the underlying "solid" plane remains hidden; supporting notes:
+
+- added plane structure within `TileGrid`, allowing tiles to be categorized and
+  styled along such grouping; this allows things like full-plane occlusion,
+  parallax translation, and z-index tiers.
+- fixed initial flash of unlit tiles, and made the domgeon demo
+  start out centered on the `@` rather than panning in by accident.
+- reduced FOV/lighting computation to happen as-needed rather than every frame
+- made movement keys persistent through local storage, allowing user
+  customization; with no settings UI yet, users are welcome to edit their
+  `localStorage` JSON directly ;-)
+- added a config data shape, afforded through the `DOMgeon` constructor for
+  page-level customization of things like default movement buttons
+- fixed light falloff model to be circular, rather than quadrant-depth based
+- simplified common page setup, dropping explicit header/footer elements
+- fixed view move animation and easing
+- sorted actor switch actions by distance
+
+## 2020-11-20
+
 Finished initial pass at a subjective plane for the player: FOV update now
 copies tiles into a subjective "meme" plane, which gets composited with the
 objective source plane. Missing meme tiles get moved into a long term store
@@ -89,7 +122,7 @@ filled gaps like inability to query tiles by plane.
 Fixed initial flash of unlit tiles, and made the domgeon demo start out
 centered on the `@` rather than panning in by accident.
 
-# 2020-11-19
+## 2020-11-19
 
 While developing and debugging the new meme plane feature, made movement keys
 configurable from page-level data passed to the `DOMgeon` constructor, and also
@@ -97,7 +130,7 @@ persisted to local storage for user customization. This further revealed that
 movement button input support for keycodes, like for the actual arrow keys, was
 incomplete; fixed as part of the new config driven scheme.
 
-# 2020-11-18
+## 2020-11-18
 
 Finished prep scope from yesterday, FOV recompute now only happes on
 change/move, and lighting recompute stops after the animations are done. Also
@@ -109,13 +142,13 @@ tiers.
 
 Next up: meme plane(s).
 
-# 2020-11-17
+## 2020-11-17
 
 Developing towards a memory layer/plane, fell off a perf cliff due to layout
 churn and force reflow / style recomputes. Left progress in dev for next, but
 prototyped non-text content tiles and meme-tile copying driven by FOV.
 
-# 2020-11-16
+## 2020-11-16
 
 Cleaned up common page structures while fiddling around with flex box, and
 reading large swaths of MDN et al:
@@ -124,7 +157,7 @@ reading large swaths of MDN et al:
 - move status display out of footer into main grid, which gives it top-left
   conventional layout for now
 
-# 2020-11-15
+## 2020-11-15
 
 Several minor fixes while exploring / researching next step:
 - view move animation wasn't eased as intended, fixed, and adjusted the easing
