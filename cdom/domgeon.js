@@ -744,27 +744,16 @@ export class DOMgeon extends EventTarget {
     /** @type {Map<string, LitPlane>} */
     const litPlanes = new Map();
 
+    // TODO support multiple view points
     let fovID = '';
-
-    /**
-     * @param {string} id
-     */
-    const collectActor = (id) => {
-      const actor = /** @type {null|HTMLElement} */ (this.grid.el.querySelector(`#${id}`));
+    if (this._litActorID) {
+      const actor = /** @type {null|HTMLElement} */ (this.grid.el.querySelector(`#${this._litActorID}`));
       if (!actor) return;
       const plane = this.grid.getTilePlane(actor);
-      let litPlane = litPlanes.get(plane);
-      if (litPlane === undefined) litPlanes.set(plane, litPlane = {
-        lightScale: 1,
-        actors: [],
-      });
-      litPlane.actors.push(actor);
+      const litPlane = litPlanes.get(plane);
+      if (litPlane === undefined) litPlanes.set(plane, {lightScale: 1, actors: [actor]});
+      else litPlane.actors.push(actor);
       fovID += `;${plane}:${actor.id}`;
-    };
-
-    // collect lit actors, advancing any animation times
-    if (this._litActorID) {
-      collectActor(this._litActorID);
     }
     const fovChanged = this._fovID !== fovID;
 
