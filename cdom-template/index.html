@@ -59,27 +59,38 @@
         .tile.mover { z-index: 20 }
         .tile.input { z-index: 50 }
 
-        .tile.floor {
-          background-color: var(--darker-grey);
-          color: var(--dark-grey);
+        main {
+          --grid-bg: hsl(0, 0, 0);
         }
 
-        /* wall should occlude floor */
+        .plane.meme .tile[data-light] {
+          opacity: var(--light, 15%);
+        }
+
+        .plane.meme .tile:not([data-light]) {
+          opacity: 15%;
+        }
+
+        .tile.floor {
+          background-color: hsl(70, 5%, 12%);
+          color: hsl(70, 5%, 27%);
+        }
+
         .tile.wall {
-          background-color: var(--darker-grey);
-          color: var(--light-grey);
+          background-color: hsl(50, 15%, 15%);
+          color: hsl(50, 25%, 30%);
         }
 
         .tile.mover {
-          color: var(--red-orange);
+          color: hsl(20, 75%, 50%);
         }
         .tile.mover.input,
         .tile.mover.inputable {
-          color: var(--dark-orange);
+          color: hsl(220, 75%, 50%);
         }
         .tile.mover.input.focus,
         .tile.mover.inputable.focused {
-          color: var(--orange);
+          color: hsl(120, 75%, 50%);
         }
 
         .tile.mover {
@@ -93,15 +104,20 @@
         }
 
         .tile.door {
+          background-color: hsl(50, 25%, 15%);
+          color: hsl(50, 90%, 30%);
           --action: "open";
           --morph_target: "!passable";
         }
         .tile.door::before { content: "+" }
 
-        .tile.door.passable { --action: "close" }
+        .tile.door.passable {
+          background-color: hsl(70, 5%, 12%);
+          --action: "close";
+        }
         .tile.door.passable::before { content: "-" }
 
-        .tile.rune { color: var(--purple) }
+        .tile.rune { color: hsl(270, 80%, 65%) }
 
         .tile.mover.support {
           text-decoration: underline;
@@ -111,9 +127,6 @@
         .plane { display: none }
         .plane[data-plane="domgeon-inspect"],
         .plane.meme { display: initial }
-
-        .plane.meme .tile { opacity: 20%; }
-        .plane.meme .tile[data-light] { opacity: var(--light, 0); }
 
         .plane[data-plane="domgeon-inspect"] { z-index: 1000 }
 
