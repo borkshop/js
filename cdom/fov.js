@@ -83,15 +83,19 @@ export class GridLighting {
    * @param {HTMLElement} source
    * @param {object} [options]
    * @param {number} [options.depthLimit]
+   * @param {(tiles: HTMLElement[]) => HTMLElement[]} [options.mask]
    * @returns {void}
    */
   revealViewField(source, {
     depthLimit=1000,
+    mask=(present) => present.filter(
+      t => this.grid.getTileData(t, this.lightVar) >= this.lightLimit),
   }) {
     this.computeField(source, depthLimit, (pos, depth) => {
       const tiles = this.grid.tilesAt(pos);
       const present = this.filter ? tiles.filter(this.filter) : tiles;
-      this.revealView(present, pos, depth);
+      const visible = mask ? mask(present) : present;
+      if (visible.length) this.revealView(visible, pos, depth);
     });
   }
 
