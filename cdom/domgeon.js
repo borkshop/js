@@ -803,7 +803,7 @@ export class DOMgeon extends EventTarget {
         scheme.revealView = (tiles, pos) => mc.collectMemesAt(plane, pos, tiles);
         for (const actor of actors) {
           // TODO compute a tighter viewLimit wrt actor position
-          scheme.revealViewField(actor, viewLimit);
+          scheme.revealViewField(actor, {depthLimit: viewLimit});
           otherActors.delete(actor.id);
         }
       }
