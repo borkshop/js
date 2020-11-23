@@ -740,15 +740,9 @@ export class DOMgeon extends EventTarget {
     const lightSelectors = Array.from(this._findLightSelectors());
 
     /**
-     * @typedef {object} LitActor
-     * @prop {HTMLElement} actor
-     * @prop {number} lightScale
-     */
-
-    /**
      * @typedef {object} LitPlane
      * @prop {number} lightScale
-     * @prop {Map<string, LitActor>} actors
+     * @prop {HTMLElement[]} actors
      */
 
     /** @type {Map<string, LitPlane>} */
@@ -758,19 +752,17 @@ export class DOMgeon extends EventTarget {
 
     /**
      * @param {string} id
-     * @param {number} lightScale
      */
-    const collectActor = (id, lightScale=1) => {
+    const collectActor = (id) => {
       const actor = /** @type {null|HTMLElement} */ (this.grid.el.querySelector(`#${id}`));
       if (!actor) return;
       const plane = this.grid.getTilePlane(actor);
       let litPlane = litPlanes.get(plane);
       if (litPlane === undefined) litPlanes.set(plane, litPlane = {
-        lightScale: 0,
-        actors: new Map(),
+        lightScale: 1,
+        actors: [],
       });
-      if (litPlane.lightScale < lightScale) litPlane.lightScale = lightScale;
-      litPlane.actors.set(actor.id, {actor, lightScale});
+      litPlane.actors.push(actor);
       fovID += `;${plane}:${actor.id}`;
     };
 
@@ -802,27 +794,25 @@ export class DOMgeon extends EventTarget {
             scheme.addLight(tile, lightAmbient);
         }
 
-        // add non-actor light fields
+        // add light fields from point sources
         /** @type {Set<string>} */
         const done = new Set();
         for (const lightSelector of lightSelectors) {
           /** @type {NodeListOf<HTMLElement>} */
           const tiles = this.grid.el.querySelectorAll(lightSelector);
-          for (const tile of tiles) if (!done.has(tile.id) && !actors.has(tile.id)) {
+          for (const tile of tiles) if (!done.has(tile.id)) {
             done.add(tile.id);
-            const lightInit = this.grid.getTileData(tile, 'lightInit');
-            scheme.addLightField(tile, {lightInit});
+            scheme.addLightField(tile, {
+              lightScale,
+              lightInit: this.grid.getTileData(tile, 'lightInit'),
+            });
           }
         }
-
-        // add actor light fields
-        for (const {actor, lightScale} of actors.values())
-          scheme.addLightField(actor, {lightScale});
 
         // reveal actor view fields by extracting seen tile data
         scheme.revealView = (tiles, pos) => mc.collectMemesAt(plane, pos, tiles);
         // TODO compute a tighter viewLimit wrt actor position
-        for (const {actor} of actors.values()) scheme.revealViewField(actor, viewLimit);
+        for (const actor of actors) scheme.revealViewField(actor, viewLimit);
 
         // clear light withing the actor's subjective plane, to be re-populated
         // by the copy below

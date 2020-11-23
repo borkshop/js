@@ -82,6 +82,16 @@
           color: var(--orange);
         }
 
+        .tile.mover {
+          --lightInit: 1;
+        }
+        .tile.mover.input {
+          --lightInit: 2;
+        }
+        .tile.mover.input.focus {
+          --lightInit: 8;
+        }
+
         .tile.door {
           --action: "open";
           --morph_target: "!passable";
