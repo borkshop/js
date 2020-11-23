@@ -299,6 +299,9 @@ class MemeCollector {
     this.memeSpace = memeSpace;
   }
 
+  /** @type {Map<string, string>} */
+  planes = new Map()
+
   /** @type {Map<string, HTMLElement>} */
   staleMemes = new Map()
 
@@ -325,19 +328,13 @@ class MemeCollector {
   }
 
   /**
-   * @param {string} name
-   */
-  memePlane(name) {
-    return `${name}-${this.memeSpace}`;
-  }
-
-  /**
    * @param {string} plane
    * @param {Point} pos
    * @param {Iterable<HTMLElement>} tiles
    */
   collectMemesAt(plane, pos, tiles) {
-    const memePlane = this.memePlane(plane);
+    const memePlane = `${plane}-${this.memeSpace}`;
+    if (!this.planes.has(plane)) this.planes.set(plane, memePlane);
     for (const meme of this.grid.tilesAt(pos, 'meme'))
       if (this.grid.getTilePlane(meme) === memePlane) {
         const id = this.grid.getTileID(meme);
@@ -812,15 +809,18 @@ export class DOMgeon extends EventTarget {
 
         // reveal actor view fields by extracting seen tile data
         scheme.revealView = (tiles, pos) => mc.collectMemesAt(plane, pos, tiles);
-        // TODO compute a tighter viewLimit wrt actor position
-        for (const actor of actors) scheme.revealViewField(actor, viewLimit);
+        for (const actor of actors) {
+          // TODO compute a tighter viewLimit wrt actor position
+          scheme.revealViewField(actor, viewLimit);
+        }
+      }
 
-        // clear light withing the actor's subjective plane, to be re-populated
-        // by the copy below
-        const memePlane = mc.memePlane(plane);
-        scheme.filter = tile => this.grid.getTilePlane(tile) === memePlane;
+      // clear light within all affected subjective planes
+      for (const plane of mc.planes.values()) {
+        scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
         scheme.clearLight();
       }
+
       // copy seen tile data into subjective planes
       mc.update();
       this._fovID = fovID;
