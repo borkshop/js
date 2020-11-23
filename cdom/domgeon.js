@@ -763,6 +763,10 @@ export class DOMgeon extends EventTarget {
       const {w: vw, h: vh} = this.grid.viewport;
       const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh));
       const mc = new MemeCollector(this.grid);
+      /** @type {Map<string, HTMLElement>} */
+      const otherActors = new Map();
+      for (const actor of this.grid.el.querySelectorAll('.mover.input'))
+        otherActors.set(actor.id, /** @type {HTMLElement} */ (actor));
 
       for (const [plane, {lightScale, actors}] of litPlanes) {
         scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
@@ -800,7 +804,16 @@ export class DOMgeon extends EventTarget {
         for (const actor of actors) {
           // TODO compute a tighter viewLimit wrt actor position
           scheme.revealViewField(actor, viewLimit);
+          otherActors.delete(actor.id);
         }
+      }
+
+      // also collect any other actor cells
+      for (const actor of otherActors.values()) {
+        const plane = this.grid.getTilePlane(actor);
+        const pos = this.grid.getTilePosition(actor);
+        const tiles = this.grid.tilesAt(pos).filter(t => this.grid.getTilePlane(t) === plane);
+        mc.collectMemesAt(plane, pos, tiles);
       }
 
       // clear light within all affected subjective planes
