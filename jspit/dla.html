@@ -9,196 +9,192 @@
   </head>
   <body>
 
-    <main>
+    <div class="grid">
+      <noscript>
+        <section>
+          <h3 class="error">Insufficient JavaScript to diffuse...</h3>
+        </section>
+      </noscript>
 
-      <div class="grid">
-        <noscript>
-          <section>
-            <h3 class="error">Insufficient JavaScript to diffuse...</h3>
-          </section>
-        </noscript>
+      <label for="particleID" style="float: left">
+        Particles:
+        <span id="particleID" class="value">0</span>
+      </label>
 
-        <label for="particleID" style="float: left">
-          Particles:
-          <span id="particleID" class="value">0</span>
-        </label>
+      <fieldset id="inspector">
+        <legend>
+          <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
+        </legend>
+        <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
+      </fieldset>
+    </div>
 
-        <fieldset id="inspector">
-          <legend>
-            <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
-          </legend>
-          <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
-        </fieldset>
-      </div>
+    <style>
+      .tile               { z-index: 1 }
+      .tile.particle      { z-index: 10 }
+      .tile.particle.live { z-index: 100 }
+      .tile.input         { z-index: 1000 }
 
-      <style>
-        .tile               { z-index: 1 }
-        .tile.particle      { z-index: 10 }
-        .tile.particle.live { z-index: 100 }
-        .tile.input         { z-index: 1000 }
+      .plane { display: none }
 
-        .plane { display: none }
+      .plane[data-plane="domgeon-inspect"] { display: initial }
 
-        .plane[data-plane="domgeon-inspect"] { display: initial }
+      .grid:not(.playing) .plane:not(.meme) { display: initial }
+      .grid.playing .plane.meme { display: initial }
 
-        .grid:not(.playing) .plane:not(.meme) { display: initial }
-        .grid.playing .plane.meme { display: initial }
+      .grid.playing .tile.particle[data-light]       { opacity: var(--light, 15%); }
+      .grid.playing .tile.particle:not([data-light]) { opacity: 15%; }
 
-        .grid.playing .tile.particle[data-light]       { opacity: var(--light, 15%); }
-        .grid.playing .tile.particle:not([data-light]) { opacity: 15%; }
+      .tile.mover { --lightInit: 8; }
 
-        .tile.mover { --lightInit: 8; }
+      .plane[data-plane="solid-meme"] { z-index: 1 }
+      .plane[data-plane="solid"]      { z-index: 10 }
 
-        .plane[data-plane="solid-meme"] { z-index: 1 }
-        .plane[data-plane="solid"]      { z-index: 10 }
+      .tile.particle.prime.live { --lightInit: 4.0; }
+    </style>
 
-        .tile.particle.prime.live { --lightInit: 4.0; }
-      </style>
+    <aside class="menu">
+      <button
+        class="sticky"
+        style="float: right; font-size: 1.5em"
+        title="Start/Stop Simulation ; Hide/Show Menu"
+        data-legend="Esc"
+        data-keycode="Escape">☰</button>
 
-      <aside class="menu">
+      <section>
+        <h1>Diffusion Limited Aggregation</h1>
+        <h3><a href="index.html">Back to Welcome screen</a></h3>
+
+        <p>
+          This is actually a dual random walker and diffusion limited
+          aggregation hybrid:
+        </p>
+        <ul>
+          <li>If a particle is spawned outside the world, it keeps moving until
+            it touches the world, aggregating onto and expanding it.</li>
+          <li>If a particle is spawned inside the world, it keeps moving until
+            it exits the world, at which point it expand the world by one cell
+            and dies.</li>
+          <li>Particles may be spawned at seed points, or at random locations
+            chosen in the void or within the world.</li>
+          <li>Particles have a heading, and randomly turn within a fixed range
+            each turn before advancing forward.</li>
+          <li>Movement and aggregation happens along cardinal directions
+            (up/down and left/right), and may optionally be allowed along
+            ordinal directions (diagonally).</li>
+        </ul>
+
+        <fieldset><legend>Settings</legend><dl>
+
+          <dt>Turns upto</dt>
+          <dd><label for="dla-turnLeft">
+            Left: Math.PI *
+            <input id="dla-turnLeft" name="turnLeft" type="number" min="0" max="1" step="0.2" />
+          </label></dd>
+          <dd><label for="dla-turnRight">
+            Right: Math.PI *
+            <input id="dla-turnRight" name="turnRight" type="number" min="0" max="1" step="0.2" />
+          </label></dd>
+
+          <dt><label for="dla-bounds">
+            Bounds:
+            <input id="dla-bounds" name="bounds" size="32" type="text" />
+            <div class="tip">
+              defaults to viewport size
+            </div>
+          </label></dt>
+
+          <dt><label for="dla-seeds">
+            Seeds:
+            <input id="dla-seeds" name="seeds" size="32" type="text" />
+          </label></dt>
+
+          <dt>Spawn Particles</dt>
+          <dd><label for="dla-initWhere">
+            Where:
+            <select id="dla-initWhere" name="initWhere"></select>
+          </label></dd>
+          <dd><label for="dla-initAnyBalance">
+            World-vs-Void Balance:
+            <input id="dla-initAnyBalance" name="initAnyBalance" type="number" min="0" max="1" step="0.01" />
+            <div class="tip">
+              when using "Random Point" strategy above, what's the target
+              proportion for particles spawned within the world
+            </div>
+          </label></dd>
+
+          <dt>Particles Move</dt>
+
+          <dd>
+          <b>pre-player:</b>
+          1 step
+          <label for="dla-genRate">
+            every
+            <input id="dla-genRate" name="genRate" type="number" min="1" max="100">ms
+          </label>
+          </dd>
+
+          <dd>
+          <b>post-player:</b>
+          1 step
+          <label for="dla-playRate">
+            every
+            <input id="dla-playRate" name="playRate" type="number" min="1" max="100">ms
+          </label>
+          </dd>
+
+          <dd><label for="dla-ordinalMoves">
+            <input id="dla-ordinalMoves" name="ordinalMoves" type="checkbox" />
+            Allow ordinal (diagonal) moves
+          </label></dd>
+
+          <dd><label for="dla-stepLimit">
+            Terminate after
+            <input id="dla-stepLimit" name="stepLimit" type="number" min="0" /> steps
+            <div class="tip">
+              if set to <code>0</code> then <code>max(bounds.w, bounds.h)/2</code> is used.
+            </div>
+          </label></dd>
+
+          <dt>Particle Limit</dt><dd><label for="dla-particleLimit">
+            Stop spawning after
+            <input id="dla-particleLimit" name="particleLimit" type="number" min="0" />
+            <div class="tip">
+              if set to <code>0</code> then <code>(bounds.w * bounds.h)/3</code> is used.
+            </div>
+          </label></dd>
+
+        </dl></fieldset>
+
+        <p>
+          <code>&lt;Space&gt;</code> hold to display hidden cell information<br />
+        </p>
+
         <button
-          class="sticky"
-          style="float: right; font-size: 1.5em"
-          title="Start/Stop Simulation ; Hide/Show Menu"
-          data-legend="Esc"
-          data-keycode="Escape">☰</button>
+          title="Reset game world state"
+          data-legend="BS"
+          data-keycode="Backspace">Reset</button>
 
-        <section>
-          <h1>Diffusion Limited Aggregation</h1>
-          <h3><a href="index.html">Back to Welcome screen</a></h3>
+      </section>
 
-          <p>
-            This is actually a dual random walker and diffusion limited
-            aggregation hybrid:
-          </p>
-          <ul>
-            <li>If a particle is spawned outside the world, it keeps moving until
-              it touches the world, aggregating onto and expanding it.</li>
-            <li>If a particle is spawned inside the world, it keeps moving until
-              it exits the world, at which point it expand the world by one cell
-              and dies.</li>
-            <li>Particles may be spawned at seed points, or at random locations
-              chosen in the void or within the world.</li>
-            <li>Particles have a heading, and randomly turn within a fixed range
-              each turn before advancing forward.</li>
-            <li>Movement and aggregation happens along cardinal directions
-              (up/down and left/right), and may optionally be allowed along
-              ordinal directions (diagonally).</li>
-          </ul>
+      <section>
 
-          <fieldset><legend>Settings</legend><dl>
+        Inspired by
+        <a href="//web.archive.org/web/20151003181050/http://codepen.io/DonKarlssonSan/full/BopXpq/">2015-10 codepen by DonKarlssonSan</a>
+        <br>
+        <br>
 
-            <dt>Turns upto</dt>
-            <dd><label for="dla-turnLeft">
-              Left: Math.PI *
-              <input id="dla-turnLeft" name="turnLeft" type="number" min="0" max="1" step="0.2" />
-            </label></dd>
-            <dd><label for="dla-turnRight">
-              Right: Math.PI *
-              <input id="dla-turnRight" name="turnRight" type="number" min="0" max="1" step="0.2" />
-            </label></dd>
+        Other resources:
+        <ul>
+          <li><a href="https://roguelike.club/event2020.html">Roguecel 2020 talk by Herbert Wolverson</a> demonstrated DLA among other techniques</li>
+          <li><a href="//www.roguebasin.com/index.php?title=Diffusion-limited_aggregation">Roguebasin DLA article</a></li>
+          <li><a href="//en.wikipedia.org/wiki/Diffusion-limited_aggregation">WikiPedia on the wider topic</a></li>
+          <li><a href="//paulbourke.net/fractals/dla/">Paul Boruke, reference from DonKarlssonSan</a></li>
+        </ul>
 
-            <dt><label for="dla-bounds">
-              Bounds:
-              <input id="dla-bounds" name="bounds" size="32" type="text" />
-              <div class="tip">
-                defaults to viewport size
-              </div>
-            </label></dt>
+      </section>
 
-            <dt><label for="dla-seeds">
-              Seeds:
-              <input id="dla-seeds" name="seeds" size="32" type="text" />
-            </label></dt>
-
-            <dt>Spawn Particles</dt>
-            <dd><label for="dla-initWhere">
-              Where:
-              <select id="dla-initWhere" name="initWhere"></select>
-            </label></dd>
-            <dd><label for="dla-initAnyBalance">
-              World-vs-Void Balance:
-              <input id="dla-initAnyBalance" name="initAnyBalance" type="number" min="0" max="1" step="0.01" />
-              <div class="tip">
-                when using "Random Point" strategy above, what's the target
-                proportion for particles spawned within the world
-              </div>
-            </label></dd>
-
-            <dt>Particles Move</dt>
-
-            <dd>
-            <b>pre-player:</b>
-            1 step
-            <label for="dla-genRate">
-              every
-              <input id="dla-genRate" name="genRate" type="number" min="1" max="100">ms
-            </label>
-            </dd>
-
-            <dd>
-            <b>post-player:</b>
-            1 step
-            <label for="dla-playRate">
-              every
-              <input id="dla-playRate" name="playRate" type="number" min="1" max="100">ms
-            </label>
-            </dd>
-
-            <dd><label for="dla-ordinalMoves">
-              <input id="dla-ordinalMoves" name="ordinalMoves" type="checkbox" />
-              Allow ordinal (diagonal) moves
-            </label></dd>
-
-            <dd><label for="dla-stepLimit">
-              Terminate after
-              <input id="dla-stepLimit" name="stepLimit" type="number" min="0" /> steps
-              <div class="tip">
-                if set to <code>0</code> then <code>max(bounds.w, bounds.h)/2</code> is used.
-              </div>
-            </label></dd>
-
-            <dt>Particle Limit</dt><dd><label for="dla-particleLimit">
-              Stop spawning after
-              <input id="dla-particleLimit" name="particleLimit" type="number" min="0" />
-              <div class="tip">
-                if set to <code>0</code> then <code>(bounds.w * bounds.h)/3</code> is used.
-              </div>
-            </label></dd>
-
-          </dl></fieldset>
-
-          <p>
-            <code>&lt;Space&gt;</code> hold to display hidden cell information<br />
-          </p>
-
-          <button
-            title="Reset game world state"
-            data-legend="BS"
-            data-keycode="Backspace">Reset</button>
-
-        </section>
-
-        <section>
-
-          Inspired by
-          <a href="//web.archive.org/web/20151003181050/http://codepen.io/DonKarlssonSan/full/BopXpq/">2015-10 codepen by DonKarlssonSan</a>
-          <br>
-          <br>
-
-          Other resources:
-          <ul>
-            <li><a href="https://roguelike.club/event2020.html">Roguecel 2020 talk by Herbert Wolverson</a> demonstrated DLA among other techniques</li>
-            <li><a href="//www.roguebasin.com/index.php?title=Diffusion-limited_aggregation">Roguebasin DLA article</a></li>
-            <li><a href="//en.wikipedia.org/wiki/Diffusion-limited_aggregation">WikiPedia on the wider topic</a></li>
-            <li><a href="//paulbourke.net/fractals/dla/">Paul Boruke, reference from DonKarlssonSan</a></li>
-          </ul>
-
-        </section>
-
-      </aside>
-
-    </main>
+    </aside>
 
     <div class="buttonbar moves left" style="display: none">
     </div>
@@ -222,7 +218,7 @@
       const dmg = window.dmg = new DOMgeon({
         ui: document.body,
         keys: document.body,
-        grid: document.querySelector('main .grid'),
+        grid: document.querySelector('.grid'),
         moveBar,
         actionBar: document.querySelector('.buttonbar.actions'),
       });

@@ -8,49 +8,48 @@
   </head>
   <body>
 
-    <main>
-      <div class="grid">
-        <noscript>
-          <section>
-            <h3 class="error">A world without JavaScript is lacking in color...</h3>
-          </section>
-        </noscript>
-      </div>
-
-      <aside class="menu">
-        <button
-          class="sticky"
-          style="float: right; font-size: 1.5em"
-          title="Start/Stop Game ; Hide/Show Menu"
-          data-legend="Esc"
-          data-keycode="Escape">☰</button>
-
+    <div class="grid">
+      <noscript>
         <section>
-          <h1>Welcome traveler</h1>
-          <h3><a href="index.html">Back to Welcome screen</a></h3>
-
-          <h3>Boop a color, get a color!</h3>
-
-          <p>
-            This is the first and simplest example of jspit's <code>TileGrid</code>.
-          </p>
-
-          <button
-            title="Reset game world state"
-            data-legend="BS"
-            data-keycode="Backspace">Reset</button>
-
+          <h3 class="error">A world without JavaScript is lacking in color...</h3>
         </section>
+      </noscript>
+    </div>
 
-        <fieldset id="inspector">
-          <legend>
-            <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
-          </legend>
-          <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
-        </fieldset>
+    <aside class="menu">
+      <button
+        class="sticky"
+        style="float: right; font-size: 1.5em"
+        title="Start/Stop Game ; Hide/Show Menu"
+        data-legend="Esc"
+        data-keycode="Escape">☰</button>
 
-      </aside>
-    </main>
+      <section>
+        <h1>Welcome traveler</h1>
+        <h3><a href="index.html">Back to Welcome screen</a></h3>
+
+        <h3>Boop a color, get a color!</h3>
+
+        <p>
+          This is the first and simplest example of jspit's <code>TileGrid</code>.
+        </p>
+
+        <button
+          title="Reset game world state"
+          data-legend="BS"
+          data-keycode="Backspace">Reset</button>
+
+      </section>
+
+      <fieldset id="inspector">
+        <legend>
+          <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
+        </legend>
+        <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
+      </fieldset>
+
+    </aside>
+
     <style>
       .plane.meme { display: none }
     </style>
@@ -126,7 +125,7 @@
       import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
       const dmg = window.dmg = new DOMgeon({
         ui: document.body,
-        grid: document.querySelector('main .grid'),
+        grid: document.querySelector('.grid'),
         moveBar: document.querySelector('.buttonbar.moves'),
         actionBar: document.querySelector('.buttonbar.actions'),
       });
