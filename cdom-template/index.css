@@ -100,6 +100,10 @@ a:hover,
 a:focus   { color: var(--action-focus-color); text-decoration: underline }
 a:active  { color: var(--acting-color); }
 
+.buttonbar {
+  z-index: 100;
+}
+
 .buttonbar.left {
   position: absolute;
   bottom: 0;
@@ -172,6 +176,7 @@ section {
   position: relative;
   height: 100%;
   width: 100%;
+  z-index: 1;
   overflow: hidden;
 
   line-height: 1.0;
