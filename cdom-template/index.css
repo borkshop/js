@@ -204,9 +204,6 @@ body.running .grid { cursor: none; }
   user-select: none;
 }
 
-.grid .tile.solid { z-index: 1; }
-.grid .tile.mind  { z-index: 2; }
-
 .grid.inspectable {
   --inspect-pinned-color: var(--magenta);
   --inspect-cursor-color: var(--cyan);
