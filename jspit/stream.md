@@ -109,6 +109,8 @@ tiles, while the underlying "solid" plane remains hidden; supporting notes:
 
 ## 2020-11-20
 
+Further improved FOV propagation to not reveal unlit tiles.
+
 Finished initial pass at a subjective plane for the player: FOV update now
 copies tiles into a subjective "meme" plane, which gets composited with the
 objective source plane. Missing meme tiles get moved into a long term store
