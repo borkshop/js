@@ -236,6 +236,15 @@ export class TileGrid {
     return {...this.viewOffset, ...this.viewSize};
   }
 
+  /** @return {Rect} */
+  get viewbox() {
+    let {x, y} = this.viewOffset;
+    let {w, h} = this.viewSize;
+    x = Math.ceil(x), y = Math.ceil(y);
+    w = Math.floor(w), h = Math.floor(h);
+    return {x, y, w, h};
+  }
+
   /** @type {?Point} */
   _viewPoint = null
 
