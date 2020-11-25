@@ -1,9 +1,31 @@
-# 2020-11-23
+# 2020-11-25
 
 ## TODO
 
+- basic abilitites
+  - build door
+  - dig wall
+  - build wall
+  - place torch
+  - modulate self light
+  - modulate dopple light
+- procgen abilitites
+  - spawn N-walker @-adjacent
+  - summon DLA particle @-attracted
+  - spawn energy-plane denizen
+  - build hallway @-adjacent
+  - build room @-adjacent
+
+- procgen ideas
+  - directional cave <http://www.roguebasin.com/index.php?title=Basic_directional_dungeon_generation>
+  - BSP <http://www.roguebasin.com/index.php?title=Basic_BSP_Dungeon_generation>
+    - param: split range + offset
+    - param: split mode and weights
+    - param: border width(s)
+  - Grid System <http://www.roguebasin.com/index.php?title=Grid_Based_Dungeon_Generator>
+
 - domgeon
-  - player inventorty/ability system; good initial use cases include a digging
+  - player inventory/ability system; good initial use cases include a digging
     item, floor tile creator, a particle gun, or void walking boots
   - move and other interaction animations
 - builder
@@ -19,62 +41,18 @@
 
 ## WIP
 
-Current functionality like movement and interaction is more or less directly
-coded into the domgeon engine:
-- input gets parsed into directional movement or an "action" string
-- movement applies to the currently focused input actor, and action strings
-  resolve against any matching capable tile adjacent to the focused input actor
-- action input buttons present are determined in the first place by "what
-  actionable tile are adjacent to the focused input actor" in a previous frame
-- the behavior incurred by an actionable tile is defined by it having up to 3
-  data/variables defined: morphTarget, morphSubject, or morphSpawn; the first
-  two proscribe an update to an existing tile (the target being acted upon, or
-  the subject actor) while the third proscribes a new tile to be spawned at the
-  target tile location
-
-For example a door is an actionable tile that morph itself, toggling it's
-possibility; further the "void rune" spawns a new input actor; prior versions
-of the "void rune" would morph the subject actor.
-
-While this works, I want to start evolving it into more of a pluggable behavior
-system, various motivations include:
-- spawning is separate behavior from morphing really
-- want to start bringing in logged behavior, which could go along with
-  interaction, be a result of a combat interaction, or just be locationally
-  triggered
-- want to do at least moderately interactive dialogs, for things like
-  inventory, talking to other characters, a character screen, etc.
-- want to add skill and abilities other than movement to actors
-- want to be able stipulate requirements of a subject actor to activate
-  something, e.g. for a locked door
-
-So notionally, I'm thinking about refactoring the current move and interaction
-code into a behavior system; some of the initial behaviors in mind:
-- tileMorpher -- updates self, actor, or specific tile
-- tileSpawner -- creates new tile [@∈]{self, actor, or specific} tile
-- mover -- maybe recast the current movement system into a behavior
-- capable -- to support capability checking for another behavior
-- logger -- log a short message to the game console
-- dialog -- presents a modal interface... maybe itself composed of interactive
-  elements w/ behaviors
-
-So how about expanding the current tile scheme:
-- support sub-structure like
-  - el > :first-child is its content
-    - it could be a `<span>` w/ text
-    - it could be a `<canvas>`
-    - it could be a `<svg>`
-  - el > * else is sub-element
-    - could be inventory
-    - could be parts
-    - could be abilities / skills
-    - could be a character stats sheet `<table>` or `<dl>`
-- then it's up to the stylesheet to display only the first-child
-- and up to application code how to update / set that first-child content
-- the children may have behaviors attached, or may serve simply as data for
-  other behaviors
-
 ## Done
+
+# 2020-11-24
+
+Made minor fixes and improvements while researching action and procgen systems:
+- pushed stream behaviors WIP section into the past
+- further simplifed template html structure, dropping the main element
+- fixed buttonbar z-index so that tiles cannot occlude buttons
+- fixed template grid background, which was supposed to be hard black, rather
+  than a bright black, after the recent color
+
+# 2020-11-23
 
 Finished out sporadic progress made over the last couple days: the demo now
 renders exclusively from the subjective (meme) plane, with light values copied
@@ -233,8 +211,64 @@ branch, to set the stage for more complicated / general actions.
 
 ## 2020-11-12
 
-Did no coding today, but did assemble some thoughts about behaviors in the
-present WIP section.
+Did no coding today, but did assemble some thoughts about behaviors:
+
+### Musing toward a behavior mechanism/system
+
+Current functionality like movement and interaction is more or less directly
+coded into the domgeon engine:
+- input gets parsed into directional movement or an "action" string
+- movement applies to the currently focused input actor, and action strings
+  resolve against any matching capable tile adjacent to the focused input actor
+- action input buttons present are determined in the first place by "what
+  actionable tile are adjacent to the focused input actor" in a previous frame
+- the behavior incurred by an actionable tile is defined by it having up to 3
+  data/variables defined: morphTarget, morphSubject, or morphSpawn; the first
+  two proscribe an update to an existing tile (the target being acted upon, or
+  the subject actor) while the third proscribes a new tile to be spawned at the
+  target tile location
+
+For example a door is an actionable tile that morph itself, toggling it's
+possibility; further the "void rune" spawns a new input actor; prior versions
+of the "void rune" would morph the subject actor.
+
+While this works, I want to start evolving it into more of a pluggable behavior
+system, various motivations include:
+- spawning is separate behavior from morphing really
+- want to start bringing in logged behavior, which could go along with
+  interaction, be a result of a combat interaction, or just be locationally
+  triggered
+- want to do at least moderately interactive dialogs, for things like
+  inventory, talking to other characters, a character screen, etc.
+- want to add skill and abilities other than movement to actors
+- want to be able stipulate requirements of a subject actor to activate
+  something, e.g. for a locked door
+
+So notionally, I'm thinking about refactoring the current move and interaction
+code into a behavior system; some of the initial behaviors in mind:
+- tileMorpher -- updates self, actor, or specific tile
+- tileSpawner -- creates new tile [@∈]{self, actor, or specific} tile
+- mover -- maybe recast the current movement system into a behavior
+- capable -- to support capability checking for another behavior
+- logger -- log a short message to the game console
+- dialog -- presents a modal interface... maybe itself composed of interactive
+  elements w/ behaviors
+
+So how about expanding the current tile scheme:
+- support sub-structure like
+  - el > :first-child is its content
+    - it could be a `<span>` w/ text
+    - it could be a `<canvas>`
+    - it could be a `<svg>`
+  - el > * else is sub-element
+    - could be inventory
+    - could be parts
+    - could be abilities / skills
+    - could be a character stats sheet `<table>` or `<dl>`
+- then it's up to the stylesheet to display only the first-child
+- and up to application code how to update / set that first-child content
+- the children may have behaviors attached, or may serve simply as data for
+  other behaviors
 
 ## 2020-11-11
 
