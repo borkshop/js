@@ -362,6 +362,7 @@ export class TileGrid {
     if (spec.className) {
       tile.className = spec.className;
       tile.classList.add('tile');
+      if (spec.kind) tile.classList.add(spec.kind);
     }
     if (spec.classList) {
       const classList = Array.isArray(spec.classList) ? spec.classList : [spec.classList];
