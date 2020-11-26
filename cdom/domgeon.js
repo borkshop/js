@@ -309,21 +309,24 @@ class MemeCollector {
   freshMemes = new Map()
 
   /**
-   * @param {TileSpec} spec
+   * @param {HTMLElement} tile
    * @returns {TileSpec}
    */
-  sense(spec) {
-    spec.className = ['tile', 'meme', ...((spec.className || '')
-      .split(/\s+/g)
-      .map(n => {
-        const ign = this.ignoreClasses.get(n);
-        return ign === undefined ? n : ign;
-      })
-      .filter(n => !!n)
-    )].join(' ');
-    if (spec.data)
-      for (const ign of this.ignoreVars)
-        delete spec.data[ign];
+  sense(tile) {
+    const spec = {
+      className: ['tile', 'meme', ...(tile.className
+        .split(/\s+/g)
+        .map(n => {
+          const ign = this.ignoreClasses.get(n);
+          return ign === undefined ? n : ign;
+        })
+        .filter(n => !!n)
+      )].join(' '),
+      text: tile.textContent || undefined,
+      data: {...tile.dataset},
+    };
+    for (const ign of this.ignoreVars)
+      delete spec.data[ign];
     return spec;
   }
 
@@ -346,11 +349,7 @@ class MemeCollector {
         plane: memePlane,
         pos,
         kind: 'meme',
-        ...this.sense({
-          className: tile.className,
-          text: tile.textContent || undefined,
-          data: {...tile.dataset},
-        }),
+        ...this.sense(tile),
       });
       this.staleMemes.delete(id);
     }
