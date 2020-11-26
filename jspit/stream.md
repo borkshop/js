@@ -43,6 +43,11 @@
 
 ## Done
 
+Got a basic BSP harness working under a development version of the cdom-template demo.
+Not quite sure what to do with it yet, and the hallway connector is as yet unexercised.
+
+Minor improvements to tile creation and meme copying.
+
 # 2020-11-24
 
 Made minor fixes and improvements while researching action and procgen systems:
