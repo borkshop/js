@@ -1,0 +1,50 @@
+{
+  "name": "demo",
+  "version": "0.1.0",
+  "description": "Cascading DOMgeon Template",
+  "author": "Joshua T Corbin <jcorbin@wunjo.org>",
+  "license": "BSD-3-Clause",
+  "main": "index.html",
+  "type": "module",
+
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/borkshop/js.git",
+    "directory": "cdom-template"
+  },
+
+  "private": true,
+  "scripts": {
+    "lint": "tsc",
+    "test": "npm run lint",
+    "start": "snowpack dev",
+    "build": "snowpack build"
+  },
+
+  "dependencies": {},
+  "devDependencies": {
+    "@types/resize-observer-browser": "^0.1.4"
+  },
+
+  "snowpack": {
+    "plugins": [
+      "@snowpack/plugin-typescript"
+    ],
+    "exclude": [
+      "**/node_modules/**/*",
+      "**/__tests__/*",
+      "**/*.@(spec|test).@(js|mjs)",
+      "tsconfig.json",
+      "jsconfig.json",
+      "package.json",
+      "snowpack.config.json"
+    ],
+    "mount": {
+      "../cdom": "/cdom",
+      ".": "/"
+    },
+    "alias": {
+      "cdom": "./cdom"
+    }
+  }
+}
