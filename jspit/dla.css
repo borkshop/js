@@ -19,7 +19,8 @@ html {
 .running .grid #inspector { visibility: hidden }
 .grid.retro    #inspector { visibility: visible }
 
-.grid .mover.input {
+.grid .mover.input,
+.grid .mover.inputable {
   color: var(--dla-player);
 }
 

@@ -115,15 +115,16 @@ export default class DLA {
     this.config = Object.create(DLA.config);
 
     for (const pos of this.config.seeds) this.dmg.grid.createTile({
-      id: `particle-${++this.particleID}`,
+      plane: 'solid',
+      pos,
+      id: `particle-${++this.particleID}`, // TODO re-use TileGrid's kind counter
       kind: 'particle',
       classList: ['init', 'support', 'passable'],
-      pos,
       text: '·',
     });
 
     this.dmg.grid.viewPoint = centroid(
-      Array.from(this.dmg.grid.queryTiles({className: ['particle', 'init']}))
+      Array.from(this.dmg.grid.queryTiles({plane: 'solid', className: ['particle', 'init']}))
         .map(p => this.dmg.grid.getTilePosition(p)));
 
     if (!(this.config.bounds.w*this.config.bounds.h)) {
@@ -188,7 +189,7 @@ export default class DLA {
   }
 
   *choosePrior() {
-    const prior = Array.from(this.dmg.grid.queryTiles({className: 'particle'}))
+    const prior = Array.from(this.dmg.grid.queryTiles({plane: 'solid', className: 'particle'}))
       .filter(t => !t.classList.contains('live'));
     while (true) {
       const tile = prior[Math.floor(Math.random()*prior.length)];
@@ -221,8 +222,8 @@ export default class DLA {
         takePoints(taken, this.choosePrior()),
       );
     case InitWhere.RandAny:
-      const nVoid  = this.dmg.grid.queryTiles({className: ['particle', 'void']}).length;
-      const nPrime = this.dmg.grid.queryTiles({className: ['particle', 'prime']}).length;
+      const nVoid  = this.dmg.grid.queryTiles({plane: 'solid', className: ['particle', 'void']}).length;
+      const nPrime = this.dmg.grid.queryTiles({plane: 'solid', className: ['particle', 'prime']}).length;
       const total  = nVoid + nPrime;
       const sVoid  = Math.pow(Math.random(), nVoid  - total * (1 - initAnyBalance));
       const sPrime = Math.pow(Math.random(), nPrime - total *      initAnyBalance);
@@ -248,11 +249,12 @@ export default class DLA {
     const {particleLimit} = this.config;
 
     const ghost = this.dmg.grid.queryTile({
+      plane: 'solid',
       className: 'ghost',
       id: '^particle-',
     });
     if (!ghost &&
-       this.dmg.grid.queryTiles({className: 'particle'}).length >= particleLimit) return null;
+       this.dmg.grid.queryTiles({plane: 'solid', className: 'particle'}).length >= particleLimit) return null;
 
     const {heading, ...pos} = this.initPlace();
     const kind = this.anyCell(pos) ? 'prime' : 'void';
@@ -267,6 +269,7 @@ export default class DLA {
     }
 
     const spec = {
+      plane: 'solid',
       pos,
       text: '🌲',
       kind: 'particle',
@@ -297,7 +300,7 @@ export default class DLA {
 
   stepRate() {
     const {genRate, playRate} = this.config;
-    const havePlayer = !!this.dmg.grid.queryTile({className: ['mover', 'input']});
+    const havePlayer = !!this.dmg.grid.queryTile({plane: 'solid', className: ['mover', 'input']});
     return havePlayer ? playRate : genRate;
   }
 

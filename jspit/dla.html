@@ -15,25 +15,36 @@
           <h3 class="error">Insufficient JavaScript to diffuse...</h3>
         </section>
       </noscript>
-
-      <label for="particleID" style="float: left">
-        Particles:
-        <span id="particleID" class="value">0</span>
-      </label>
-
-      <fieldset id="inspector">
-        <legend>
-          <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
-        </legend>
-        <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
-      </fieldset>
     </div>
 
+    <aside class="console">
+      <h2>
+        <label for="particleID" style="float: left">
+          Particles:
+          <span id="particleID" class="value">0</span>
+        </label>
+      </h2>
+    </aside>
+
     <style>
+      .grid {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 2;
+      }
+
+      aside.console {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 2;
+      }
+
       .tile               { z-index: 1 }
       .tile.particle      { z-index: 10 }
       .tile.particle.live { z-index: 100 }
-      .tile.input         { z-index: 1000 }
+      .tile.mover         { z-index: 1000 }
 
       .plane { display: none }
 
@@ -84,7 +95,7 @@
             ordinal directions (diagonally).</li>
         </ul>
 
-        <fieldset><legend>Settings</legend><dl>
+        <details><summary>Settings</summary><dl>
 
           <dt>Turns upto</dt>
           <dd><label for="dla-turnLeft">
@@ -164,7 +175,14 @@
             </div>
           </label></dd>
 
-        </dl></fieldset>
+        </dl></details>
+
+        <details id="inspector">
+          <summary>
+            <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
+          </summary>
+          <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
+        </details>
 
         <p>
           <code>&lt;Space&gt;</code> hold to display hidden cell information<br />
@@ -227,7 +245,7 @@
       const initialDrop = 0.25; // auto-drop player at this proportion of limit particles
       let dropped = false;
       const dropPlayer = () => {
-        let actor = dmg.grid.queryTile({className: ['input', 'focus', 'mover']});
+        let actor = dmg.grid.queryTile({plane: 'solid', className: ['input', 'focus', 'mover']});
         if (actor) {
           actor.parentNode?.removeChild(actor);
           actor = null;
@@ -235,10 +253,11 @@
         } else {
           dropped = true;
           const pos = world.config.seeds[0]; // TODO input
-          const actor = dmg.grid.createTile({
+          actor = dmg.grid.createTile({
+            plane: 'solid',
+            pos,
             kind: 'mover',
             classList: ['input', 'focus'],
-            pos,
             text: '@',
           });
         }
@@ -247,7 +266,7 @@
 
       const world = new DLA(dmg);
       dmg.animParts.push(_ => {
-        let playing = !!dmg.grid.queryTile({className: ['input', 'focus', 'mover']});
+        let playing = !!dmg.grid.queryTile({plane: 'solid', className: ['input', 'focus', 'mover']});
         if (particleID) {
           particleID.innerText = world.particleID.toString();
           if (!dropped && !playing && world.particleID >= initialDrop*world.config.particleLimit) {
