@@ -124,9 +124,9 @@
       }
 
       .plane { display: none }
-      .plane[data-plane="domgeon-inspect"],
       .plane.meme { display: initial }
 
+      .plane[data-plane="domgeon-inspect"] { display: initial }
       .plane[data-plane="domgeon-inspect"] { z-index: 1000 }
 
     </style>
@@ -135,8 +135,7 @@
     <div class="buttonbar actions right float"></div>
 
     <script type="module">
-      import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
-      import {fillRect, roomShader, borderShader} from 'cdom/builder';
+      import {DOMgeon} from 'cdom/domgeon';
       const dmg = window.dmg = new DOMgeon({
         ui: document.body,
         keys: document.body,
@@ -145,8 +144,11 @@
         actionBar: document.querySelector('.buttonbar.actions'),
         lightLimit: 0.2,
       });
+
+      import {DOMgeonInspector} from 'cdom/domgeon';
       new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
+      import {fillRect, roomShader, borderShader} from 'cdom/builder';
       const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: '·'};
       const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
       const doorShader = {plane: 'solid', kind: 'door', classList: 'interact'};
