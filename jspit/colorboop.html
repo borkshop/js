@@ -89,11 +89,18 @@
         grid.clear();
 
         const pos = {x: 10, y: 10};
-        grid.createTile({pos, kind: 'mover', classList: ['input', 'support'], text: '@'});
+        grid.createTile({
+          plane: 'solid',
+          pos,
+          kind: 'mover',
+          classList: ['input', 'support'],
+          text: '@',
+        });
         grid.viewPoint = pos;
 
         colors.forEach((color, i) => {
           grid.createTile({
+            plane: 'solid',
             pos: {x: 5, y: i},
             kind: 'swatch',
             classList: 'interact',
@@ -107,6 +114,7 @@
             },
           });
           grid.createTile({
+            plane: 'solid',
             pos: {x: 15, y: i},
             kind: 'swatch',
             classList: 'interact',
