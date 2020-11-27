@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="index.css" />
+    <title>jspit: BSP Procgen</title>
+  </head>
+  <body>
+
+    <div class="grid">
+      <noscript>
+        <section>
+          <h3 class="error">DOMgeoneering requires JavaScript</h3>
+        </section>
+      </noscript>
+    </div>
+
+    <aside class="menu">
+      <button
+        class="sticky"
+        style="float: right; font-size: 2em; line-height: 0.75"
+        data-keycode="Escape"
+        title="Start/Stop Game ; Hide/Show Menu">☰</button>
+
+      <section>
+        <h1>BSP Procgen</h1>
+        <h3><a href="index.html">Back to Welcome screen</a></h3>
+
+        <p>
+          Demonstrates procedural generation within a random Binary Space
+          Partitioning
+        </p>
+
+      </section>
+
+    </aside>
+
+    <style>
+      /* tile stacking priorities */
+      .tile.floor { z-index:  1 }
+      .tile       { z-index:  5 }
+      .tile.wall  { z-index: 10 }
+      .tile.mover { z-index: 20 }
+      .tile.input { z-index: 50 }
+
+      .grid { --grid-bg: hsl(0, 0, 0); }
+
+      .plane { display: none }
+
+      .grid:not(.playing) .plane:not(.meme) { display: initial }
+      .grid.playing .plane.meme { display: initial }
+
+      .plane.meme .tile[data-light] { opacity: var(--light, 15%); }
+      .plane.meme .tile:not([data-light]) { opacity: 15%; }
+
+      .tile.floor { background-color: hsl(70, 5%, 12%); }
+      .tile.wall { background-color: hsl(50, 15%, 15%); }
+      .tile.door { background-color: hsl(50, 25%, 15%); }
+      .tile.door.passable { background-color: hsl(70, 5%, 12%); }
+
+      .tile.floor { color: hsl(70, 5%, 27%); }
+      .tile.wall { color: hsl(50, 25%, 30%); }
+      .tile.mover { color: hsl(20, 75%, 50%); }
+      .tile.mover.input,
+      .tile.mover.inputable { color: hsl(220, 75%, 50%); }
+      .tile.mover.input.focus,
+      .tile.mover.inputable.focused { color: hsl(120, 75%, 50%); }
+      .tile.door { color: hsl(50, 90%, 30%); }
+
+      .tile.mover { --lightInit: 1; }
+      .tile.mover.input { --lightInit: 2; }
+      .tile.mover.input.focus { --lightInit: 8; }
+
+      .tile.door { --action: "open"; --morph_target: "!passable"; }
+      .tile.door.passable { --action: "close"; }
+
+      .tile.door::before { content: "+" }
+      .tile.door.passable::before { content: "-" }
+
+      .tile.mover.support {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+      }
+    </style>
+
+    <div class="buttonbar moves left"></div>
+    <div class="buttonbar actions right float"></div>
+
+    <script type="module">
+      import {DOMgeon} from 'cdom/domgeon';
+      import {BSP} from 'cdom/procgen';
+      import * as build from 'cdom/builder';
+
+      const dmg = window.dmg = new DOMgeon({
+        ui: document.body,
+        keys: document.body,
+        grid: document.querySelector('.grid'),
+        moveBar: document.querySelector('.buttonbar.moves'),
+        actionBar: document.querySelector('.buttonbar.actions'),
+        lightLimit: 0.2,
+      });
+
+      const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: '·'};
+      const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
+      const doorShader = {plane: 'solid', kind: 'door', classList: 'interact'};
+      const roomShader = build.roomShader({
+        floors: floorShader,
+        walls: wallShader,
+      });
+
+      const bounds = dmg.grid.viewbox;
+
+      dmg.grid.viewPoint = {
+        x: bounds.x + bounds.w/2,
+        y: bounds.y + bounds.h/2,
+      };
+
+      const maxRoomArea = 108;
+      const minRoomArea = 25;
+      const minRoomSize = {w: 4, h: 4};
+
+      function adjustRoomRegion(region) {
+        let {x, y, w, h} = region;
+        const ux = Math.max(0, w - minRoomSize.w);
+        const uy = Math.max(0, h - minRoomSize.h);
+        if (ux * uy <= 0) return region;
+        let dx = Math.floor(Math.random() * ux);
+        let dy = Math.floor(Math.random() * uy);
+        while ((w - dx) * (h - dy) < minRoomArea) {
+          if      (dx > dy) dx--;
+          else if (dy > 0)  dy--;
+          else              return region;
+        }
+        w -= dx, h -= dy;
+        x += Math.floor(Math.random() * dx);
+        y += Math.floor(Math.random() * dy);
+        return {x, y, w, h};
+      }
+
+      /** @enum {number} */
+      const Tangent = {
+        None: 0,
+        Top: 1,
+        Right: 2,
+        Bottom: 3,
+        Left: 4,
+      };
+
+      /**
+       * @param {Rect} a
+       * @param {Rect} b
+       * @return {Tangent} - which side of a
+       */
+      function tangent(a, b) {
+        const {x, y, w, h} = a;
+        if (b.y + b.h === y - 1) return Tangent.Top;
+        if (b.x - 1   === x + w) return Tangent.Right;
+        if (b.y - 1   === y + h) return Tangent.Bottom;
+        if (b.x + b.w === x - 1) return Tangent.Left;
+        return Tangent.None;
+      }
+
+      function rangesOverlap(off1, n1, off2, n2) {
+        const hi1 = off1 + n1;
+        const hi2 = off2 + n2;
+        if (off2 <= off1 && off1 <= hi2) return true;
+        if (off2 <= hi1 && hi1 <= hi2) return true;
+        if (off1 < off2 && hi2 < hi1) return true;
+        if (off2 < off1 && hi1 < hi2) return true;
+        return false;
+      }
+
+      const colors = [ 'red', 'green', 'blue', ];
+      const res = BSP.run({
+        bounds,
+        fill: (region, id) => {
+          const depth = Math.floor(Math.log2(id));
+          if (Math.random() >= Math.pow(0.75, depth)) return null;
+
+          const {w, h} = region;
+          if (w < minRoomSize.w || h < minRoomSize.h) return null;
+
+          // increasing probability of stopping here and placing a room within
+          // this region, starting once we get under max area, reaching 100%
+          // certainty at min area.
+          const p = (maxRoomArea - w * h) / (maxRoomArea - minRoomArea);
+          if (Math.random() >= p) return null;
+          region = adjustRoomRegion(region)
+          build.fillRect(dmg.grid, region, roomShader);
+          return [{kind: 'room', id, ...region}];
+        },
+        connect: (as, bs) => {
+
+          for (const b of bs) {
+
+            const aTouches = as.map(a => {
+              const t = tangent(b, a)
+              switch (t) {
+              case Tangent.Top:
+              case Tangent.Bottom:
+                return Tangent.None;
+              case Tangent.Right:
+              case Tangent.Left:
+                return Tangent.None;
+              }
+              return t;
+            }).filter(t => !!t);
+
+            // TODO if touching coalesce shared wall(s)
+
+            // TODO if not touching add hallway(s) to nearest
+
+            // TODO add door(s) w/ touching
+
+            as.push(b);
+          }
+          return as;
+        },
+      });
+
+      console.groupCollapsed(`BSP created ${res?.length} regions`);
+      console.table(res);
+      console.groupEnd();
+
+    </script>
+  </body>
+
+</html>
+<!-- vim:set ts=2 sw=2 expandtab -->
+
