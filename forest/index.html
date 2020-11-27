@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="drakula.css" />
     <link rel="stylesheet" type="text/css" href="index.css" />
     <title>The Dark Forest</title>
   </head>
@@ -40,119 +41,10 @@
 
     </aside>
 
-    <style>
-      /* tile stacking priorities */
-      .tile.floor { z-index:  1 }
-      .tile       { z-index:  5 }
-      .tile.wall  { z-index: 10 }
-      .tile.mover { z-index: 20 }
-      .tile.input { z-index: 50 }
-
-      .grid {
-        --grid-bg: hsl(0, 0, 0);
-      }
-
-      .plane.meme .tile[data-light] {
-        opacity: var(--light, 15%);
-      }
-
-      .plane.meme .tile:not([data-light]) {
-        opacity: 15%;
-      }
-
-      .tile.floor {
-        background-color: rgb(126, 69, 12);
-        color: hsl(70, 5%, 27%);
-      }
-
-      .tile.wall {
-      }
-
-      .tile.mover {
-        color: hsl(20, 75%, 50%);
-      }
-      .tile.mover.input,
-      .tile.mover.inputable {
-        color: hsl(220, 75%, 50%);
-      }
-      .tile.mover.input.focus,
-      .tile.mover.inputable.focused {
-        color: hsl(120, 75%, 50%);
-      }
-
-      .tile.mover {
-        --lightInit: 1;
-      }
-      .tile.mover.input {
-        --lightInit: 2;
-      }
-      .tile.mover.input.focus {
-        --lightInit: 8;
-      }
-
-      .tile.door {
-        background-color: hsl(50, 25%, 15%);
-        color: hsl(50, 90%, 30%);
-        --action: "open";
-        --morph_target: "!passable";
-      }
-      .tile.door::before { content: "🚪" }
-
-      .tile.door.passable {
-        background-color: hsl(70, 5%, 12%);
-        --action: "close";
-      }
-      .tile.door.passable::before { content: "-" }
-
-      .tile.rune { color: hsl(270, 80%, 65%) }
-
-      .tile.mover.support {
-        text-decoration: underline;
-        text-decoration-style: dotted;
-      }
-
-      .plane { display: none }
-      .plane[data-plane="domgeon-inspect"],
-      .plane.meme { display: initial }
-
-      .plane[data-plane="domgeon-inspect"] { z-index: 1000 }
-
-    </style>
-
     <div class="buttonbar moves left"></div>
     <div class="buttonbar actions right float"></div>
 
-    <script type="module">
-      import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
-      import {fillRect, toShader} from 'cdom/builder';
-      const dmg = window.dmg = new DOMgeon({
-        ui: document.body,
-        keys: document.body,
-        grid: document.querySelector('.grid'),
-        moveBar: document.querySelector('.buttonbar.moves'),
-        actionBar: document.querySelector('.buttonbar.actions'),
-        lightLimit: 0.2,
-      });
-      new DOMgeonInspector(dmg, document.querySelector('#inspector'));
-
-      const floorShader = toShader({plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: ''});
-      const treeShader = toShader({plane: 'solid', kind: 'wall', text: '🌲'});
-
-      dmg.grid.getPlane('solid').classList.add('lit');
-
-      function forestShader(grid, pos, rect) {
-        floorShader(grid, pos, rect);
-        if (Math.random() < .25 && !(pos.x === 50 && pos.y === 50)) {
-          treeShader(grid, pos, rect);
-        }
-      }
-
-      fillRect(dmg.grid, {x: 0, y: 0, w: 101, h: 101}, forestShader);
-
-      const actor = dmg.grid.createTile({pos: {x: 50, y: 50}, plane: 'solid', kind: 'char', classList: ['mover', 'input', 'focus'], text: '🙂'});
-      dmg.updateActorView(actor);
-
-    </script>
+    <script type="module" src="./index.js"></script>
   </body>
 
 </html>
