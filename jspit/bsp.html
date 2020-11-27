@@ -34,6 +34,13 @@
 
       </section>
 
+      <fieldset id="inspector">
+        <legend>
+          <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
+        </legend>
+        <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
+      </fieldset>
+
     </aside>
 
     <style>
@@ -53,6 +60,9 @@
 
       .plane.meme .tile[data-light] { opacity: var(--light, 15%); }
       .plane.meme .tile:not([data-light]) { opacity: 15%; }
+
+      .plane[data-plane="domgeon-inspect"] { display: initial }
+      .plane[data-plane="domgeon-inspect"] { z-index: 1000 }
 
       .tile.floor { background-color: hsl(70, 5%, 12%); }
       .tile.wall { background-color: hsl(50, 15%, 15%); }
@@ -97,6 +107,9 @@
         actionBar: document.querySelector('.buttonbar.actions'),
         lightLimit: 0.2,
       });
+
+      import {DOMgeonInspector} from 'cdom/domgeon';
+      new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
       import * as build from 'cdom/builder';
       const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: '·'};
