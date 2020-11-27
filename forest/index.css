@@ -167,11 +167,12 @@ section {
 }
 
 .grid {
-  position: relative;
+  position: absolute;
   height: 100%;
   width: 100%;
+
   z-index: 1;
-  overflow: hidden;
+  overflow: visible;
 
   line-height: 1.0;
   font-size: 18pt;
@@ -183,6 +184,13 @@ section {
   --xlate-x: 0;
   --xlate-y: 0;
 
+  left: 0;
+  top: 0;
+  transform:
+    translateX(calc(0em - var(--xlate-x) * var(--tile-width)))
+    translateY(calc(0em - var(--xlate-y) * var(--tile-height)))
+    rotateZ(360deg);
+
   background-color: var(--grid-bg);
   font-family: monospace;
 }
@@ -193,8 +201,8 @@ body.running .grid { cursor: none; }
   --x: 0;
   --y: 0;
   position: absolute;
-  left: calc((var(--x) - var(--xlate-x)) * var(--tile-width));
-  top:  calc((var(--y) - var(--xlate-y)) * var(--tile-height));
+  left: calc(var(--x) * var(--tile-width));
+  top:  calc(var(--y) * var(--tile-height));
   width: var(--tile-width);
   height: var(--tile-height);
 
