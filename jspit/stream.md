@@ -1,4 +1,4 @@
-# 2020-11-25
+# 2020-11-26
 
 ## TODO
 
@@ -42,6 +42,10 @@
 ## WIP
 
 ## Done
+
+Started out on a jspit BSP demo page.
+
+# 2020-11-25
 
 Got a basic BSP harness working under a development version of the cdom-template demo.
 Not quite sure what to do with it yet, and the hallway connector is as yet unexercised.
