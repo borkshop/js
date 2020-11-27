@@ -161,27 +161,29 @@
       /**
        * @param {Rect} a
        * @param {Rect} b
-       * @return {Tangent} - which side of a
+       * @return {Tangent} - which side of a touches b
        */
       function tangent(a, b) {
         const {x, y, w, h} = a;
-        if (b.y + b.h === y - 1) return Tangent.Top;
+        if (b.y + b.h === y    ) return Tangent.Top;
         if (b.x - 1   === x + w) return Tangent.Right;
         if (b.y - 1   === y + h) return Tangent.Bottom;
-        if (b.x + b.w === x - 1) return Tangent.Left;
+        if (b.x + b.w === x    ) return Tangent.Left;
         return Tangent.None;
       }
 
-      function rangesOverlap(off1, n1, off2, n2) {
+      function overlap(off1, n1, off2, n2) {
         const hi1 = off1 + n1;
         const hi2 = off2 + n2;
-        if (off2 <= off1 && off1 <= hi2) return true;
-        if (off2 <= hi1 && hi1 <= hi2) return true;
-        if (off1 < off2 && hi2 < hi1) return true;
-        if (off2 < off1 && hi1 < hi2) return true;
-        return false;
+        if (off1 < off2 && hi2 < hi1) return {off: off2+1, n: n2-2};
+        if (off2 < off1 && hi1 < hi2) return {off: off1+1, n: n1-2};
+        if (off2 <= off1 && off1 <= hi2) return {off: off1+1, n: Math.min(hi1, hi2) - off1 - 2};
+        if (off2 <= hi1 && hi1 <= hi2) {
+          const off = Math.max(off1, off2);
+          return {off: off+1, n: hi1 - off - 2};
+        }
+        return {off: -1, n: 0};
       }
-
 
       import {BSP} from 'cdom/procgen';
       const res = BSP.run({
@@ -203,21 +205,64 @@
           return [{kind: 'room', id, ...region}];
         },
         connect: (as, bs) => {
+          if (as.length === 1 && bs.length > 1) {
+            const tmp = as;
+            as = bs;
+            bs = tmp;
+          }
 
+          const plane = 'solid';
           for (const b of bs) {
 
-            const aTouches = as.map(a => {
+            for (const a of as) {
               const t = tangent(b, a)
+              let o = null;
               switch (t) {
               case Tangent.Top:
               case Tangent.Bottom:
-                return Tangent.None;
+                o = overlap(b.x, b.w, a.x, a.w);
+                break;
               case Tangent.Right:
               case Tangent.Left:
-                return Tangent.None;
+                o = overlap(b.y, b.h, a.y, a.h);
+                break;
+              default:
+                continue;
               }
-              return t;
-            }).filter(t => !!t);
+              if (o.n <= 0) continue;
+
+              const touch = (pos) => {
+                // for (const tile of dmg.grid.tilesAt(pos, 'wall'))
+                //   if (dmg.grid.getTilePlane(tile) === plane)
+              };
+
+              let {x, y, w, h} = b;
+              switch (t) {
+
+              case Tangent.Bottom:
+                y += h;
+              case Tangent.Top:
+                x = o.off;
+                const oy = t === Tangent.Bottom ? a.y : a.y + a.h;
+                for (let i=0; i<o.n; i++, x++) {
+                  // touch({x, y: oy});
+                  touch({x, y});
+                }
+                break;
+
+              case Tangent.Right:
+                x += w;
+              case Tangent.Left:
+                y = o.off;
+                const ox = t === Tangent.Right ? a.x : a.x + a.w;
+                for (let i=0; i<o.n; i++, y++) {
+                  // touch({x: ox, y});
+                  touch({x, y});
+                }
+
+              }
+              break;
+            }
 
             // TODO if touching coalesce shared wall(s)
 
