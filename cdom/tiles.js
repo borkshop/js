@@ -189,10 +189,6 @@ export class TileGrid {
     this._ghost = this.el.ownerDocument.createElement('div');
     this._ghost.style.display = 'initial';
     this._ghost.style.visibility = 'hidden';
-    this.updateTile(this._ghost, {
-      className: '_ghost',
-      text: 'X',
-    });
     const tiles = Array.from(this.queryTiles()).filter(({id}) => !!id);
     this.spatialIndex.update(
       tiles.map(tile => tile.id),
@@ -202,13 +198,13 @@ export class TileGrid {
 
   /** @return {Point} */
   get tileSize() {
-    // TODO use an invisible measurement tile? cache?
-    for (const tile of /** @type {NodeListOf<HTMLElement>} */ (this.el.querySelectorAll('.tile'))) {
-      const x = tile.offsetWidth;
-      const y = tile.offsetHeight;
-      return {x, y};
-    }
-    return {x: 0, y: 0};
+    if (!this._ghost.parentNode) this.updateTile(this._ghost, {
+      className: '_ghost',
+      text: 'X',
+    });
+    const x = this._ghost.offsetWidth;
+    const y = this._ghost.offsetHeight;
+    return {x, y};
   }
 
   /** @return {Point} */
@@ -486,7 +482,8 @@ export class TileGrid {
 
   clear() {
     for (const tile of this.queryTiles())
-      tile.parentNode?.removeChild(tile);
+      if (tile !== this._ghost)
+        tile.parentNode?.removeChild(tile);
     this._viewPoint = null;
     this._updateSize();
   }
