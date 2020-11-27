@@ -19,6 +19,7 @@
 
   "workspaces": [
     "cdom-template",
-    "jspit"
+    "jspit",
+    "forest"
   ]
 }
