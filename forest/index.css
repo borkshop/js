@@ -138,7 +138,7 @@ button[data-legend]::after {
   color: var(--ui-fg);
 }
 
-aside {
+aside.menu {
   overflow: auto;
   max-height: 100%;
   position: absolute;
@@ -153,10 +153,10 @@ aside.modal {
   width: 60%;
 }
 
-body.running aside > *:not(.sticky) { display: none; }
+body.running aside.menu > *:not(.sticky) { display: none; }
 
-aside section               { margin-top: 1em; }
-aside section:first-of-type { margin-top: 0; }
+aside.menu section               { margin-top: 1em; }
+aside.menu section:first-of-type { margin-top: 0; }
 
 section {
   background-color: var(--content-bg);
@@ -167,11 +167,11 @@ section {
 }
 
 .grid {
-  position: absolute;
+  position: relative;
   height: 100%;
   width: 100%;
   z-index: 1;
-  overflow: visible;
+  overflow: hidden;
 
   line-height: 1.0;
   font-size: 18pt;
@@ -183,15 +183,24 @@ section {
   --xlate-x: 0;
   --xlate-y: 0;
 
-  left: 0;
-  top: 0;
+  background-color: var(--grid-bg);
+  font-family: monospace;
+}
+
+.grid .plane {
+  position: absolute;
   transform:
     translateX(calc((0 - var(--xlate-x)) * var(--tile-width)))
     translateY(calc((0 - var(--xlate-y)) * var(--tile-height)))
-    rotateZ(360deg);
-
-  background-color: var(--grid-bg);
-  font-family: monospace;
+    ;
+    /* NOTE(josh): dropped the rotateZ(360deg) for now, since am pretty sure it
+     * has no effect, other than introducing a few floating point epsilons into
+     * the mix:
+     *
+     * Looking at `getComputedStyle($0).transform` in the conosle, we see:
+     * - with: "matrix(1, -2.44929e-16, 2.44929e-16, 1, -464.5, -704.5)"
+     * - sans: "matrix(1, 0, 0, 1, -464.5, -704.5)"
+     */
 }
 
 body.running .grid { cursor: none; }
