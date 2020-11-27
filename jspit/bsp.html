@@ -89,9 +89,6 @@
 
     <script type="module">
       import {DOMgeon} from 'cdom/domgeon';
-      import {BSP} from 'cdom/procgen';
-      import * as build from 'cdom/builder';
-
       const dmg = window.dmg = new DOMgeon({
         ui: document.body,
         keys: document.body,
@@ -101,6 +98,7 @@
         lightLimit: 0.2,
       });
 
+      import * as build from 'cdom/builder';
       const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: '·'};
       const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
       const doorShader = {plane: 'solid', kind: 'door', classList: 'interact'};
@@ -171,7 +169,8 @@
         return false;
       }
 
-      const colors = [ 'red', 'green', 'blue', ];
+
+      import {BSP} from 'cdom/procgen';
       const res = BSP.run({
         bounds,
         fill: (region, id) => {
