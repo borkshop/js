@@ -170,7 +170,6 @@ section {
   position: absolute;
   height: 100%;
   width: 100%;
-
   z-index: 1;
   overflow: visible;
 
@@ -187,8 +186,8 @@ section {
   left: 0;
   top: 0;
   transform:
-    translateX(calc(0em - var(--xlate-x) * var(--tile-width)))
-    translateY(calc(0em - var(--xlate-y) * var(--tile-height)))
+    translateX(calc((0 - var(--xlate-x)) * var(--tile-width)))
+    translateY(calc((0 - var(--xlate-y)) * var(--tile-height)))
     rotateZ(360deg);
 
   background-color: var(--grid-bg);

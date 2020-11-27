@@ -185,14 +185,22 @@ section {
   font-family: monospace;
 }
 
+.grid .plane {
+  position: absolute;
+  transform:
+    translateX(calc((0 - var(--xlate-x)) * var(--tile-width)))
+    translateY(calc((0 - var(--xlate-y)) * var(--tile-height)))
+    ;
+}
+
 body.running .grid { cursor: none; }
 
 .grid .tile {
   --x: 0;
   --y: 0;
   position: absolute;
-  left: calc((var(--x) - var(--xlate-x)) * var(--tile-width));
-  top:  calc((var(--y) - var(--xlate-y)) * var(--tile-height));
+  left: calc(var(--x) * var(--tile-width));
+  top:  calc(var(--y) * var(--tile-height));
   width: var(--tile-width);
   height: var(--tile-height);
 
