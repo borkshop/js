@@ -324,7 +324,6 @@ class MemeCollector {
       )].join(' '),
       text: tile.textContent || undefined,
       data: {...tile.dataset},
-      style: tile.style,
     };
     for (const ign of this.ignoreVars)
       delete spec.data[ign];
