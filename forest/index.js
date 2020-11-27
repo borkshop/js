@@ -1,18 +1,10 @@
 // @ts-check
 import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
 import {fillRect, toShader} from 'cdom/builder';
-import {makeXorShift128} from './xorshift128/index';
+import {makePrng} from 'cdom/prng';
 
 const search = new URLSearchParams(location.search);
-
-// Create a random number generator for the given or implied seed.
-// This requires converting the seed *string* to a sequence of 4 byte words.
-const encoder = new TextEncoder();
-const given = encoder.encode(search.get('seed') || '');
-const seed = new Uint32Array(Math.ceil(given.length / 4));
-seed.set(new Uint32Array(given.buffer));
-const prng = makeXorShift128();
-prng.update(seed);
+const prng = makePrng(search.get('seed') || '');
 
 /** @typedef { import("./cdom/tiles").Point } Point */
 /** @typedef { import("./cdom/tiles").Rect } Rect */
@@ -67,7 +59,7 @@ dmg.grid.getPlane('solid').classList.add('lit');
  */
 function forestShader(grid, pos, rect) {
   floorShader(grid, pos, rect);
-  if (prng.random() < .25 && !(pos.x === 50 && pos.y === 50)) {
+  if ((prng.randomUint32() & 0x3) === 0 && !(pos.x === 50 && pos.y === 50)) {
     treeShader(grid, pos, rect);
   }
 }
