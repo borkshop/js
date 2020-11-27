@@ -1,4 +1,4 @@
-# 2020-11-26
+# 2020-11-27
 
 ## TODO
 
@@ -42,6 +42,12 @@
 ## WIP
 
 ## Done
+
+Adopted viewport transform update from forest demo: now done with a planar CSS
+transform, rather than being calculated on each tile. Have not tried to measure
+any difference yet, but this just seems more intrinsically correct.
+
+# 2020-11-26
 
 Started out on a jspit BSP demo page.
 
