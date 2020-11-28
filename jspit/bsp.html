@@ -21,7 +21,15 @@
         class="sticky"
         style="float: right; font-size: 2em; line-height: 0.75"
         data-keycode="Escape"
-        title="Start/Stop Game ; Hide/Show Menu">☰</button>
+        title="<Esc>: Start/Stop Game ; Hide/Show Menu">☰</button>
+
+      <label for="debug" style="float: right">
+        <button
+          style="font-size: 2em; line-height: 0.75"
+          data-key="^"
+          title="^: Toggle debug overlay">⌕</button>
+        <input id="debug" type="checkbox" style="display: none">
+      </label>
 
       <section>
         <h1>BSP Procgen</h1>
@@ -88,7 +96,7 @@
 
       .plane { display: none }
 
-      .grid:not(.playing) .plane:not(.meme) { display: initial }
+      .grid:not(.playing) .plane[data-plane="solid"] { display: initial }
       .grid.playing .plane.meme { display: initial }
 
       .plane.meme .tile[data-light] { opacity: var(--light, 15%); }
@@ -101,6 +109,11 @@
       .tile.wall { background-color: hsl(50, 15%, 15%); }
       .tile.door { background-color: hsl(50, 25%, 15%); }
       .tile.door.passable { background-color: hsl(70, 5%, 12%); }
+
+      .tile.wall.mark {
+        background-color: hsl(50, 30%, 30%);
+        color: hsl(50, 90%, 60%);
+      }
 
       .tile.floor { color: hsl(70, 5%, 27%); }
       .tile.wall { color: hsl(50, 25%, 30%); }
@@ -125,6 +138,18 @@
         text-decoration: underline;
         text-decoration-style: dotted;
       }
+
+      .grid.debugging .plane[data-plane="debug"] { display: initial }
+      .plane[data-plane="debug"] { z-index: 300 }
+      .plane[data-plane="solid"] { z-index: 200 }
+
+      .tile.box {
+        z-index: calc(10 + var(--depth, 0));
+        width: calc(var(--w) * var(--tile-height));
+        height: calc(var(--h) * var(--tile-height));
+        border: 0.2em solid hsl(calc(0 + var(--depth) * 47), 50%, 50%);
+      }
+
     </style>
 
     <div class="buttonbar moves left"></div>
@@ -139,6 +164,10 @@
         moveBar: document.querySelector('.buttonbar.moves'),
         actionBar: document.querySelector('.buttonbar.actions'),
         lightLimit: 0.2,
+      });
+
+      document.getElementById('debug').addEventListener('change', (ev) => {
+        dmg.grid.el.classList.toggle('debugging', !!ev.target.checked);
       });
 
       import {DOMgeonInspector} from 'cdom/domgeon';
@@ -160,81 +189,42 @@
         y: bounds.y + bounds.h/2,
       };
 
-      const maxRoomArea = 108;
-      const minRoomArea = 25;
       const minRoomSize = {w: 4, h: 4};
+      const minRoomArea = 25;
+      const maxRoomArea = 108;
 
-      function adjustRoomRegion(region) {
-        let {x, y, w, h} = region;
-        const ux = Math.max(0, w - minRoomSize.w);
-        const uy = Math.max(0, h - minRoomSize.h);
-        if (ux * uy <= 0) return region;
-        let dx = Math.floor(Math.random() * ux);
-        let dy = Math.floor(Math.random() * uy);
-        while ((w - dx) * (h - dy) < minRoomArea) {
-          if      (dx > dy) dx--;
-          else if (dy > 0)  dy--;
-          else              return region;
-        }
-        w -= dx, h -= dy;
-        x += Math.floor(Math.random() * dx);
-        y += Math.floor(Math.random() * dy);
-        return {x, y, w, h};
-      }
-
-      /** @enum {number} */
-      const Tangent = {
-        None: 0,
-        Top: 1,
-        Right: 2,
-        Bottom: 3,
-        Left: 4,
-      };
-
-      /**
-       * @param {Rect} a
-       * @param {Rect} b
-       * @return {Tangent} - which side of a touches b
-       */
-      function tangent(a, b) {
-        const {x, y, w, h} = a;
-        if (b.y + b.h === y    ) return Tangent.Top;
-        if (b.x - 1   === x + w) return Tangent.Right;
-        if (b.y - 1   === y + h) return Tangent.Bottom;
-        if (b.x + b.w === x    ) return Tangent.Left;
-        return Tangent.None;
-      }
-
-      function overlap(off1, n1, off2, n2) {
-        const hi1 = off1 + n1;
-        const hi2 = off2 + n2;
-        if (off1 < off2 && hi2 < hi1) return {off: off2+1, n: n2-2};
-        if (off2 < off1 && hi1 < hi2) return {off: off1+1, n: n1-2};
-        if (off2 <= off1 && off1 <= hi2) return {off: off1+1, n: Math.min(hi1, hi2) - off1 - 2};
-        if (off2 <= hi1 && hi1 <= hi2) {
-          const off = Math.max(off1, off2);
-          return {off: off+1, n: hi1 - off - 2};
-        }
-        return {off: -1, n: 0};
-      }
+      import {
+        shrinkRegion,
+        tangent,
+        adjacentPoints,
+      } from './bsp';
 
       import {BSP} from 'cdom/procgen';
+      const touches = new Set();
       const res = BSP.run({
         bounds,
         fill: (region, id) => {
-          const depth = Math.floor(Math.log2(id));
-          if (Math.random() >= Math.pow(0.75, depth)) return null;
-
-          const {w, h} = region;
+          const {x, y, w, h} = region;
           if (w < minRoomSize.w || h < minRoomSize.h) return null;
+
+          const depth = Math.floor(Math.log2(id + 1));
+          const box = dmg.grid.createTile({
+            id: `bsp-box-${id}`,
+            plane: 'debug',
+            kind: 'box',
+            pos: {x, y},
+            data: {bspID: id, depth, w, h},
+          });
 
           // increasing probability of stopping here and placing a room within
           // this region, starting once we get under max area, reaching 100%
           // certainty at min area.
-          const p = (maxRoomArea - w * h) / (maxRoomArea - minRoomArea);
-          if (Math.random() >= p) return null;
-          region = adjustRoomRegion(region)
+          region = shrinkRegion(region, {a: minRoomArea, ...minRoomSize});
+          const p = (maxRoomArea - region.w * region.h) / (maxRoomArea - minRoomArea);
+          if (p < 0 || Math.random() >= p) return null;
+
           build.fillRect(dmg.grid, region, roomShader);
+          box.classList.add('leaf');
           return [{kind: 'room', id, ...region}];
         },
         connect: (as, bs) => {
@@ -245,59 +235,39 @@
           }
 
           const plane = 'solid';
+          const kindAt = (pos, kind) => dmg.grid.tilesAt(pos, kind)
+            .filter(t => dmg.grid.getTilePlane(t) === plane);
+          const mark = (pos, text) => {
+            for (const tile of kindAt(pos, 'wall')) {
+              tile.textContent = text;
+              tile.classList.add('mark');
+            }
+          };
+
           for (const b of bs) {
 
-            for (const a of as) {
-              const t = tangent(b, a)
-              let o = null;
-              switch (t) {
-              case Tangent.Top:
-              case Tangent.Bottom:
-                o = overlap(b.x, b.w, a.x, a.w);
-                break;
-              case Tangent.Right:
-              case Tangent.Left:
-                o = overlap(b.y, b.h, a.y, a.h);
-                break;
-              default:
-                continue;
-              }
-              if (o.n <= 0) continue;
-
-              const touch = (pos) => {
-                // for (const tile of dmg.grid.tilesAt(pos, 'wall'))
-                //   if (dmg.grid.getTilePlane(tile) === plane)
-              };
-
-              let {x, y, w, h} = b;
-              switch (t) {
-
-              case Tangent.Bottom:
-                y += h;
-              case Tangent.Top:
-                x = o.off;
-                const oy = t === Tangent.Bottom ? a.y : a.y + a.h;
-                for (let i=0; i<o.n; i++, x++) {
-                  // touch({x, y: oy});
-                  touch({x, y});
-                }
-                break;
-
-              case Tangent.Right:
-                x += w;
-              case Tangent.Left:
-                y = o.off;
-                const ox = t === Tangent.Right ? a.x : a.x + a.w;
-                for (let i=0; i<o.n; i++, y++) {
-                  // touch({x: ox, y});
-                  touch({x, y});
-                }
-
-              }
-              break;
-            }
-
             // TODO if touching coalesce shared wall(s)
+            for (const a of as)
+              for (const {t, o} of tangent(b, a)) if (o.n > 2) {
+                // shrink overlap to never consider extreme points, since
+                // erasing those walls could introduce unintended diagonal
+                // freedoms
+                o.o++, o.n -= 2;
+
+                const k = `${a.id};${b.id}`;
+                const ck = `${b.id};${a.id}`;
+                if (touches.has(k) || touches.has(ck)) continue;
+                const n = touches.size;
+                touches.add(k);
+
+                // ASCII letters; uppercase for B lowercase for A
+                const code = 0x01 + n;
+                const bt = String.fromCharCode(code | 0x40);
+                const at = String.fromCharCode(code | 0x60);
+
+                for (const {co, ...pos} of adjacentPoints(t, o, b, a))
+                  mark(pos, co ? at : bt);
+              }
 
             // TODO if not touching add hallway(s) to nearest
 
