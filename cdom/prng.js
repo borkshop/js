@@ -34,9 +34,9 @@ const encoder = new TextEncoder();
  */
 export function makePrng(seed) {
   const text = encoder.encode(seed);
-  const words = new Uint32Array(Math.ceil(text.length / 4));
-  words.set(new Uint32Array(text.buffer));
+  const padded = new Uint8Array(Math.ceil(text.length / 4) * 4);
+  padded.set(text);
   const prng = makeXorShift128();
-  prng.update(words);
+  prng.update(new Uint32Array(padded.buffer));
   return prng;
 }
