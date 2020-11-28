@@ -31,12 +31,13 @@ import {GridLighting} from './fov';
  */
 
 /**
+ * @param {DOMgeon} dmg
  * @param {TileGrid} grid
  * @param {HTMLElement[]} interacts
  * @param {HTMLElement} subject
  * @returns {boolean}
  */
-function procInteraction(grid, interacts, subject) {
+function procInteraction(dmg, grid, interacts, subject) {
   if (!interacts.length) return false;
   // TODO interaction loop to choose
   if (interacts.length > 1) return false;
@@ -52,9 +53,15 @@ function procInteraction(grid, interacts, subject) {
     Math.pow(at.y - pos.y, 2)
   ) >= 2) return false;
 
+  const kind = grid.getTileKind(interact);
+  const proc = dmg.procs[kind];
+  if (proc) {
+    proc({dmg, grid, object: interact, subject});
+    return true;
+  }
+
   const spawn = grid.getTileData(interact, 'morph_spawn');
   if (spawn) {
-    const kind = grid.getTileKind(interact);
     const tile = grid.buildTile({pos: at, kind, ...spawn});
     if (tile.id === subject.id) return true;
   }
@@ -64,6 +71,27 @@ function procInteraction(grid, interacts, subject) {
 
   return true;
 }
+
+/**
+ * A procedure (Proc) involves a subject and object DOMgeon element
+ * and produces some effect upon the subject's express interaction
+ * with that object.
+ *
+ * @typedef {Object} ProcOptions
+ * @prop {DOMgeon} dmg
+ * @prop {TileGrid} grid
+ * @prop {HTMLElement} object
+ * @prop {HTMLElement} subject
+ */
+
+/**
+ * A procedure (Proc) involves a subject and object DOMgeon element
+ * and produces some effect upon the subject's express interaction
+ * with that object.
+ *
+ * @callback Proc
+ * @param {ProcOptions} options
+ */
 
 /**
  * @param {TileGrid} grid
@@ -82,14 +110,14 @@ function applyMorph(grid, tile, morph) {
 }
 
 /** @type {TileMoverProc} */
-function procMove({grid, mover, move}) {
+function procMove({dmg, grid, mover, move}) {
   const {action, data} = move;
 
   // interact with target tile
   if (action === 'interact') {
     const tileID = data?.tileID;
     const interact = tileID && grid.getTile(tileID);
-    if (interact) procInteraction(grid, [interact], mover)
+    if (interact) procInteraction(dmg, grid, [interact], mover)
     return;
   }
 
@@ -107,7 +135,7 @@ function procMove({grid, mover, move}) {
     !h.classList.contains('passable')
   );
   if (interacts.length) {
-    if (!procInteraction(grid, interacts, mover)) return;
+    if (!procInteraction(dmg, grid, interacts, mover)) return;
     // re-query over any interaction updates
     present = grid.tilesAt(to).filter(h => grid.getTilePlane(h) === plane);
   }
@@ -424,7 +452,10 @@ export class DOMgeon extends EventTarget {
   /** @type {Object<string, TileMoverProc>} */
   moveProcs = {
     '': procMove,
-  }
+  };
+
+  /** @type {Object<string, Proc>} */
+  procs = {};
 
   /** @type {DOMgeonConfig} */
   config = {
@@ -453,6 +484,7 @@ export class DOMgeon extends EventTarget {
    * @prop {HTMLElement} [keys] - document element to listen for key events upon; defaults to ui
    * @prop {HTMLElement} [moveBar] - element under which to place move buttons; defaults to ui
    * @prop {HTMLElement} [actionBar] - element under which to add action buttons; defaults to ui
+   * @prop {Object<string, Proc>} [procs] - callbacks for interaction with objects by kind
    */
 
   /**
@@ -484,6 +516,9 @@ export class DOMgeon extends EventTarget {
       keys = ui,
       actionBar = ui,
       moveBar = ui,
+
+      /** @type {Object<string, Proc>} */
+      procs = {},
     } = options;
     this.ui = ui;
     this.keys = keys;
@@ -491,6 +526,7 @@ export class DOMgeon extends EventTarget {
     this.moveBar = moveBar;
 
     this.grid = new TileGrid(grid);
+    this.procs = procs;
 
     this.onKey = new Handlers();
     this.keySynth = new KeySynthesizer();
@@ -854,7 +890,7 @@ export class DOMgeon extends EventTarget {
     if (move && actor) {
       this.grid.setTileData(actor, 'move', move);
       this.dispatchEvent(new Event('move'));
-      moveTiles({grid: this.grid, kinds: this.moveProcs});
+      moveTiles({dmg: this, grid: this.grid, kinds: this.moveProcs});
       this._fovID = ''; // force FOV recompute during next lighting update
     }
 
@@ -994,6 +1030,7 @@ export class DOMgeonInspector extends TileInspector {
 
 /**
  * @typedef {object} TileMove
+ * @prop {DOMgeon} dmg
  * @prop {TileGrid} grid
  * @prop {HTMLElement} mover
  * @prop {Move} move
@@ -1013,40 +1050,41 @@ export class DOMgeonInspector extends TileInspector {
  * @prop {Object<string, string|undefined>} [data]
  */
 
-
 /**
  * @param {Object} options
+ * @param {DOMgeon} options.dmg
  * @param {TileGrid} options.grid
  * @param {string} [options.moverClass]
  * @param {Object<string, TileMoverProc>} [options.kinds]
  * @return {void}
  */
-function moveTiles({grid, moverClass='mover', kinds}) {
+function moveTiles({dmg, grid, moverClass='mover', kinds}) {
   if (!kinds) {
-    moveTileClass({grid, moverClass});
+    moveTileClass({dmg, grid, moverClass});
     return;
   }
   for (const kind in kinds) if (kind)
-    moveTileClass({grid, moverClass, kind, proc: kinds[kind]});
-  moveTileClass({grid, moverClass, proc: kinds['']});
+    moveTileClass({dmg, grid, moverClass, kind, proc: kinds[kind]});
+  moveTileClass({dmg, grid, moverClass, proc: kinds['']});
 }
 
 /**
  * @param {Object} options
+ * @param {DOMgeon} options.dmg
  * @param {TileGrid} options.grid
  * @param {string} [options.moverClass]
  * @param {string} [options.kind]
  * @param {TileMoverProc} [options.proc]
  * @return {void}
  */
-function moveTileClass({grid, moverClass='mover', kind='', proc=defaultMoverProc}) {
+function moveTileClass({dmg, grid, moverClass='mover', kind='', proc=defaultMoverProc}) {
   for (const mover of grid.queryTiles({
     className: kind ? [moverClass, kind] : moverClass,
   })) {
     const move = grid.getTileData(mover, 'move');
     grid.setTileData(mover, 'move', null);
     if (!move || typeof move !== 'object') continue;
-    proc({grid, mover, move})
+    proc({dmg, grid, mover, move})
   }
 }
 
