@@ -1,4 +1,4 @@
-# 2020-11-27
+# 2020-11-28
 
 ## TODO
 
@@ -42,6 +42,16 @@
 ## WIP
 
 ## Done
+
+Elaborated on the current state of the BSP demo.
+
+# 2020-11-27
+
+Fixed cdom-template's snowpack config by syncing it from jspit, and dropped the
+problematic cdom symlink; pain points revealed by the new forest demo.
+
+Minor continuing work on the BSP demo towards connecting rooms, including
+cleaning up cdom-template's inspector hookup, and adopting it in the bsp demo.
 
 Adopted viewport transform update from forest demo: now done with a planar CSS
 transform, rather than being calculated on each tile. Have not tried to measure
