@@ -10,16 +10,13 @@ import {
 import {
   TileGrid,
   TileInspector, dumpTiles,
-  moveTiles,
 } from './tiles';
 import {everyFrame, schedule} from './anim';
 import {GridLighting} from './fov';
 
 /** @typedef { import("./tiles").Point } Point */
 /** @typedef { import("./tiles").Rect } Rect */
-/** @typedef { import("./tiles").Move } Move */
 /** @typedef { import("./tiles").TileFilter } TileFilter */
-/** @typedef { import("./tiles").TileMoverProc } TileMoverProc */
 /** @typedef { import("./tiles").TileSpec } TileSpec */
 /** @typedef { import("./tiles").TileInspectEvent } TileInspectEvent */
 /** @typedef {{kind: string}&TileSpec} TileSpecKind */
@@ -993,4 +990,74 @@ export class DOMgeonInspector extends TileInspector {
     for (const type of ['mousemove', 'click'])
       this.dmg.grid.el.removeEventListener(type, this);
   }
+}
+
+/**
+ * @typedef {object} TileMove
+ * @prop {TileGrid} grid
+ * @prop {HTMLElement} mover
+ * @prop {Move} move
+ */
+
+/** @typedef {(req:TileMove) => void} TileMoverProc */
+
+/**
+ * A move has a spatial component and an optional action string.
+ * The action string may be used to define custom extensions or to otherwise
+ * change the semantics of the x,y spatial component.
+ *
+ * @typedef {object} Move
+ * @prop {string} action
+ * @prop {number} x
+ * @prop {number} y
+ * @prop {Object<string, string|undefined>} [data]
+ */
+
+
+/**
+ * @param {Object} options
+ * @param {TileGrid} options.grid
+ * @param {string} [options.moverClass]
+ * @param {Object<string, TileMoverProc>} [options.kinds]
+ * @return {void}
+ */
+function moveTiles({grid, moverClass='mover', kinds}) {
+  if (!kinds) {
+    moveTileClass({grid, moverClass});
+    return;
+  }
+  for (const kind in kinds) if (kind)
+    moveTileClass({grid, moverClass, kind, proc: kinds[kind]});
+  moveTileClass({grid, moverClass, proc: kinds['']});
+}
+
+/**
+ * @param {Object} options
+ * @param {TileGrid} options.grid
+ * @param {string} [options.moverClass]
+ * @param {string} [options.kind]
+ * @param {TileMoverProc} [options.proc]
+ * @return {void}
+ */
+function moveTileClass({grid, moverClass='mover', kind='', proc=defaultMoverProc}) {
+  for (const mover of grid.queryTiles({
+    className: kind ? [moverClass, kind] : moverClass,
+  })) {
+    const move = grid.getTileData(mover, 'move');
+    grid.setTileData(mover, 'move', null);
+    if (!move || typeof move !== 'object') continue;
+    proc({grid, mover, move})
+  }
+}
+
+/**
+ * @param {TileMove} move
+ */
+function defaultMoverProc({grid, mover, move}) {
+  if (move.action) return;
+  if (typeof move.x !== 'number' || isNaN(move.x)) return;
+  if (typeof move.y !== 'number' || isNaN(move.y)) return;
+  const {x, y} = grid.getTilePosition(mover);
+  const to = {x: x + move.x, y: y + move.y};
+  grid.moveTileTo(mover, to);
 }
