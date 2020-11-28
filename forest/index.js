@@ -7,13 +7,13 @@ const search = new URLSearchParams(location.search);
 const seed = search.get('seed') || '';
 const prng = makePrng(seed);
 
-/** @typedef { import("./cdom/tiles").Point } Point */
-/** @typedef { import("./cdom/tiles").Rect } Rect */
-/** @typedef { import("./cdom/builder").Context } Context */
+/** @typedef { import("cdom/tiles").Point } Point */
+/** @typedef { import("cdom/tiles").Rect } Rect */
+/** @typedef { import("cdom/builder").Context } Context */
 
 /**
  * @template T
- * @typedef { import("./cdom/builder").Shader<T> } Shader
+ * @typedef { import("cdom/builder").Shader<T> } Shader
  */
 
 /**
