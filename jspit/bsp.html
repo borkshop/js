@@ -29,8 +29,41 @@
 
         <p>
           Demonstrates procedural generation within a random Binary Space
-          Partitioning
+          Partitioning. This is still very much a WIP, and is roughly only
+          "half done" (rooms, but no doors or hallways):
         </p>
+
+        <ul>
+
+          <li>What's done:<ul>
+            <li>the current scheme runs a BSP over the viewport bounds</li>
+            <li>with a random chance (that increases with BSP tree depth) to
+              place a room within a region; rooms may be no smaller than 4 units
+              in either dimension, must have at least a 25-tile area, and at most
+              108-tile area</li>
+            <li>all of those constraint dimensions are wall-inclusive, so the
+              minimum width/height of 4 means at least 2 floor tiles</li>
+          </ul></li>
+
+          <li>What's next:<ul>
+            <li>rooms are currently completely disconnnected</li>
+            <li>adjacent rooms should have shared-wall
+              simplification/elimination/door addition</li>
+            <li>non-adjacent sibling rooms (in the BSP tree) should have a
+              connecting hallway added</li>
+          </ul></li>
+
+          <li>What's beyond:<ul>
+            <li>the current approach is very oriented around: fill or sub-divide both regions
+              defined by each splitting point, then reduce the tree up from its
+              leaves, connecting all parts</li>
+            <li>an alternate interpretation worth pursuing would be: start with
+              a fully supported space (all floor tiles), descend by building a
+              wall along each splitting axis, then ascend connectively
+              similarly to the current void-filler approach</li>
+          </ul></li>
+
+        </ul>
 
       </section>
 
