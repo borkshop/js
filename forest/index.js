@@ -94,7 +94,7 @@ function forestShader(grid, pos, rect) {
   }
 }
 
-fillRect(dmg.grid, {x: -50, y: -50, w: 101, h: 101}, forestShader);
+fillRect(/** @type{Context} */(dmg.grid), {x: -50, y: -50, w: 101, h: 101}, forestShader);
 
 const actor = dmg.grid.createTile({
   pos: {x: 0, y: 0},
