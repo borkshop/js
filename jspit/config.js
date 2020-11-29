@@ -72,6 +72,21 @@ export function bindCSSVar({ctx, style, name}) {
 /**
  * @param {object} params
  * @param {Context} params.ctx
+ * @param {HTMLElement} params.el
+ * @param {string} params.name
+ * @returns {void}
+ */
+export function bindCSSClass({ctx, el, name}) {
+  bindVar({ctx,
+    name,
+    load: () => el.classList.contains(name),
+    save: (v) => el.classList.toggle(name, !!v),
+  });
+}
+
+/**
+ * @param {object} params
+ * @param {Context} params.ctx
  * @param {string} params.name
  * @param {() => any} params.load
  * @param {(v:any) => void} params.save
