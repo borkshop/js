@@ -1,6 +1,25 @@
 // @ts-check
 
 /**
+ * @param {Event} event
+ * @returns {null|HTMLButtonElement}
+ */
+function buttonFor(event) {
+  if (event instanceof MouseEvent) {
+    const {target} = event;
+    if (target instanceof HTMLButtonElement) return target;
+  } else if (event instanceof KeyboardEvent) {
+    const {key, code, view} = event;
+    const root = view?.document;
+    if (!root) return null;
+    /** @type {null|HTMLButtonElement} */
+    return root.querySelector(`button[data-keycode="${code}"]`)
+      || root.querySelector(`button[data-key="${key}"]`);
+  }
+  return null;
+}
+
+/**
  * Allows easy handling of one-off keys, cancelling the triggering event.
  * Useful for handling things like a modal Escape menu.
  *
@@ -25,17 +44,19 @@ export class Handlers {
    * @returns {null|EventHandler}
    */
   lookup(event) {
+    const button = buttonFor(event);
     if (event instanceof MouseEvent) {
-      const {type, target} = event;
-      if (type === 'click' && target instanceof HTMLButtonElement) {
-        const {key, keycode} = target.dataset;
-        return (keycode && this.byCode[keycode])
-            || (key && this.byKey[key])
-            || null;
+      const {type} = event;
+      if (type === 'click' && button) {
+        const {key, keycode} = button.dataset;
+        const by = (keycode && this.byCode[keycode])
+                || (key && this.byKey[key]);
+        if (by) return by;
       }
     } else if (event instanceof KeyboardEvent) {
       const {key, code} = event;
-      return this.byCode[code] || this.byKey[key] || null;
+      const by = this.byCode[code] || this.byKey[key];
+      if (by) return by;
     }
     return null;
   }
@@ -65,14 +86,9 @@ export class KeyHighlighter {
 
   /** @param {Event} event */
   handleEvent(event) {
-    if (!(event instanceof KeyboardEvent)) return;
-    const {type, key, code, view} = event;
-    const root = view?.document;
-    if (!root) return;
-    /** @type {null|HTMLButtonElement} */
-    const button = root.querySelector(`button[data-keycode="${code}"]`)
-                || root.querySelector(`button[data-key="${key}"]`);
-    if (!button) return;
+    const {type} = event;
+    const button = buttonFor(event);
+    if      (!button)            return;
     else if (button.disabled)    button.classList.toggle('held', false);
     else if (type === 'keydown') button.classList.toggle('held', true);
     else if (type === 'keyup')   button.classList.toggle('held', false);
