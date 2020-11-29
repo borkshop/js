@@ -2,6 +2,7 @@
 
 import {
   Handlers,
+  ButtonInputs,
   KeyHighlighter,
   KeySynthesizer,
   KeyChorder,
@@ -437,6 +438,9 @@ export class DOMgeon extends EventTarget {
   /** @type {Handlers} */
   onKey
 
+  /** @type {ButtonInputs} */
+  inputs
+
   /** @type {KeySynthesizer} */
   keySynth
 
@@ -529,6 +533,7 @@ export class DOMgeon extends EventTarget {
     this.procs = procs;
 
     this.onKey = new Handlers();
+    this.inputs = new ButtonInputs();
     this.keySynth = new KeySynthesizer();
     this.keyShow = new KeyHighlighter();
     this.keyChord = new KeyChorder();
@@ -539,6 +544,7 @@ export class DOMgeon extends EventTarget {
     this.keys.addEventListener('keydown', this.keyShow);
     this.keys.addEventListener('keyup', this.onKey);
     this.keys.addEventListener('keydown', this.onKey);
+    this.keys.addEventListener('keyup', this.inputs);
 
     this.onKey.byCode['Escape'] = (ev) => {
       if (ev.type === 'keydown') return;
