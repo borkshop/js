@@ -1,4 +1,4 @@
-# 2020-11-28
+# 2020-11-29
 
 ## TODO
 
@@ -23,6 +23,7 @@
     - param: split mode and weights
     - param: border width(s)
   - Grid System <http://www.roguebasin.com/index.php?title=Grid_Based_Dungeon_Generator>
+  - random rooms + connections, ala <https://github.com/ondras/rot.js/blob/a21112e/src/map/uniform.ts>
 
 - domgeon
   - player inventory/ability system; good initial use cases include a digging
@@ -43,9 +44,35 @@
 
 ## Done
 
-Elaborated on the current state of the BSP demo.
+# Week Ending 2020-11-28
 
-# 2020-11-27
+- finished half of a classic BSP dungeon gen, on top of a flexible BSP
+  iteration core, and a new jspit demo page; for now it's just rooms, next up
+  is halls
+- made small fixes to the template revealed by the new forest world
+- adopted viewport transform approach pioneered by the new forest world
+- further simplifed template html structure, dropping the main element, and
+  making action bar buttons alway above grid planes
+- fixed buttonbar z-index so that tiles cannot occlude buttons
+- made actor lighting optional and not a special case; now the page stylesheet
+  must add a `--lightInit` to movers if desired.
+- recolored the template domgeon demo over HSL space, rather than a limited
+  discrete palette; there's still more work to do towards simplifying and
+  separating the two main concerns in the template stylesheet: rules for common
+  functionality, and (default) theming
+- fixed template grid background, which was supposed to be hard black, rather
+  than a bright black, after the recent color
+- further solidifed the subjectvie plane notion, so that it is the only thing
+  rendered now, rather than compositing with the objective plane
+
+## 2020-11-28
+
+BSP demo progress:
+- elaborated in-page status text
+- fixed all remaining off-by-one (lol ob1) errors in adjacent room edge 
+- added cdom toggle button support, and used it fro BSP's debug plane
+
+## 2020-11-27
 
 Fixed cdom-template's snowpack config by syncing it from jspit, and dropped the
 problematic cdom symlink; pain points revealed by the new forest demo.
@@ -57,18 +84,18 @@ Adopted viewport transform update from forest demo: now done with a planar CSS
 transform, rather than being calculated on each tile. Have not tried to measure
 any difference yet, but this just seems more intrinsically correct.
 
-# 2020-11-26
+## 2020-11-26
 
 Started out on a jspit BSP demo page.
 
-# 2020-11-25
+## 2020-11-25
 
 Got a basic BSP harness working under a development version of the cdom-template demo.
 Not quite sure what to do with it yet, and the hallway connector is as yet unexercised.
 
 Minor improvements to tile creation and meme copying.
 
-# 2020-11-24
+## 2020-11-24
 
 Made minor fixes and improvements while researching action and procgen systems:
 - pushed stream behaviors WIP section into the past
@@ -77,7 +104,7 @@ Made minor fixes and improvements while researching action and procgen systems:
 - fixed template grid background, which was supposed to be hard black, rather
   than a bright black, after the recent color
 
-# 2020-11-23
+## 2020-11-23
 
 Finished out sporadic progress made over the last couple days: the demo now
 renders exclusively from the subjective (meme) plane, with light values copied
