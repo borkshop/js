@@ -73,6 +73,46 @@ export class Handlers {
 }
 
 /**
+ * Couples received button events with associated input elements.
+ *
+ * A button has an associated input if it is a direct child of a label element
+ * with a valid for that resolves to an input element.
+ *
+ * Currently only input[type="checkbox"] elements are supported, toggling their
+ * checked property, and dispatching their change event.
+ *
+ * @implements {EventListenerObject}
+ */
+export class ButtonInputs {
+  /**
+   * @param {Event} event
+   */
+  handleEvent(event) {
+    const button = buttonFor(event);
+    if (!button) return;
+    const label = button.parentNode;
+    if (!(label instanceof HTMLLabelElement)) return;
+    const forEl = label.ownerDocument.getElementById(label.htmlFor);
+    if (!(forEl instanceof HTMLInputElement)) return;
+    this.handleInput(event, forEl);
+  }
+
+  /**
+   * @param {Event} event
+   * @param {HTMLInputElement} input
+   */
+  handleInput(event, input) {
+    if (input.type !== 'checkbox') return;
+    event.stopPropagation();
+    event.preventDefault();
+    input.checked = !input.checked;
+    input.dispatchEvent(new Event('change', {
+      bubbles: true, cancelable: true, composed: true,
+    }));
+  }
+}
+
+/**
  * Toggles a CSS class on any <button data-key="KEY" data-keycode="CODE">
  * element that matches received keydown/keyup events.
  *
