@@ -470,10 +470,20 @@ export class DOMgeon extends EventTarget {
       'ArrowRight': '→',
     },
     moveButtons: [
+      {x: 0, y: -1, keycode: 'ArrowUp', title: 'Move Up', label: '↑'},
+      {x: -1, y: 0, keycode: 'ArrowLeft', title: 'Move Left', label: '←'},
+      {x: 0, y: 1, keycode: 'ArrowDown', title: 'Move Down', label: '↓'},
+      {x: 1, y: 0, key: 'ArrowRight', title: 'Move Right', label: '→'},
+
       {x: 0, y: -1, key: 'w', title: 'Move Up', label: '↑'},
       {x: -1, y: 0, key: 'a', title: 'Move Left', label: '←'},
       {x: 0, y: 1, key: 's', title: 'Move Down', label: '↓'},
       {x: 1, y: 0, key: 'd', title: 'Move Right', label: '→'},
+
+      {x: 0, y: -1, key: 'k', title: 'Move Up', label: '↑'},
+      {x: -1, y: 0, key: 'h', title: 'Move Left', label: '←'},
+      {x: 0, y: 1, key: 'j', title: 'Move Down', label: '↓'},
+      {x: 1, y: 0, key: 'l', title: 'Move Right', label: '→'},
       // {x: 0, y: 0, key: 'r', title: 'Stay (no move)', label: '⊙'},
     ],
     lightLimit: 0.2,
