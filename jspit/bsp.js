@@ -131,23 +131,34 @@ export function* tangent(a, b) {
 }
 
 /**
+ * A Point from a Range; its p property is a proportion in [0, 1) indicating
+ * how far through the Range.
+ *
+ * @typedef {Point&{p: number}} RangePoint
+ */
+
+/**
  * @param {Range} range
  * @param {number} co
- * @returns {IterableIterator<Point>}
+ * @returns {IterableIterator<RangePoint>}
  */
 function* eachPointX(range, co) {
-  for (let i=0, v=range.o; i<range.n; i++, v++)
-    yield {x: v, y: co};
+  for (let i=0, v=range.o; i<range.n; i++, v++) {
+    const p = i/range.n;
+    yield {x: v, y: co, p};
+  }
 }
 
 /**
  * @param {Range} range
  * @param {number} co
- * @returns {IterableIterator<Point>}
+ * @returns {IterableIterator<RangePoint>}
  */
 function* eachPointY(range, co) {
-  for (let i=0, v=range.o; i<range.n; i++, v++)
-    yield {x: co, y: v};
+  for (let i=0, v=range.o; i<range.n; i++, v++) {
+    const p = i/range.n;
+    yield {x: co, y: v, p};
+  }
 }
 
 /**
@@ -161,7 +172,7 @@ function* eachPointY(range, co) {
  * @param {Range} o
  * @param {Rect} a
  * @param {Rect} b
- * @returns {IterableIterator<{co: boolean}&Point>}
+ * @returns {IterableIterator<{co: boolean}&RangePoint>}
  */
 export function* adjacentPoints(t, o, a, b) {
   let as, bs;
@@ -184,6 +195,6 @@ export function* adjacentPoints(t, o, a, b) {
     break;
   default: return;
   }
-  for (const pos of as) yield {co: false, ...pos}
-  for (const pos of bs) yield {co: true, ...pos}
+  for (const p of as) yield {co: false, ...p}
+  for (const p of bs) yield {co: true, ...p}
 }

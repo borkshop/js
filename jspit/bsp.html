@@ -19,9 +19,14 @@
     <aside class="menu">
       <button
         class="sticky"
-        style="float: right; font-size: 2em; line-height: 0.75"
+        style="float: right; font-size: 1.5em; line-height: 1"
         data-keycode="Escape"
         title="<Esc>: Start/Stop Game ; Hide/Show Menu">☰</button>
+
+      <button
+        style="float: right; font-size: 1.5em; line-height: 1"
+        data-keycode="Backspace"
+        title="<BS>: Regenerate the world">♻</button>
 
       <label for="debug" style="float: right">
         <button
@@ -37,6 +42,7 @@
 
         <p>
           Primarily inspired by <a
+            target="_blank"
             href="http://www.roguebasin.com/index.php?title=Basic_BSP_Dungeon_generation"
             >Rogue Basin BSP article</a>.
           Demonstrates procedural dungeon generation within a random Binary
@@ -46,32 +52,29 @@
 
         <ul>
 
-          <li>What's done:<ul>
-            <li>the current scheme runs a BSP over the viewport bounds</li>
-            <li>with a random chance (that increases with BSP tree depth) to
-              place a room within a region; rooms may be no smaller than 4 units
-              in either dimension, must have at least a 25-tile area, and at most
-              108-tile area</li>
-            <li>all of those constraint dimensions are wall-inclusive, so the
-              minimum width/height of 4 means at least 2 floor tiles</li>
-          </ul></li>
+          <li>the current scheme runs a BSP over the viewport bounds</li>
+          <li>with a random chance (that increases with BSP tree depth) to
+            place a room within a region; rooms may be no smaller than 4 units
+            in either dimension, must have at least a 25-tile area, and at most
+            108-tile area</li>
+          <li>all of those constraint dimensions are wall-inclusive, so the
+            minimum width/height of 4 means at least 2 floor tiles</li>
+          <li>adjacent rooms have their shared walls simplified, granting
+            more space to the smaller dimension, and placing a door randomly
+            weighted towards the center</li>
 
-          <li>What's next:<ul>
-            <li>rooms are currently completely disconnnected</li>
-            <li>adjacent rooms should have shared-wall
-              simplification/elimination/door addition</li>
+          <li>TODO:<ul>
             <li>non-adjacent sibling rooms (in the BSP tree) should have a
               connecting hallway added</li>
-          </ul></li>
-
-          <li>What's beyond:<ul>
-            <li>the current approach is very oriented around: fill or sub-divide both regions
-              defined by each splitting point, then reduce the tree up from its
-              leaves, connecting all parts</li>
-            <li>an alternate interpretation worth pursuing would be: start with
-              a fully supported space (all floor tiles), descend by building a
-              wall along each splitting axis, then ascend connectively
-              similarly to the current void-filler approach</li>
+            <li>Another approach entirely:<ul>
+              <li>the current approach is very oriented around: fill or sub-divide both regions
+                defined by each splitting point, then reduce the tree up from its
+                leaves, connecting all parts</li>
+              <li>an alternate interpretation worth pursuing would be: start with
+                a fully supported space (all floor tiles), descend by building a
+                wall along each splitting axis, then ascend connectively
+                similarly to the current void-filler approach</li>
+            </ul></li>
           </ul></li>
 
         </ul>
@@ -177,20 +180,26 @@
       new DOMgeonInspector(dmg, document.querySelector('#inspector'));
 
       import * as build from 'cdom/builder';
-      const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: '·'};
-      const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
-      const doorShader = {plane: 'solid', kind: 'door', classList: 'interact'};
+      const floorShader = build.toShader({
+        plane: 'solid',
+        kind: 'floor',
+        classList: ['support', 'passable'],
+        text: '·',
+      });
+      const wallShader = build.toShader({
+        plane: 'solid',
+        kind: 'wall',
+        text: '#',
+      });
+      const doorShader = build.toShader({
+        plane: 'solid',
+        kind: 'door',
+        classList: 'interact',
+      });
       const roomShader = build.roomShader({
         floors: floorShader,
         walls: wallShader,
       });
-
-      const bounds = dmg.grid.viewbox;
-
-      dmg.grid.viewPoint = {
-        x: bounds.x + bounds.w/2,
-        y: bounds.y + bounds.h/2,
-      };
 
       const minRoomSize = {w: 4, h: 4};
       const minRoomArea = 25;
@@ -203,88 +212,129 @@
       } from './bsp';
 
       import {BSP} from 'cdom/procgen';
-      const touches = new Set();
-      const res = BSP.run({
-        bounds,
-        fill: (region, id) => {
-          const {x, y, w, h} = region;
-          if (w < minRoomSize.w || h < minRoomSize.h) return null;
 
-          const depth = Math.floor(Math.log2(id + 1));
-          const box = dmg.grid.createTile({
-            id: `bsp-box-${id}`,
-            plane: 'debug',
-            kind: 'box',
-            pos: {x, y},
-            data: {bspID: id, depth, w, h},
-          });
+      const plane = 'solid';
 
-          // increasing probability of stopping here and placing a room within
-          // this region, starting once we get under max area, reaching 100%
-          // certainty at min area.
-          region = shrinkRegion(region, {a: minRoomArea, ...minRoomSize});
-          const p = (maxRoomArea - region.w * region.h) / (maxRoomArea - minRoomArea);
-          if (p < 0 || Math.random() >= p) return null;
+      function* tilesAt(pos, kind) {
+        // TODO tilesAt should require a plane, or be limited to one by a view
+        for (const tile of dmg.grid.tilesAt(pos, kind))
+          if (dmg.grid.getTilePlane(tile) === plane)
+            yield tile;
+      }
 
-          build.fillRect(dmg.grid, region, roomShader);
-          box.classList.add('leaf');
-          return [{kind: 'room', id, ...region}];
-        },
-        connect: (as, bs) => {
-          if (as.length === 1 && bs.length > 1) {
-            const tmp = as;
-            as = bs;
-            bs = tmp;
-          }
+      function removeAt(pos, kind) {
+        for (const tile of tilesAt(pos, kind))
+          tile.parentNode?.removeChild(tile);
+      }
 
-          const plane = 'solid';
-          const kindAt = (pos, kind) => dmg.grid.tilesAt(pos, kind)
-            .filter(t => dmg.grid.getTilePlane(t) === plane);
-          const mark = (pos, text) => {
-            for (const tile of kindAt(pos, 'wall')) {
-              tile.textContent = text;
-              tile.classList.add('mark');
+      function doorAt(pos) {
+        removeAt(pos, 'wall');
+        doorShader(dmg.grid, pos);
+      }
+
+      function markAt(pos, kind, text) {
+        for (const tile of tilesAt(pos, kind)) {
+          tile.textContent = text;
+          tile.classList.add('mark');
+        }
+      }
+
+      function reset() {
+        dmg.grid.clear();
+
+        const bounds = dmg.grid.viewbox;
+        dmg.grid.viewPoint = {
+          x: bounds.x + bounds.w/2,
+          y: bounds.y + bounds.h/2,
+        };
+
+        // old scheme for pair markers
+        // const marks = new Map();
+        // function marker(aid, bid) {
+        //   const k = `${aid};${bid}`;
+        //   const ck = `${bid};${aid}`;
+        //   if (marks.has(k) || marks.has(ck)) return null;
+        //   const n = marks.size;
+        //   marks.set(k, n);
+        //   // ASCII letters; uppercase for prime lowercase for co
+        //   const code = 0x01 + n;
+        //   const t   = String.fromCharCode(code | 0x40);
+        //   const cot = String.fromCharCode(code | 0x60);
+        //   return (pos, co) => markAt(pos, 'wall', co ? cot : t);
+        // }
+
+        const res = BSP.run({
+          bounds,
+          fill: (region, id) => {
+            const {x, y, w, h} = region;
+            if (w < minRoomSize.w || h < minRoomSize.h) return null;
+
+            const depth = Math.floor(Math.log2(id + 1));
+            const box = dmg.grid.createTile({
+              id: `bsp-box-${id}`,
+              plane: 'debug',
+              kind: 'box',
+              pos: {x, y},
+              data: {bspID: id, depth, w, h},
+            });
+
+            // increasing probability of stopping here and placing a room within
+            // this region, starting once we get under max area, reaching 100%
+            // certainty at min area.
+            region = shrinkRegion(region, {a: minRoomArea, ...minRoomSize});
+            const p = (maxRoomArea - region.w * region.h) / (maxRoomArea - minRoomArea);
+            if (p < 0 || Math.random() >= p) return null;
+
+            build.fillRect(dmg.grid, region, roomShader);
+            box.classList.add('leaf');
+            return [{kind: 'room', id, ...region}];
+          },
+          connect: (as, bs) => {
+            if (as.length === 1 && bs.length > 1) {
+              const tmp = as;
+              as = bs;
+              bs = tmp;
             }
-          };
 
-          for (const b of bs) {
-
-            // TODO if touching coalesce shared wall(s)
-            for (const a of as)
+            // simplify any shared walls, and add doors
+            let connected = false;
+            for (const b of bs) for (const a of as)
               for (const {t, o} of tangent(b, a)) if (o.n > 2) {
                 // shrink overlap to never consider extreme points, since
                 // erasing those walls could introduce unintended diagonal
                 // freedoms
                 o.o++, o.n -= 2;
 
-                const k = `${a.id};${b.id}`;
-                const ck = `${b.id};${a.id}`;
-                if (touches.has(k) || touches.has(ck)) continue;
-                const n = touches.size;
-                touches.add(k);
-
-                // ASCII letters; uppercase for B lowercase for A
-                const code = 0x01 + n;
-                const bt = String.fromCharCode(code | 0x40);
-                const at = String.fromCharCode(code | 0x60);
-
-                for (const {co, ...pos} of adjacentPoints(t, o, b, a))
-                  mark(pos, co ? at : bt);
+                const dir = !!(t % 2); // true iff top/bottom
+                const eraseCo = dir ? a.h < b.h : a.w < b.w; // erase from the smaller dimension
+                let choice = null, doorScore = 0;
+                for (const {co, p, ...pos} of adjacentPoints(t, o, b, a))
+                  if (co === eraseCo) {
+                    removeAt(pos, 'wall');
+                  } else {
+                    // scale of [0, 100], quadratically peaking in the middle
+                    const weight = Math.pow((0.5 - Math.abs(p - 0.5))/0.5*10, 2);
+                    const score = weight ? Math.pow(Math.random(), 1/weight) : 0;
+                    if (!choice || doorScore < score)
+                      choice = pos, doorScore = score;
+                  }
+                if (choice) {
+                  doorAt(choice);
+                  connected = true;
+                }
               }
 
             // TODO if not touching add hallway(s) to nearest
 
-            // TODO add door(s) w/ touching
+            return as.concat(bs);
+          },
+        });
+      }
 
-            as.push(b);
-          }
-          return as;
-        },
-      });
-
-      console.groupCollapsed(`BSP created ${res?.length} regions`);
-      console.table(res);
-      console.groupEnd();
+      dmg.onKey.byCode['Backspace'] = ({type}) => {
+        if (type === 'keyup') reset();
+      };
+      reset();
 
     </script>
   </body>
