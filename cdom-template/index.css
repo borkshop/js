@@ -57,12 +57,13 @@ html {
   --content-bg: var(--dark-grey);
   --content-fg: var(--dark-white);
 
-  --ui-bg: var(--dark-grey);
+  --ui-a: 60%;
+  --ui-bg: rgba(var(--dark-grey-rgb), var(--ui-a));
   --ui-fg: var(--dark-white);
   --ui-disabled: var(--lighter-grey);
 
-  --ui-accent:       var(--grey);
-  --ui-accent-focus: var(--light-grey);
+  --ui-accent:       rgba(var(--grey-rgb), var(--ui-a));
+  --ui-accent-focus: rgba(var(--light-grey-rgb), var(--ui-a));
 
   --action-color:       var(--blue);
   --action-focus-color: var(--cyan);
