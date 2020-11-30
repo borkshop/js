@@ -1,4 +1,4 @@
-# 2020-11-29
+# 2020-11-30
 
 ## TODO
 
@@ -43,6 +43,17 @@
 ## WIP
 
 ## Done
+
+Made the BSP demo resetable and playable:
+- press `<Backspace>` to regenerate the world
+- press `@` to spawn a player
+
+# 2020-11-29
+
+Finished BSP wall simplification and door placement. Started developing hallway
+connections, but wasn't able to finish that part completely...
+
+Made cdom-template buttons semi-translucent.
 
 # Week Ending 2020-11-28
 
