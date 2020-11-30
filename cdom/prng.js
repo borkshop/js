@@ -38,5 +38,8 @@ export function makePrng(seed) {
   padded.set(text);
   const prng = makeXorShift128();
   prng.update(new Uint32Array(padded.buffer));
+  // Inject some chaos.
+  // Evidently the seed is not enough.
+  while (prng.random() < 0.8) {}
   return prng;
 }

@@ -72,7 +72,7 @@ const linkShader = toShader({
 
 dmg.grid.getPlane('solid').classList.add('lit');
 
-const distance = prng.random() * 5 + 5;
+const distance = prng.random() * 10 + 10;
 const angle = prng.random() * Math.PI * 2;
 const linkPos = {
   x: Math.round(distance * Math.cos(angle)),

@@ -153,8 +153,8 @@ export const makeXorShift128 = (seed = defaultSeed) => {
     for (let i = 0; i < words.length; i += 1) {
       state[j] ^= words[i];
       j = (j + 1) & (4 - 1);
+      advance();
     }
-    advance();
   };
 
   // Math.pow(2, -32) = 2.3283064365386963e-10
