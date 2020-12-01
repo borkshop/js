@@ -150,17 +150,16 @@ export class KeySynthesizer {
     if (event instanceof MouseEvent) {
       const {type, target, view} = event;
       if (type !== 'click' || !(target instanceof HTMLButtonElement)) return;
-      const key = target.dataset['key'];
-      if (key && !target.disabled) {
+      const {key, keycode} = target.dataset;
+      if (!target.disabled && (key || keycode)) {
         event.stopPropagation();
         event.preventDefault();
         const holdable = !!view?.getComputedStyle(target).getPropertyValue('--holdable');
-        const code = target.dataset['keycode'] || '';
         /** @type {KeyboardEventInit} */
         const init = {
           bubbles: true, cancelable: true, composed: true,
           view,
-          key, code,
+          key, code: keycode,
         };
         if (!holdable) {
           target.dispatchEvent(new KeyboardEvent('keydown', init));
