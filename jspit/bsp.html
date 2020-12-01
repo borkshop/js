@@ -159,7 +159,9 @@
     </style>
 
     <div class="buttonbar moves left"></div>
-    <div class="buttonbar actions right float"></div>
+    <div class="buttonbar actions right float">
+      <button data-key="@" title="Drop Player">@</button>
+    </div>
 
     <script type="module">
       import {DOMgeon} from 'cdom/domgeon';
@@ -197,7 +199,15 @@
         classList: 'interact',
       });
       const roomShader = build.roomShader({
-        floors: floorShader,
+        floors: (grid, pos, shape) => {
+          floorShader(grid, pos, shape);
+          const {x, y, w, h} = shape;
+          if (pos.x === x + Math.floor(w/2) &&
+              pos.y === y + Math.floor(h/2)) {
+            const tile = grid.tileAt(pos, 'floor');
+            if (tile) tile.classList.add('spawn');
+          }
+        },
         walls: wallShader,
       });
 
@@ -214,6 +224,40 @@
       import {BSP} from 'cdom/procgen';
 
       const plane = 'solid';
+
+      let lastSpawn = null;
+      function chooseSpawn() {
+        let spawn = null, bestScore = 0;
+        for (const tile of dmg.grid.queryTiles({
+          plane,
+          className: 'spawn',
+        })) {
+          const pos = dmg.grid.getTilePosition(tile);
+          if (pos.x === lastSpawn?.x && pos.y === lastSpawn?.y) continue;
+          const score = Math.random();
+          if (!spawn || bestScore < score)
+            spawn = pos, bestScore = score;
+        }
+        lastSpawn = spawn;
+        return spawn;
+      }
+
+      function dropPlayer() {
+        let actor = dmg.grid.queryTile({plane: 'solid', className: ['input', 'focus', 'mover']});
+        if (actor) {
+          dmg.grid.moveTileTo(actor, chooseSpawn());
+        } else {
+          actor = dmg.grid.createTile({
+            plane: 'solid',
+            pos: chooseSpawn(),
+            kind: 'mover',
+            classList: ['input', 'focus'],
+            text: '@',
+          });
+        }
+        dmg.updateActorView(actor);
+        dmg.grid.el.classList.toggle('playing', !!actor);
+      }
 
       function* tilesAt(pos, kind) {
         // TODO tilesAt should require a plane, or be limited to one by a view
@@ -240,6 +284,8 @@
       }
 
       function reset() {
+        const playing = dmg.grid.el.classList.contains('playing');
+
         dmg.grid.clear();
 
         const bounds = dmg.grid.viewbox;
@@ -329,11 +375,17 @@
             return as.concat(bs);
           },
         });
+
+        if (playing) dropPlayer();
       }
 
       dmg.onKey.byCode['Backspace'] = ({type}) => {
         if (type === 'keyup') reset();
       };
+      dmg.onKey.byKey['@'] = ({type}) => {
+        if (type === 'keyup') dropPlayer();
+      };
+
       reset();
 
     </script>
