@@ -37,7 +37,7 @@ export function shrinkRegion(region, min, options={}) {
 }
 
 /** @enum {number} */
-export const Adjacent = {
+export const Side = {
   None: 0,
   Top: 1,
   Right: 2,
@@ -54,14 +54,14 @@ export const Adjacent = {
  *
  * @param {Rect} a
  * @param {Rect} b
- * @returns {IterableIterator<Adjacent>}
+ * @returns {IterableIterator<Side>}
  */
 export function* adjacent(a, b) {
   const {x, y, w, h} = a;
-  if (b.y + b.h === y    ) yield Adjacent.Top;
-  if (b.x       === x + w) yield Adjacent.Right;
-  if (b.y       === y + h) yield Adjacent.Bottom;
-  if (b.x + b.w === x    ) yield Adjacent.Left;
+  if (b.y + b.h === y    ) yield Side.Top;
+  if (b.x       === x + w) yield Side.Right;
+  if (b.y       === y + h) yield Side.Bottom;
+  if (b.x + b.w === x    ) yield Side.Left;
 }
 
 /**
@@ -95,18 +95,18 @@ export function overlap({o: off1, n: n1}, {o: off2, n: n2}) {
 }
 
 /**
- * @param {Adjacent} t
+ * @param {Side} s
  * @param {Rect} a
  * @param {Rect} b
  * @returns {Range}
  */
-function orthoOverlap(t, a, b) {
-  switch (t) {
-    case Adjacent.Top:
-    case Adjacent.Bottom:
+function orthoOverlap(s, a, b) {
+  switch (s) {
+    case Side.Top:
+    case Side.Bottom:
       return overlap({o: a.x, n: a.w}, {o: b.x, n: b.w});
-    case Adjacent.Right:
-    case Adjacent.Left:
+    case Side.Right:
+    case Side.Left:
       return overlap({o: a.y, n: a.h}, {o: b.y, n: b.h});
   }
   return {o: 0, n: 0};
@@ -114,7 +114,7 @@ function orthoOverlap(t, a, b) {
 
 /**
  * @typedef {object} Tangent
- * @prop {Adjacent} t
+ * @prop {Side} t
  * @prop {Range} o
  */
 
@@ -168,28 +168,28 @@ function* eachPointY(range, co) {
  * Rectangle B is considered to be the "co-rectangle", its points have their
  * added co property set true.
  *
- * @param {Adjacent} t
+ * @param {Side} s
  * @param {Range} o
  * @param {Rect} a
  * @param {Rect} b
  * @returns {IterableIterator<{co: boolean}&RangePoint>}
  */
-export function* adjacentPoints(t, o, a, b) {
+export function* adjacentPoints(s, o, a, b) {
   let as, bs;
-  switch (t) {
-  case Adjacent.Bottom:
+  switch (s) {
+  case Side.Bottom:
     as = eachPointX(o, a.y + a.h - 1);
     bs = eachPointX(o, b.y);
     break;
-  case Adjacent.Top:
+  case Side.Top:
     as = eachPointX(o, a.y);
     bs = eachPointX(o, b.y + b.h - 1);
     break;
-  case Adjacent.Right:
+  case Side.Right:
     as = eachPointY(o, a.x + a.w - 1);
     bs = eachPointY(o, b.x);
     break;
-  case Adjacent.Left:
+  case Side.Left:
     as = eachPointY(o, a.x);
     bs = eachPointY(o, b.x + b.w - 1);
     break;
@@ -197,4 +197,157 @@ export function* adjacentPoints(t, o, a, b) {
   }
   for (const p of as) yield {co: false, ...p}
   for (const p of bs) yield {co: true, ...p}
+}
+
+/** @typedef {{s: Side}&RangePoint} SidePoint */
+
+/**
+ * @param {Rect} a
+ * @param {Side[]} ss
+ * @returns {IterableIterator<SidePoint>}
+ */
+export function* sidePoints(a, ...ss) {
+  for (const s of ss) switch (s) {
+  case Side.Top:
+    for (const p of eachPointX({o: a.x+1, n: a.w-2}, a.y)) yield {s, ...p};
+    break;
+  case Side.Right:
+    for (const p of eachPointY({o: a.y+1, n: a.h-2}, a.x + a.w - 1)) yield {s, ...p};
+    break;
+  case Side.Bottom:
+    for (const p of eachPointX({o: a.x+1, n: a.w-2}, a.y + a.h - 1)) yield {s, ...p};
+    break;
+  case Side.Left:
+    for (const p of eachPointY({o: a.y+1, n: a.h-2}, a.x)) yield {s, ...p};
+    break;
+  }
+}
+
+// TODO maybe collect hallway utils into a static class and/or object
+
+/**
+ * @typedef {object} ConnectionPoint
+ * @prop {SidePoint} ap
+ * @prop {SidePoint} bp
+ */
+
+/**
+ * Yields candidate hallway connection points between two rectangles.
+ *
+ * @param {Rect} a
+ * @param {Rect} b
+ * @param {object} [options]
+ * @param {(p: Point) => boolean} [options.pointFilter]
+ * @returns {IterableIterator<ConnectionPoint>}
+ */
+export function* connectionPoints(a, b, options={}) {
+  const {
+    pointFilter = _p => true
+  } = options;
+  for (const aSide of [Side.Top, Side.Right, Side.Bottom, Side.Left])
+  for (const bSide of [Side.Top, Side.Right, Side.Bottom, Side.Left])
+  if (hallwaySidesFeasible(bSide, aSide))
+    for (const ap of sidePoints(a, aSide)) if (pointFilter(ap))
+    for (const bp of sidePoints(b, bSide)) if (pointFilter(bp))
+    if (hallwayPointsFeasible(ap, bp)) yield {ap, bp};
+}
+
+/**
+ * Returns false if it's not feasible to build a hallway between
+ * any point along two given rectangle sides.
+ *
+ * @param {Side} a
+ * @param {Side} b
+ * @returns {boolean}
+ */
+function hallwaySidesFeasible(a, b) {
+  if (a === b) return false;
+  // TODO more checks
+  return true;
+}
+
+/**
+ * Returns false if it's not feasible to build a hallway between
+ * two given rectangle side points. Currently the only check is
+ * against backtracking.
+ *
+ * @param {SidePoint} a
+ * @param {SidePoint} b
+ * @returns {boolean}
+ */
+function hallwayPointsFeasible(a, b) {
+  const td = absDist(a, b);
+
+  const aFirst = addPoints(a, sideNormal(a.s));
+  const bFirst = addPoints(b, sideNormal(b.s));
+
+  // would require backtracking
+  if (absDist(aFirst, b) > td) return false;
+  if (absDist(a, bFirst) > td) return false;
+
+  // TODO more checks
+  return true;
+}
+
+/**
+ * @param {Side} s
+ * @returns {Point}
+ */
+export function sideNormal(s) {
+  switch (s) {
+  case Side.Top:    return {x:  0, y: -1};
+  case Side.Right:  return {x:  1, y:  0};
+  case Side.Bottom: return {x:  0, y:  1};
+  case Side.Left:   return {x: -1, y:  0};
+  }
+  return {x: 0, y: 0};
+}
+
+/**
+ * @param {Point} a
+ * @param {Point} b
+ * @returns {number}
+ */
+export function absDist(a, b) {
+  return Math.abs(b.x - a.x) +
+         Math.abs(b.y - a.y);
+}
+
+/**
+ * @param {Point} a
+ * @param {Point} b
+ * @returns {Point}
+ */
+function addPoints(a, b) {
+  return {x: a.x + b.x, y: a.y + b.y};
+}
+
+/**
+ * Randomly choose things, with an optional weight function and custom random
+ * generator.
+ *
+ * @template T
+ * @param {Iterable<T>} things
+ * @param {object} [options]
+ * @param {() => number} [options.random]
+ * @param {(thing: T) => number} [options.weight]
+ * @returns {null|T}
+ */
+export function choose(things, options={}) {
+  const {
+    random = Math.random,
+    weight = () => 1,
+  } = options;
+  let choice = null, bestScore = 0;
+  for (const thing of things) {
+    const w = weight(thing);
+    if (w <= 0) {
+      if (!choice) choice = thing;
+      continue;
+    }
+    const score = Math.pow(random(), 1/w);
+    if (!choice || bestScore < score)
+      choice = thing, bestScore = score;
+  }
+  return choice;
 }

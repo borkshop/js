@@ -51,7 +51,6 @@
         </p>
 
         <ul>
-
           <li>the current scheme runs a BSP over the viewport bounds</li>
           <li>with a random chance (that increases with BSP tree depth) to
             place a room within a region; rooms may be no smaller than 4 units
@@ -62,22 +61,18 @@
           <li>adjacent rooms have their shared walls simplified, granting
             more space to the smaller dimension, and placing a door randomly
             weighted towards the center</li>
-
-          <li>TODO:<ul>
-            <li>non-adjacent sibling rooms (in the BSP tree) should have a
-              connecting hallway added</li>
-            <li>Another approach entirely:<ul>
-              <li>the current approach is very oriented around: fill or sub-divide both regions
-                defined by each splitting point, then reduce the tree up from its
-                leaves, connecting all parts</li>
-              <li>an alternate interpretation worth pursuing would be: start with
-                a fully supported space (all floor tiles), descend by building a
-                wall along each splitting axis, then ascend connectively
-                similarly to the current void-filler approach</li>
-            </ul></li>
-          </ul></li>
-
+          <li>(adjacent blocks of) rooms then have connective hallways added;
+          this mostly works most of the time!</li>
         </ul>
+
+        <p>Press <code>@</code> to play through the level; press <code>@</code>
+        again if you get stuck to be respawned in a random room.</p>
+
+        <p>Press <code>&lt;Backspace&gt;</code> to spin the RNG again and build
+        a new world.</p>
+
+        <p>Press <code>^</code> to toggle an overlay that shows the chosen
+        binary tree regions.</p>
 
       </section>
 
@@ -219,6 +214,9 @@
         shrinkRegion,
         tangent,
         adjacentPoints,
+        connectionPoints,
+        sideNormal,
+        Side,
       } from './bsp';
 
       import {BSP} from 'cdom/procgen';
@@ -283,6 +281,14 @@
         }
       }
 
+      function turnTo(dir, at, to) {
+        if (dir.y !== 0 && at.y === to.y)
+          return {y: 0, x: Math.sign(to.x - at.x)};
+        if (dir.x !== 0 && at.x === to.x)
+          return {x: 0, y: Math.sign(to.y - at.y)};
+        return null;
+      }
+
       function reset() {
         const playing = dmg.grid.el.classList.contains('playing');
 
@@ -294,20 +300,14 @@
           y: bounds.y + bounds.h/2,
         };
 
-        // old scheme for pair markers
-        // const marks = new Map();
-        // function marker(aid, bid) {
-        //   const k = `${aid};${bid}`;
-        //   const ck = `${bid};${aid}`;
-        //   if (marks.has(k) || marks.has(ck)) return null;
-        //   const n = marks.size;
-        //   marks.set(k, n);
-        //   // ASCII letters; uppercase for prime lowercase for co
-        //   const code = 0x01 + n;
-        //   const t   = String.fromCharCode(code | 0x40);
-        //   const cot = String.fromCharCode(code | 0x60);
-        //   return (pos, co) => markAt(pos, 'wall', co ? cot : t);
-        // }
+        const interiorPoints = new Set();
+
+        let regionID = 0;
+        function makeRegion(region, kind, id) {
+          if (typeof id !== 'number') id = ++regionID; // gen next (connect phase)
+          else regionID = Math.max(id, regionID);      // given (fill phase)
+          return {kind, id, ...region};
+        }
 
         const res = BSP.run({
           bounds,
@@ -333,7 +333,7 @@
 
             build.fillRect(dmg.grid, region, roomShader);
             box.classList.add('leaf');
-            return [{kind: 'room', id, ...region}];
+            return [makeRegion(region, 'room', id)];
           },
           connect: (as, bs) => {
             if (as.length === 1 && bs.length > 1) {
@@ -354,7 +354,8 @@
                 const dir = !!(t % 2); // true iff top/bottom
                 const eraseCo = dir ? a.h < b.h : a.w < b.w; // erase from the smaller dimension
                 let choice = null, doorScore = 0;
-                for (const {co, p, ...pos} of adjacentPoints(t, o, b, a))
+                for (const {co, p, ...pos} of adjacentPoints(t, o, b, a)) {
+                  interiorPoints.add(`${pos.x},${pos.y}`);
                   if (co === eraseCo) {
                     removeAt(pos, 'wall');
                   } else {
@@ -364,13 +365,116 @@
                     if (!choice || doorScore < score)
                       choice = pos, doorScore = score;
                   }
+                }
                 if (choice) {
                   doorAt(choice);
                   connected = true;
                 }
               }
 
-            // TODO if not touching add hallway(s) to nearest
+            if (!connected) {
+              // find closest candidate wall points to form a hallway
+              // TODO maybe do random weighting rather than hard "best candidate"?
+              const cand = [];
+              for (const a of as) for (const b of bs) for (const cp of connectionPoints(a, b, {
+                pointFilter: ({x,y}) => !interiorPoints.has(`${x},${y}`),
+              })) {
+                const {ap, bp} = cp;
+                const d = {x: bp.x - ap.x, y: bp.y - ap.y};
+                const td = Math.abs(d.x) + Math.abs(d.y);
+                cand.push({td, d, a, b, ...cp});
+              }
+              cand.sort(({td: atd}, {td: btd}) => atd - btd);
+              for (const c of cand) {
+                const {td, ap, bp} = c;
+
+                /** @type {Rect[]} */
+                const halls = [];
+                /** @type {Rect|null} */
+                let hall = null;
+
+                let dir = sideNormal(ap.s);
+                let at = {x: ap.x, y: ap.y};
+                let sanity = td;
+                let ok = true;
+                while (ok) {
+                  if (sanity--<0) {
+                    ok = false;
+                    break;
+                  }
+
+                  const newDir = turnTo(dir, at, bp);
+                  if (newDir) {
+                    if (hall) halls.push(hall)
+                    hall = null, dir = newDir;
+                  }
+
+                  at.x += dir.x, at.y += dir.y;
+                  if (at.x === bp.x && at.y === bp.y) {
+                    if (hall) halls.push(hall);
+                    break;
+                  }
+
+                  if (!dir.x && !dir.y) {
+                    ok = false;
+                    break;
+                  }
+
+                  // blocked by any present .tile:not(.passable) in hall region
+                  // (floor or flanking walls)
+                  for (const p of dir.y
+                    ? [{x: at.x-1, y: at.y},   at, {x: at.x+1, y: at.y}]
+                    : [{x: at.x,   y: at.y-1}, at, {x: at.x,   y: at.y+1}])
+                    for (const present of tilesAt(p))
+                      if (!present.classList.contains('passable')) {
+                        ok = false;
+                        break;
+                      }
+
+                  if (hall) hall.w += dir.x, hall.h += dir.y;
+                  else hall = {...at, w: dir.x, h: dir.y};
+
+                }
+                if (!ok) continue;
+
+                // TODO factor out some sort of procgen.HallBuilder
+                // TODO rework this to be more like a Digger algo, or to place
+                // expanded hall rectangles, and then simplify shared walls ala
+                // the above
+                for (let k=0; k<halls.length; k++) {
+                  const hall = halls[k];
+
+                  let {x, y, w, h} = hall;
+                  if (h < 0) y += h + 1, h = -h;
+                  if (w < 0) x += w + 1, w = -w;
+
+                  /** @param {Point}
+                   * @returns {Point[]} */
+                  const section = h
+                    ? ({x, y}) => [{x: x-1, y}, {x, y}, {x: x+1, y}]
+                    : ({x, y}) => [{x, y: y-1}, {x, y}, {x, y: y+1}]
+
+                  const n = w || h;
+                  const dx = w ? 1 : 0, dy = h ? 1 : 0;
+
+                  for (let i=0; i<n; i++, x += dx, y += dy) {
+                    const ps = section({x, y});
+                    for (let j=0; j<ps.length; j++) {
+                      const p = ps[j];
+                      floorShader(dmg.grid, p);
+                      if (j === 0 || j === ps.length-1) wallShader(dmg.grid, p);
+                      else removeAt(p, 'wall');
+                    }
+                  }
+
+                  as.push(makeRegion(hall, 'hall'));
+                }
+                doorAt(ap);
+                doorAt(bp);
+                connected = true;
+                break;
+              }
+            }
 
             return as.concat(bs);
           },
