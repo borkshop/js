@@ -1,4 +1,4 @@
-# 2020-12-01
+# 2020-12-02
 
 ## TODO
 
@@ -43,6 +43,15 @@
 ## WIP
 
 ## Done
+
+Refactored and flattened the `cdom/prng` module:
+- simplified over `ArrayBuffer`
+- reified into a proper class, easing state inspection, type checking, and code
+  readability
+- as a follow-on, redid the forest seed generation scheme, improving randomness
+  across levels
+
+# 2020-12-01
 
 Finished a sufficient version of the BSP generator, be declaring it's remaining
 bugs to be "fun".
