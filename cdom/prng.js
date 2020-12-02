@@ -249,3 +249,41 @@ export class XorShift128Plus {
     return new XorShift128Plus(this.state);
   }
 }
+
+/**
+ * Runs a given world function under a stream of RNGs, returning a frequency
+ * counts for each successive random choice.
+ *
+ * For example, if you care about rolling 4d6 (drop lowest) across a few stats:
+ *
+ *   PRNG.countOutcomes(someLikelyRNGs, (rng, count) => {
+ *     for (let i = 0; i < 6; ++i) count(
+ *       new Array(4).fill(1).map(              // 4
+ *         _ => Math.floor((rng.random() * 6))) // d6
+ *         .sort((a, b) => a - b)               // sort ascending
+ *         .slice(1)                            // drop lowest
+ *         .reduce((a, b) => a + b)             // sum
+ *     );
+ *   })
+ *
+ * For someLikelyRNGs, typically use either an eager Array<PRNG> or a lazy
+ * function()* to generate many lazily; it can also be easier to write a
+ * stateful generator, than to build an ahead-of-time list for scenarios where
+ * each generation's seed is determined by the prior generation.
+ *
+ * @param {Iterable<PRNG>} rngs
+ * @param {(rng: PRNG, collect: (value: number) => void) => void} world
+ */
+export function countOutcomes(rngs, world) {
+  /** @type {Array<Map<number, number>>} */
+  const rounds = [];
+  for (const rng of rngs) {
+    let i = 0;
+    world(rng, value => {
+      const counts = rounds[i] || (rounds[i] = new Map());
+      counts.set(value, (counts.get(value) || 0) + 1);
+      i++;
+    });
+  }
+  return rounds;
+}

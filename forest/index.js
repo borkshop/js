@@ -9,6 +9,56 @@ const prng = PRNG.ingest(
   search.get('seed') || '',
 );
 
+/* {
+  // logs frequency tables to test prng seeding
+  const levels = 100;
+  for (const {label, rngs} of [
+    {
+      label: 'old scheme, cold',
+      rngs: new Array(levels).fill(1).map((_, i) =>
+        PRNG.ingest(new PRNG.XorShift128Plus(), `${i}`)),
+    },
+    {
+      label: 'old scheme, warmed up',
+      rngs: new Array(levels).fill(1).map((_, i) => {
+        const rng = PRNG.ingest(new PRNG.XorShift128Plus(), `${i}`);
+        while (rng.random() < 0.8) {}
+        return rng;
+      }),
+    },
+    {
+      label: 'new scheme',
+      rngs: function*() {
+        let seed = '';
+        for (let i = 0; i < levels; ++i) {
+          const rng = PRNG.ingest(new PRNG.XorShift128Plus(), seed);
+          const nextSeedBytes = new Uint8Array(32);
+          rng.scribble(nextSeedBytes.buffer);
+          seed = btoa(String.fromCharCode(...nextSeedBytes));
+          yield rng;
+        }
+      },
+    },
+  ]) {
+    console.log(label);
+    console.table(PRNG.countOutcomes(
+      typeof rngs === 'function' ? rngs() : rngs, (rng, count) => {
+        const rounds = 10, n = 100;
+        // roll {rounds}d{N}
+        for (let i = 0; i < rounds; ++i)
+          count(Math.floor((rng.random() * n)));
+      })
+      // transform count maps to descending outcome strings
+      .map(counts => Array.from(counts.entries())
+        .map(([rand, count]) => [count, rand])
+        .sort(([a], [b]) => b - a)
+        .map(([count, rand]) => `${count} x ${rand}`)
+      )
+      // only return the top-10 from reach round
+      .map(row => row.slice(0, 10)));
+  }
+} */
+
 const nextSeedBytes = new Uint8Array(32);
 prng.scribble(nextSeedBytes.buffer);
 const nextSeed = btoa(String.fromCharCode(...nextSeedBytes));
