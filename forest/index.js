@@ -4,13 +4,14 @@ import {fillRect, toShader} from 'cdom/builder';
 import * as PRNG from 'cdom/prng';
 
 const search = new URLSearchParams(location.search);
-const seed = search.get('seed') || '';
 const prng = PRNG.ingest(
   new PRNG.XorShift128Plus(),
-  seed,
+  search.get('seed') || '',
 );
-// Inject some chaos, evidently xorshift128+'s update isn't sufficient alone.
-while (prng.random() < 0.8) {}
+
+const nextSeedBytes = new Uint8Array(32);
+prng.scribble(nextSeedBytes.buffer);
+const nextSeed = btoa(String.fromCharCode(...nextSeedBytes));
 
 /** @typedef { import("cdom/tiles").Point } Point */
 /** @typedef { import("cdom/tiles").Rect } Rect */
@@ -51,14 +52,7 @@ const dmg = new DOMgeon({
   lightLimit: 0.2,
   procs: {
     link() {
-      const search = new URLSearchParams();
-      const match = /^(.*?)(\d*)$/.exec(seed);
-      if (match === null) {
-        throw new Error('assertion failed: regex should always match');
-      }
-      const n = parseInt(match[2] || '0', 10);
-      search.set('seed', `${match[1]}${n + 1}`);
-      window.location.search = search.toString();
+      window.location.search = new URLSearchParams({seed: nextSeed}).toString();
     }
   }
 });
