@@ -1,4 +1,4 @@
-# 2020-11-30
+# 2020-12-01
 
 ## TODO
 
@@ -43,6 +43,11 @@
 ## WIP
 
 ## Done
+
+Finished a sufficient version of the BSP generator, be declaring it's remaining
+bugs to be "fun".
+
+# 2020-11-30
 
 Made the BSP demo resetable and playable:
 - press `<Backspace>` to regenerate the world
