@@ -1,11 +1,16 @@
 // @ts-check
 import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
 import {fillRect, toShader} from 'cdom/builder';
-import {makePrng} from 'cdom/prng';
+import * as PRNG from 'cdom/prng';
 
 const search = new URLSearchParams(location.search);
 const seed = search.get('seed') || '';
-const prng = makePrng(seed);
+const prng = PRNG.ingest(
+  new PRNG.XorShift128Plus(),
+  seed,
+);
+// Inject some chaos, evidently xorshift128+'s update isn't sufficient alone.
+while (prng.random() < 0.8) {}
 
 /** @typedef { import("cdom/tiles").Point } Point */
 /** @typedef { import("cdom/tiles").Rect } Rect */
