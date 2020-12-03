@@ -20,6 +20,60 @@ function buttonFor(event) {
 }
 
 /**
+ * Allows aliasing buttons by key or keycode, canceling any originating event,
+ * and dispatching a newly synthesized copy of the source event on any resolved
+ * button element (skipping any intermediaries in the case of an alias chain).
+ *
+ * @implements {EventListenerObject}
+ */
+export class KeyAliases {
+  /**
+   * @param {HTMLButtonElement} button
+   * @returns {null|HTMLButtonElement}
+   */
+  lookup(button) {
+    const alias = button.dataset.alias;
+    if (!alias) return null;
+
+    const root = button.ownerDocument;
+    /** @type {null|HTMLButtonElement} */
+    const next = root.querySelector(`button[data-keycode="${alias}"]`)
+              || root.querySelector(`button[data-key="${alias}"]`);
+    if (!next) return null;
+    return this.lookup(next) || next;
+  }
+
+  /**
+   * @param {Event} event
+   */
+  handleEvent(event) {
+    const button = buttonFor(event);
+    if (!button) return;
+    const alias = this.lookup(button);
+    if (!alias) return;
+
+    event.stopImmediatePropagation();
+    event.preventDefault();
+    // TODO do we need to filter down the event fields into *EventInit?
+    if (event instanceof MouseEvent) {
+      alias.dispatchEvent(new MouseEvent(event.type, {
+        bubbles: true, cancelable: true, composed: true,
+        view: button.ownerDocument.defaultView,
+        // TODO other MouseEventInit fields?
+      }))
+    } else if (event instanceof KeyboardEvent) {
+      const {key, keycode} = alias.dataset;
+      alias.dispatchEvent(new KeyboardEvent(event.type, {
+        bubbles: true, cancelable: true, composed: true,
+        view: button.ownerDocument.defaultView,
+        key, code: keycode,
+        // TODO other KeyboardEventInit fields?
+      }));
+    }
+  }
+}
+
+/**
  * Allows easy handling of one-off keys, cancelling the triggering event.
  * Useful for handling things like a modal Escape menu.
  *
