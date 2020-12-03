@@ -494,15 +494,10 @@ export class DOMgeon extends EventTarget {
   /** @type {DOMgeonConfig} */
   config = {
     moveButtons: [
-      {x: 0, y: -1, keycode: 'ArrowUp', title: 'Move Up', label: '↑'},
-      {x: -1, y: 0, keycode: 'ArrowLeft', title: 'Move Left', label: '←'},
-      {x: 0, y: 1, keycode: 'ArrowDown', title: 'Move Down', label: '↓'},
-      {x: 1, y: 0, keycode: 'ArrowRight', title: 'Move Right', label: '→'},
-
-      {x: 0, y: -1, key: 'w', title: 'Move Up', label: '↑'},
-      {x: -1, y: 0, key: 'a', title: 'Move Left', label: '←'},
-      {x: 0, y: 1, key: 's', title: 'Move Down', label: '↓'},
-      {x: 1, y: 0, key: 'd', title: 'Move Right', label: '→'},
+      {x: 0, y: -1, key: 'w', title: 'Move Up', label: '↑', aliasCodes: ['ArrowUp']},
+      {x: -1, y: 0, key: 'a', title: 'Move Left', label: '←', aliasCodes: ['ArrowLeft']},
+      {x: 0, y: 1, key: 's', title: 'Move Down', label: '↓', aliasCodes: ['ArrowDown']},
+      {x: 1, y: 0, key: 'd', title: 'Move Right', label: '→', aliasCodes: ['ArrowRight']},
 
       // These override the existing buttons if present.
       // {x: 0, y: -1, key: 'k', title: 'Move Up', label: '↑'},
