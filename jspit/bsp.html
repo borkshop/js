@@ -244,6 +244,9 @@
         let actor = dmg.grid.queryTile({plane: 'solid', className: ['input', 'focus', 'mover']});
         if (actor) {
           dmg.grid.moveTileTo(actor, chooseSpawn());
+          // TODO this is a hack to invalidate FOV, should be auto-invalidated
+          // by any tile moving
+          dmg._fovID = '';
         } else {
           actor = dmg.grid.createTile({
             plane: 'solid',
