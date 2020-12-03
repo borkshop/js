@@ -3,6 +3,7 @@
 import {
   Handlers,
   ButtonInputs,
+  KeyAliases,
   KeyHighlighter,
   KeySynthesizer,
   KeyChorder,
@@ -451,6 +452,9 @@ export class DOMgeon extends EventTarget {
   /** @type {KeySynthesizer} */
   keySynth
 
+  /** @type {KeyAliases} */
+  keyAliases
+
   /** @type {KeyHighlighter} */
   keyShow
 
@@ -547,13 +551,17 @@ export class DOMgeon extends EventTarget {
     this.onKey = new Handlers();
     this.inputs = new ButtonInputs();
     this.keySynth = new KeySynthesizer();
+    this.keyAliases = new KeyAliases();
     this.keyShow = new KeyHighlighter();
     this.keyChord = new KeyChorder();
 
+    this.ui.addEventListener('click', this.keyAliases);
     this.ui.addEventListener('click', this.onKey);
     this.ui.addEventListener('click', this.keySynth);
     this.keys.addEventListener('keyup', this.keyShow);
     this.keys.addEventListener('keydown', this.keyShow);
+    this.keys.addEventListener('keyup', this.keyAliases);
+    this.keys.addEventListener('keydown', this.keyAliases);
     this.keys.addEventListener('keyup', this.onKey);
     this.keys.addEventListener('keydown', this.onKey);
     this.keys.addEventListener('keyup', this.inputs);
