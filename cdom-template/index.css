@@ -105,6 +105,10 @@ a:active  { color: var(--acting-color); }
   z-index: 100;
 }
 
+.buttonbar button[data-alias] {
+  display: none;
+}
+
 .buttonbar.left {
   position: absolute;
   bottom: 0;

@@ -102,6 +102,10 @@ a:hover,
 a:focus   { color: var(--action-focus-color); text-decoration: underline }
 a:active  { color: var(--acting-color); }
 
+.buttonbar button[data-alias] {
+  display: none;
+}
+
 .buttonbar {
   z-index: 100;
 }
