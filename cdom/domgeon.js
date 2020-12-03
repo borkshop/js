@@ -566,12 +566,10 @@ export class DOMgeon extends EventTarget {
     let moveButtons = toActionButtonSpecs(localStorage.getItem('domgeon.moveButtons'));
     if (!moveButtons) {
       moveButtons = [...this.config.moveButtons];
-      localStorage.setItem('domgeon.moveButtons', JSON.stringify(moveButtons));
     } else {
       const moves = new Set(moveButtons.map(({x,y}) => `${x},${y}`));
       if (this.config.moveButtons.some(({x,y}) => !moves.has(`${x},${y}`))) {
         moveButtons.push(...this.config.moveButtons.filter(({x,y}) => !moves.has(`${x},${y}`)));
-        localStorage.setItem('domgeon.moveButtons', JSON.stringify(moveButtons));
       }
     }
 
