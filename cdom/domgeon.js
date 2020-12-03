@@ -162,6 +162,9 @@ function procMove({dmg, grid, mover, move}) {
  * @prop {string} [keycode]
  * @prop {string} [title]
  * @prop {string} [legend]
+ * @prop {string} [alias]
+ * @prop {string[]} [aliasKeys]
+ * @prop {string[]} [aliasCodes]
  */
 
 /** @typedef {ButtonSpec&Partial<Move>} ActionButtonSpec */
@@ -222,7 +225,7 @@ function updateActionButton(cont, button, spec) {
     return;
   }
 
-  let {label, key, keycode, title, legend, action, x, y, data} = spec;
+  let {label, key, keycode, alias, title, legend, action, x, y, data} = spec;
   if (data?.key) ({key, ...data} = data);
   if (data?.keycode) ({keycode, ...data} = data);
   if (data?.legend) ({legend, ...data} = data);
@@ -244,8 +247,10 @@ function updateActionButton(cont, button, spec) {
   }
   if (button.dataset['key'] !== key) button.dataset['key'] = key;
   if (button.dataset['keycode'] !== keycode) button.dataset['keycode'] = keycode;
+  if (button.dataset['alias'] !== alias) button.dataset['alias'] = alias;
   priorData.delete('key');
   priorData.delete('keycode');
+  priorData.delete('alias');
 
   if (!label) label = '';
   else if (legend === label) legend = '';
@@ -272,6 +277,20 @@ function updateActionButton(cont, button, spec) {
   }
   for (const prop of priorData)
     delete button.dataset[prop];
+
+  if (spec.aliasKeys) for (const aliasKey of spec.aliasKeys)
+    updateActionButton(cont, cont.querySelector(`button[data-key="${aliasKey}"]`), {
+      alias: keycode || key,
+      label: `Alias: ${keycode || key}`,
+      key: aliasKey
+    });
+
+  if (spec.aliasCodes) for (const aliasCode of spec.aliasCodes)
+    updateActionButton(cont, cont.querySelector(`button[data-keycode="${aliasCode}"]`), {
+      alias: keycode || key,
+      label: `Alias: ${keycode || key}`,
+      keycode: aliasCode,
+    });
 }
 
 /**
