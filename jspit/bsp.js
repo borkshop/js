@@ -712,9 +712,10 @@ function reset() {
 }
 
 /** @param {Event} event */
-dmg.onKey.byCode['Backspace'] = ({type}) => { if (type === 'keyup') reset(); };
+dmg.onKey.byID['regenWorld'] = ({type}) => { if (type === 'keyup') reset(); };
 
 /** @param {Event} event */
-dmg.onKey.byKey['@'] = ({type}) => { if (type === 'keyup') dropPlayer(); };
+dmg.onKey.byID['dropPlayer'] = ({type}) => { if (type === 'keyup') dropPlayer(); };
+
 
 reset();
