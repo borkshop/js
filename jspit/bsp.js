@@ -577,32 +577,8 @@ class BSPRoomBuilder {
     // simplify any shared walls, and add doors
     let connected = false;
     for (const b of bs) for (const a of as)
-      for (const {t, o} of tangent(b, a)) if (o.n > 2) {
-        // shrink overlap to never consider extreme points, since
-        // erasing those walls could introduce unintended diagonal
-        // freedoms
-        o.o++, o.n -= 2;
-
-        const dir = !!(t % 2); // true iff top/bottom
-        const eraseCo = dir ? a.h < b.h : a.w < b.w; // erase from the smaller dimension
-        let choice = null, doorScore = 0;
-        for (const {co, p, ...pos} of adjacentPoints(t, o, b, a)) {
-          this.interiorPoints.add(`${pos.x},${pos.y}`);
-          if (co === eraseCo) {
-            removeAt(pos, 'wall');
-          } else {
-            // scale of [0, 100], quadratically peaking in the middle
-            const weight = Math.pow((0.5 - Math.abs(p - 0.5))/0.5*10, 2);
-            const score = weight ? Math.pow(Math.random(), 1/weight) : 0;
-            if (!choice || doorScore < score)
-              choice = pos, doorScore = score;
-          }
-        }
-        if (choice) {
-          doorAt(choice);
-          connected = true;
-        }
-      }
+      for (const tan of tangent(b, a))
+        if (this.simplifyTangentRooms(b, a, tan)) connected = true;
 
     if (!connected) {
       // find closest candidate wall points to form a hallway
@@ -707,6 +683,41 @@ class BSPRoomBuilder {
     }
 
     return as.concat(bs);
+  }
+
+  /**
+   * @param {Rect} a
+   * @param {Rect} b
+   * @param {Tangent} a2b
+   * @returns {boolean}
+   */
+  simplifyTangentRooms(a, b, {t, o}) {
+    if (o.n <= 2) return false;
+
+    // shrink overlap to never consider extreme points, since
+    // erasing those walls could introduce unintended diagonal
+    // freedoms
+    o.o++, o.n -= 2;
+
+    const dir = !!(t % 2); // true iff top/bottom
+    const eraseCo = dir ? b.h < a.h : b.w < a.w; // erase from the smaller dimension
+    let choice = null, doorScore = 0;
+    for (const {co, p, ...pos} of adjacentPoints(t, o, a, b)) {
+      this.interiorPoints.add(`${pos.x},${pos.y}`);
+      if (co === eraseCo) {
+        removeAt(pos, 'wall');
+      } else {
+        // scale of [0, 100], quadratically peaking in the middle
+        const weight = Math.pow((0.5 - Math.abs(p - 0.5))/0.5*10, 2);
+        const score = weight ? Math.pow(Math.random(), 1/weight) : 0;
+        if (!choice || doorScore < score)
+          choice = pos, doorScore = score;
+      }
+    }
+    if (!choice) return false;
+
+    doorAt(choice);
+    return true;
   }
 }
 
