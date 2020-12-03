@@ -44,12 +44,21 @@
 
 ## Done
 
+Improved button input situation:
+- added proper key/code alias support
+- change default config to WASD with arrow key aliases
+- stop over-eager config saving
+- expand support for default button legends
+
 Refactored and flattened the `cdom/prng` module:
 - simplified over `ArrayBuffer`
 - reified into a proper class, easing state inspection, type checking, and code
   readability
 - as a follow-on, redid the forest seed generation scheme, improving randomness
   across levels
+- took time to evaluate prior seed generation schemes
+
+Fixed BSP FOV invalidation after a player respawn/move.
 
 # 2020-12-01
 
