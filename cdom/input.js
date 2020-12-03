@@ -65,7 +65,7 @@ export class Handlers {
   handleEvent(event) {
     const handler = this.lookup(event);
     if (handler) {
-      event.stopPropagation();
+      event.stopImmediatePropagation();
       event.preventDefault();
       handler(event);
     }
@@ -103,7 +103,7 @@ export class ButtonInputs {
    */
   handleInput(event, input) {
     if (input.type !== 'checkbox') return;
-    event.stopPropagation();
+    event.stopImmediatePropagation();
     event.preventDefault();
     input.checked = !input.checked;
     input.dispatchEvent(new Event('change', {
@@ -152,7 +152,7 @@ export class KeySynthesizer {
       if (type !== 'click' || !(target instanceof HTMLButtonElement)) return;
       const {key, keycode} = target.dataset;
       if (!target.disabled && (key || keycode)) {
-        event.stopPropagation();
+        event.stopImmediatePropagation();
         event.preventDefault();
         const holdable = !!view?.getComputedStyle(target).getPropertyValue('--holdable');
         /** @type {KeyboardEventInit} */
@@ -217,7 +217,7 @@ export class KeyChorder extends EventTarget {
         return;
       }
     }
-    event.stopPropagation();
+    event.stopImmediatePropagation();
     event.preventDefault();
   }
 }
