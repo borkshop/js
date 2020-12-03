@@ -14,7 +14,7 @@ function buttonFor(event) {
     if (!root) return null;
     /** @type {null|HTMLButtonElement} */
     return root.querySelector(`button[data-keycode="${code}"]`)
-      || root.querySelector(`button[data-key="${key}"]`);
+        || root.querySelector(`button[data-key="${key}"]`);
   }
   return null;
 }
