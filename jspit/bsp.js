@@ -569,13 +569,10 @@ class BSPRoomBuilder {
   /**
    * @param {Rect[]} as
    * @param {Rect[]} bs
+   * @returns {Rect[]}
    */
   connect(as, bs) {
-    if (as.length === 1 && bs.length > 1) {
-      const tmp = as;
-      as = bs;
-      bs = tmp;
-    }
+    if (as.length === 1 && bs.length > 1) return this.connect(bs, as);
 
     // simplify any shared walls, and add doors
     let connected = false;
