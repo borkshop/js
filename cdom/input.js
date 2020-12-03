@@ -93,6 +93,9 @@ export class Handlers {
   /** @type {EventHandlers} */
   byKey = {}
 
+  /** @type {EventHandlers} */
+  byID = {}
+
   /**
    * @param {Event} event
    * @returns {null|EventHandler}
@@ -102,14 +105,18 @@ export class Handlers {
     if (event instanceof MouseEvent) {
       const {type} = event;
       if (type === 'click' && button) {
+        const {id} = button;
         const {key, keycode} = button.dataset;
         const by = (keycode && this.byCode[keycode])
-                || (key && this.byKey[key]);
+                || (key && this.byKey[key])
+                || (id && this.byID[id]);
         if (by) return by;
       }
     } else if (event instanceof KeyboardEvent) {
       const {key, code} = event;
-      const by = this.byCode[code] || this.byKey[key];
+      const by = (code && this.byCode[code])
+              || (key && this.byKey[key])
+              || (button?.id && this.byID[button.id]);
       if (by) return by;
     }
     return null;
