@@ -202,6 +202,14 @@ function toActionButtonSpecs(btns) {
   return btns.length ? btns : null;
 }
 
+/** @type {Object<string, string>} */
+const defaultCodeLegends = {
+  'ArrowLeft': '←',
+  'ArrowDown': '↓',
+  'ArrowUp': '↑',
+  'ArrowRight': '→',
+};
+
 /**
  * @param {HTMLElement} cont
  * @param {null|HTMLButtonElement} button
@@ -227,6 +235,7 @@ function updateActionButton(cont, button, spec) {
 
   if (!key) key = button.dataset['key'];
   if (!keycode) keycode = button.dataset['keycode'];
+  if (!legend && keycode) legend = defaultCodeLegends[keycode];
   if (!legend && key) {
     const K = key.toUpperCase();
     if (!label) label = K;
@@ -414,8 +423,6 @@ class MemeCollector {
  * @typedef {Object} DOMgeonConfig
  * @prop {ActionButtonSpec[]} moveButtons - movement button definitions;
  * defaults to WASD cardinal moves
- * @prop {Object<string, string>} moveLegends - legends for movement buttons if
- * not specified in moveButtons; defaults to unicode arrows
  * @prop {number} lightLimit
  */
 
@@ -463,12 +470,6 @@ export class DOMgeon extends EventTarget {
 
   /** @type {DOMgeonConfig} */
   config = {
-    moveLegends: {
-      'ArrowLeft': '←',
-      'ArrowDown': '↓',
-      'ArrowUp': '↑',
-      'ArrowRight': '→',
-    },
     moveButtons: [
       {x: 0, y: -1, keycode: 'ArrowUp', title: 'Move Up', label: '↑'},
       {x: -1, y: 0, keycode: 'ArrowLeft', title: 'Move Left', label: '←'},
@@ -574,15 +575,10 @@ export class DOMgeon extends EventTarget {
     }
 
     if (this.moveBar) for (let moveButton of moveButtons) {
-      let {key, keycode, x, y} = moveButton;
+      let {x, y} = moveButton;
       /** @type {null|HTMLButtonElement} */
       const button = this.moveBar.querySelector(`button[data-movedir="${x},${y}"]`);
-      if (button?.dataset['key']) key = button.dataset['key'];
-      const legend =
-        keycode ? this.config.moveLegends[keycode]
-        : key ? this.config.moveLegends[key]
-        : undefined;
-      updateActionButton(this.moveBar, button, {legend, ...moveButton});
+      updateActionButton(this.moveBar, button, moveButton);
     }
   }
 
