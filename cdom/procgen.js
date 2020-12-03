@@ -45,7 +45,7 @@ export class BSP {
    * @prop {(a: R, b: R) => null|R} connect - region connector function,
    * receives data from two areas that are each either a filled region leaf or
    * a tree of connected regions
-   * @prop {Size} limit - sub-division limit
+   * @prop {Size} [limit] - sub-division limit
    * @prop {() => number} [random] - random chooser, must return a value
    * in the range [0, 1.0), defaults to Math.random
    * @prop {number} [splitRange] - random range to choose split values

@@ -1,6 +1,6 @@
 // @ts-check
 
-// TODO move worthwhile parts into cdom/procgen
+/// TODO move worthwhile parts into cdom/procgen
 
 /** @typedef { import("cdom/tiles").Point } Point */
 /** @typedef { import("cdom/tiles").Size } Size */
@@ -351,3 +351,370 @@ export function choose(things, options={}) {
   }
   return choice;
 }
+
+/// demo page specifics
+
+import {find, mustFind} from 'cdom/wiring';
+
+import {DOMgeon} from 'cdom/domgeon';
+const dmg =
+  new DOMgeon({
+  ui: document.body,
+  keys: document.body,
+  grid: mustFind('.grid'),
+  moveBar: find('.buttonbar.moves'),
+  actionBar: find('.buttonbar.actions'),
+  lightLimit: 0.2,
+});
+globalThis.dmg = dmg;
+
+find('#debug')?.addEventListener('change', ev => {
+  if (ev.target instanceof HTMLInputElement)
+    dmg.grid.el.classList.toggle('debugging', !!ev.target.checked);
+});
+
+import {DOMgeonInspector} from 'cdom/domgeon';
+const inspectorEl = find('#inspector');
+if (inspectorEl) new DOMgeonInspector(dmg, inspectorEl);
+
+import * as build from 'cdom/builder';
+const floorShader = build.toShader({
+  plane: 'solid',
+  kind: 'floor',
+  classList: ['support', 'passable'],
+  text: '·',
+});
+const wallShader = build.toShader({
+  plane: 'solid',
+  kind: 'wall',
+  text: '#',
+});
+const doorShader = build.toShader({
+  plane: 'solid',
+  kind: 'door',
+  classList: 'interact',
+});
+const roomShader = build.roomShader({
+  floors: (grid, pos, shape) => {
+    floorShader(grid, pos, shape);
+    const {x, y, w, h} = shape;
+    if (pos.x === x + Math.floor(w/2) &&
+        pos.y === y + Math.floor(h/2)) {
+      const tile = grid.tileAt(pos, 'floor');
+      if (tile) tile.classList.add('spawn');
+    }
+  },
+  walls: wallShader,
+});
+
+const minRoomSize = {w: 4, h: 4};
+const minRoomArea = 25;
+const maxRoomArea = 108;
+
+import {BSP} from 'cdom/procgen';
+
+const plane = 'solid';
+
+/** @type {null|Point} */
+let lastSpawn = null;
+function chooseSpawn() {
+  let spawn = null, bestScore = 0;
+  for (const tile of dmg.grid.queryTiles({
+    plane,
+    className: 'spawn',
+  })) {
+    const pos = dmg.grid.getTilePosition(tile);
+    if (pos.x === lastSpawn?.x && pos.y === lastSpawn?.y) continue;
+    const score = Math.random();
+    if (!spawn || bestScore < score)
+      spawn = pos, bestScore = score;
+  }
+  lastSpawn = spawn;
+  return spawn;
+}
+
+function dropPlayer() {
+  const spawn = chooseSpawn();
+  if (!spawn) return;
+  let actor = dmg.grid.queryTile({plane: 'solid', className: ['input', 'focus', 'mover']});
+  if (actor) {
+    dmg.grid.moveTileTo(actor, spawn);
+    // TODO this is a hack to invalidate FOV, should be auto-invalidated
+    // by any tile moving
+    dmg._fovID = '';
+  } else {
+    actor = dmg.grid.createTile({
+      plane: 'solid',
+      pos: spawn,
+      kind: 'mover',
+      classList: ['input', 'focus'],
+      text: '@',
+    });
+  }
+  dmg.updateActorView(actor);
+  dmg.grid.el.classList.toggle('playing', !!actor);
+}
+
+/**
+ * @param {Point} pos
+ * @param {string} [kind]
+ */
+function* tilesAt(pos, kind) {
+  // TODO tilesAt should require a plane, or be limited to one by a view
+  const tiles = kind
+    ? dmg.grid.tilesAt(pos, kind)
+    : dmg.grid.tilesAt(pos);
+  for (const tile of tiles)
+    if (dmg.grid.getTilePlane(tile) === plane)
+      yield tile;
+}
+
+/**
+ * @param {Point} pos
+ * @param {string} kind
+ */
+function removeAt(pos, kind) {
+  for (const tile of tilesAt(pos, kind))
+    tile.parentNode?.removeChild(tile);
+}
+
+const buildCtx = /** @type {build.Context} */ (dmg.grid); // FIXME TileSpec.kind
+
+/**
+ * @param {Point} pos
+ */
+function doorAt(pos) {
+  removeAt(pos, 'wall');
+  doorShader(buildCtx, pos, null);
+}
+
+// /**
+//  * @param {Point} pos
+//  * @param {string} kind
+//  * @param {string} text
+//  */
+// function markAt(pos, kind, text) {
+//   for (const tile of tilesAt(pos, kind)) {
+//     tile.textContent = text;
+//     tile.classList.add('mark');
+//   }
+// }
+
+/**
+ * @param {Point} dir
+ * @param {Point} at
+ * @param {Point} to
+ */
+function turnTo(dir, at, to) {
+  if (dir.y !== 0 && at.y === to.y)
+    return {y: 0, x: Math.sign(to.x - at.x)};
+  if (dir.x !== 0 && at.x === to.x)
+    return {x: 0, y: Math.sign(to.y - at.y)};
+  return null;
+}
+
+function reset() {
+  const playing = dmg.grid.el.classList.contains('playing');
+
+  dmg.grid.clear();
+
+  const bounds = dmg.grid.viewbox;
+  dmg.grid.viewPoint = {
+    x: bounds.x + bounds.w/2,
+    y: bounds.y + bounds.h/2,
+  };
+
+  const interiorPoints = new Set();
+
+  let regionID = 0;
+
+  /**
+   * @param {Rect} region
+   * @param {string} kind
+   * @param {number} [id]
+   */
+  function makeRegion(region, kind, id) {
+    if (typeof id !== 'number') id = ++regionID; // gen next (connect phase)
+    else regionID = Math.max(id, regionID);      // given (fill phase)
+    return {kind, id, ...region};
+  }
+
+  BSP.run({
+    bounds,
+    fill: (region, id) => {
+      const {x, y, w, h} = region;
+      if (w < minRoomSize.w || h < minRoomSize.h) return null;
+
+      const depth = Math.floor(Math.log2(id + 1));
+      const box = dmg.grid.createTile({
+        id: `bsp-box-${id}`,
+        plane: 'debug',
+        kind: 'box',
+        pos: {x, y},
+        data: {bspID: id, depth, w, h},
+      });
+
+      // increasing probability of stopping here and placing a room within
+      // this region, starting once we get under max area, reaching 100%
+      // certainty at min area.
+      region = shrinkRegion(region, {a: minRoomArea, ...minRoomSize});
+      const p = (maxRoomArea - region.w * region.h) / (maxRoomArea - minRoomArea);
+      if (p < 0 || Math.random() >= p) return null;
+
+      build.fillRect(buildCtx, region, roomShader);
+      box.classList.add('leaf');
+      return [makeRegion(region, 'room', id)];
+    },
+    connect: (as, bs) => {
+      if (as.length === 1 && bs.length > 1) {
+        const tmp = as;
+        as = bs;
+        bs = tmp;
+      }
+
+      // simplify any shared walls, and add doors
+      let connected = false;
+      for (const b of bs) for (const a of as)
+        for (const {t, o} of tangent(b, a)) if (o.n > 2) {
+          // shrink overlap to never consider extreme points, since
+          // erasing those walls could introduce unintended diagonal
+          // freedoms
+          o.o++, o.n -= 2;
+
+          const dir = !!(t % 2); // true iff top/bottom
+          const eraseCo = dir ? a.h < b.h : a.w < b.w; // erase from the smaller dimension
+          let choice = null, doorScore = 0;
+          for (const {co, p, ...pos} of adjacentPoints(t, o, b, a)) {
+            interiorPoints.add(`${pos.x},${pos.y}`);
+            if (co === eraseCo) {
+              removeAt(pos, 'wall');
+            } else {
+              // scale of [0, 100], quadratically peaking in the middle
+              const weight = Math.pow((0.5 - Math.abs(p - 0.5))/0.5*10, 2);
+              const score = weight ? Math.pow(Math.random(), 1/weight) : 0;
+              if (!choice || doorScore < score)
+                choice = pos, doorScore = score;
+            }
+          }
+          if (choice) {
+            doorAt(choice);
+            connected = true;
+          }
+        }
+
+      if (!connected) {
+        // find closest candidate wall points to form a hallway
+        // TODO maybe do random weighting rather than hard "best candidate"?
+        const cand = [];
+        for (const a of as) for (const b of bs) for (const cp of connectionPoints(a, b, {
+          pointFilter: ({x,y}) => !interiorPoints.has(`${x},${y}`),
+        })) {
+          const {ap, bp} = cp;
+          const d = {x: bp.x - ap.x, y: bp.y - ap.y};
+          const td = Math.abs(d.x) + Math.abs(d.y);
+          cand.push({td, d, a, b, ...cp});
+        }
+        cand.sort(({td: atd}, {td: btd}) => atd - btd);
+        for (const c of cand) {
+          const {td, ap, bp} = c;
+
+          /** @type {Rect[]} */
+          const halls = [];
+          /** @type {Rect|null} */
+          let hall = null;
+
+          let dir = sideNormal(ap.s);
+          let at = {x: ap.x, y: ap.y};
+          let sanity = td;
+          let ok = true;
+          while (ok) {
+            if (sanity--<0) {
+              ok = false;
+              break;
+            }
+
+            const newDir = turnTo(dir, at, bp);
+            if (newDir) {
+              if (hall) halls.push(hall)
+              hall = null, dir = newDir;
+            }
+
+            at.x += dir.x, at.y += dir.y;
+            if (at.x === bp.x && at.y === bp.y) {
+              if (hall) halls.push(hall);
+              break;
+            }
+
+            if (!dir.x && !dir.y) {
+              ok = false;
+              break;
+            }
+
+            // blocked by any present .tile:not(.passable) in hall region
+            // (floor or flanking walls)
+            for (const p of dir.y
+              ? [{x: at.x-1, y: at.y},   at, {x: at.x+1, y: at.y}]
+              : [{x: at.x,   y: at.y-1}, at, {x: at.x,   y: at.y+1}])
+              for (const present of tilesAt(p))
+                if (!present.classList.contains('passable')) {
+                  ok = false;
+                  break;
+                }
+
+            if (hall) hall.w += dir.x, hall.h += dir.y;
+            else hall = {...at, w: dir.x, h: dir.y};
+
+          }
+          if (!ok) continue;
+
+          // TODO factor out some sort of procgen.HallBuilder
+          // TODO rework this to be more like a Digger algo, or to place
+          // expanded hall rectangles, and then simplify shared walls ala
+          // the above
+          for (let k=0; k<halls.length; k++) {
+            const hall = halls[k];
+
+            let {x, y, w, h} = hall;
+            if (h < 0) y += h + 1, h = -h;
+            if (w < 0) x += w + 1, w = -w;
+
+            const section = h
+              ? /** @param {Point} p */ ({x, y}) => [{x: x-1, y}, {x, y}, {x: x+1, y}]
+              : /** @param {Point} p */ ({x, y}) => [{x, y: y-1}, {x, y}, {x, y: y+1}];
+
+            const n = w || h;
+            const dx = w ? 1 : 0, dy = h ? 1 : 0;
+
+            for (let i=0; i<n; i++, x += dx, y += dy) {
+              const ps = section({x, y});
+              for (let j=0; j<ps.length; j++) {
+                const p = ps[j];
+                floorShader(buildCtx, p, hall);
+                if (j === 0 || j === ps.length-1) wallShader(buildCtx, p, hall);
+                else removeAt(p, 'wall');
+              }
+            }
+
+            as.push(makeRegion(hall, 'hall'));
+          }
+          doorAt(ap);
+          doorAt(bp);
+          connected = true;
+          break;
+        }
+      }
+
+      return as.concat(bs);
+    },
+  });
+
+  if (playing) dropPlayer();
+}
+
+/** @param {Event} event */
+dmg.onKey.byCode['Backspace'] = ({type}) => { if (type === 'keyup') reset(); };
+
+/** @param {Event} event */
+dmg.onKey.byKey['@'] = ({type}) => { if (type === 'keyup') dropPlayer(); };
+
+reset();
