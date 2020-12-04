@@ -583,16 +583,9 @@ class BSPRoomBuilder {
     if (!connected) {
       // find closest candidate wall points to form a hallway
       // TODO maybe do random weighting rather than hard "best candidate"?
-      const cand = [];
-      for (const a of as) for (const b of bs) for (const cp of connectionPoints(a, b, {
-        pointFilter: ({x,y}) => !this.interiorPoints.has(`${x},${y}`),
-      })) {
-        const {ap, bp} = cp;
-        const d = {x: bp.x - ap.x, y: bp.y - ap.y};
-        const td = Math.abs(d.x) + Math.abs(d.y);
-        cand.push({td, d, a, b, ...cp});
-      }
-      cand.sort(({td: atd}, {td: btd}) => atd - btd);
+      const cand = Array
+        .from(this.hallwayCandidates(as, bs))
+        .sort(({td: atd}, {td: btd}) => atd - btd);
       for (const c of cand) {
         const {td, ap, bp} = c;
 
@@ -718,6 +711,29 @@ class BSPRoomBuilder {
 
     doorAt(choice);
     return true;
+  }
+
+  /**
+   * @param {Point} p
+   */
+  isInteriorPoint({x,y}) {
+    return !this.interiorPoints.has(`${x},${y}`);
+  }
+
+  /**
+   * @param {Rect[]} as
+   * @param {Rect[]} bs
+   */
+  *hallwayCandidates(as, bs) {
+    for (const a of as) for (const b of bs)
+      for (const cp of connectionPoints(a, b, {
+        pointFilter: p => this.isInteriorPoint(p),
+      })) {
+        const {ap, bp} = cp;
+        const d = {x: bp.x - ap.x, y: bp.y - ap.y};
+        const td = Math.abs(d.x) + Math.abs(d.y);
+        yield {td, d, a, b, ...cp};
+      }
   }
 }
 
