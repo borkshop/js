@@ -653,9 +653,10 @@ class BSPRoomBuilder {
     // find closest candidate wall points to form a hallway
     // TODO maybe do random weighting rather than hard "best candidate"?
     const cand = Array
-      .from(this.hallwayCandidates(as, bs))
-      .sort(({td: atd}, {td: btd}) => atd - btd);
-    for (const {td, ap, bp} of cand) {
+      .from(this.hallwayCandidates(as, bs));
+    for (const {td, ap, bp} of cand
+      .sort(({td: a}, {td: b}) => b - a)
+    ) {
 
       /** @type {Rect[]} */
       const halls = [];
