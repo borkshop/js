@@ -1,4 +1,4 @@
-# 2020-12-02
+# 2020-12-03
 
 ## TODO
 
@@ -43,6 +43,17 @@
 ## WIP
 
 ## Done
+
+Refactored BSP rooms-and-halls builder, fixing a simple priority reversal bug
+that was causing disconnected levels. There may still be other, now rarer,
+sources of disconnected levels tho.
+
+Added by-id button handling, use it in BSP demo.
+
+Ejected BSP page script module in alignment with forest structure; will work on
+rectifying the `builder.Context` vs `TileSpec` type awkwardness soon.
+
+# 2020-12-02
 
 Improved button input situation:
 - added proper key/code alias support
