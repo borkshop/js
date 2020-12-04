@@ -519,6 +519,7 @@ function turnTo(dir, at, to) {
 class BSPRoomBuilder {
   interiorPoints = new Set()
   regionID = 0
+  random = Math.random
 
   reset() {
     this.interiorPoints.clear();
@@ -559,7 +560,7 @@ class BSPRoomBuilder {
     // certainty at min area.
     region = shrinkRegion(region, {a: minRoomArea, ...minRoomSize});
     const p = (maxRoomArea - region.w * region.h) / (maxRoomArea - minRoomArea);
-    if (p < 0 || Math.random() >= p) return null;
+    if (p < 0 || this.random() >= p) return null;
 
     build.fillRect(buildCtx, region, roomShader);
     box.classList.add('leaf');
@@ -610,7 +611,7 @@ class BSPRoomBuilder {
       } else {
         // scale of [0, 100], quadratically peaking in the middle
         const weight = Math.pow((0.5 - Math.abs(p - 0.5))/0.5*10, 2);
-        const score = weight ? Math.pow(Math.random(), 1/weight) : 0;
+        const score = weight ? Math.pow(this.random(), 1/weight) : 0;
         if (!choice || doorScore < score)
           choice = pos, doorScore = score;
       }
