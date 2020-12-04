@@ -580,100 +580,8 @@ class BSPRoomBuilder {
       for (const tan of tangent(b, a))
         if (this.simplifyTangentRooms(b, a, tan)) connected = true;
 
-    if (!connected) {
-      // find closest candidate wall points to form a hallway
-      // TODO maybe do random weighting rather than hard "best candidate"?
-      const cand = Array
-        .from(this.hallwayCandidates(as, bs))
-        .sort(({td: atd}, {td: btd}) => atd - btd);
-      for (const c of cand) {
-        const {td, ap, bp} = c;
-
-        /** @type {Rect[]} */
-        const halls = [];
-        /** @type {Rect|null} */
-        let hall = null;
-
-        let dir = sideNormal(ap.s);
-        let at = {x: ap.x, y: ap.y};
-        let sanity = td;
-        let ok = true;
-        while (ok) {
-          if (sanity--<0) {
-            ok = false;
-            break;
-          }
-
-          const newDir = turnTo(dir, at, bp);
-          if (newDir) {
-            if (hall) halls.push(hall)
-            hall = null, dir = newDir;
-          }
-
-          at.x += dir.x, at.y += dir.y;
-          if (at.x === bp.x && at.y === bp.y) {
-            if (hall) halls.push(hall);
-            break;
-          }
-
-          if (!dir.x && !dir.y) {
-            ok = false;
-            break;
-          }
-
-          // blocked by any present .tile:not(.passable) in hall region
-          // (floor or flanking walls)
-          for (const p of dir.y
-            ? [{x: at.x-1, y: at.y},   at, {x: at.x+1, y: at.y}]
-            : [{x: at.x,   y: at.y-1}, at, {x: at.x,   y: at.y+1}])
-            for (const present of tilesAt(p))
-              if (!present.classList.contains('passable')) {
-                ok = false;
-                break;
-              }
-
-          if (hall) hall.w += dir.x, hall.h += dir.y;
-          else hall = {...at, w: dir.x, h: dir.y};
-
-        }
-        if (!ok) continue;
-
-        // TODO factor out some sort of procgen.HallBuilder
-        // TODO rework this to be more like a Digger algo, or to place
-        // expanded hall rectangles, and then simplify shared walls ala
-        // the above
-        for (let k=0; k<halls.length; k++) {
-          const hall = halls[k];
-
-          let {x, y, w, h} = hall;
-          if (h < 0) y += h + 1, h = -h;
-          if (w < 0) x += w + 1, w = -w;
-
-          const section = h
-            ? /** @param {Point} p */ ({x, y}) => [{x: x-1, y}, {x, y}, {x: x+1, y}]
-            : /** @param {Point} p */ ({x, y}) => [{x, y: y-1}, {x, y}, {x, y: y+1}];
-
-          const n = w || h;
-          const dx = w ? 1 : 0, dy = h ? 1 : 0;
-
-          for (let i=0; i<n; i++, x += dx, y += dy) {
-            const ps = section({x, y});
-            for (let j=0; j<ps.length; j++) {
-              const p = ps[j];
-              floorShader(buildCtx, p, hall);
-              if (j === 0 || j === ps.length-1) wallShader(buildCtx, p, hall);
-              else removeAt(p, 'wall');
-            }
-          }
-
-          as.push(this.makeRegion(hall, 'hall'));
-        }
-        doorAt(ap);
-        doorAt(bp);
-        connected = true;
-        break;
-      }
-    }
+    // try to build a hallway between the two (presumed connected) sets
+    if (!connected && this.buildHallBetween(as, bs)) connected = true;
 
     return as.concat(bs);
   }
@@ -734,6 +642,105 @@ class BSPRoomBuilder {
         const td = Math.abs(d.x) + Math.abs(d.y);
         yield {td, d, a, b, ...cp};
       }
+  }
+
+  /**
+   * @param {Rect[]} as
+   * @param {Rect[]} bs
+   * @returns {boolean}
+   */
+  buildHallBetween(as, bs) {
+    // find closest candidate wall points to form a hallway
+    // TODO maybe do random weighting rather than hard "best candidate"?
+    const cand = Array
+      .from(this.hallwayCandidates(as, bs))
+      .sort(({td: atd}, {td: btd}) => atd - btd);
+    for (const {td, ap, bp} of cand) {
+
+      /** @type {Rect[]} */
+      const halls = [];
+      /** @type {Rect|null} */
+      let hall = null;
+
+      let dir = sideNormal(ap.s);
+      let at = {x: ap.x, y: ap.y};
+      let sanity = td;
+      let ok = true;
+      while (ok) {
+        if (sanity--<0) {
+          ok = false;
+          break;
+        }
+
+        const newDir = turnTo(dir, at, bp);
+        if (newDir) {
+          if (hall) halls.push(hall)
+          hall = null, dir = newDir;
+        }
+
+        at.x += dir.x, at.y += dir.y;
+        if (at.x === bp.x && at.y === bp.y) {
+          if (hall) halls.push(hall);
+          break;
+        }
+
+        if (!dir.x && !dir.y) {
+          ok = false;
+          break;
+        }
+
+        // blocked by any present .tile:not(.passable) in hall region
+        // (floor or flanking walls)
+        for (const p of dir.y
+          ? [{x: at.x-1, y: at.y},   at, {x: at.x+1, y: at.y}]
+          : [{x: at.x,   y: at.y-1}, at, {x: at.x,   y: at.y+1}])
+          for (const present of tilesAt(p))
+            if (!present.classList.contains('passable')) {
+              ok = false;
+              break;
+            }
+
+        if (hall) hall.w += dir.x, hall.h += dir.y;
+        else hall = {...at, w: dir.x, h: dir.y};
+
+      }
+      if (!ok) continue;
+
+      // TODO factor out some sort of procgen.HallBuilder
+      // TODO rework this to be more like a Digger algo, or to place
+      // expanded hall rectangles, and then simplify shared walls ala
+      // the above
+      for (let k=0; k<halls.length; k++) {
+        const hall = halls[k];
+
+        let {x, y, w, h} = hall;
+        if (h < 0) y += h + 1, h = -h;
+        if (w < 0) x += w + 1, w = -w;
+
+        const section = h
+          ? /** @param {Point} p */ ({x, y}) => [{x: x-1, y}, {x, y}, {x: x+1, y}]
+          : /** @param {Point} p */ ({x, y}) => [{x, y: y-1}, {x, y}, {x, y: y+1}];
+
+        const n = w || h;
+        const dx = w ? 1 : 0, dy = h ? 1 : 0;
+
+        for (let i=0; i<n; i++, x += dx, y += dy) {
+          const ps = section({x, y});
+          for (let j=0; j<ps.length; j++) {
+            const p = ps[j];
+            floorShader(buildCtx, p, hall);
+            if (j === 0 || j === ps.length-1) wallShader(buildCtx, p, hall);
+            else removeAt(p, 'wall');
+          }
+        }
+
+        as.push(this.makeRegion(hall, 'hall'));
+      }
+      doorAt(ap);
+      doorAt(bp);
+      return true;
+    }
+    return false;
   }
 }
 
