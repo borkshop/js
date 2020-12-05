@@ -501,16 +501,19 @@ function doorAt(pos) {
 // }
 
 /**
- * @param {Point} dir
- * @param {Point} at
- * @param {Point} to
+ * @param {Point} pos
  */
-function turnTo(dir, at, to) {
-  if (dir.y !== 0 && at.y === to.y)
-    return {y: 0, x: Math.sign(to.x - at.x)};
-  if (dir.x !== 0 && at.x === to.x)
-    return {x: 0, y: Math.sign(to.y - at.y)};
-  return null;
+function digAt(pos) {
+  // shade room tiles into a 3x3 cell around the dig point
+  const place = {x: pos.x-1, y: pos.y-1, w: 3, h: 3};
+  build.fillRect(buildCtx, place, (ctx, pos, shape) => {
+    if (!ctx.tileAt(pos, 'support'))
+      roomShader(ctx, pos, shape);
+  });
+  // then dig out that location
+  for (const present of tilesAt(pos))
+    if (!present.classList.contains('passable'))
+      present.parentNode?.removeChild(present);
 }
 
 /**
@@ -582,7 +585,16 @@ class BSPRoomBuilder {
         if (this.simplifyTangentRooms(b, a, tan)) connected = true;
 
     // try to build a hallway between the two (presumed connected) sets
-    if (!connected && this.buildHallBetween(as, bs)) connected = true;
+    if (!connected) {
+      const halls = this.buildHallBetween(as, bs);
+      if (halls) {
+        for (const hall of halls) {
+          // TODO simplify redundant walls
+          as.push(this.makeRegion(hall, 'hall'));
+        }
+        connected = true;
+      }
+    }
 
     return as.concat(bs);
   }
@@ -648,101 +660,115 @@ class BSPRoomBuilder {
   /**
    * @param {Rect[]} as
    * @param {Rect[]} bs
-   * @returns {boolean}
+   * @returns {null|Rect[]}
    */
   buildHallBetween(as, bs) {
     // find closest candidate wall points to form a hallway
     // TODO maybe do random weighting rather than hard "best candidate"?
     const cand = Array
       .from(this.hallwayCandidates(as, bs));
-    for (const {td, ap, bp} of cand
+    for (const {ap, bp} of cand
       .sort(({td: a}, {td: b}) => b - a)
     ) {
-
-      /** @type {Rect[]} */
-      const halls = [];
-      /** @type {Rect|null} */
-      let hall = null;
-
-      let dir = sideNormal(ap.s);
-      let at = {x: ap.x, y: ap.y};
-      let sanity = td;
-      let ok = true;
-      while (ok) {
-        if (sanity--<0) {
-          ok = false;
-          break;
-        }
-
-        const newDir = turnTo(dir, at, bp);
-        if (newDir) {
-          if (hall) halls.push(hall)
-          hall = null, dir = newDir;
-        }
-
-        at.x += dir.x, at.y += dir.y;
-        if (at.x === bp.x && at.y === bp.y) {
-          if (hall) halls.push(hall);
-          break;
-        }
-
-        if (!dir.x && !dir.y) {
-          ok = false;
-          break;
-        }
-
-        // blocked by any present .tile:not(.passable) in hall region
-        // (floor or flanking walls)
-        for (const p of dir.y
-          ? [{x: at.x-1, y: at.y},   at, {x: at.x+1, y: at.y}]
-          : [{x: at.x,   y: at.y-1}, at, {x: at.x,   y: at.y+1}])
-          for (const present of tilesAt(p))
-            if (!present.classList.contains('passable')) {
-              ok = false;
-              break;
-            }
-
-        if (hall) hall.w += dir.x, hall.h += dir.y;
-        else hall = {...at, w: dir.x, h: dir.y};
-
-      }
-      if (!ok) continue;
-
-      // TODO factor out some sort of procgen.HallBuilder
-      // TODO rework this to be more like a Digger algo, or to place
-      // expanded hall rectangles, and then simplify shared walls ala
-      // the above
-      for (let k=0; k<halls.length; k++) {
-        const hall = halls[k];
-
-        let {x, y, w, h} = hall;
-        if (h < 0) y += h + 1, h = -h;
-        if (w < 0) x += w + 1, w = -w;
-
-        const section = h
-          ? /** @param {Point} p */ ({x, y}) => [{x: x-1, y}, {x, y}, {x: x+1, y}]
-          : /** @param {Point} p */ ({x, y}) => [{x, y: y-1}, {x, y}, {x, y: y+1}];
-
-        const n = w || h;
-        const dx = w ? 1 : 0, dy = h ? 1 : 0;
-
-        for (let i=0; i<n; i++, x += dx, y += dy) {
-          const ps = section({x, y});
-          for (let j=0; j<ps.length; j++) {
-            const p = ps[j];
-            floorShader(buildCtx, p, hall);
-            if (j === 0 || j === ps.length-1) wallShader(buildCtx, p, hall);
-            else removeAt(p, 'wall');
-          }
-        }
-
-        as.push(this.makeRegion(hall, 'hall'));
-      }
+      const {trace, ok} = this.traceHallway(ap, bp);
+      const halls = ok ? this.extrudeHallway(ap, trace) : null;
+      if (!halls?.length) continue;
+      for (const pos of trace) digAt(pos);
       doorAt(ap);
       doorAt(bp);
-      return true;
+      return halls;
     }
-    return false;
+    return null;
+  }
+
+  /**
+   * @param {SidePoint} from
+   * @param {SidePoint} to
+   * @returns {{
+   *   trace: Point[]
+   *   ok: boolean
+   *   reason?: string
+   *   blocked?: HTMLElement
+   * }}
+   */
+  traceHallway(from, to) {
+    const trace = [];
+    const maxSteps = Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
+    let {x, y} = from, dir = sideNormal(from.s);
+    while (trace.length < maxSteps) {
+      // turn if we've exhausted the current direction
+      if (dir.y !== 0 && y === to.y)
+        dir = {y: 0, x: Math.sign(to.x - x)};
+      if (dir.x !== 0 && x === to.x)
+        dir = {x: 0, y: Math.sign(to.y - y)};
+
+      // are we there yet?
+      x += dir.x, y += dir.y;
+      // TODO ensure proper approach against sideNormal(to)
+      if (x === to.x && y === to.y) return {trace, ok: true};
+      trace.push({x, y});
+
+      // we somehow lost the way; shouldn't be possible, since the dir update
+      // above should only go to zero when we reach to
+      if (!dir.x && !dir.y)
+        return {trace, ok: false, reason: 'hallway trace lost the way'};
+
+      // blocked by any present .tile:not(.passable) in hall region
+      // (floor or flanking walls)
+      for (const p of dir.y
+        ? [{x: x-1, y}, {x, y}, {x: x+1, y}]
+        : [{x, y: y-1}, {x, y}, {x, y: y+1}])
+        for (const present of tilesAt(p))
+          if (!present.classList.contains('passable'))
+            return {trace, ok: false, reason: 'blocked', blocked: present};
+    }
+    return {trace, ok: false, reason: 'max hallway steps exceeded'};
+  }
+
+  /**
+   * @param {SidePoint} from
+   * @param {Point[]} trace
+   * @returns {null|Rect[]}
+   */
+  extrudeHallway(from, trace) {
+    /** @type {Rect[]} */
+    const halls = [];
+
+    /** @type {Rect|null} */
+    let hall = null;
+
+    let {x, y} = from;
+    for (const to of trace) {
+      const dx = to.x - x, dy = to.y - y;
+      if (Math.abs(dx) + Math.abs(dy) !== 1) return null; // invalid trace
+
+      // the digging head defines a newly revealed 2x3 region
+      const head = dx === 0
+        ? {x: x-1, w: 3, y, h: dy*2}
+        : {y: y-1, h: 3, x, w: dx*2};
+
+      // such head region either extends the current hall, or starts a new one
+      if      (hall?.x === head.x) hall.h += dy;
+      else if (hall?.y === head.y) hall.w += dx;
+      else if (!hall) hall = head; // first hall, no overlap since trace is exclusive
+      else {
+        halls.push(hall);
+        // prior hall overlaps half of the revealed region
+        head.x -= dx, head.y -= dy;
+        hall = head;
+      }
+
+      ({x, y} = to);
+    }
+    if (hall) halls.push(hall);
+
+    // normalize negative width/heights
+    return halls.map(hall => {
+      let {x, y, w, h} = hall;
+      if (w < 0) hall.x = x + w + 1, hall.w = -w;
+      if (h < 0) hall.y = y + h + 1, hall.h = -h;
+      return hall;
+    });
   }
 }
 
