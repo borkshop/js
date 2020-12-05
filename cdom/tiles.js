@@ -63,6 +63,11 @@
  * @prop {Object<string,any>} [data] - specifies new tile dataset attributes
  */
 
+/** @typedef {TileSpec&{
+ *   id?: string
+ *   kind: string
+ * }} NewTileSpec */
+
 /**
  * Inserts a 0 bit after each of 26 the low bits of x, masking
  * away any higher bits; this is the best we can do in JavaScript since integer
@@ -276,7 +281,7 @@ export class TileGrid {
   _kindid = new Map()
 
   /**
-   * @param {{kind: string}&TileSpec} spec
+   * @param {NewTileSpec} spec
    * @returns {HTMLElement}
    */
   buildTile(spec) {
@@ -291,7 +296,7 @@ export class TileGrid {
   /**
    * Creates a new tile element from a given specification, returning it.
    *
-   * @param {{id?: string, kind: string}&TileSpec} idSpec
+   * @param {NewTileSpec} idSpec
    * @return {HTMLElement}
    */
   createTile({id, ...spec}) {
