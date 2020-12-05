@@ -3,6 +3,7 @@
 /** @typedef { import("./tiles").Point } Point */
 /** @typedef { import("./tiles").Rect } Rect */
 /** @typedef { import("./tiles").TileSpec } TileSpec */
+/** @typedef { import("./tiles").NewTileSpec } NewTileSpec */
 
 /**
  * A shader is a function that gets called over many points, and is expected to
@@ -26,9 +27,9 @@
  * Shaders get called under this abstracted Context context.
  *
  * @typedef {object} Context
- * @prop {(spec:TileSpec) => HTMLElement} buildTile
- * @prop {(pos:Point, ...className:string[]) => HTMLElement|null} tileAt
- * @prop {(pos:Point, ...className:string[]) => HTMLElement[]} tilesAt
+ * @prop {(spec: NewTileSpec) => HTMLElement} buildTile
+ * @prop {(pos: Point, ...className: string[]) => HTMLElement|null} tileAt
+ * @prop {(pos: Point, ...className: string[]) => HTMLElement[]} tilesAt
  */
 
 /**
@@ -36,7 +37,7 @@
  * any user-given shader function.
  *
  * @template {any} C
- * @param {string|TileSpec|Shader<C>|null|undefined} shader
+ * @param {string|NewTileSpec|Shader<C>|null|undefined} shader
  * @param {string} [defaultKind]
  * @returns {Shader<C>}
  */
@@ -48,9 +49,9 @@ export function toShader(shader, defaultKind) {
 }
 
 /**
- * @param {string|TileSpec|null|undefined} spec
+ * @param {string|NewTileSpec|null|undefined} spec
  * @param {string} [defaultKind]
- * @returns {TileSpec|null|undefined}
+ * @returns {NewTileSpec|null|undefined}
  */
 export function toSpec(spec, defaultKind) {
   return typeof spec === 'string'
@@ -65,7 +66,7 @@ export function toSpec(spec, defaultKind) {
  *
  * @param {Context} grid
  * @param {Rect} rect
- * @param {string|TileSpec|Shader<Rect>} shader
+ * @param {string|NewTileSpec|Shader<Rect>} shader
  */
 export function fillRect(grid, rect, shader) {
   shader = toShader(shader);
@@ -79,7 +80,7 @@ export function fillRect(grid, rect, shader) {
  *
  * @param {Context} grid
  * @param {Rect} rect
- * @param {string|TileSpec|Shader<Rect>} shader
+ * @param {string|NewTileSpec|Shader<Rect>} shader
  */
 export function strokeRect(grid, rect, shader) {
   shader = toShader(shader);
@@ -98,10 +99,10 @@ export function strokeRect(grid, rect, shader) {
  * Creates a rectangular shader that build tiles only along the perimeter of a
  * rectangle.
  *
- * @param {string|TileSpec|null} top
- * @param {string|TileSpec|null} [right] - defaults to top if not given
- * @param {string|TileSpec|null} [bottom] - defaults to top if not given
- * @param {string|TileSpec|null} [left] - defaults to right if not given
+ * @param {string|NewTileSpec|null} top
+ * @param {string|NewTileSpec|null} [right] - defaults to top if not given
+ * @param {string|NewTileSpec|null} [bottom] - defaults to top if not given
+ * @param {string|NewTileSpec|null} [left] - defaults to right if not given
  * @returns {Shader<Rect>} - a shader that builds a tile along the rectangle's
  * perimeter, skipping any interior position; therefore may be used under
  * fillRect as well as strokeRect.
@@ -110,12 +111,12 @@ export function borderShader(top, right, bottom, left) {
   if (right === undefined) right = top;
   if (bottom === undefined) bottom = top;
   if (left === undefined) left = right;
-  /** @type {(TileSpec|null)[]} */
+  /** @type {(NewTileSpec|null)[]} */
   const specs = [top, right, bottom, left].map(a => toSpec(a) || null);
   /**
    * @param {Point} pos
    * @param {Rect} rect
-   * @returns {TileSpec|null}
+   * @returns {NewTileSpec|null}
    */
   const choose = (pos, rect) => {
     const bi = borderIndex(pos, rect);
@@ -137,9 +138,9 @@ export function borderShader(top, right, bottom, left) {
  * optionally doors.
  *
  * @param {object} [params]
- * @param {string|TileSpec|Shader<Rect>} [params.floors]
- * @param {string|TileSpec|Shader<Rect>} [params.walls]
- * @param {string|TileSpec|Shader<Rect>} [params.doors]
+ * @param {string|NewTileSpec|Shader<Rect>} [params.floors]
+ * @param {string|NewTileSpec|Shader<Rect>} [params.walls]
+ * @param {string|NewTileSpec|Shader<Rect>} [params.doors]
  * @param {(pos:Point, rect:Rect) => boolean} [params.doorsAt] - a convenience mask for
  * where to call the door shader; mostly useful when you don't want to
  * implement a fully custom door shader
@@ -241,7 +242,7 @@ class buildSpy {
   }
 
   /**
-   * @param {TileSpec} spec
+   * @param {NewTileSpec} spec
    * @returns {HTMLElement}
    */
   buildTile(spec) {
