@@ -723,14 +723,10 @@ class BSPRoomBuilder {
       if (!dir.x && !dir.y)
         return {trace, ok: false, reason: 'hallway trace lost the way'};
 
-      // blocked by any present .tile:not(.passable) in hall region
-      // (floor or flanking walls)
-      for (const p of dir.y
-        ? [{x: x-1, y}, {x, y}, {x: x+1, y}]
-        : [{x, y: y-1}, {x, y}, {x, y: y+1}])
-        for (const present of tilesAt(p))
-          if (!present.classList.contains('passable'))
-            return {trace, ok: false, reason: 'blocked', blocked: present};
+      // blocked by any present .tile:not(.passable)
+      for (const present of tilesAt({x, y}))
+        if (!present.classList.contains('passable'))
+          return {trace, ok: false, reason: 'blocked', blocked: present};
     }
     return {trace, ok: false, reason: 'max hallway steps exceeded'};
   }
