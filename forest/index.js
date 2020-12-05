@@ -1,6 +1,6 @@
 // @ts-check
 import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
-import {fillRect, toShader} from 'cdom/builder';
+import * as build from 'cdom/builder';
 import * as PRNG from 'cdom/prng';
 
 const search = new URLSearchParams(location.search);
@@ -109,9 +109,9 @@ const dmg = new DOMgeon({
 globalThis.dmg = dmg;
 new DOMgeonInspector(dmg, find('#inspector'));
 
-const floorShader = toShader({plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: ''});
-const treeShader = toShader({plane: 'solid', kind: 'wall', text: '🌲'});
-const linkShader = toShader({
+const floorShader = build.toShader({plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: ''});
+const treeShader = build.toShader({plane: 'solid', kind: 'wall', text: '🌲'});
+const linkShader = build.toShader({
   plane: 'solid',
   kind:  'link',
   text: '🔗',
@@ -143,7 +143,7 @@ function forestShader(grid, pos, rect) {
   }
 }
 
-fillRect(/** @type{Context} */(dmg.grid), {x: -50, y: -50, w: 101, h: 101}, forestShader);
+build.fillRect((dmg.grid), {x: -50, y: -50, w: 101, h: 101}, forestShader);
 
 const actor = dmg.grid.createTile({
   pos: {x: 0, y: 0},
