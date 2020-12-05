@@ -589,7 +589,10 @@ class BSPRoomBuilder {
       const halls = this.buildHallBetween(as, bs);
       if (halls) {
         for (const hall of halls) {
-          // TODO simplify redundant walls
+          for (const a of as) for (const tan of tangent(hall, a))
+            this.simplifyTangentRooms(hall, a, tan, {placeDoor: false});
+          for (const b of bs) for (const tan of tangent(hall, b))
+            this.simplifyTangentRooms(hall, b, tan, {placeDoor: false});
           as.push(this.makeRegion(hall, 'hall'));
         }
         connected = true;
@@ -603,10 +606,15 @@ class BSPRoomBuilder {
    * @param {Rect} a
    * @param {Rect} b
    * @param {Tangent} a2b
+   * @param {object} [options]
+   * @param {boolean} [options.placeDoor]
    * @returns {boolean}
    */
-  simplifyTangentRooms(a, b, {t, o}) {
+  simplifyTangentRooms(a, b, {t, o}, options={}) {
     if (o.n <= 2) return false;
+    const {
+      placeDoor = true
+    } = options;
 
     // shrink overlap to never consider extreme points, since
     // erasing those walls could introduce unintended diagonal
@@ -614,13 +622,15 @@ class BSPRoomBuilder {
     o.o++, o.n -= 2;
 
     const dir = !!(t % 2); // true iff top/bottom
-    const eraseCo = dir ? b.h < a.h : b.w < a.w; // erase from the smaller dimension
+    const eraseCo = dir // erase from the smaller dimension, except for room v hallway
+      ? b.h !== 1 && b.h < a.h
+      : b.w !== 1 && b.w < a.w;
     let choice = null, doorScore = 0;
     for (const {co, p, ...pos} of adjacentPoints(t, o, a, b)) {
       this.interiorPoints.add(`${pos.x},${pos.y}`);
       if (co === eraseCo) {
         removeAt(pos, 'wall');
-      } else {
+      } else if (placeDoor) {
         // scale of [0, 100], quadratically peaking in the middle
         const weight = Math.pow((0.5 - Math.abs(p - 0.5))/0.5*10, 2);
         const score = weight ? Math.pow(this.random(), 1/weight) : 0;
@@ -628,9 +638,9 @@ class BSPRoomBuilder {
           choice = pos, doorScore = score;
       }
     }
-    if (!choice) return false;
 
-    doorAt(choice);
+    if (choice) doorAt(choice);
+    else if (placeDoor) return false;
     return true;
   }
 
