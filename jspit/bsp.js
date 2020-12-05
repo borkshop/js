@@ -478,14 +478,12 @@ function removeAt(pos, kind) {
     tile.parentNode?.removeChild(tile);
 }
 
-const buildCtx = /** @type {build.Context} */ (dmg.grid); // FIXME TileSpec.kind
-
 /**
  * @param {Point} pos
  */
 function doorAt(pos) {
   removeAt(pos, 'wall');
-  doorShader(buildCtx, pos, null);
+  doorShader(dmg.grid, pos, null);
 }
 
 // /**
@@ -506,7 +504,7 @@ function doorAt(pos) {
 function digAt(pos) {
   // shade room tiles into a 3x3 cell around the dig point
   const place = {x: pos.x-1, y: pos.y-1, w: 3, h: 3};
-  build.fillRect(buildCtx, place, (ctx, pos, shape) => {
+  build.fillRect(dmg.grid, place, (ctx, pos, shape) => {
     if (!ctx.tileAt(pos, 'support'))
       roomShader(ctx, pos, shape);
   });
@@ -565,7 +563,7 @@ class BSPRoomBuilder {
     const p = (maxRoomArea - region.w * region.h) / (maxRoomArea - minRoomArea);
     if (p < 0 || this.random() >= p) return null;
 
-    build.fillRect(buildCtx, region, roomShader);
+    build.fillRect(dmg.grid, region, roomShader);
     box.classList.add('leaf');
     return [this.makeRegion(region, 'room', id)];
   }
