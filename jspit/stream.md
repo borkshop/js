@@ -1,4 +1,4 @@
-# 2020-12-03
+# 2020-12-04
 
 ## TODO
 
@@ -43,6 +43,11 @@
 ## WIP
 
 ## Done
+
+Finally fixed BSP demo hallway building, no longer able to reveal void cells,
+and more often results in a fully-connected level.
+
+# 2020-12-03
 
 Refactored BSP rooms-and-halls builder, fixing a simple priority reversal bug
 that was causing disconnected levels. There may still be other, now rarer,
