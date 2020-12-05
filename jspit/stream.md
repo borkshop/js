@@ -44,6 +44,9 @@
 
 ## Done
 
+Fixed type issues around `cdom/builder.Context` vs `TileSpec.kind` by adding
+`NewTileSpec` required by `createTile` and `buildTile` methods.
+
 Finally fixed BSP demo hallway building, no longer able to reveal void cells,
 and more often results in a fully-connected level.
 
