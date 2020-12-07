@@ -101,38 +101,7 @@
       }
     </style>
 
-    <script type="module">
-      import Physarum from './physarum';
-      import {readHashVar, setHashVar} from './state';
-      import {DOMgeon} from 'cdom/domgeon';
-      import {bindProp, bindCSSVar} from './config';
-
-      const ctx = {
-        getInput: (name) => document.querySelector(`input#${name}`),
-        getSelect: (name) => document.querySelector(`select#${name}`),
-      };
-
-      const gridSheet = document.querySelector('body style').sheet;
-
-      for (const {selectorText, style} of gridSheet.cssRules)
-        if (selectorText === '.tile.trail')
-          bindCSSVar({style, name: 'trail-hue', ctx});
-
-      const dmg = window.dmg = new DOMgeon({
-        ui: document.body,
-        keys: document.body,
-        grid: document.querySelector('.grid'),
-      });
-
-      const status = document.querySelector('#status');
-      const sim = window.sim = new Physarum(dmg, status);
-
-      document.querySelector('#singleStep')
-
-      bindProp({obj: sim, name: 'singleStep', ctx});
-
-      dmg.onKey.byCode['Backspace'] = () => { sim.reset(); };
-    </script>
+    <script type="module" src="./physarum.js"></script>
   </body>
 
 </html>

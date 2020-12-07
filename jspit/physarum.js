@@ -1,3 +1,7 @@
+// @ts-check
+
+/// module code with more-or-less reusable simulation implementation
+
 import {mortonKey} from 'cdom/tiles';
 import {atHeading, stepParticles} from './particles';
 import {toRad, parseAngle, parsePercent} from './units';
@@ -11,7 +15,7 @@ import {toRad, parseAngle, parsePercent} from './units';
  * @typedef {import('cdom/tiles').TileGrid} TileGrid
  */
 
-export default class {
+export default class Physarum {
   /** @type {TileGrid} */
   grid
 
@@ -306,3 +310,37 @@ export default class {
     this.status.innerText = `${notes.join(' ')}`;
   }
 }
+
+/// page level wirting code 
+
+import {find, mustFind} from 'cdom/wiring';
+
+import {DOMgeon} from 'cdom/domgeon';
+const dmg = new DOMgeon({
+  ui: document.body,
+  keys: document.body,
+  grid: mustFind('.grid'),
+});
+const sim = new Physarum(dmg, mustFind('#status'));
+globalThis.dmg = dmg;
+globalThis.sim = sim;
+
+dmg.onKey.byCode['Backspace'] = () => { sim.reset(); };
+
+import * as config from './config';
+/** @type {config.Context} */
+const ctx = {
+  getInput: (name) => document.querySelector(`input#${name}`),
+  getSelect: (name) => document.querySelector(`select#${name}`),
+};
+
+const bodyStyle = /** @type {HTMLStyleElement | undefined} */ (find('body style'));
+const gridSheet = bodyStyle?.sheet;
+if (gridSheet) {
+  for (const rule of gridSheet.cssRules) if (rule.type === CSSRule.STYLE_RULE) {
+    const {selectorText, style} = /** @type {CSSStyleRule} */ (rule);
+    if (selectorText === '.tile.trail')
+      config.bindCSSVar({style, name: 'trail-hue', ctx});
+  }
+}
+config.bindProp({obj: sim, name: 'singleStep', ctx});
