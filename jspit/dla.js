@@ -1,10 +1,16 @@
+// @ts-check
+
+/// module code with more-or-less reusable bits
+// TODO consider factoring them out into cdom/...
+
 import {toRad, parseAngle} from './units';
 import {stepParticles} from './particles';
 
 import {centroid} from 'cdom/tiles';
 
 /** @typedef {import('cdom/tiles').Point} Point */
-/** @typedef {import('cdom/domgeon').DOMgeon} DOMgeon */
+
+import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
 
 /**
  * @param {Generator<Point>} it
@@ -380,3 +386,90 @@ export default class DLA {
     })) if (!this.spawn()) break;
   }
 }
+
+/// demo page-level code
+
+import {find, mustFind} from 'cdom/wiring';
+
+const dmg = window.dmg = new DOMgeon({
+  ui: document.body,
+  keys: document.body,
+  grid: mustFind('.grid'),
+  moveBar: find('.buttonbar.moves'),
+  actionBar: find('.buttonbar.actions'),
+});
+
+import * as config from './config';
+/** @type {config.Context} */
+const ctx = {
+  getInput: (name) => document.querySelector(`.menu input[name="${name}"]`) || null,
+  getSelect: (name) => document.querySelector(`.menu select[name="${name}"]`) || null,
+};
+config.bindVars({ctx, data: DLA.config});
+
+const inspectEl = find('#inspector')
+const inspector = inspectEl
+  ? new DOMgeonInspector(dmg, inspectEl)
+  : null;
+
+const initialDrop = 0.25; // auto-drop player at this proportion of limit particles
+let dropped = false;
+const dropPlayer = () => {
+  let actor = dmg.grid.queryTile({plane: 'solid', className: ['input', 'focus', 'mover']});
+  if (actor) {
+    actor.parentNode?.removeChild(actor);
+    actor = null;
+    // TODO reset view anchor?
+  } else {
+    dropped = true;
+    const pos = world.config.seeds[0]; // TODO input
+    actor = dmg.grid.createTile({
+      plane: 'solid',
+      pos,
+      kind: 'mover',
+      classList: ['input', 'focus'],
+      text: '@',
+    });
+  }
+  dmg.updateActorView(actor);
+};
+
+const particleID = find('#particleID');
+const world = new DLA(dmg);
+dmg.animParts.push(_ => {
+  let playing = !!dmg.grid.queryTile({plane: 'solid', className: ['input', 'focus', 'mover']});
+  if (particleID) {
+    particleID.textContent = world.particleID.toString();
+    if (!dropped && !playing && world.particleID >= initialDrop*world.config.particleLimit) {
+      dropPlayer();
+      playing = true;
+    }
+  }
+  dmg.grid.el.classList.toggle('playing', playing);
+  if (dmg.moveBar) dmg.moveBar.style.display = playing ? '' : 'none';
+  return true;
+});
+
+dmg.onKey.byCode['Backspace'] = () => {
+  world.reset();
+  if (particleID) particleID.innerText = '0';
+  dropped = false;
+};
+
+/** @param {Event} event */
+dmg.onKey.byKey['@'] = ({type}) => {
+  if (type === 'keydown') return;
+  dropPlayer();
+};
+
+/** @param {Event} event */
+dmg.onKey.byCode['Space'] = ({type}) => {
+  const enabled = type === 'keydown';
+  dmg.grid.el.classList.toggle('inspectable', enabled);
+  dmg.grid.el.classList.toggle('retro', enabled);
+  if (inspector) {
+    if (enabled) dmg.grid.el.addEventListener('mousemove', inspector);
+    else dmg.grid.el.removeEventListener('mousemove', inspector);
+  }
+};
+
