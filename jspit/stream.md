@@ -1,4 +1,4 @@
-# 2020-12-04
+# 2020-12-07
 
 ## TODO
 
@@ -44,13 +44,35 @@
 
 ## Done
 
+Ejected page level script code from all other jspit demos.
+
+TODO catch cdom-template up
+
+# Week Ending 2020-12-05
+
+- Finished a basic/classic version of BSP-drive rooms and hallways procgen;
+  next step is to start generalizing many of the demo-internal utilities into
+  the cdom/procgen module. This will likely happen by further iterating on the
+  BSP demo itself, evolving it beyond just the classic scheme, and beginning to
+  blend it with other procgen methods, something like.
+- Analyzed and fixed forest's prng seeding, moderately improving the cdom/prng
+  module along the way.
+- Started adopting the externalized script idiom from the forest demo,
+  primarily since it forces type checking of all code, helping to forestall the
+  need for testing beyond lint. Fixed revealed type checking errors, mostly
+  around `cdom/builder.Context` vs `TileSpec.kind`.
+- Minor improvements to the button input scheme, now explicitly supporting
+  aliases, and handler registration by ID.
+
+## 2020-12-04
+
 Fixed type issues around `cdom/builder.Context` vs `TileSpec.kind` by adding
 `NewTileSpec` required by `createTile` and `buildTile` methods.
 
 Finally fixed BSP demo hallway building, no longer able to reveal void cells,
 and more often results in a fully-connected level.
 
-# 2020-12-03
+## 2020-12-03
 
 Refactored BSP rooms-and-halls builder, fixing a simple priority reversal bug
 that was causing disconnected levels. There may still be other, now rarer,
@@ -61,7 +83,7 @@ Added by-id button handling, use it in BSP demo.
 Ejected BSP page script module in alignment with forest structure; will work on
 rectifying the `builder.Context` vs `TileSpec` type awkwardness soon.
 
-# 2020-12-02
+## 2020-12-02
 
 Improved button input situation:
 - added proper key/code alias support
@@ -79,18 +101,18 @@ Refactored and flattened the `cdom/prng` module:
 
 Fixed BSP FOV invalidation after a player respawn/move.
 
-# 2020-12-01
+## 2020-12-01
 
 Finished a sufficient version of the BSP generator, be declaring it's remaining
 bugs to be "fun".
 
-# 2020-11-30
+## 2020-11-30
 
 Made the BSP demo resetable and playable:
 - press `<Backspace>` to regenerate the world
 - press `@` to spawn a player
 
-# 2020-11-29
+## 2020-11-29
 
 Finished BSP wall simplification and door placement. Started developing hallway
 connections, but wasn't able to finish that part completely...
