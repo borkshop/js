@@ -293,9 +293,3 @@ ul, ol, dl {
 }
 
 .value { user-select: all }
-
-.linkbar span:not(:first-of-type):before { content: " | " }
-
-/* TODO better list styles */
-
-/* vim:set ts=2 sw=2 expandtab */
