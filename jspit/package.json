@@ -50,7 +50,7 @@
       ".": "/"
     },
     "alias": {
-      "cdom": "./cdom"
+      "cdom": "/cdom"
     }
   }
 }
