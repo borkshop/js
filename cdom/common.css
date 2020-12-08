@@ -1,0 +1,252 @@
+/* Provides color variables that may be defined by the user:
+ *
+ * --main-bg and --main-fg are used to establish root color
+ *
+ * --content-bg and --content-fg are used for sectional content
+ *
+ * --action-color, --action-focus-color, and --acting-color are used for user
+ * interaction elements like links and buttons
+ * --ui-bg, --ui-disabled, and --ui-fg are further used for various from
+ * elements and buttons
+ *
+ * --grid-bg may be defined to alter the tile grid's background, rather than
+ * let --main-bg show through
+ *
+ * --inspect-cursor-color and --inspect-pinned-color style the grid inspector;
+ * default to blue and red respectively
+ *
+ * Most variables do not have a default variable, making their rules in this
+ * sheet collapse down to things like spacing and sizing if unset.
+ */
+
+/* maximize document to viewport, disable scrolling */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* border-box sizing model, with inheritable overrides */
+:root { box-sizing: border-box; }
+*, *:before, *:after { box-sizing: inherit; }
+
+/* basic content coloring */
+
+html, body {
+  background-color: var(--main-bg);
+  color: var(--main-fg);
+}
+
+a         { color: var(--action-color); text-decoration: none; }
+a:hover,
+a:focus   { color: var(--action-focus-color); text-decoration: underline }
+a:active  { color: var(--acting-color); }
+
+/* structural content */
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+}
+
+p {
+  margin: 1em 0.5em;
+  padding: 0;
+}
+
+ul, ol, dl {
+  margin: 0.3em 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+section {
+  background-color: var(--content-bg);
+  color: var(--content-fg);
+  margin-top: 1em;
+  padding: 0.3em 0.5em;
+  border-radius: 0.3em;
+}
+
+/* basic menu / modal system */
+
+aside.menu {
+  overflow: auto;
+  max-height: 100%;
+  position: absolute;
+  z-index: 1000;
+  top: 0;
+  right: 0;
+  width: 40%;
+}
+
+aside.modal {
+  left: 20%;
+  width: 60%;
+}
+
+body.running aside.menu > *:not(.sticky) { display: none; }
+
+aside.menu section               { margin-top: 1em; }
+aside.menu section:first-of-type { margin-top: 0; }
+
+details {
+  margin: 0.3em 0;
+  padding: 0.3em 0.5em;
+}
+
+label       .tip { display: none }
+label:hover .tip { display: block }
+
+/* main tile grid */
+
+.grid {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+  overflow: hidden;
+
+  line-height: 1.0;
+  font-size: 18pt;
+  user-select: none;
+
+  --tile-width:  1em;
+  --tile-height: 1em;
+
+  --xlate-x: 0;
+  --xlate-y: 0;
+
+  background-color: var(--grid-bg);
+  font-family: monospace;
+}
+
+.grid .plane {
+  position: absolute;
+  transform:
+    translateX(calc((0 - var(--xlate-x)) * var(--tile-width)))
+    translateY(calc((0 - var(--xlate-y)) * var(--tile-height)))
+    ;
+}
+
+body.running .grid { cursor: none; }
+
+.grid .tile {
+  --x: 0;
+  --y: 0;
+  position: absolute;
+  left: calc(var(--x) * var(--tile-width));
+  top:  calc(var(--y) * var(--tile-height));
+  width: var(--tile-width);
+  height: var(--tile-height);
+
+  text-align: center;
+  vertical-align: middle;
+  user-select: none;
+}
+
+/* input styling, such as movement and action buttonbars or menu controls */
+
+button[data-legend]::after {
+  font-size: 0.5em;
+  content: attr(data-legend);
+  color: var(--ui-fg);
+}
+
+select, button {
+  background-color: var(--ui-bg);
+  color: var(--action-color);
+  border: 0.1em solid var(--ui-accent);
+  border-radius: 0.3em;
+}
+
+button:hover, button:focus {
+  color: var(--action-focus-color);
+  border-color: var(--action-focus-color);
+}
+
+button.held, button:active {
+  color: var(--acting-color);
+  border-color: var(--acting-color);
+}
+
+button:disabled {
+  color: var(--ui-disabled) !important;
+  border-color: var(--ui-disabled) !important;
+}
+
+label:hover {
+  color: var(--action-focus-color);
+}
+
+input, textarea {
+  background-color: var(--ui-bg);
+  color: var(--ui-fg);
+  border: 0.1em solid var(--ui-accent);
+  border-radius: 0.3em;
+}
+
+input:hover, textarea:hover, select:hover,
+input:focus, textarea:focus, select:focus {
+  color: var(--action-focus-color);
+  border-color: var(--action-focus-color);
+}
+
+fieldset {
+  margin: 0.3em 0;
+  background-color: var(--content-bg);
+  color: var(--content-fg);
+  border-radius: 0.3em;
+  border: 0.1em solid var(--ui-accent);
+  padding: 0 0.5em 0.3em 0.5em;
+}
+
+/* buttonbars and baseline input styling, e.g. for movement and actions */
+
+.buttonbar {
+  z-index: 100;
+}
+
+.buttonbar button[data-alias] {
+  display: none;
+}
+
+.buttonbar.left {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.buttonbar.right {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+.buttonbar.left.float button { float: left; clear: left; }
+.buttonbar.right.float button { float: right; clear: right; }
+
+.buttonbar.moves button {
+  --holdable: true;
+  min-width: 2em;
+  font-size: 2em;
+}
+
+.buttonbar.actions button {
+  min-width: 1em;
+  font-size: 1em;
+}
+
+/* grid inspection */
+
+.grid.inspectable {
+  cursor: crosshair;
+}
+.grid.inspectable .tile.inspect-cursor {
+  z-index: 10000;
+  border: 0.1em solid var(--inspect-cursor-color, blue);
+}
+.grid.inspectable .tile.inspect-cursor.pinned {
+  border-color: var(--inspect-pinned-color, red);
+}
