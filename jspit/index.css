@@ -1,1 +1,79 @@
-../cdom-template/index.css
+@import "cdom/common.css";
+
+/* Color definitions borrowed from the Darcula colorscheme for convenience */
+
+:root {
+  font-family: sans;
+  font-size: 12pt;
+
+  --black-rgb:          0, 0, 0;
+  --darker-grey-rgb:    18, 18, 18;
+  --dark-grey-rgb:      38, 38, 38;
+  --grey-rgb:           68, 68, 68;
+  --light-grey-rgb:     88, 88, 88;
+  --lighter-grey-rgb:   102, 102, 102;
+  --white-rgb:          192, 192, 192;
+  --dark-white-rgb:     158, 158, 158;
+  --blue-rgb:           95, 135, 175;
+  --bright-purple-rgb:  95, 0, 255;
+  --cyan-rgb:           0, 215, 215;
+  --dark-orange-rgb:    175, 95, 0;
+  --dark-sea-green-rgb: 95, 135, 95;
+  --green-rgb:          0, 175, 0;
+  --light-cyan-rgb:     95, 175, 175;
+  --magenta-rgb:        255, 0, 135;
+  --orange-rgb:         215, 135, 0;
+  --purple-rgb:         135, 135, 175;
+  --red-rgb:            215, 0, 0;
+  --red-orange-rgb:     175, 95, 95;
+  --yellow-rgb:         128, 128, 0;
+  --yellow-orange-rgb:  215, 175, 0;
+
+  --black:          rgb(var(--black-rgb));
+  --darker-grey:    rgb(var(--darker-grey-rgb));
+  --dark-grey:      rgb(var(--dark-grey-rgb));
+  --grey:           rgb(var(--grey-rgb));
+  --light-grey:     rgb(var(--light-grey-rgb));
+  --lighter-grey:   rgb(var(--lighter-grey-rgb));
+  --white:          rgb(var(--white-rgb));
+  --dark-white:     rgb(var(--dark-white-rgb));
+  --blue:           rgb(var(--blue-rgb));
+  --bright-purple:  rgb(var(--bright-purple-rgb));
+  --cyan:           rgb(var(--cyan-rgb));
+  --dark-orange:    rgb(var(--dark-orange-rgb));
+  --dark-sea-green: rgb(var(--dark-sea-green-rgb));
+  --green:          rgb(var(--green-rgb));
+  --light-cyan:     rgb(var(--light-cyan-rgb));
+  --magenta:        rgb(var(--magenta-rgb));
+  --orange:         rgb(var(--orange-rgb));
+  --purple:         rgb(var(--purple-rgb));
+  --red:            rgb(var(--red-rgb));
+  --red-orange:     rgb(var(--red-orange-rgb));
+  --yellow:         rgb(var(--yellow-rgb));
+  --yellow-orange:  rgb(var(--yellow-orange-rgb));
+
+  --inspect-pinned-color: var(--magenta);
+  --inspect-cursor-color: var(--cyan);
+
+  --main-bg: var(--darker-grey);
+  --main-fg: var(--light-grey);
+
+  --content-bg: var(--dark-grey);
+  --content-fg: var(--dark-white);
+
+  --ui-a: 60%;
+  --ui-bg: rgba(var(--dark-grey-rgb), var(--ui-a));
+  --ui-fg: var(--dark-white);
+  --ui-disabled: var(--lighter-grey);
+
+  --ui-accent:       rgba(var(--grey-rgb), var(--ui-a));
+  --ui-accent-focus: rgba(var(--light-grey-rgb), var(--ui-a));
+
+  --action-color:       var(--blue);
+  --action-focus-color: var(--cyan);
+  --acting-color:       var(--magenta);
+  --acted-color:        var(--bright-purple);
+}
+
+/* specific to index.html */
+.linkbar span:not(:first-of-type):before { content: " | " }
