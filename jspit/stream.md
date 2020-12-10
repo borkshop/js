@@ -1,4 +1,4 @@
-# 2020-12-07
+# 2020-12-10
 
 ## TODO
 
@@ -42,11 +42,18 @@
 
 ## WIP
 
+Breaking up the template, and increasing its explanatory detail.
+
 ## Done
 
-Ejected page level script code from all other jspit demos.
+# 2020-12-08
 
-TODO catch cdom-template up
+Started breaking up the cdom-template parts, after first ejecting all styles
+from all demos, and factoring out a `cdom/common.css` import.
+
+# 2020-12-07
+
+Ejected page level script code from all other jspit demos.
 
 # Week Ending 2020-12-05
 
