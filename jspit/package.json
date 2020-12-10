@@ -47,10 +47,12 @@
     ],
     "mount": {
       "../cdom": "/cdom",
+      "../cdom-template": "/cdom-template",
       ".": "/"
     },
     "alias": {
-      "cdom": "/cdom"
+      "cdom": "/cdom",
+      "cdom-template": "/cdom-template"
     }
   }
 }
