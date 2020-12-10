@@ -1,1 +1,88 @@
-../cdom-template/index.html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="cdom-template/index.css" />
+    <title>Cascading DOMgeon Template</title>
+  </head>
+  <body>
+
+    <div class="grid">
+      <noscript>
+        <section>
+          <h3 class="error">DOMgeoneering requires JavaScript</h3>
+        </section>
+      </noscript>
+    </div>
+
+    <aside class="menu">
+      <button
+        class="sticky"
+        style="float: right; font-size: 2em; line-height: 0.75"
+        data-keycode="Escape"
+        title="Start/Stop Game ; Hide/Show Menu">☰</button>
+
+      <button
+        style="float: right; font-size: 2em; line-height: 0.75"
+        data-key="?"
+        title="Show help overview">?</button>
+
+      <section>
+        <h1>Cascading DOMgeon Template</h1>
+        <h3><a href="index.html">Back to Welcome screen</a></h3>
+
+        <p>
+          Press &lt;Escape&gt; to start/hide this menu, press it again to return to this menu.
+        </p>
+
+        <details>
+          <summary>TODO</summary>
+          <ul>
+            <li>the void should be an other plane...</li>
+            <li>things to find and do there</li>
+            <li>...how to return back to the solid plane?</li>
+            <li>maybe inventory and items</li>
+          </ul>
+        </details>
+      </section>
+
+      <!-- TODO may comment out or remove this, as it's mostly a development aid -->
+      <fieldset id="inspector">
+        <legend>
+          <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
+        </legend>
+        <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
+      </fieldset>
+
+    </aside>
+
+    <div class="buttonbar moves left">
+      <!--
+      <table>
+        <tr>
+          <td><button data-key="q" data-legend="Q" data-movedir="-1,-1">NW</button></td>
+          <td><button data-key="w" data-legend="W" data-movedir="0,-1">N</button></td>
+          <td><button data-key="e" data-legend="E" data-movedir="1,-1">NE</button></td>
+        </tr>
+        <tr>
+          <td><button data-key="a" data-legend="A" data-movedir="-1,0">W</button></td>
+          <td><button data-key="s" data-legend="S" data-movedir="0,0">.</button></td>
+          <td><button data-key="d" data-legend="D" data-movedir="1,0">E</button></td>
+        </tr>
+        <tr>
+          <td><button data-key="z" data-legend="Z" data-movedir="-1,1">SW</button></td>
+          <td><button data-key="x" data-legend="X" data-movedir="0,1">S</button></td>
+          <td><button data-key="c" data-legend="C" data-movedir="1,1">SE</button></td>
+        </tr>
+      </table>
+      -->
+    </div>
+
+    <div class="buttonbar actions right float"></div>
+
+    <script type="module" src="cdom-template/index.js"></script>
+  </body>
+
+</html>
+<!-- vim:set ts=2 sw=2 expandtab -->

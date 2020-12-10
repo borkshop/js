@@ -60,6 +60,7 @@
 
   --main-bg: var(--darker-grey);
   --main-fg: var(--light-grey);
+  --grid-bg: var(--black);
 
   --content-bg: var(--dark-grey);
   --content-fg: var(--dark-white);
@@ -77,3 +78,81 @@
   --acting-color:       var(--magenta);
   --acted-color:        var(--bright-purple);
 }
+
+/** tile grid plane mechanics */
+
+/* planes must be explicitly shown */
+.plane { display: none }
+
+/* the player's meme plane(s) contain subjective copies of objective tiles:
+ * - ones that are within Field Of View (FOV) have a --light variable
+ * - where-as ones that are merely memories of previously seen tiles do not
+ */
+.plane.meme { display: initial }
+.plane.meme .tile[data-light] { opacity: var(--light, 15%); }
+.plane.meme .tile:not([data-light]) { opacity: 15%; }
+
+/* inspector plane should be on top and shown */
+.plane[data-plane="domgeon-inspect"] { display: initial }
+.plane[data-plane="domgeon-inspect"] { z-index: 1000 }
+
+/** tile grid tiles */
+
+/* tile stacking priorities */
+.tile.floor { z-index:  1 }
+.tile       { z-index:  5 }
+.tile.wall  { z-index: 10 }
+.tile.mover { z-index: 20 }
+.tile.input { z-index: 50 }
+
+/* basic structural tiles: floor and wall */
+.tile.floor {
+  background-color: hsl(70, 5%, 12%);
+  color: hsl(70, 5%, 27%);
+}
+
+.tile.wall {
+  background-color: hsl(50, 15%, 15%);
+  color: hsl(50, 25%, 30%);
+}
+
+/* a door tile that can be opened or closed */
+.tile.door {
+  background-color: hsl(50, 25%, 15%);
+  color: hsl(50, 90%, 30%);
+  --action: "open";
+  --morph_target: "!passable";
+}
+.tile.door::before { content: "+" }
+.tile.door.passable {
+  background-color: hsl(70, 5%, 12%);
+  --action: "close";
+}
+.tile.door.passable::before { content: "-" }
+
+/* rune tiles */
+.tile.rune { color: hsl(270, 80%, 65%) }
+/* TODO could differentiate between .floor.rune vs just .rune */
+
+/* mover tiles, like the player */
+.tile.mover { color: hsl(20, 75%, 50%); }
+
+/* mark self-supported movers specially since they may walk around outside of
+ * normal world support */
+.tile.mover.support {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+/* color player's own movers specially within its subjective plane; in the
+ * objective plane these are .mover.input and .mover.input.focus respectively */
+.tile.mover.inputable { color: hsl(220, 75%, 50%); }
+.tile.mover.inputable.focused { color: hsl(120, 75%, 50%); }
+
+/* for lighting, any tile may be a light source; these defaults provide default
+ * player-centric lighting, which is a bit of a cheesy stand-in for other
+ * alternatives like a properly lit level, or held torch items that can be
+ * controlled. */
+.tile.mover             { --lightInit: 1; }
+.tile.mover.input       { --lightInit: 2; }
+.tile.mover.input.focus { --lightInit: 8; }
