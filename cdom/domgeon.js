@@ -781,8 +781,8 @@ export class DOMgeon extends EventTarget {
 
   *_findLightSelectors() {
     for (const styleSheet of this.grid.el.ownerDocument.styleSheets)
-      for (const rule of styleSheet.rules) {
-        const {selectorText, style} = /** @type {CSSStyleRule} */ (rule);
+      for (const rule of styleSheet.rules) if (rule instanceof CSSStyleRule) {
+        const {selectorText, style} = rule;
         if (style.getPropertyValue('--lightInit')) {
           for (const match of selectorText.matchAll(/(\.tile\.[^\s:#\[]+)/g))
             yield match[1];
