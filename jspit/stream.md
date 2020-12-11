@@ -48,12 +48,12 @@ Breaking up the template, and increasing its explanatory detail.
 
 # 2020-12-08
 
-Started breaking up the cdom-template parts, after first ejecting all styles
-from all demos, and factoring out a `cdom/common.css` import.
+Broke up the cdom-template html into a separated js and css file, synced all
+jspyt demos and forest with the new scheme.
 
 # 2020-12-07
 
-Ejected page level script code from all other jspit demos.
+Ejected page level script code from all jspit demos.
 
 # Week Ending 2020-12-05
 
