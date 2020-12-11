@@ -586,11 +586,6 @@ export class DOMgeon extends EventTarget {
     this.keys.addEventListener('keydown', this.onKey);
     this.keys.addEventListener('keyup', this.inputs);
 
-    this.onKey.byCode['Escape'] = (ev) => {
-      if (ev.type === 'keydown') return;
-      if (this.running) this.stop(); else this.start();
-    };
-
     /** @type {null|ActionButtonSpec[]} */
     let moveButtons = toActionButtonSpecs(localStorage.getItem('domgeon.moveButtons'));
     if (!moveButtons) {
@@ -608,6 +603,13 @@ export class DOMgeon extends EventTarget {
       const button = this.moveBar.querySelector(`button[data-movedir="${x},${y}"]`);
       updateActionButton(this.moveBar, button, moveButton);
     }
+
+    this.onKey.byID['startStop'] = ({type}) => {
+      if (type === 'keyup') {
+        if (this.running) this.stop();
+        else this.start();
+      }
+    };
 
     if (this.ui.classList.contains('running')) setTimeout(() => this.start(), 0);
   }

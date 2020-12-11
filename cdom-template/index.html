@@ -23,8 +23,13 @@
       <!-- NOTE any .sticky elements under aside.menu will still be shown even
         when running / the menu is hidden -->
 
+      <!-- Starts and stops the domgeon interaction loop, also causing the
+        aside.menu to be shown when not running (see index.css). If your game
+        has no need to ever not run, you'll want to set the body.running class
+        above, and delete this button. -->
       <button
         class="sticky"
+        id="startStop"
         style="float: right; font-size: 2em; line-height: 0.75"
         data-keycode="Escape"
         title="Start/Stop Game ; Hide/Show Menu">☰</button>
