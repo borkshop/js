@@ -21,6 +21,10 @@ import * as build from 'cdom/builder';
 const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: '·'};
 const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
 const doorShader = {plane: 'solid', kind: 'door'};
+const roomShader = build.roomShader({
+  floors: floorShader,
+  walls: wallShader,
+});
 
 /** @param {Event} ev */
 dmg.onKey.byKey['?'] = ev => {
@@ -32,27 +36,29 @@ dmg.onKey.byKey['?'] = ev => {
 
 dmg.grid.getPlane('solid').classList.add('lit');
 
-build.fillRect(dmg.grid, {x: 0, y: 0, w: 13, h: 8}, build.roomShader({
-  floors: floorShader,
-  walls: wallShader,
-  doors: doorShader,
-  doorsAt: (pos, rect) => 
-    pos.x === rect.x + Math.floor(rect.w/2),
-}));
+for (const room of [
+  {x: 0, y:   0, w: 13, h: 8},
+  {x: 4, y: -10, w:  5, h: 5},
+]) build.fillRect(dmg.grid, room, roomShader);
 
-build.fillRect(dmg.grid, {x: 5, y: -5, w: 3, h: 5}, build.roomShader({
-  floors: floorShader,
-  walls: build.borderShader(null, wallShader),
-}));
+// TODO factor out room & hall routines from bsp
 
-build.fillRect(dmg.grid, {x: 4, y: -10, w: 5, h: 5}, build.roomShader({
-  floors: floorShader,
-  walls: wallShader,
-  doors: doorShader,
-  doorsAt: (pos, rect) => 
-    pos.x === rect.x + Math.floor(rect.w/2) &&
-    pos.y === rect.y + rect.h-1,
-}));
+// TODO
+// doors: doorShader,
+// doorsAt: (pos, rect) =>
+//   pos.x === rect.x + Math.floor(rect.w/2),
+
+// TODO hallway build
+// build.fillRect(dmg.grid, {x: 5, y: -5, w: 3, h: 5}, build.roomShader({
+//   floors: floorShader,
+//   walls: build.borderShader(null, wallShader),
+// }));
+
+// TODO
+// doors: doorShader,
+// doorsAt: (pos, rect) =>
+//   pos.x === rect.x + Math.floor(rect.w/2) &&
+//   pos.y === rect.y + rect.h-1,
 
 dmg.grid.buildTile({
   pos: {x: 6, y: -8},
