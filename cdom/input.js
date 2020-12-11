@@ -75,11 +75,9 @@ export class KeyAliases {
 
 /**
  * Allows easy handling of one-off keys, cancelling the triggering event.
- * Useful for handling things like a modal Escape menu.
  *
- * Also supports clicking data-keycode or data-key annotated buttons.
- *
- * Prefers to call any byCode handler over any byKey handler.
+ * The first handler defined in byCode, byKey, or byID is called, in that order
+ * of precedence.
  *
  * @implements {EventListenerObject}
  */
@@ -101,24 +99,14 @@ export class Handlers {
    * @returns {null|EventHandler}
    */
   lookup(event) {
+    if (!(event instanceof KeyboardEvent)) return null;
+    const byCode = event.code && this.byCode[event.code];
+    if (byCode) return byCode;
+    const byKey = event.key && this.byKey[event.key];
+    if (byKey) return byKey;
     const button = buttonFor(event);
-    if (event instanceof MouseEvent) {
-      const {type} = event;
-      if (type === 'click' && button) {
-        const {id} = button;
-        const {key, keycode} = button.dataset;
-        const by = (keycode && this.byCode[keycode])
-                || (key && this.byKey[key])
-                || (id && this.byID[id]);
-        if (by) return by;
-      }
-    } else if (event instanceof KeyboardEvent) {
-      const {key, code} = event;
-      const by = (code && this.byCode[code])
-              || (key && this.byKey[key])
-              || (button?.id && this.byID[button.id]);
-      if (by) return by;
-    }
+    const byID = button?.id && this.byID[button.id];
+    if (byID) return byID;
     return null;
   }
 
@@ -208,28 +196,27 @@ export class KeyHighlighter {
 export class KeySynthesizer {
   /** @param {Event} event */
   handleEvent(event) {
-    if (event instanceof MouseEvent) {
-      const {type, target, view} = event;
-      if (type !== 'click' || !(target instanceof HTMLButtonElement)) return;
-      const {key, keycode} = target.dataset;
-      if (!target.disabled && (key || keycode)) {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-        const holdable = !!view?.getComputedStyle(target).getPropertyValue('--holdable');
-        /** @type {KeyboardEventInit} */
-        const init = {
-          bubbles: true, cancelable: true, composed: true,
-          view,
-          key, code: keycode,
-        };
-        if (!holdable) {
-          target.dispatchEvent(new KeyboardEvent('keydown', init));
-          target.dispatchEvent(new KeyboardEvent('keyup', init));
-        } else if (target.classList.toggle('held')) {
-          target.dispatchEvent(new KeyboardEvent('keydown', init));
-        } else {
-          target.dispatchEvent(new KeyboardEvent('keyup', init));
-        }
+    if (!(event instanceof MouseEvent)) return;
+    const {type, target, view} = event;
+    if (type !== 'click' || !(target instanceof HTMLButtonElement)) return;
+    const {key, keycode} = target.dataset;
+    if (!target.disabled && (key || keycode)) {
+      event.stopImmediatePropagation();
+      event.preventDefault();
+      const holdable = !!view?.getComputedStyle(target).getPropertyValue('--holdable');
+      /** @type {KeyboardEventInit} */
+      const init = {
+        bubbles: true, cancelable: true, composed: true,
+        view,
+        key, code: keycode,
+      };
+      if (!holdable) {
+        target.dispatchEvent(new KeyboardEvent('keydown', init));
+        target.dispatchEvent(new KeyboardEvent('keyup', init));
+      } else if (target.classList.toggle('held')) {
+        target.dispatchEvent(new KeyboardEvent('keydown', init));
+      } else {
+        target.dispatchEvent(new KeyboardEvent('keyup', init));
       }
     }
   }
