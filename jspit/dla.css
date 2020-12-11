@@ -1,4 +1,6 @@
-html {
+@import "./index.css";
+
+:root {
   --main-bg: var(--grey);
 
   --dla-player: var(--yellow-orange);
