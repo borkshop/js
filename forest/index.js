@@ -137,4 +137,3 @@ const actor = dmg.grid.createTile({
 });
 
 dmg.updateActorView(actor);
-dmg.start();
