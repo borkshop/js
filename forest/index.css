@@ -1,3 +1,99 @@
+@import "cdom/common.css";
+
+:root {
+  font-family: sans;
+  font-size: 12pt;
+
+  --black-rgb:          0, 0, 0;
+  --darker-grey-rgb:    18, 18, 18;
+  --dark-grey-rgb:      38, 38, 38;
+  --grey-rgb:           68, 68, 68;
+  --light-grey-rgb:     88, 88, 88;
+  --lighter-grey-rgb:   102, 102, 102;
+  --white-rgb:          192, 192, 192;
+  --dark-white-rgb:     158, 158, 158;
+  --blue-rgb:           95, 135, 175;
+  --bright-purple-rgb:  95, 0, 255;
+  --cyan-rgb:           0, 215, 215;
+  --dark-orange-rgb:    175, 95, 0;
+  --dark-sea-green-rgb: 95, 135, 95;
+  --green-rgb:          0, 175, 0;
+  --light-cyan-rgb:     95, 175, 175;
+  --magenta-rgb:        255, 0, 135;
+  --orange-rgb:         215, 135, 0;
+  --purple-rgb:         135, 135, 175;
+  --red-rgb:            215, 0, 0;
+  --red-orange-rgb:     175, 95, 95;
+  --yellow-rgb:         128, 128, 0;
+  --yellow-orange-rgb:  215, 175, 0;
+  --sky-blue-rgb:       128, 191, 255;
+
+  --black:          rgb(var(--black-rgb));
+  --darker-grey:    rgb(var(--darker-grey-rgb));
+  --dark-grey:      rgb(var(--dark-grey-rgb));
+  --grey:           rgb(var(--grey-rgb));
+  --light-grey:     rgb(var(--light-grey-rgb));
+  --lighter-grey:   rgb(var(--lighter-grey-rgb));
+  --white:          rgb(var(--white-rgb));
+  --dark-white:     rgb(var(--dark-white-rgb));
+  --blue:           rgb(var(--blue-rgb));
+  --bright-purple:  rgb(var(--bright-purple-rgb));
+  --cyan:           rgb(var(--cyan-rgb));
+  --dark-orange:    rgb(var(--dark-orange-rgb));
+  --dark-sea-green: rgb(var(--dark-sea-green-rgb));
+  --green:          rgb(var(--green-rgb));
+  --light-cyan:     rgb(var(--light-cyan-rgb));
+  --magenta:        rgb(var(--magenta-rgb));
+  --orange:         rgb(var(--orange-rgb));
+  --purple:         rgb(var(--purple-rgb));
+  --red:            rgb(var(--red-rgb));
+  --red-orange:     rgb(var(--red-orange-rgb));
+  --yellow:         rgb(var(--yellow-rgb));
+  --yellow-orange:  rgb(var(--yellow-orange-rgb));
+  --sky-blue:       rgb(var(--sky-blue-rgb));
+
+  --main-bg: rgb(98, 54, 9);
+  --main-fg: var(--sky-blue);
+  --grid-bg: transparent;
+
+  --content-bg: var(--dark-grey);
+  --content-fg: var(--dark-white);
+
+  --ui-a: 60%;
+  --ui-bg: rgba(var(--dark-grey-rgb), var(--ui-a));
+  --ui-fg: var(--dark-white);
+  --ui-disabled: var(--lighter-grey);
+
+  --ui-accent:       rgba(var(--grey-rgb), var(--ui-a));
+  --ui-accent-focus: rgba(var(--light-grey-rgb), var(--ui-a));
+
+  --action-color:       var(--blue);
+  --action-focus-color: var(--cyan);
+  --acting-color:       var(--magenta);
+  --acted-color:        var(--bright-purple);
+
+  --inspect-pinned-color: var(--magenta);
+  --inspect-cursor-color: var(--cyan);
+}
+
+/** tile grid plane mechanics */
+
+/* planes must be explicitly shown */
+.plane { display: none }
+
+/* the player's meme plane(s) contain subjective copies of objective tiles:
+ * - ones that are within Field Of View (FOV) have a --light variable
+ * - where-as ones that are merely memories of previously seen tiles do not
+ */
+.plane.meme { display: initial }
+.plane.meme .tile[data-light] { opacity: var(--light, 15%); }
+.plane.meme .tile:not([data-light]) { opacity: 15%; }
+
+/* inspector plane should be on top and shown */
+.plane[data-plane="domgeon-inspect"] { display: initial }
+.plane[data-plane="domgeon-inspect"] { z-index: 1000 }
+
+/** tile grid tiles */
 
 /* tile stacking priorities */
 .tile.floor { z-index:  1 }
@@ -6,48 +102,17 @@
 .tile.mover { z-index: 20 }
 .tile.input { z-index: 50 }
 
-.grid {
-  --grid-bg: hsl(0, 0, 0);
-}
-
-.plane.meme .tile[data-light] {
-  opacity: var(--light, 15%);
-}
-
-.plane.meme .tile:not([data-light]) {
-  opacity: 15%;
-}
-
+/* basic structural tiles: floor and wall */
 .tile.floor {
   background-color: rgb(126, 69, 12);
   color: hsl(70, 5%, 27%);
 }
 
 .tile.wall {
+  /* FIXME these are trees */
 }
 
-.tile.mover {
-  color: hsl(20, 75%, 50%);
-}
-.tile.mover.input,
-.tile.mover.inputable {
-  color: hsl(220, 75%, 50%);
-}
-.tile.mover.input.focus,
-.tile.mover.inputable.focused {
-  color: hsl(120, 75%, 50%);
-}
-
-.tile.mover {
-  --lightInit: 1;
-}
-.tile.mover.input {
-  --lightInit: 2;
-}
-.tile.mover.input.focus {
-  --lightInit: 8;
-}
-
+/* a door tile that can be opened or closed */
 .tile.door {
   background-color: hsl(50, 25%, 15%);
   color: hsl(50, 90%, 30%);
@@ -55,22 +120,35 @@
   --morph_target: "!passable";
 }
 .tile.door::before { content: "🚪" }
-
 .tile.door.passable {
   background-color: hsl(70, 5%, 12%);
   --action: "close";
 }
 .tile.door.passable::before { content: "-" }
 
+/* rune tiles */
 .tile.rune { color: hsl(270, 80%, 65%) }
+/* TODO could differentiate between .floor.rune vs just .rune */
 
+/* mover tiles, like the player */
+.tile.mover { color: hsl(20, 75%, 50%); }
+
+/* mark self-supported movers specially since they may walk around outside of
+ * normal world support */
 .tile.mover.support {
   text-decoration: underline;
   text-decoration-style: dotted;
 }
 
-.plane { display: none }
-.plane[data-plane="domgeon-inspect"],
-.plane.meme { display: initial }
+/* color player's own movers specially within its subjective plane; in the
+ * objective plane these are .mover.input and .mover.input.focus respectively */
+.tile.mover.inputable { color: hsl(220, 75%, 50%); }
+.tile.mover.inputable.focused { color: hsl(120, 75%, 50%); }
 
-.plane[data-plane="domgeon-inspect"] { z-index: 1000 }
+/* for lighting, any tile may be a light source; these defaults provide default
+ * player-centric lighting, which is a bit of a cheesy stand-in for other
+ * alternatives like a properly lit level, or held torch items that can be
+ * controlled. */
+.tile.mover             { --lightInit: 1; }
+.tile.mover.input       { --lightInit: 2; }
+.tile.mover.input.focus { --lightInit: 8; }

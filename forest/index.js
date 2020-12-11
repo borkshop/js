@@ -1,4 +1,7 @@
 // @ts-check
+
+import {find, mustFind} from 'cdom/wiring';
+
 import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
 import * as build from 'cdom/builder';
 import * as PRNG from 'cdom/prng';
@@ -72,31 +75,10 @@ const nextSeed = btoa(String.fromCharCode(...nextSeedBytes));
  * @typedef { import("cdom/builder").Shader<T> } Shader
  */
 
-/**
- * @template T
- * @param {T | null} value
- * @param {string} label
- * @returns {T}
- */
-function check(value, label) {
-  if (value == null) {
-    throw new TypeError(`${label} must not be ${value}`);
-  }
-  return value;
-}
-
-/**
- * @param {string} selector
- * @returns {HTMLElement}
- */
-function find(selector) {
-  return check(document.querySelector(selector), selector);
-}
-
 const dmg = new DOMgeon({
   ui: document.body,
   keys: document.body,
-  grid: find('.grid'),
+  grid: mustFind('.grid'),
   moveBar: find('.buttonbar.moves'),
   actionBar: find('.buttonbar.actions'),
   lightLimit: 0.2,
@@ -107,7 +89,8 @@ const dmg = new DOMgeon({
   }
 });
 globalThis.dmg = dmg;
-new DOMgeonInspector(dmg, find('#inspector'));
+const inspector = find('#inspector');
+if (inspector) new DOMgeonInspector(dmg, inspector);
 
 const floorShader = build.toShader({plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: ''});
 const treeShader = build.toShader({plane: 'solid', kind: 'wall', text: '🌲'});

@@ -55,9 +55,6 @@
   --yellow:         rgb(var(--yellow-rgb));
   --yellow-orange:  rgb(var(--yellow-orange-rgb));
 
-  --inspect-pinned-color: var(--magenta);
-  --inspect-cursor-color: var(--cyan);
-
   --main-bg: var(--darker-grey);
   --main-fg: var(--light-grey);
   --grid-bg: var(--black);
@@ -77,6 +74,9 @@
   --action-focus-color: var(--cyan);
   --acting-color:       var(--magenta);
   --acted-color:        var(--bright-purple);
+
+  --inspect-pinned-color: var(--magenta);
+  --inspect-cursor-color: var(--cyan);
 }
 
 /** tile grid plane mechanics */
