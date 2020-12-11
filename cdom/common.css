@@ -87,6 +87,7 @@ aside.modal {
 }
 
 body.running aside.menu > *:not(.sticky) { display: none; }
+body.running .grid { cursor: none; }
 
 aside.menu section               { margin-top: 1em; }
 aside.menu section:first-of-type { margin-top: 0; }
@@ -129,8 +130,6 @@ label:hover .tip { display: block }
     translateY(calc((0 - var(--xlate-y)) * var(--tile-height)))
     ;
 }
-
-body.running .grid { cursor: none; }
 
 .grid .tile {
   --x: 0;
