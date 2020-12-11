@@ -1,4 +1,4 @@
-# 2020-12-10
+# 2020-12-11
 
 ## TODO
 
@@ -42,14 +42,28 @@
 
 ## WIP
 
-Breaking up the template, and increasing its explanatory detail.
+- standardized playing state
 
 ## Done
+
+Updated all jspit demos over new indirected startStop (nee Escape) button.
+Other minor improvements to bsp and dla demos.
+
+Added support for forest-style initial running, and mayde the Escape menu
+completely optional; updated forest to use this.
+
+Improved template html usage notes, adding many instruction comments.
+
+Fixed a minor bug around clicking buttons with handlers.
+
+# 2020-12-10
+
+Dropped inspector and explicit walls from forest, sync with template to use cdom/common css.
 
 # 2020-12-08
 
 Broke up the cdom-template html into a separated js and css file, synced all
-jspyt demos and forest with the new scheme.
+jspit demos and forest with the new scheme.
 
 # 2020-12-07
 
