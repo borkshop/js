@@ -489,6 +489,23 @@ export class DOMgeon extends EventTarget {
    */
   running = false
 
+  /**
+   * True if the domgeon game is currently play(ing)(able); controls whether
+   * player input will be processed or discarded within any running the main
+   * interaction/animation loop.
+   */
+  get playing() { return this._playing; }
+  set playing(playing) {
+    this._playing = !!playing;
+    this.ui.classList.toggle('playing', this._playing);
+    if (this._playing) {
+      this._fovID = '';
+      this.updateActorView(this.focusedActor());
+    }
+    this.dispatchEvent(new Event(this._playing ? 'play' : 'pause'));
+  }
+  _playing = true
+
   /** @type {Object<string, TileMoverProc>} */
   moveProcs = {
     '': procMove,
@@ -611,6 +628,11 @@ export class DOMgeon extends EventTarget {
       }
     };
 
+    this.onKey.byID['playPause'] = ({type}) => {
+      if (type === 'keyup') dmg.playing = !dmg.playing;
+    };
+
+    this.ui.classList.toggle('playing', this.playing);
     if (this.ui.classList.contains('running')) setTimeout(() => this.start(), 0);
   }
 
@@ -704,8 +726,10 @@ export class DOMgeon extends EventTarget {
       () => !!this.running,
       () => {
         if (lastChord !== null) {
-          const actor = this.processInput(lastChord);
-          if (actor) this.updateActorView(actor);
+          if (this.playing) {
+            const actor = this.processInput(lastChord);
+            if (actor) this.updateActorView(actor);
+          }
           lastChord = null;
         }
         return true;
@@ -754,7 +778,7 @@ export class DOMgeon extends EventTarget {
    * @returns {void}
    */
   updateActorView(actor) {
-    if (actor) {
+    if (this.playing && actor) {
       const pos = this.grid.getTilePosition(actor);
       const wanted = this.wantedViewPoint(pos, this.grid.viewport);
       const to = wanted || (this.grid.hasFixedViewPoint() ? null : pos);
