@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" type="text/css" href="index.css" />
+    <link rel="stylesheet" type="text/css" href="bsp.css" />
     <title>jspit: BSP Procgen</title>
   </head>
   <body>
@@ -86,74 +86,6 @@
       </fieldset>
 
     </aside>
-
-    <style>
-      /* tile stacking priorities */
-      .tile.floor { z-index:  1 }
-      .tile       { z-index:  5 }
-      .tile.wall  { z-index: 10 }
-      .tile.mover { z-index: 20 }
-      .tile.input { z-index: 50 }
-
-      .grid { --grid-bg: hsl(0, 0, 0); }
-
-      .plane { display: none }
-
-      .grid:not(.playing) .plane[data-plane="solid"] { display: initial }
-      .grid.playing .plane.meme { display: initial }
-
-      .plane.meme .tile[data-light] { opacity: var(--light, 15%); }
-      .plane.meme .tile:not([data-light]) { opacity: 15%; }
-
-      .plane[data-plane="domgeon-inspect"] { display: initial }
-      .plane[data-plane="domgeon-inspect"] { z-index: 1000 }
-
-      .tile.floor { background-color: hsl(70, 5%, 12%); }
-      .tile.wall { background-color: hsl(50, 15%, 15%); }
-      .tile.door { background-color: hsl(50, 25%, 15%); }
-      .tile.door.passable { background-color: hsl(70, 5%, 12%); }
-
-      .tile.wall.mark {
-        background-color: hsl(50, 30%, 30%);
-        color: hsl(50, 90%, 60%);
-      }
-
-      .tile.floor { color: hsl(70, 5%, 27%); }
-      .tile.wall { color: hsl(50, 25%, 30%); }
-      .tile.mover { color: hsl(20, 75%, 50%); }
-      .tile.mover.input,
-      .tile.mover.inputable { color: hsl(220, 75%, 50%); }
-      .tile.mover.input.focus,
-      .tile.mover.inputable.focused { color: hsl(120, 75%, 50%); }
-      .tile.door { color: hsl(50, 90%, 30%); }
-
-      .tile.mover { --lightInit: 1; }
-      .tile.mover.input { --lightInit: 2; }
-      .tile.mover.input.focus { --lightInit: 8; }
-
-      .tile.door { --action: "open"; --morph_target: "!passable"; }
-      .tile.door.passable { --action: "close"; }
-
-      .tile.door::before { content: "+" }
-      .tile.door.passable::before { content: "-" }
-
-      .tile.mover.support {
-        text-decoration: underline;
-        text-decoration-style: dotted;
-      }
-
-      .grid.debugging .plane[data-plane="debug"] { display: initial }
-      .plane[data-plane="debug"] { z-index: 300 }
-      .plane[data-plane="solid"] { z-index: 200 }
-
-      .tile.box {
-        z-index: calc(10 + var(--depth, 0));
-        width: calc(var(--w) * var(--tile-height));
-        height: calc(var(--h) * var(--tile-height));
-        border: 0.2em solid hsl(calc(0 + var(--depth) * 47), 50%, 50%);
-      }
-
-    </style>
 
     <div class="buttonbar moves left"></div>
     <div class="buttonbar actions right float">

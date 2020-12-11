@@ -1,9 +1,6 @@
 @import "cdom/common.css";
 
-/* Starter font and color definitions (borrowed from the Darcula colorscheme)
- * for convenience; these will probably be the first things you'll want to
- * change.
- */
+/* Color definitions borrowed from the Darcula colorscheme for convenience */
 
 :root {
   font-family: sans;
@@ -84,8 +81,11 @@
 /* planes must be explicitly shown */
 .plane { display: none }
 
-/* only display what the player can see or remembers */
-.plane.meme { display: initial }
+/* when playing, only display what the player can see or remembers */
+.grid.playing .plane.meme { display: initial }
+
+/* when not playing, display the objective world directly */
+.grid:not(.playing) .plane[data-plane="solid"] { display: initial }
 
 /* the player's meme plane(s) contain subjective copies of objective tiles:
  * - ones that are within Field Of View (FOV) have a --light variable
@@ -158,3 +158,16 @@
 .tile.mover             { --lightInit: 1; }
 .tile.mover.input       { --lightInit: 2; }
 .tile.mover.input.focus { --lightInit: 8; }
+
+/* debug plan contains box outlines to demarcate BSP tree regions */
+
+.grid.debugging .plane[data-plane="debug"] { display: initial }
+.plane[data-plane="debug"] { z-index: 300 }
+.plane[data-plane="solid"] { z-index: 200 }
+
+.tile.box {
+  z-index: calc(10 + var(--depth, 0));
+  width: calc(var(--w) * var(--tile-height));
+  height: calc(var(--h) * var(--tile-height));
+  border: 0.2em solid hsl(calc(0 + var(--depth) * 47), 50%, 50%);
+}
