@@ -84,8 +84,16 @@
 /* planes must be explicitly shown */
 .plane { display: none }
 
-/* only display what the player can see or remembers */
-.plane.meme { display: initial }
+/* hide the movement bar until playing */
+.buttonbar.moves, .buttonbar.actions { display: none }
+
+/* when playing, display player view and movement controls */
+body.playing .plane.meme { display: initial }
+body.playing .buttonbar.moves,
+body.playing .buttonbar.actions { display: initial }
+
+/* when not playing, display the objective world directly */
+body:not(.playing) .plane[data-plane="solid"] { display: initial }
 
 /* the player's meme plane(s) contain subjective copies of objective tiles:
  * - ones that are within Field Of View (FOV) have a --light variable
