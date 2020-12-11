@@ -93,12 +93,12 @@ const inspector = find('#inspector');
 if (inspector) new DOMgeonInspector(dmg, inspector);
 
 const floorShader = build.toShader({plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: ''});
-const treeShader = build.toShader({plane: 'solid', kind: 'wall', text: '🌲'});
+const treeShader = build.toShader({plane: 'solid', kind: 'tree', text: '🌲'});
 const linkShader = build.toShader({
   plane: 'solid',
   kind:  'link',
   text: '🔗',
-  classList: ['interact', 'wall'],
+  classList: ['interact'],
   data: { proc: 'link' }
 });
 

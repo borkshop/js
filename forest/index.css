@@ -98,18 +98,14 @@
 /* tile stacking priorities */
 .tile.floor { z-index:  1 }
 .tile       { z-index:  5 }
-.tile.wall  { z-index: 10 }
+.tile.tree  { z-index: 10 }
+.tile.link  { z-index: 15 }
 .tile.mover { z-index: 20 }
 .tile.input { z-index: 50 }
 
-/* basic structural tiles: floor and wall */
 .tile.floor {
   background-color: rgb(126, 69, 12);
   color: hsl(70, 5%, 27%);
-}
-
-.tile.wall {
-  /* FIXME these are trees */
 }
 
 /* a door tile that can be opened or closed */
