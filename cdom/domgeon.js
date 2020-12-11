@@ -480,7 +480,13 @@ export class DOMgeon extends EventTarget {
   /** @type {KeyChorder} */
   keyChord
 
-  /** @type {boolean} */
+  /**
+   * Set true by start(), indicating that an animation loop is running; set
+   * false when the start() loop exits, or when stop() is called to signal to
+   * halt it.
+   *
+   * @type {boolean}
+   */
   running = false
 
   /** @type {Object<string, TileMoverProc>} */
@@ -602,6 +608,8 @@ export class DOMgeon extends EventTarget {
       const button = this.moveBar.querySelector(`button[data-movedir="${x},${y}"]`);
       updateActionButton(this.moveBar, button, moveButton);
     }
+
+    if (this.ui.classList.contains('running')) setTimeout(() => this.start(), 0);
   }
 
   stop() {
@@ -665,14 +673,14 @@ export class DOMgeon extends EventTarget {
   }
 
   async start() {
-    this.running = true;
-    this.ui.classList.toggle('running', true);
+    if (this.running) return;
+    this.ui.classList.toggle('running', this.running = true);
 
     this.keyChord.clear();
     /** @type {null|Set<string>} */
     let lastChord = null;
     /** @param {Event} event */
-    const keepLastKeyChord = (event) => {
+    const keepLastKeyChord = event => {
       if (event instanceof KeyChordEvent)
         lastChord = new Set(event.keys);
     };
@@ -709,8 +717,7 @@ export class DOMgeon extends EventTarget {
     this.keys.removeEventListener('keyup', this.keyChord);
     this.keys.removeEventListener('keydown', this.keyChord);
 
-    this.ui.classList.toggle('running', false);
-    this.running = false;
+    this.ui.classList.toggle('running', this.running = false);
   }
 
   /**
