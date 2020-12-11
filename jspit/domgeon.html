@@ -6,6 +6,9 @@
     <link rel="stylesheet" type="text/css" href="cdom-template/index.css" />
     <title>Cascading DOMgeon Template</title>
   </head>
+
+  <!-- NOTE if the game should immediately start running without any sort of
+    introductory screen, simply add class="running" to <body> -->
   <body>
 
     <div class="grid">
@@ -17,16 +20,19 @@
     </div>
 
     <aside class="menu">
+      <!-- NOTE any .sticky elements under aside.menu will still be shown even
+        when running / the menu is hidden -->
+
+      <!-- Starts and stops the domgeon interaction loop, also causing the
+        aside.menu to be shown when not running (see index.css). If your game
+        has no need to ever not run, you'll want to set the body.running class
+        above, and delete this button. -->
       <button
         class="sticky"
+        id="startStop"
         style="float: right; font-size: 2em; line-height: 0.75"
         data-keycode="Escape"
         title="Start/Stop Game ; Hide/Show Menu">☰</button>
-
-      <button
-        style="float: right; font-size: 2em; line-height: 0.75"
-        data-key="?"
-        title="Show help overview">?</button>
 
       <section>
         <h1>Cascading DOMgeon Template</h1>
@@ -57,28 +63,7 @@
 
     </aside>
 
-    <div class="buttonbar moves left">
-      <!--
-      <table>
-        <tr>
-          <td><button data-key="q" data-legend="Q" data-movedir="-1,-1">NW</button></td>
-          <td><button data-key="w" data-legend="W" data-movedir="0,-1">N</button></td>
-          <td><button data-key="e" data-legend="E" data-movedir="1,-1">NE</button></td>
-        </tr>
-        <tr>
-          <td><button data-key="a" data-legend="A" data-movedir="-1,0">W</button></td>
-          <td><button data-key="s" data-legend="S" data-movedir="0,0">.</button></td>
-          <td><button data-key="d" data-legend="D" data-movedir="1,0">E</button></td>
-        </tr>
-        <tr>
-          <td><button data-key="z" data-legend="Z" data-movedir="-1,1">SW</button></td>
-          <td><button data-key="x" data-legend="X" data-movedir="0,1">S</button></td>
-          <td><button data-key="c" data-legend="C" data-movedir="1,1">SE</button></td>
-        </tr>
-      </table>
-      -->
-    </div>
-
+    <div class="buttonbar moves left"></div>
     <div class="buttonbar actions right float"></div>
 
     <script type="module" src="cdom-template/index.js"></script>
