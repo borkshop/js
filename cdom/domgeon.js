@@ -647,6 +647,10 @@ export class DOMgeon extends EventTarget {
    * @returns {void}
    */
   viewTo(to, t=this.viewAnimTime) {
+    if (!this.running) {
+      this.grid.viewPoint = to;
+      return;
+    }
     const at = this.grid.viewPoint;
     if (this.grid.hasFixedViewPoint()) {
       if (at.x === to.x && at.y === to.y) return;
@@ -754,10 +758,7 @@ export class DOMgeon extends EventTarget {
       const pos = this.grid.getTilePosition(actor);
       const wanted = this.wantedViewPoint(pos, this.grid.viewport);
       const to = wanted || (this.grid.hasFixedViewPoint() ? null : pos);
-      if (to) {
-        if (this.running) this.viewTo(to);
-        else this.grid.viewPoint = to;
-      }
+      if (to) this.viewTo(to);
     } // else TODO what should view track?
     const actorID = actor?.id || '';
     if (actorID !== this._litActorID) this._litActorID = actorID;
