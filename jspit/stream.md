@@ -46,6 +46,9 @@
 
 ## Done
 
+Generalized the playability-vs-demo toggle used by a couple jspit demos into a
+latent DOMgeon feature.
+
 Updated all jspit demos over new indirected startStop (nee Escape) button.
 Other minor improvements to bsp and dla demos.
 
