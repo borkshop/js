@@ -2,26 +2,44 @@
 
 :root {
   --main-bg: var(--grey);
-
-  --dla-player: var(--yellow-orange);
 }
 
-.grid .mover.input,
-.grid .mover.inputable {
-  color: var(--dla-player);
-}
+/** tile grid plane mechanics */
 
-.grid .tile.particle {
+/* planes must be explicitly shown */
+.plane { display: none }
+
+.grid:not(.playing) .plane:not(.meme) { display: initial }
+.grid.playing .plane.meme { display: initial }
+
+/* the player's meme plane(s) contain subjective copies of objective tiles:
+ * - ones that are within Field Of View (FOV) have a --light variable
+ * - where-as ones that are merely memories of previously seen tiles do not
+ */
+.plane.meme .tile[data-light] { opacity: var(--light, 15%); }
+.plane.meme .tile:not([data-light]) { opacity: 15%; }
+
+/** tile grid tiles */
+
+.tile               { z-index: 1 }
+.tile.particle      { z-index: 10 }
+.tile.particle.live { z-index: 100 }
+.tile.mover         { z-index: 1000 }
+
+.tile.particle {
   background-color: var(--light-grey);
   color:            var(--dark-white);
 }
 
-.grid .tile.ghost { visibility: hidden }
-
-.grid .tile.particle.live {
+.tile.particle.live {
   color: var(--red);
   transform: rotate(calc(var(--heading) - 0.5turn));
 }
+
+.tile.mover           { color: var(--dark-orange); }
+.tile.mover.inputable { color: var(--yellow-orange); }
+
+.tile.ghost { visibility: hidden }
 
 .grid.retro { background-color: var(--black); }
 
@@ -37,13 +55,6 @@
   color: var(--dark-sea-green);
 }
 
-.grid {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
-}
-
 aside.console {
   position: absolute;
   top: 0;
@@ -51,22 +62,6 @@ aside.console {
   z-index: 2;
 }
 
-.tile               { z-index: 1 }
-.tile.particle      { z-index: 10 }
-.tile.particle.live { z-index: 100 }
-.tile.mover         { z-index: 1000 }
-
-.plane { display: none }
-
-.plane[data-plane="solid-meme"] { z-index: 1 }
-.plane[data-plane="solid"]      { z-index: 10 }
-
-.grid:not(.playing) .plane:not(.meme) { display: initial }
-.grid.playing .plane.meme { display: initial }
-
-.grid.playing .tile.particle[data-light]       { opacity: var(--light, 15%); }
-.grid.playing .tile.particle:not([data-light]) { opacity: 15%; }
-
+/* light sources */
 .tile.mover { --lightInit: 8; }
-
 .tile.particle.prime.live { --lightInit: 4.0; }
