@@ -34,6 +34,19 @@
         data-keycode="Escape"
         title="Start/Stop Game ; Hide/Show Menu">☰</button>
 
+      <!-- Toggles playing state:
+        - when playing the player's subjective plane is shown (see index.css)
+        - when not playing the objective world plane (solid) is shown instead, and
+          any player input is discorded by the DOMgeon interaction loop
+        TODO this is mainly here as a development / debugging aide, and should be
+        eliminated in or otherwise managed by a shipping game -->
+      <button
+        class="sticky"
+        id="playPause"
+        style="float: right; font-size: 2em; line-height: 0.75"
+        data-key="@"
+        title="Toggle playing state">@</button>
+
       <section>
         <h1>Cascading DOMgeon Template</h1>
         <h3><a href="index.html">Back to Welcome screen</a></h3>
