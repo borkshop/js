@@ -433,28 +433,6 @@ function chooseSpawn() {
   return spawn;
 }
 
-function dropPlayer() {
-  const spawn = chooseSpawn();
-  if (!spawn) return;
-  let actor = dmg.grid.queryTile({plane: 'solid', className: ['input', 'focus', 'mover']});
-  if (actor) {
-    dmg.grid.moveTileTo(actor, spawn);
-    // TODO this is a hack to invalidate FOV, should be auto-invalidated
-    // by any tile moving
-    dmg._fovID = '';
-  } else {
-    actor = dmg.grid.createTile({
-      plane: 'solid',
-      pos: spawn,
-      kind: 'mover',
-      classList: ['input', 'focus'],
-      text: '@',
-    });
-  }
-  dmg.updateActorView(actor);
-  dmg.grid.el.classList.toggle('playing', !!actor);
-}
-
 /**
  * @param {Point} pos
  * @param {string} [kind]
@@ -782,23 +760,35 @@ const bsp = new BSP({
   connect: (as, bs) => roomBuilder.connect(as, bs),
 });
 
+/** @type {null|Point} */
+let origin = null;
 function reset() {
-  const playing = dmg.grid.el.classList.contains('playing');
   dmg.grid.clear();
   const bounds = dmg.grid.viewbox;
-  dmg.grid.viewPoint = {
+  origin = {
     x: bounds.x + bounds.w/2,
     y: bounds.y + bounds.h/2,
   };
+  dmg.grid.viewPoint = origin;
   roomBuilder.reset();
   bsp.run(bounds);
-  if (playing) dropPlayer();
+
+  const spawn = chooseSpawn();
+  if (spawn) dmg.updateActorView(dmg.grid.createTile({
+    plane: 'solid',
+    pos: spawn,
+    kind: 'mover',
+    classList: ['input', 'focus'],
+    text: '@',
+  }));
 }
 
 /** @param {Event} event */
 dmg.onKey.byID['regenWorld'] = ({type}) => { if (type === 'keyup') reset(); };
 
-/** @param {Event} event */
-dmg.onKey.byID['dropPlayer'] = ({type}) => { if (type === 'keyup') dropPlayer(); };
+dmg.addEventListener('pause', () => {
+  if (origin) dmg.viewTo(origin);
+});
+dmg.playing = false;
 
 reset();

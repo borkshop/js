@@ -27,6 +27,13 @@
         title="<Esc>: Start/Stop Game ; Hide/Show Menu">☰</button>
 
       <button
+        class="sticky"
+        id="playPause"
+        style="float: right; font-size: 1.5em; line-height: 1"
+        data-key="@"
+        title="Toggle playing state">@</button>
+
+      <button
         style="float: right; font-size: 1.5em; line-height: 1"
         id="regenWorld"
         data-keycode="Backspace"
@@ -84,9 +91,7 @@
     </aside>
 
     <div class="buttonbar moves left"></div>
-    <div class="buttonbar actions right float">
-      <button data-key="@" id="dropPlayer" title="Drop Player">@</button>
-    </div>
+    <div class="buttonbar actions right float"></div>
 
     <script type="module" src="./bsp.js"></script>
   </body>
