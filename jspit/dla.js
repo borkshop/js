@@ -98,6 +98,7 @@ export default class DLA {
   dmg
   config = DLA.config
   particleID = 0
+  havePlayed = false;
 
   /**
    * @param {DOMgeon} dmg
@@ -155,6 +156,17 @@ export default class DLA {
       const {bounds: {w, h}} = this.config;
       this.config.stepLimit = Math.max(w, h) / 2;
     }
+
+    dmg.updateActorView(dmg.grid.createTile({
+      plane: 'solid',
+      pos: this.config.seeds[0],
+      kind: 'mover',
+      classList: ['input', 'focus'],
+      text: '@',
+    }));
+
+    this.dmg.playing = false;
+    this.havePlayed = false;
   }
 
   *chooseVoid() {
@@ -305,9 +317,7 @@ export default class DLA {
   }
 
   stepRate() {
-    const {genRate, playRate} = this.config;
-    const havePlayer = !!this.dmg.grid.queryTile({plane: 'solid', className: ['mover', 'input']});
-    return havePlayer ? playRate : genRate;
+    return this.dmg.playing ? this.config.playRate : this.config.genRate;
   }
 
   /**
@@ -413,53 +423,28 @@ const inspector = inspectEl
   : null;
 
 const initialDrop = 0.25; // auto-drop player at this proportion of limit particles
-let dropped = false;
-const dropPlayer = () => {
-  let actor = dmg.grid.queryTile({plane: 'solid', className: ['input', 'focus', 'mover']});
-  if (actor) {
-    actor.parentNode?.removeChild(actor);
-    actor = null;
-    // TODO reset view anchor?
-  } else {
-    dropped = true;
-    const pos = world.config.seeds[0]; // TODO input
-    actor = dmg.grid.createTile({
-      plane: 'solid',
-      pos,
-      kind: 'mover',
-      classList: ['input', 'focus'],
-      text: '@',
-    });
-  }
-  dmg.updateActorView(actor);
-};
-
 const particleID = find('#particleID');
 const world = new DLA(dmg);
 dmg.animParts.push(_ => {
-  let playing = !!dmg.grid.queryTile({plane: 'solid', className: ['input', 'focus', 'mover']});
   if (particleID) {
     particleID.textContent = world.particleID.toString();
-    if (!dropped && !playing && world.particleID >= initialDrop*world.config.particleLimit) {
-      dropPlayer();
-      playing = true;
+    if (!world.havePlayed && !dmg.playing && world.particleID >= initialDrop*world.config.particleLimit) {
+      dmg.playing = true;
+      world.havePlayed = true;
     }
   }
-  dmg.grid.el.classList.toggle('playing', playing);
-  if (dmg.moveBar) dmg.moveBar.style.display = playing ? '' : 'none';
   return true;
 });
 
 dmg.onKey.byCode['Backspace'] = () => {
   world.reset();
   if (particleID) particleID.innerText = '0';
-  dropped = false;
 };
 
 /** @param {Event} event */
 dmg.onKey.byKey['@'] = ({type}) => {
-  if (type === 'keydown') return;
-  dropPlayer();
+  if (type !== 'keyup') return;
+  if (dmg.playing = !dmg.playing) world.havePlayed = true;
 };
 
 /** @param {Event} event */
