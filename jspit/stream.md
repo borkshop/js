@@ -1,4 +1,4 @@
-# 2020-12-11
+# 2020-12-12
 
 ## TODO
 
@@ -42,9 +42,11 @@
 
 ## WIP
 
-- standardized playing state
-
 ## Done
+
+Factored out a generator core within `cdom/fov`.
+
+# 2020-12-11
 
 Generalized the playability-vs-demo toggle used by a couple jspit demos into a
 latent DOMgeon feature.
