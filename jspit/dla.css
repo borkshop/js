@@ -6,21 +6,6 @@
   --dla-player: var(--yellow-orange);
 }
 
-.grid #inspector {
-  float: left;
-  padding: 0;
-  z-index: 1000;
-}
-
-.grid #inspector textarea {
-  border: none;
-  resize: none;
-  user-select: all;
-}
-
-.running .grid #inspector { visibility: hidden }
-.grid.retro    #inspector { visibility: visible }
-
 .grid .mover.input,
 .grid .mover.inputable {
   color: var(--dla-player);
@@ -72,7 +57,6 @@ aside.console {
 .tile.mover         { z-index: 1000 }
 
 .plane { display: none }
-.plane[data-plane="domgeon-inspect"] { display: initial }
 
 .plane[data-plane="solid-meme"] { z-index: 1 }
 .plane[data-plane="solid"]      { z-index: 10 }
