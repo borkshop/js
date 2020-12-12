@@ -786,6 +786,20 @@ function reset() {
 /** @param {Event} event */
 dmg.onKey.byID['regenWorld'] = ({type}) => { if (type === 'keyup') reset(); };
 
+// TODO custom action/ability, rather than a one-off key
+/** @param {Event} event */
+dmg.onKey.byID['jump'] = ({type}) => {
+  if (type !== 'keyup') return;
+  const actor = dmg.focusedActor();
+  const spawn = chooseSpawn();
+  if (actor && spawn) {
+    dmg.grid.moveTileTo(actor, spawn);
+    // FIXME hack to invalidate FOV ; should be internalized post-action, as
+    // this handler should be an action, not a one-off function outside DOMgeon
+    dmg._fovID = '';
+  }
+};
+
 dmg.addEventListener('pause', () => {
   if (origin) dmg.viewTo(origin);
 });

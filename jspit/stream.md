@@ -44,6 +44,8 @@
 
 ## Done
 
+Fixed BSP player teleport action.
+
 Factored out a generator core within `cdom/fov`.
 
 # 2020-12-11

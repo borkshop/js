@@ -77,8 +77,11 @@
             remain...</li>
         </ul>
 
-        <p>Press <code>@</code> to play through the level; press <code>@</code>
-        again if you get stuck to be respawned in a random room.</p>
+        <p>Press <code>@</code> to play through the level; press it again to
+        toggle back to demo mode.</p>
+
+        <p>Press <code>*</code> to teleport to a different room randomly;
+        useful in case you get stuck in a disconnected world.</p>
 
         <p>Press <code>&lt;Backspace&gt;</code> to spin the RNG again and build
         a new world.</p>
@@ -91,7 +94,12 @@
     </aside>
 
     <div class="buttonbar moves left"></div>
-    <div class="buttonbar actions right float"></div>
+    <div class="buttonbar actions right float">
+      <button
+        id="jump"
+        data-key="*"
+        title="Jump to a different random room">*</button>
+    </div>
 
     <script type="module" src="./bsp.js"></script>
   </body>
