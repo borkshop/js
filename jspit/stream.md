@@ -1,4 +1,4 @@
-# 2020-12-12
+# 2020-12-13
 
 ## TODO
 
@@ -18,10 +18,6 @@
 
 - procgen ideas
   - directional cave <http://www.roguebasin.com/index.php?title=Basic_directional_dungeon_generation>
-  - BSP <http://www.roguebasin.com/index.php?title=Basic_BSP_Dungeon_generation>
-    - param: split range + offset
-    - param: split mode and weights
-    - param: border width(s)
   - Grid System <http://www.roguebasin.com/index.php?title=Grid_Based_Dungeon_Generator>
   - random rooms + connections, ala <https://github.com/ondras/rot.js/blob/a21112e/src/map/uniform.ts>
 
@@ -44,11 +40,32 @@
 
 ## Done
 
+# Week Ending 2020-12-12
+
+- Continued learning from, and standardizing with The Dark Forest
+  - everything now uses an externalized page script and style sheet; this is
+    much more friendly to a larger number of tools and editors, since nested
+    language support is still an emerging trend in 2020, owing to years of
+    lacking parser theory/practice recognizing that it's A Thing ™
+  - in particular, this enables `tsc` to type check page-integration code,
+    improving developer velocity
+  - broke out a separate `cdom/common.css` to share, minimizing the
+    copy/paste/sync ask for functional CSS
+  - added several instruction notes to the template html; more to come
+  - added proper support for menu-less always-running domgeons
+- Generalized jspit's notion of play(ing,able) vs demo modes, exemplified best
+  by the BSP demo
+- Several other minor fixes and improvements to BSP, forest, cdom/input, and
+  cdom/fov; see git for details, and do give the updated BSP and Dark Forest
+  worlds another look
+
+## 2020-12-12
+
 Fixed BSP player teleport action.
 
 Factored out a generator core within `cdom/fov`.
 
-# 2020-12-11
+## 2020-12-11
 
 Generalized the playability-vs-demo toggle used by a couple jspit demos into a
 latent DOMgeon feature.
@@ -63,16 +80,16 @@ Improved template html usage notes, adding many instruction comments.
 
 Fixed a minor bug around clicking buttons with handlers.
 
-# 2020-12-10
+## 2020-12-10
 
 Dropped inspector and explicit walls from forest, sync with template to use cdom/common css.
 
-# 2020-12-08
+## 2020-12-08
 
 Broke up the cdom-template html into a separated js and css file, synced all
 jspit demos and forest with the new scheme.
 
-# 2020-12-07
+## 2020-12-07
 
 Ejected page level script code from all jspit demos.
 
