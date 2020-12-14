@@ -1,4 +1,4 @@
-# 2020-12-13
+# 2020-12-14
 
 ## TODO
 
@@ -39,6 +39,25 @@
 ## WIP
 
 ## Done
+
+Evolved `cdom/input.KeyChorder` so that it won't eat browser controls, making
+menu-less games that always run (Dark Forest) more ergonomic. This needfully
+accounts for sequences like (e.g. Mac OS close tab shortcut):
+- `Down:W Down:Meta Up:Meta-W` -- will result in a "W" chord event, likely
+  handled as "move up"
+- `Down:W Down:Meta Up:Meta Up:W` -- variant due to timing, will still count
+  and be handled internally
+- `Down:W Down:Meta Up:W Up:Meta` -- at least in Chrome, this the `Up:W` event
+  is missing, and the result is a stuck "W" key withing chord held state
+- `Down:Meta-W *` or `Down:Meta Down:W *` -- will be ignored, resulting in a
+  browser command to close tab
+
+Currently this id done with an expansive set of `KeyChorder.ignoredModifers`
+that may be modified per instance if a game wants to embrace things like the
+shift key. There's likely some logic missing to allow for this, since the
+`Shift` key won't (always!) materialize in the resultant event chord set.
+
+# 2020-12-13
 
 Finished the FOV iteration refactor started yesterday.
 
