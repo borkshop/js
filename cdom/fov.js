@@ -56,7 +56,7 @@ export class GridLighting {
   }) {
     const origin = this.grid.getTilePosition(source);
     const depthLimit = Math.sqrt(lightInit/this.lightLimit);
-    this.computeField(source, depthLimit, (pos) => {
+    for (const pos of this.iterateField(source, depthLimit)) {
       const dsq = Math.pow(pos.x - origin.x, 2) + Math.pow(pos.y - origin.y, 2)
       const light = lightScale*lightInit/dsq;
       if (light >= this.lightLimit) {
@@ -64,7 +64,7 @@ export class GridLighting {
         for (const tile of this.filter ? tiles.filter(this.filter) : tiles)
           this.addLight(tile, light);
       }
-    });
+    }
   }
 
   /**
@@ -91,12 +91,12 @@ export class GridLighting {
     mask=(present) => present.filter(
       t => this.grid.getTileData(t, this.lightVar) >= this.lightLimit),
   }) {
-    this.computeField(source, depthLimit, (pos, depth) => {
+    for (const {depth, ...pos} of this.iterateField(source, depthLimit)) {
       const tiles = this.grid.tilesAt(pos);
       const present = this.filter ? tiles.filter(this.filter) : tiles;
       const visible = mask ? mask(present) : present;
       if (visible.length) this.revealView(visible, pos, depth);
-    });
+    }
   }
 
   /**
@@ -120,14 +120,13 @@ export class GridLighting {
 
   /**
    * @param {HTMLElement} source
-   * @param {number} depthLimit
-   * @param {(pos:Point, depth:number) => void} update
-   * @returns {void}
+   * @param {number} [depthLimit]
+   * @returns {IterableIterator<DepthPoint>}
    */
-  computeField(source, depthLimit, update) {
+  *iterateField(source, depthLimit) {
     const origin = this.grid.getTilePosition(source);
     const selfSupported = !!source.classList.contains('support');
-    for (const {depth, ...pos} of iterateField({
+    yield* iterateField({
       origin,
       depthLimit,
       query: (pos) => {
@@ -137,7 +136,7 @@ export class GridLighting {
         const blocked = !supported || present.some(t => !t.classList.contains('passable'));
         return {supported, blocked};
       },
-    })) update(pos, depth);
+    });
   }
 }
 
