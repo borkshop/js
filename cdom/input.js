@@ -235,15 +235,15 @@ export class KeyChorder extends EventTarget {
   chord = new Set()
 
   ignoredModifiers = new Set([
-    'control',
-    'shift',
-    'alt',
-    'meta',
+    'Alt',
+    'Control',
+    'Meta',
+    'Shift',
   ])
 
   /** @param {KeyboardEvent} event */
   hasIgnoredModifier(event) {
-    if (this.ignoredModifiers.has(event.key.toLowerCase())) return true;
+    if (this.ignoredModifiers.has(event.key)) return true;
     return false;
   }
 
