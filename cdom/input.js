@@ -256,6 +256,8 @@ export class KeyChorder extends EventTarget {
   /** @param {KeyboardEvent} event */
   hasIgnoredModifier(event) {
     if (this.ignoredModifiers.has(event.key)) return true;
+    for (const key of this.ignoredModifiers)
+      if (event.getModifierState(key)) return true;
     return false;
   }
 
@@ -269,7 +271,7 @@ export class KeyChorder extends EventTarget {
     if (!(event instanceof KeyboardEvent)) return;
     const {type, key, code, view} = event;
 
-    if (this.hasIgnoredModifier(event)) return;
+    if (this.hasIgnoredModifier(event) && !this.held.has(key)) return;
 
     const root = view?.document;
     if (!root) return;
