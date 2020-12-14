@@ -234,6 +234,19 @@ export class KeyChorder extends EventTarget {
   held = new Set()
   chord = new Set()
 
+  ignoredModifiers = new Set([
+    'control',
+    'shift',
+    'alt',
+    'meta',
+  ])
+
+  /** @param {KeyboardEvent} event */
+  hasIgnoredModifier(event) {
+    if (this.ignoredModifiers.has(event.key.toLowerCase())) return true;
+    return false;
+  }
+
   clear() {
     this.held.clear();
     this.chord.clear();
@@ -243,7 +256,8 @@ export class KeyChorder extends EventTarget {
   handleEvent(event) {
     if (!(event instanceof KeyboardEvent)) return;
     const {type, key, code, view} = event;
-    if (['control', 'shift', 'alt', 'meta'].includes(key.toLowerCase())) return;
+
+    if (this.hasIgnoredModifier(event)) return;
 
     const root = view?.document;
     if (!root) return;
