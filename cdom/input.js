@@ -236,9 +236,21 @@ export class KeyChorder extends EventTarget {
 
   ignoredModifiers = new Set([
     'Alt',
+    'AltGraph',
+    'CapsLock',
     'Control',
+    'Fn',
+    'FnLock',
+    'Hyper',
     'Meta',
+    'OS', // since meta isn't consistent on windows
+    'NumLock',
+    'ScrollLock',
     'Shift',
+    'Super',
+    'Symbol',
+    'SymbolLock',
+    'Win', // IE9 compat; can drop?
   ])
 
   /** @param {KeyboardEvent} event */
