@@ -243,27 +243,28 @@ export class KeyChorder extends EventTarget {
   handleEvent(event) {
     if (!(event instanceof KeyboardEvent)) return;
     const {type, key, code, view} = event;
+    if (['control', 'shift', 'alt', 'meta'].includes(key.toLowerCase())) return;
+
     const root = view?.document;
     if (!root) return;
     /** @type {null|HTMLButtonElement} */
     const button = root.querySelector(`button[data-keycode="${code}"]`)
                 || root.querySelector(`button[data-key="${key}"]`);
     if (button?.disabled) return;
-    if (!['control', 'shift', 'alt', 'meta'].includes(key.toLowerCase())) {
-      if (type === 'keyup') {
-        if (this.held.delete(key)) {
-          this.chord.add(key);
-          if (!this.held.size) {
-            this.dispatchEvent(new KeyChordEvent(this.chord));
-            this.chord.clear();
-          }
+
+    if (type === 'keyup') {
+      if (this.held.delete(key)) {
+        this.chord.add(key);
+        if (!this.held.size) {
+          this.dispatchEvent(new KeyChordEvent(this.chord));
+          this.chord.clear();
         }
-      } else if (type === 'keydown') {
-        this.chord.clear();
-        this.held.add(key);
-      } else {
-        return;
       }
+    } else if (type === 'keydown') {
+      this.chord.clear();
+      this.held.add(key);
+    } else {
+      return;
     }
     event.stopImmediatePropagation();
     event.preventDefault();
