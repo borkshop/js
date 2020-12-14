@@ -40,6 +40,8 @@
 
 ## Done
 
+Finished the FOV iteration refactor started yesterday.
+
 # Week Ending 2020-12-12
 
 - Continued learning from, and standardizing with The Dark Forest
