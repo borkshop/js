@@ -126,17 +126,13 @@ export class GridLighting {
   *iterateField(source, depthLimit) {
     const origin = this.grid.getTilePosition(source);
     const selfSupported = !!source.classList.contains('support');
-    yield* iterateField({
-      origin,
-      depthLimit,
-      query: (pos) => {
-        const tiles = this.grid.tilesAt(pos);
-        const present = this.filter ? tiles.filter(this.filter) : tiles;
-        const supported = selfSupported || present.some(t => t.classList.contains('support'));
-        const blocked = !supported || present.some(t => !t.classList.contains('passable'));
-        return {supported, blocked};
-      },
-    });
+    yield* iterateField(origin, pos => {
+      const tiles = this.grid.tilesAt(pos);
+      const present = this.filter ? tiles.filter(this.filter) : tiles;
+      const supported = selfSupported || present.some(t => t.classList.contains('support'));
+      const blocked = !supported || present.some(t => !t.classList.contains('passable'));
+      return {supported, blocked};
+    }, depthLimit);
   }
 }
 
@@ -160,13 +156,12 @@ export class GridLighting {
  * Implements a reasonably general Symmetric Shadowcasting
  * adapted from https://www.albertford.com/shadowcasting/
  *
- * @param {object} params
- * @param {Point} params.origin
- * @param {(pos:Point)=>{supported: boolean, blocked: boolean}} params.query
- * @param {number} [params.depthLimit]
+ * @param {Point} origin
+ * @param {(pos:Point)=>{supported: boolean, blocked: boolean}} query
+ * @param {number} [depthLimit]
  * @returns {IterableIterator<DepthPoint>}
  */
-export function* iterateField({origin, query, depthLimit=1000}) {
+export function* iterateField(origin, query, depthLimit=1000) {
   /* TODO support casting from walls:
    * > So here are the modifications for casting field of view from a wall tile:
    * > - Make slopes originate from the edges of the tile instead of the center.
