@@ -322,36 +322,6 @@ function addPoints(a, b) {
   return {x: a.x + b.x, y: a.y + b.y};
 }
 
-/**
- * Randomly choose things, with an optional weight function and custom random
- * generator.
- *
- * @template T
- * @param {Iterable<T>} things
- * @param {object} [options]
- * @param {() => number} [options.random]
- * @param {(thing: T) => number} [options.weight]
- * @returns {null|T}
- */
-export function choose(things, options={}) {
-  const {
-    random = Math.random,
-    weight = () => 1,
-  } = options;
-  let choice = null, bestScore = 0;
-  for (const thing of things) {
-    const w = weight(thing);
-    if (w <= 0) {
-      if (!choice) choice = thing;
-      continue;
-    }
-    const score = Math.pow(random(), 1/w);
-    if (!choice || bestScore < score)
-      choice = thing, bestScore = score;
-  }
-  return choice;
-}
-
 /// demo page specifics
 
 import {find, mustFind} from 'cdom/wiring';
