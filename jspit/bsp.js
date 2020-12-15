@@ -299,6 +299,8 @@ function addPoints(a, b) {
 
 /// demo page specifics
 
+const plane = 'solid'; // TODO should get reified
+
 import {find, mustFind} from 'cdom/wiring';
 
 import {DOMgeon} from 'cdom/domgeon';
@@ -324,18 +326,18 @@ if (inspectorEl) new DOMgeonInspector(dmg, inspectorEl);
 
 import * as build from 'cdom/builder';
 const floorShader = build.toShader({
-  plane: 'solid',
+  plane,
   kind: 'floor',
   classList: ['support', 'passable'],
   text: '·',
 });
 const wallShader = build.toShader({
-  plane: 'solid',
+  plane,
   kind: 'wall',
   text: '#',
 });
 const doorShader = build.toShader({
-  plane: 'solid',
+  plane,
   kind: 'door',
   classList: 'interact',
 });
@@ -355,8 +357,6 @@ const roomShader = build.roomShader({
 const minRoomSize = {w: 4, h: 4};
 const minRoomArea = 25;
 const maxRoomArea = 108;
-
-const plane = 'solid';
 
 /** @type {null|Point} */
 let lastSpawn = null;
@@ -718,7 +718,7 @@ function reset() {
 
   const spawn = chooseSpawn();
   if (spawn) dmg.updateActorView(dmg.grid.createTile({
-    plane: 'solid',
+    plane,
     pos: spawn,
     kind: 'mover',
     classList: ['input', 'focus'],
