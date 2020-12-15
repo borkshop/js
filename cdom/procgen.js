@@ -1,5 +1,31 @@
 // @ts-check
 
+/// basic Iterator<T> tools
+
+/** An Iterator version of Array.prototype.map
+ *
+ * @template S,T
+ * @param {Iterable<S>} it
+ * @param {(s: S) => T} fn
+ * @returns {IterableIterator<T>}
+ */
+export function* map(it, fn) {
+  for (const s of it) yield fn(s);
+}
+
+/** An Iterator version of Array.prototype.filter
+ *
+ * @template T
+ * @param {Iterable<T>} it
+ * @param {(t: T) => boolean} filter
+ * @returns {IterableIterator<T>}
+ */
+export function* filter(it, filter) {
+  for (const i of it) if (filter(i)) yield i;
+}
+
+/// Space Partitioning, mostly Binary
+
 // NOTE for random selection within a range throughout, we use:
 //     Range * random()
 // which is technically biased, but idiomatic in javascript
@@ -156,6 +182,37 @@ export class BSP {
 
     return res.shift() || null;
   }
+}
+
+/// General random selection
+
+/** Randomly choose things, with an optional weight function and custom random
+ * generator.
+ *
+ * @template T
+ * @param {Iterable<T>} things
+ * @param {object} [options]
+ * @param {() => number} [options.random]
+ * @param {(thing: T) => number} [options.weight]
+ * @returns {null|T}
+ */
+export function choose(things, options={}) {
+  const {
+    random = Math.random,
+    weight = () => 1,
+  } = options;
+  let choice = null, bestScore = 0;
+  for (const thing of things) {
+    const w = weight(thing);
+    if (w <= 0) {
+      if (!choice) choice = thing;
+      continue;
+    }
+    const score = Math.pow(random(), 1/w);
+    if (!choice || bestScore < score)
+      choice = thing, bestScore = score;
+  }
+  return choice;
 }
 
 /** Selects a random rectangle within a given container rectangle, with at

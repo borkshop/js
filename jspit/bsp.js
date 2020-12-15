@@ -1,6 +1,9 @@
 // @ts-check
 
 import {
+  map, filter,
+  choose,
+
   BSP,
   chooseSubRect,
 } from 'cdom/procgen';
@@ -369,19 +372,14 @@ const maxRoomArea = 108;
 /** @type {null|Point} */
 let lastSpawn = null;
 function chooseSpawn() {
-  let spawn = null, bestScore = 0;
-  for (const tile of dmg.grid.queryTiles({
-    plane,
-    className: 'spawn',
-  })) {
-    const pos = dmg.grid.getTilePosition(tile);
-    if (pos.x === lastSpawn?.x && pos.y === lastSpawn?.y) continue;
-    const score = Math.random();
-    if (!spawn || bestScore < score)
-      spawn = pos, bestScore = score;
-  }
-  lastSpawn = spawn;
-  return spawn;
+  return lastSpawn = choose(filter(
+    map(dmg.grid.queryTiles({
+      plane,
+      className: 'spawn',
+    }),
+    t => dmg.grid.getTilePosition(t)),
+    ({x,y}) => x !== lastSpawn?.x || y !== lastSpawn?.y,
+  ));
 }
 
 /**
