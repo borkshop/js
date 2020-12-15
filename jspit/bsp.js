@@ -1,40 +1,15 @@
 // @ts-check
 
+import {
+  BSP,
+  chooseSubRect,
+} from 'cdom/procgen';
+
 /// TODO move worthwhile parts into cdom/procgen
 
 /** @typedef { import("cdom/tiles").Point } Point */
 /** @typedef { import("cdom/tiles").Size } Size */
 /** @typedef { import("cdom/tiles").Rect } Rect */
-
-/**
- * Shrinks a region randomly, up to a given minimum size and area.
- *
- * @param {Rect} region
- * @param {Size&{a: number}} min
- * @param {object} [options]
- * @param {() => number} [options.random]
- * @returns {Rect}
- */
-export function shrinkRegion(region, min, options={}) {
-  const {
-    random=Math.random,
-  } = options;
-  let {x, y, w, h} = region;
-  const ux = Math.max(0, w - min.w);
-  const uy = Math.max(0, h - min.h);
-  if (ux * uy <= 0) return region;
-  let dx = Math.floor(random() * ux);
-  let dy = Math.floor(random() * uy);
-  while ((w - dx) * (h - dy) < min.a) {
-    if      (dx > dy) dx--;
-    else if (dy > 0)  dy--;
-    else              return region;
-  }
-  w -= dx, h -= dy;
-  x += Math.floor(random() * dx);
-  y += Math.floor(random() * dy);
-  return {x, y, w, h};
-}
 
 /** @enum {number} */
 export const Side = {
@@ -381,8 +356,6 @@ const minRoomSize = {w: 4, h: 4};
 const minRoomArea = 25;
 const maxRoomArea = 108;
 
-import {BSP} from 'cdom/procgen';
-
 const plane = 'solid';
 
 /** @type {null|Point} */
@@ -507,7 +480,7 @@ class BSPRoomBuilder {
     // increasing probability of stopping here and placing a room within
     // this region, starting once we get under max area, reaching 100%
     // certainty at min area.
-    region = shrinkRegion(region, {a: minRoomArea, ...minRoomSize});
+    region = chooseSubRect(region, {a: minRoomArea, ...minRoomSize});
     const p = (maxRoomArea - region.w * region.h) / (maxRoomArea - minRoomArea);
     if (p < 0 || this.random() >= p) return null;
 

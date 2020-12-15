@@ -157,3 +157,22 @@ export class BSP {
     return res.shift() || null;
   }
 }
+
+/** Selects a random rectangle within a given container rectangle, with at
+ * least a minimum size and area.
+ *
+ * @param {Rect} within
+ * @param {Size&{a: number}} min
+ * @param {object} [options]
+ * @param {() => number} [options.random]
+ * @returns {Rect}
+ */
+export function chooseSubRect(within, min, options={}) {
+  const {random=Math.random} = options;
+  const w = Math.floor(random() * (within.w - min.w)) + min.w;
+  const mh = Math.max(min.h, Math.ceil(min.a/w));
+  const h = Math.floor(random() * (within.h - mh)) + mh;
+  const x = within.x + Math.floor(random() * (within.w - w));
+  const y = within.y + Math.floor(random() * (within.h - h));
+  return {x, y, w, h};
+}
