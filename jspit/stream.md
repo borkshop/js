@@ -1,4 +1,4 @@
-# 2020-12-14
+# 2020-12-15
 
 ## TODO
 
@@ -39,6 +39,11 @@
 ## WIP
 
 ## Done
+
+# 2020-12-14
+
+Refactored BSP room selection to never fully reject and into
+`procgen.chosseSubRect`, usable for a "uniform" generator.
 
 Evolved `cdom/input.KeyChorder` so that it won't eat browser controls, making
 menu-less games that always run (Dark Forest) more ergonomic. This needfully
