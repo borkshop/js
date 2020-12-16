@@ -38,7 +38,16 @@
 
 ## WIP
 
+Adding a basic item system to the BSP demo, to enable digging.
+
 ## Done
+
+Added whole-world rejection sampling to the BSP demo, with an error world if
+generation fails 10 times.
+
+Factored out more bits from the BSP demo into cdom/domgeon including:
+- basic iterator tools like `map` and `filter`
+- a weighted random `choose(Iterator<T>) => T` function
 
 # 2020-12-14
 
