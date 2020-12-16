@@ -56,14 +56,11 @@ export class GridLighting {
   }) {
     const origin = this.grid.getTilePosition(source);
     const depthLimit = Math.sqrt(lightInit/this.lightLimit);
-    for (const pos of this.iterateField(source, depthLimit)) {
-      const dsq = Math.pow(pos.x - origin.x, 2) + Math.pow(pos.y - origin.y, 2)
+    for (const {at, x, y} of this.iterateField(source, depthLimit)) {
+      const dsq = Math.pow(x - origin.x, 2) + Math.pow(y - origin.y, 2)
       const light = lightScale*lightInit/dsq;
-      if (light >= this.lightLimit) {
-        const tiles = this.grid.tilesAt(pos);
-        for (const tile of this.filter ? tiles.filter(this.filter) : tiles)
-          this.addLight(tile, light);
-      }
+      if (light < this.lightLimit) continue;
+      for (const tile of at) this.addLight(tile, light);
     }
   }
 
@@ -91,10 +88,8 @@ export class GridLighting {
     mask=(present) => present.filter(
       t => this.grid.getTileData(t, this.lightVar) >= this.lightLimit),
   }) {
-    for (const {depth, ...pos} of this.iterateField(source, depthLimit)) {
-      const tiles = this.grid.tilesAt(pos);
-      const present = this.filter ? tiles.filter(this.filter) : tiles;
-      const visible = mask ? mask(present) : present;
+    for (const {depth, at, ...pos} of this.iterateField(source, depthLimit)) {
+      const visible = mask ? mask(at) : at;
       if (visible.length) this.revealView(visible, pos, depth);
     }
   }
@@ -121,17 +116,17 @@ export class GridLighting {
   /**
    * @param {HTMLElement} source
    * @param {number} [depthLimit]
-   * @returns {IterableIterator<DepthPoint>}
+   * @returns {IterableIterator<DepthPoint & {at: HTMLElement[]}>}
    */
   *iterateField(source, depthLimit) {
     const origin = this.grid.getTilePosition(source);
     const selfSupported = !!source.classList.contains('support');
     yield* iterateField(origin, pos => {
       const tiles = this.grid.tilesAt(pos);
-      const present = this.filter ? tiles.filter(this.filter) : tiles;
-      const supported = selfSupported || present.some(t => t.classList.contains('support'));
-      const blocked = !supported || present.some(t => !t.classList.contains('passable'));
-      return {supported, blocked};
+      const at = this.filter ? tiles.filter(this.filter) : tiles;
+      const supported = selfSupported || at.some(t => t.classList.contains('support'));
+      const blocked = !supported || at.some(t => !t.classList.contains('passable'));
+      return {supported, blocked, at};
     }, depthLimit);
   }
 }
@@ -156,10 +151,11 @@ export class GridLighting {
  * Implements a reasonably general Symmetric Shadowcasting
  * adapted from https://www.albertford.com/shadowcasting/
  *
+ * @template At
  * @param {Point} origin
- * @param {(pos:Point)=>{supported: boolean, blocked: boolean}} query
+ * @param {(pos:Point)=>{supported: boolean, blocked: boolean, at: At}} query
  * @param {number} [depthLimit]
- * @returns {IterableIterator<DepthPoint>}
+ * @returns {IterableIterator<DepthPoint & {at: At}>}
  */
 export function* iterateField(origin, query, depthLimit=1000) {
   /* TODO support casting from walls:
@@ -185,7 +181,10 @@ export function* iterateField(origin, query, depthLimit=1000) {
     return true;
   }
 
-  if (visit(origin)) yield {...origin, depth: 0};
+  if (visit(origin)) {
+    const {at} = query(origin);
+    yield {...origin, depth: 0, at};
+  }
 
   // work in cardinally aligned quadrants around origin; each quadrant is
   // essentially a π/2 section centered around each +/- x/y axis
@@ -223,10 +222,10 @@ export function* iterateField(origin, query, depthLimit=1000) {
       for (let col = minCol; col <= maxCol; col++) {
         const tileSlope = (2*col - 1) / (2*depth);
         const pos = quadrant(depth, col);
-        const {supported, blocked} = query(pos);
+        const {supported, blocked, at} = query(pos);
 
         if (blocked) {
-          if (supported && visit(pos)) yield {...pos, depth}
+          if (supported && visit(pos)) yield {...pos, depth, at};
           if (wasBlocked === false) rows.push({
             depth: depth + 1,
             startSlope: restartSlope,
@@ -240,7 +239,7 @@ export function* iterateField(origin, query, depthLimit=1000) {
               col >= depth * restartSlope &&
               col <= depth * endSlope &&
               visit(pos)
-          ) yield {...pos, depth};
+          ) yield {...pos, depth, at};
           if (wasBlocked) restartSlope = tileSlope;
         }
         wasBlocked = blocked;
