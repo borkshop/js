@@ -24,14 +24,29 @@ export function* filter(it, filter) {
   for (const i of it) if (filter(i)) yield i;
 }
 
+/// 2d spatial routines
+
+/** @typedef {import('./tiles').Point} Point */
+/** @typedef {import('./tiles').Size} Size */
+/** @typedef {import('./tiles').Rect} Rect */
+
+/** Yields the 4 cardinal neighbors of a point in clockwise order.
+ *
+ * @param {Point} p
+ * @returns {IterableIterator<Point>}
+ */
+export function* cardinals({x, y}) {
+  yield {x, y: y-1};
+  yield {x: x+1, y};
+  yield {x, y: y+1};
+  yield {x: x-1, y};
+}
+
 /// Space Partitioning, mostly Binary
 
 // NOTE for random selection within a range throughout, we use:
 //     Range * random()
 // which is technically biased, but idiomatic in javascript
-
-/** @typedef {import('./tiles').Size} Size */
-/** @typedef {import('./tiles').Rect} Rect */
 
 /**
  * @typedef {object} Split
