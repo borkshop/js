@@ -24,8 +24,7 @@ export const Side = {
   Left: 4,
 };
 
-/**
- * Yields (in clockwise order) any sides of rectangle A that are externally
+/** Yields (in clockwise order) any sides of rectangle A that are externally
  * adjacent to the 4 infinite lines that intersect to define rectangle B.
  *
  * These results are tangent candidates, which need to be further checked for
@@ -35,7 +34,7 @@ export const Side = {
  * @param {Rect} b
  * @returns {IterableIterator<Side>}
  */
-export function* adjacent(a, b) {
+function* adjacent(a, b) {
   const {x, y, w, h} = a;
   if (b.y + b.h === y    ) yield Side.Top;
   if (b.x       === x + w) yield Side.Right;
@@ -60,7 +59,7 @@ export function* adjacent(a, b) {
  * @param {Range} b
  * @returns {Range}
  */
-export function overlap({o: off1, n: n1}, {o: off2, n: n2}) {
+function overlap({o: off1, n: n1}, {o: off2, n: n2}) {
   const hi1 = off1 + n1;
   const hi2 = off2 + n2;
   if (off1 <= off2 && hi2 <= hi1) return {o: off2, n: n2};
@@ -307,7 +306,11 @@ const plane = 'solid'; // TODO should get reified
 
 import {find, mustFind} from 'cdom/wiring';
 
-import {DOMgeon} from 'cdom/domgeon';
+import {
+  DOMgeon,
+  DOMgeonInspector,
+} from 'cdom/domgeon';
+
 const dmg =
   new DOMgeon({
   ui: document.body,
@@ -324,7 +327,6 @@ find('#debug')?.addEventListener('change', ev => {
     dmg.grid.el.classList.toggle('debugging', !!ev.target.checked);
 });
 
-import {DOMgeonInspector} from 'cdom/domgeon';
 const inspectorEl = find('#inspector');
 if (inspectorEl) new DOMgeonInspector(dmg, inspectorEl);
 
