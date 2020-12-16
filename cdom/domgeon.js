@@ -32,7 +32,6 @@ import {GridLighting} from './fov';
 
 /**
  * @typedef {Object} ProcParams
- * @prop {DOMgeon} dmg
  * @prop {TileGrid} grid - the tile grid of reference
  * @prop {HTMLElement} subject - the tile that is performing an action
  * @prop {HTMLElement} object - the tile being acted upon
@@ -69,7 +68,7 @@ function procInteraction(dmg, grid, subject, interacts) {
 
   const proc = dmg.procs[grid.getTileKind(object)];
   if (proc) {
-    proc({dmg, grid, subject, object});
+    proc({grid, subject, object});
     return true;
   }
 
