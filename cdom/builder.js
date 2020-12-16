@@ -36,10 +36,10 @@
  * Converts constant tile spec values into shader functions, passing through
  * any user-given shader function.
  *
- * @template {any} C
- * @param {string|NewTileSpec|Shader<C>|null|undefined} shader
+ * @template {any} S
+ * @param {string|NewTileSpec|Shader<S>|null|undefined} shader
  * @param {string} [defaultKind]
- * @returns {Shader<C>}
+ * @returns {Shader<S>}
  */
 export function toShader(shader, defaultKind) {
   if (typeof shader === 'function') return shader;
