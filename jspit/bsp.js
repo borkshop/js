@@ -443,6 +443,8 @@ function digAt(pos) {
       present.parentNode?.removeChild(present);
 }
 
+/** @typedef {Rect & {id: number, kind: string}} Region */
+
 /**
  * Implements stateful fill and connect methods usable under BSPOptions.
  */
@@ -460,6 +462,7 @@ class BSPRoomBuilder {
    * @param {Rect} region
    * @param {string} kind
    * @param {number} [id]
+   * @returns {Region}
    */
   makeRegion(region, kind, id) {
     if (typeof id !== 'number') id = ++this.regionID; // gen next (connect phase)
@@ -470,7 +473,7 @@ class BSPRoomBuilder {
   /**
    * @param {Rect} region
    * @param {number} id
-   * @returns {null|Rect[]}
+   * @returns {null|Region[]}
    */
   fill(region, id) {
     const {x, y, w, h} = region;
@@ -498,9 +501,9 @@ class BSPRoomBuilder {
   }
 
   /**
-   * @param {Rect[]} as
-   * @param {Rect[]} bs
-   * @returns {Rect[]}
+   * @param {Region[]} as
+   * @param {Region[]} bs
+   * @returns {Region[]}
    */
   connect(as, bs) {
     if (as.length === 1 && bs.length > 1) return this.connect(bs, as);
@@ -706,6 +709,7 @@ class BSPRoomBuilder {
 }
 
 const roomBuilder = new BSPRoomBuilder();
+/** @type {BSP<Region[]>} */
 const bsp = new BSP({
   fill: (region, id) => roomBuilder.fill(region, id),
   connect: (as, bs) => roomBuilder.connect(as, bs),
@@ -733,7 +737,9 @@ function generateWorld() {
   };
   dmg.grid.viewPoint = origin;
   roomBuilder.reset();
-  bsp.run(bounds);
+  const regions = bsp.run(bounds);
+  if (!regions ||
+      regions.filter(({kind}) => kind === 'room').length < 5) return false;
 
   const spawn = chooseSpawn();
   if (!spawn) return false;
