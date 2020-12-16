@@ -7,6 +7,10 @@ import {toRad, parseAngle} from './units';
 import {stepParticles} from './particles';
 
 import {centroid} from 'cdom/tiles';
+import {
+  cardinals,
+  neighbors,
+} from 'cdom/procgen';
 
 /** @typedef {import('cdom/tiles').Point} Point */
 
@@ -331,6 +335,8 @@ export default class DLA {
       stepLimit,
     } = this.config;
 
+    const particleNear = ordinalMoves ? neighbors : cardinals;
+
     for (let i = 0; i < n; ++i) if (!stepParticles({
       grid: this.dmg.grid,
       update: (grid, ps) => {
@@ -366,20 +372,9 @@ export default class DLA {
         }
 
         // in-void particle aggregating onto world; aka DLA depostion
-        if (!atPos.length && (
-          atTo.length
-          || this.anyCell(
-            {x: posCell.x,   y: posCell.y-1},
-            {x: posCell.x+1, y: posCell.y},
-            {x: posCell.x,   y: posCell.y+1},
-            {x: posCell.x-1, y: posCell.y},
-          )
-          || (ordinalMoves && this.anyCell(
-            {x: posCell.x+1, y: posCell.y-1},
-            {x: posCell.x+1, y: posCell.y+1},
-            {x: posCell.x-1, y: posCell.y+1},
-            {x: posCell.x-1, y: posCell.y-1},
-          ))
+        if (!atPos.length && (                   // no current world particle
+          atTo.length ||                         // particle hit the world
+          this.anyCell(...particleNear(posCell)) // or became adjacent
         )) {
           grid.updateTile(p, {
             pos: posCell,
