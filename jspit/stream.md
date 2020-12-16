@@ -1,4 +1,4 @@
-# 2020-12-15
+# 2020-12-16
 
 ## TODO
 
@@ -41,6 +41,19 @@
 Adding a basic item system to the BSP demo, to enable digging.
 
 ## Done
+
+Added BSP spatial query demo to exercise new `procgen.iterateSpace`. Enabled by
+new `DOMgeon.mayPlay` hook and `TileGrid.translateClient` ex-inspector.
+
+Factored out `procgen` `cardinals`, `ordinals`, and `neighbors` utilities, 2/3
+tested by dla demo.
+
+Circled back to `fov.iterateField` and added pass through `At` data similar to
+`procgen.iterateField`.
+
+Added `procgen.contains(Rect, ...Point) => boolean`, untested but looks right.
+
+# 2020-12-15
 
 Added whole-world rejection sampling to the BSP demo, with an error world if
 generation fails 10 times.
