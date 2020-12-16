@@ -201,6 +201,19 @@ export class TileGrid {
     );
   }
 
+  /**
+   * @param {Point} client
+   * @returns {Point}
+   */
+  translateClient(client) {
+    let {x, y} = this.viewOffset;
+    const gridRect = this.el.getBoundingClientRect();
+    const {x: w, y: h} = this.tileSize;
+    x = Math.floor(x + (client.x - gridRect.left) / w);
+    y = Math.floor(y + (client.y - gridRect.top) / h);
+    return {x, y};
+  }
+
   /** @return {Point} */
   get tileSize() {
     if (!this._ghost.parentNode) this.updateTile(this._ghost, {
@@ -684,12 +697,7 @@ export class TileInspector {
    * @return {void}
    */
   handleEvent(ev) {
-    let {x, y} = this.grid.viewOffset;
-    const gridRect = this.grid.el.getBoundingClientRect();
-    const {x: w, y: h} = this.grid.tileSize;
-    x = Math.floor(x + (ev.clientX - gridRect.left) / w);
-    y = Math.floor(y + (ev.clientY - gridRect.top) / h);
-    const pos = {x, y};
+    const pos = this.grid.translateClient({x: ev.clientX, y: ev.clientY});
     const tiles = this.grid.tilesAt(pos).filter(t => this.filter(t, this.grid));
     switch (ev.type) {
     case 'click':
