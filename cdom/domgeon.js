@@ -58,30 +58,30 @@ function procInteraction(dmg, grid, interacts, subject) {
   if (!interacts.length) return false;
   // TODO interaction loop to choose
   if (interacts.length > 1) return false;
-  const interact = interacts[0];
+  const object = interacts[0];
 
   const pos = grid.getTilePosition(subject);
-  const at = grid.getTilePosition(interact);
+  const at = grid.getTilePosition(object);
   if (Math.sqrt(
     Math.pow(at.x - pos.x, 2) +
     Math.pow(at.y - pos.y, 2)
   ) >= 2) return false;
 
-  const proc = dmg.procs[grid.getTileKind(interact)];
+  const proc = dmg.procs[grid.getTileKind(object)];
   if (proc) {
-    proc({dmg, grid, subject, object: interact});
+    proc({dmg, grid, subject, object});
     return true;
   }
 
-  const spawn = grid.getTileData(interact, 'morph_spawn');
+  const spawn = grid.getTileData(object, 'morph_spawn');
   if (spawn) {
-    const kind = grid.getTileKind(interact);
+    const kind = grid.getTileKind(object);
     const tile = grid.buildTile({pos: at, kind, ...spawn});
     if (tile.id === subject.id) return true;
   }
 
-  applyMorph(grid, interact, grid.getTileData(interact, 'morph_target'));
-  applyMorph(grid, subject, grid.getTileData(interact, 'morph_subject'));
+  applyMorph(grid, object, grid.getTileData(object, 'morph_target'));
+  applyMorph(grid, subject, grid.getTileData(object, 'morph_subject'));
 
   return true;
 }
