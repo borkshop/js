@@ -70,8 +70,7 @@ function procInteraction(dmg, grid, interacts, subject) {
     Math.pow(at.y - pos.y, 2)
   ) >= 2) return false;
 
-  const kind = grid.getTileKind(interact);
-  const proc = dmg.procs[kind];
+  const proc = dmg.procs[grid.getTileKind(interact)];
   if (proc) {
     proc({dmg, grid, subject, object: interact});
     return true;
@@ -79,6 +78,7 @@ function procInteraction(dmg, grid, interacts, subject) {
 
   const spawn = grid.getTileData(interact, 'morph_spawn');
   if (spawn) {
+    const kind = grid.getTileKind(interact);
     const tile = grid.buildTile({pos: at, kind, ...spawn});
     if (tile.id === subject.id) return true;
   }
