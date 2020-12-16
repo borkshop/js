@@ -325,6 +325,14 @@ const inspectorEl = find('#inspector');
 if (inspectorEl) new DOMgeonInspector(dmg, inspectorEl);
 
 import * as build from 'cdom/builder';
+
+const playerSpec = {
+  plane,
+  kind: 'mover',
+  classList: ['input', 'focus'],
+  text: '@',
+};
+
 const floorShader = build.toShader({
   plane,
   kind: 'floor',
@@ -703,10 +711,17 @@ const bsp = new BSP({
   connect: (as, bs) => roomBuilder.connect(as, bs),
 });
 
+function reset() {
+  let sanity = 10;
+  while (sanity-->0) if (generateWorld()) return;
+}
+
 /** @type {null|Point} */
 let origin = null;
-function reset() {
+
+function generateWorld() {
   dmg.grid.clear();
+
   const bounds = dmg.grid.viewbox;
   origin = {
     x: bounds.x + bounds.w/2,
@@ -717,13 +732,10 @@ function reset() {
   bsp.run(bounds);
 
   const spawn = chooseSpawn();
-  if (spawn) dmg.updateActorView(dmg.grid.createTile({
-    plane,
-    pos: spawn,
-    kind: 'mover',
-    classList: ['input', 'focus'],
-    text: '@',
-  }));
+  if (!spawn) return false;
+
+  dmg.updateActorView(dmg.grid.createTile({pos: spawn, ...playerSpec}));
+  return true;
 }
 
 /** @param {Event} event */
