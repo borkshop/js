@@ -311,6 +311,7 @@ import {find, mustFind} from 'cdom/wiring';
 import {
   DOMgeon,
   DOMgeonInspector,
+  assignProcs,
 } from 'cdom/domgeon';
 
 const dmg =
@@ -339,7 +340,65 @@ const playerSpec = {
   kind: 'mover',
   classList: ['input', 'focus'],
   text: '@',
+  data: {
+    proc: 'handy',
+    hands: 'right left',
+  },
 };
+
+/**
+ * @param {any} datum
+ * @returns {Item?}
+ */
+function toItem(datum) {
+  if (!datum || typeof datum !== 'string') return null;
+  return items[datum] || null;
+}
+
+/**
+ * @param {string} name
+ * @returns {string}
+ */
+function handVar(name) {
+  return `hand${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+}
+
+assignProcs(dmg.procs, {
+  handy(params) {
+    const {grid, subject, object} = params;
+
+    function* hands() {
+      const handsVar = grid.getTileData(subject, 'hands');
+      if (typeof handsVar === 'string') yield* handsVar.split(/\s+/g)
+    }
+
+    // first try to take an item
+    const take = toItem(grid.getTileData(object, 'item'));
+    if (take) for (const hand of hands()) {
+      const dat = handVar(hand);
+      if (toItem(grid.getTileData(subject, dat))) continue;
+      grid.setTileData(subject, dat, take.name);
+      if (!grid.getTileData(object, 'itemYieldsCopy'))
+        object.parentNode?.removeChild(object);
+      return true;
+    }
+
+    // failing that, try to use an item in hand
+    for (const hand of hands()) {
+      const item = toItem(grid.getTileData(subject, handVar(hand)));
+      const proc = item?.proc && params.getProc(item.proc);
+      if (proc && proc(params)) return true;
+    }
+
+    return false;
+  },
+
+  dig({grid, object}) {
+    if (grid.getTileKind(object) !== 'wall') return false;
+    digAt(grid.getTilePosition(object));
+    return true;
+  },
+});
 
 const floorShader = build.toShader({
   plane,
@@ -368,6 +427,52 @@ const roomShader = build.roomShader({
   },
   walls: wallShader,
 });
+
+/** A simple item that can be picked up by the player.
+ * Intentionally left out behavior, size, other physicality aspects (for now...)
+ *
+ * @typedef {object} Item
+ * @prop {string} name -- internal symbol
+ * @prop {string} title -- user facing label
+ * @prop {string} desc -- user facing flavor text
+ * @prop {string} text -- for TileSpec.text
+ * @prop {string} [proc] -- what do
+ */
+
+/** @type {Object<string, Item>} */
+const items = {
+  pickaxe: {
+    name: 'pickaxe',
+    title: 'Pick Axe',
+    desc: 'You Dig? Dig It!',
+    text: '⛏',
+    proc: 'dig',
+  },
+};
+
+/**
+ * @param {Point} pos
+ * @param {string} itemName
+ */
+function itemAt(pos, itemName) {
+  const item = items[itemName];
+  if (!item) return;
+
+  // NOTE buildTile is unique@pos, so there can only be on item built per location
+  const {name, text} = item;
+  const tile = dmg.grid.buildTile({
+    pos,
+    plane,
+    kind: 'item',
+    className: name,
+    data: {
+      item: name,
+    },
+    text,
+  });
+  // TODO support tile titles tile.title = item.title;
+  return tile;
+}
 
 const minRoomSize = {w: 4, h: 4};
 const minRoomArea = 25;
@@ -765,6 +870,17 @@ function generateWorld() {
   // must have a player spawn
   const spawn = chooseSpawn();
   if (!spawn) return false;
+
+  // TODO maybe hide it in a far away room, instead of giving it away in the
+  // first room; but needs some connectedness analysis, since not all rooms
+  // are connected currently
+  const place = choose(filter(spaceAt(spawn),
+    ({blocked, x, y}) => !blocked && (x !== spawn.x || y !== spawn.y),
+  ), {
+    weight: ({x, y}) => Math.pow(x-spawn.x, 2) + Math.pow(y-spawn.y, 2),
+  });
+  if (!place) return false;
+  itemAt(place, 'pickaxe');
 
   dmg.updateActorView(dmg.grid.createTile({pos: spawn, ...playerSpec}));
   return true;
