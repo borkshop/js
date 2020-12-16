@@ -496,6 +496,8 @@ export class DOMgeon extends EventTarget {
    */
   get playing() { return this._playing; }
   set playing(playing) {
+    const val = !!playing;
+    if (this._playing === val) return;
     this._playing = !!playing;
     this.ui.classList.toggle('playing', this._playing);
     if (this._playing) {
