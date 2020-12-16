@@ -30,6 +30,10 @@ export function* filter(it, filter) {
 /** @typedef {import('./tiles').Size} Size */
 /** @typedef {import('./tiles').Rect} Rect */
 
+import {
+  mortonKey,
+} from 'cdom/tiles';
+
 /** Yields the 4 cardinal neighbors of a point in clockwise order.
  *
  * @param {Point} p
@@ -68,6 +72,45 @@ export function* neighbors({x, y}) {
   yield {x: x-1, y: y+1};
   yield {x: x-1, y};
   yield {x: x-1, y: y-1};
+}
+
+/** Iterates all points connected to a given starting point.
+ *
+ * Semantics are defined by a query(Point) => {supported, blocked, at} :
+ * - whether a given point is spatially defined (supported)
+ * - whether a given point is unpassable (blocked)
+ * - and is able to pass arbitrary spatial query data at each point through to
+ *   the consumer.
+ *
+ * Search starts from the given pos: Point and
+ * - stops on any unsupported or blocked point
+ * - blocked points are still yielded, leaving edge inclusion/exclusion up to the consumer
+ * - proceeds from any unblocked point to all next(Point) => Iterable<Point> that have not yet been seen
+ *
+ * @template At
+ * @param {Point} pos
+ * @param {(at: Point) => {supported: boolean, blocked: boolean, at: At}} query
+ * @param {(p: Point) => Iterable<Point>} next
+ * @returns {IterableIterator<{at: At, blocked: boolean} & Point>}
+ */
+export function* iterateSpace(pos, query, next=cardinals) {
+  // TODO maybe unify with cdom/fov.iterateField
+  /** @type {Set<number>} */
+  const seen = new Set();
+  const q = [pos];
+  while (q.length) {
+    const p = q.shift();
+    if (!p) continue;
+    const k = mortonKey(p);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    const {supported, blocked, at} = query(p);
+    if (!supported) continue;
+    yield {at, blocked, ...p};
+    if (!blocked)
+      for (const np of next(p))
+        if (!seen.has(mortonKey(np))) q.push(np);
+  }
 }
 
 /// Space Partitioning, mostly Binary
