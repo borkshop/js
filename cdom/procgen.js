@@ -74,6 +74,20 @@ export function* neighbors({x, y}) {
   yield {x: x-1, y: y-1};
 }
 
+/** Returns true only if rect contains all points in ps.
+ *
+ * @param {Rect} rect
+ * @param {Point[]} ps
+ * @returns {boolean}
+ */
+export function contains({x, y, w, h}, ...ps) {
+  for (const {x: px, y: py} of ps)
+    if ( !(x <= px && px < x+w)
+      || !(y <= py && py < y+h)
+    ) return false;
+  return true;
+}
+
 /** Iterates all points connected to a given starting point.
  *
  * Semantics are defined by a query(Point) => {supported, blocked, at} :
