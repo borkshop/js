@@ -89,6 +89,8 @@ body.playing .plane.meme { display: initial }
 body.playing .buttonbar.moves,
 body.playing .buttonbar.actions { display: initial }
 
+body.playing .demo { display: none }
+
 /* when not playing, display the objective world directly */
 body:not(.playing) .plane[data-plane="solid"] { display: initial }
 
@@ -102,6 +104,17 @@ body:not(.playing) .plane[data-plane="solid"] { display: initial }
 /* inspector plane should be on top and shown */
 .plane[data-plane="domgeon-inspect"] { display: initial }
 .plane[data-plane="domgeon-inspect"] { z-index: 1000 }
+
+/** spatial query ui */
+
+.query .grid {
+  cursor: help !important;
+  border: 0.1em dashed var(--red);
+}
+
+.query .grid .tile.floor[data-query-distance] {
+  background-color: hsl(70, calc(5% + 95% * var(--queryDistance)), 12%);
+}
 
 /** tile grid tiles */
 

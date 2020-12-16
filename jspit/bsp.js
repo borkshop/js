@@ -3,6 +3,7 @@
 import {
   map, filter,
   choose,
+  iterateSpace,
 
   BSP,
   chooseSubRect,
@@ -394,6 +395,21 @@ function* tilesAt(pos, kind) {
   for (const tile of tiles)
     if (dmg.grid.getTilePlane(tile) === plane)
       yield tile;
+}
+
+/**
+ * @param {Point} pos
+ */
+function spaceAt(pos) {
+  return iterateSpace(pos, p => {
+    const at = Array.from(tilesAt(p));
+    const supported = at.some(t => t.classList.contains('support'));
+    const blocked = !supported || at.some(t => {
+      return !t.classList.contains('passable')
+          ||  t.classList.contains('door');
+    });
+    return {supported, blocked, at};
+  });
 }
 
 /**
@@ -814,6 +830,39 @@ dmg.onKey.byID['jump'] = ({type}) => {
     dmg._fovID = '';
   }
 };
+
+/** @param {Event} event */
+dmg.onKey.byID['spaceQuery'] = ({type}) => {
+  if (type !== 'keyup') return;
+  if (!dmg.playing) dmg.ui.classList.toggle('query');
+};
+
+/** @type {MouseEvent} ev */
+dmg.ui.addEventListener('click', ev => {
+  if (!dmg.ui.classList.contains('query')) return;
+
+  // clear any prior query distances
+  for (const t of dmg.grid.getPlane(plane).querySelectorAll('.tile[data-query-distance]'))
+    if (t instanceof HTMLElement)
+      delete t.dataset['queryDistance'];
+
+  const pos = dmg.grid.translateClient({x: ev.clientX, y: ev.clientY});
+
+  // mark unblocked floor tiles with a distance factor from query
+  const res = [];
+  for (const {blocked, x, y, at} of spaceAt(pos))
+    if (!blocked) for (const t of at) if (t.classList.contains('floor')) {
+      const d = Math.sqrt(Math.pow(x-pos.x, 2) + Math.pow(y-pos.y, 2));
+      res.push({t, d});
+      break;
+    }
+  const max = res
+    .map(({d}) => d)
+    .reduce((a, b) => Math.max(a, b), 0);
+  for (const {t, d} of res)
+    dmg.grid.setTileData(t, 'queryDistance', d / max);
+});
+dmg.mayPlay = () => !dmg.ui.classList.contains('query');
 
 dmg.addEventListener('pause', () => {
   if (origin) dmg.viewTo(origin);
