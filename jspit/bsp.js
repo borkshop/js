@@ -714,6 +714,10 @@ const bsp = new BSP({
 function reset() {
   let sanity = 10;
   while (sanity-->0) if (generateWorld()) return;
+  sendA(
+    'We Apologize For The Inconvenience\n\n' +
+    'embiggen the window?'
+  )
 }
 
 /** @type {null|Point} */
@@ -736,6 +740,58 @@ function generateWorld() {
 
   dmg.updateActorView(dmg.grid.createTile({pos: spawn, ...playerSpec}));
   return true;
+}
+
+/**
+ * Put the player in a single room with a message written on the floor
+ * That'll show 'em!
+ *
+ * @param {string} message
+ */
+function sendA(message) {
+  dmg.grid.clear();
+
+  const bounds = dmg.grid.viewbox;
+  origin = {
+    x: bounds.x + bounds.w/2,
+    y: bounds.y + bounds.h/2,
+  };
+  dmg.grid.viewPoint = origin;
+
+  build.fillRect(dmg.grid, bounds, roomShader);
+
+  bounds.x++, bounds.y++, bounds.w-=2, bounds.h-=2;
+
+  // lay text out on tile positions, implementing unix-style newlines
+  // TODO this could mature into both a full(er) ansi interpretor and something
+  // driven by a TileSpec database
+  /** @type {string[]} */
+  const text = [];
+  let {x, y, w} = bounds;
+  const mx = x + w;
+  for (const t of message) switch (t) {
+  case '\n':
+    while (x++<mx) text.push('');
+    x = bounds.x, y++;
+    break;
+  default:
+    if (++x >= mx) { x = bounds.x, y++ }
+    text.push(t);
+  }
+
+  build.fillRect(dmg.grid, bounds, (grid, pos, bounds) => {
+    const x = pos.x - bounds.x;
+    const y = pos.y - bounds.y;
+    const i = y * bounds.w + x;
+    const t = text[i];
+    if (t) {
+      const floor = grid.tileAt(pos, 'floor');
+      if (floor) floor.textContent = t;
+    }
+  });
+
+  const pos = {x: Math.floor(origin.x), y: Math.floor(origin.y)};
+  dmg.updateActorView(dmg.grid.createTile({pos, ...playerSpec}));
 }
 
 /** @param {Event} event */
