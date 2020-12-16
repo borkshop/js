@@ -85,6 +85,7 @@ const dmg = new DOMgeon({
   procs: {
     link() {
       window.location.search = new URLSearchParams({seed: nextSeed}).toString();
+      return true;
     }
   }
 });

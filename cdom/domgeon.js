@@ -25,9 +25,15 @@ import {GridLighting} from './fov';
 
 /**
  * A procedure (Proc) involves a subject tile acting upon an object tile.
+ * Should return true only if the Proc action has semantically succeeded.
+ *
+ * Where-as false should only be returned if no effect has been made, in which
+ * case the caller may give the object's controller a chance to elect a
+ * different action.
  *
  * @callback Proc
  * @param {ProcParams} params
+ * @returns {boolean} - must be true only if the Proc semantically had an effect
  */
 
 /**
@@ -67,10 +73,7 @@ function procInteraction(dmg, grid, subject, interacts) {
   ) >= 2) return false;
 
   const proc = dmg.procs[grid.getTileKind(object)];
-  if (proc) {
-    proc({grid, subject, object});
-    return true;
-  }
+  if (proc && proc({grid, subject, object})) return true;
 
   const spawn = grid.getTileData(object, 'morph_spawn');
   if (spawn) {
