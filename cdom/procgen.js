@@ -42,6 +42,34 @@ export function* cardinals({x, y}) {
   yield {x: x-1, y};
 }
 
+/** Yields the 4 ordinal neighbors of a point in clockwise order.
+ *
+ * @param {Point} p
+ * @returns {IterableIterator<Point>}
+ */
+export function* ordinals({x, y}) {
+  yield {x: x+1, y: y-1};
+  yield {x: x+1, y: y+1};
+  yield {x: x-1, y: y+1};
+  yield {x: x-1, y: y-1};
+}
+
+/** Yields all 8 neighbors of a point in clockwise order.
+ *
+ * @param {Point} p
+ * @returns {IterableIterator<Point>}
+ */
+export function* neighbors({x, y}) {
+  yield {x,      y: y-1};
+  yield {x: x+1, y: y-1};
+  yield {x: x+1, y};
+  yield {x: x+1, y: y+1};
+  yield {x,      y: y+1};
+  yield {x: x-1, y: y+1};
+  yield {x: x-1, y};
+  yield {x: x-1, y: y-1};
+}
+
 /// Space Partitioning, mostly Binary
 
 // NOTE for random selection within a range throughout, we use:
