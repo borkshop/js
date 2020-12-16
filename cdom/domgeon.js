@@ -24,6 +24,21 @@ import {GridLighting} from './fov';
 /** @typedef {{kind: string}&TileSpec} TileSpecKind */
 
 /**
+ * A procedure (Proc) involves a subject tile acting upon an object tile.
+ *
+ * @callback Proc
+ * @param {ProcParams} params
+ */
+
+/**
+ * @typedef {Object} ProcParams
+ * @prop {DOMgeon} dmg
+ * @prop {TileGrid} grid - the tile grid of reference
+ * @prop {HTMLElement} subject - the tile that is performing an action
+ * @prop {HTMLElement} object - the tile being acted upon
+ */
+
+/**
  * @template T
  * @typedef {object} Anim
  * @prop {number} t
@@ -58,7 +73,7 @@ function procInteraction(dmg, grid, interacts, subject) {
   const kind = grid.getTileKind(interact);
   const proc = dmg.procs[kind];
   if (proc) {
-    proc({dmg, grid, object: interact, subject});
+    proc({dmg, grid, subject, object: interact});
     return true;
   }
 
@@ -73,27 +88,6 @@ function procInteraction(dmg, grid, interacts, subject) {
 
   return true;
 }
-
-/**
- * A procedure (Proc) involves a subject and object DOMgeon element
- * and produces some effect upon the subject's express interaction
- * with that object.
- *
- * @typedef {Object} ProcOptions
- * @prop {DOMgeon} dmg
- * @prop {TileGrid} grid
- * @prop {HTMLElement} object
- * @prop {HTMLElement} subject
- */
-
-/**
- * A procedure (Proc) involves a subject and object DOMgeon element
- * and produces some effect upon the subject's express interaction
- * with that object.
- *
- * @callback Proc
- * @param {ProcOptions} options
- */
 
 /**
  * @param {TileGrid} grid
