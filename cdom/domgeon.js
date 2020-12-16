@@ -480,6 +480,9 @@ export class DOMgeon extends EventTarget {
   /** @type {KeyChorder} */
   keyChord
 
+  /** @type {null|(() => boolean)} */
+  mayPlay = null
+
   /**
    * Set true by start(), indicating that an animation loop is running; set
    * false when the start() loop exits, or when stop() is called to signal to
@@ -498,6 +501,7 @@ export class DOMgeon extends EventTarget {
   set playing(playing) {
     const val = !!playing;
     if (this._playing === val) return;
+    if (val && (this.mayPlay && !this.mayPlay())) return;
     this._playing = !!playing;
     this.ui.classList.toggle('playing', this._playing);
     if (this._playing) {
