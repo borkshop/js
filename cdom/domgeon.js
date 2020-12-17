@@ -55,13 +55,27 @@ import {GridLighting} from './fov';
 /**
  * @param {DOMgeon} dmg
  * @param {TileGrid} grid
+ * @param {HTMLElement} tile
+ * @returns {Proc|null}
+ */
+function procFor(dmg, grid, tile) {
+  const kind = grid.getTileKind(tile);
+  const kindProc = dmg.procs[kind];
+  if (kindProc) return kindProc;
+
+  return null;
+}
+
+/**
+ * @param {DOMgeon} dmg
+ * @param {TileGrid} grid
  * @param {HTMLElement} subject
  * @param {HTMLElement[]} interacts
  * @returns {boolean}
  */
 function procInteraction(dmg, grid, subject, interacts) {
   const at = grid.getTilePosition(subject);
-  // TODO support subject procs
+  const subProc = procFor(dmg, grid, subject);
 
   // interact with the first capable tile
   // TODO allow subject to choose / disambiguate?
@@ -72,8 +86,10 @@ function procInteraction(dmg, grid, subject, interacts) {
     const d = Math.sqrt(Math.pow(pos.x - at.x, 2) + Math.pow(pos.y - at.y, 2));
     if (d >= 2) continue;
 
-    const proc = dmg.procs[grid.getTileKind(object)];
-    if (proc && proc({grid, subject, object})) return true;
+    // TODO support joint lookup of a subject X object specific Proc?
+    if (subProc && subProc({grid, subject, object})) return true;
+    const objProc = procFor(dmg, grid, object);
+    if (objProc && objProc({grid, subject, object})) return true;
 
     // TODO refactor into a Proc
     const spawn = grid.getTileData(object, 'morph_spawn');
