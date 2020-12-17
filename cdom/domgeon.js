@@ -583,7 +583,6 @@ export class DOMgeon extends EventTarget {
    * @prop {HTMLElement} [keys] - document element to listen for key events upon; defaults to ui
    * @prop {HTMLElement} [moveBar] - element under which to place move buttons; defaults to ui
    * @prop {HTMLElement} [actionBar] - element under which to add action buttons; defaults to ui
-   * @prop {Object<string, Proc>} [procs] - named procedures for tile interactions
    */
 
   /**
@@ -622,9 +621,6 @@ export class DOMgeon extends EventTarget {
     this.actionBar = actionBar;
     this.moveBar = moveBar;
     this.grid = new TileGrid(grid);
-
-    if (options.procs)
-      this.procs = Object.assign(this.procs, options.procs);
 
     this.onKey = new Handlers();
     this.inputs = new ButtonInputs();
