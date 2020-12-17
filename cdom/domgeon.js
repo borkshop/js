@@ -60,9 +60,6 @@ function procInteraction(dmg, grid, interacts, subject) {
   if (interacts.length > 1) return false;
   const interact = interacts[0];
 
-  // TODO cross planar capability
-  if (grid.getTilePlane(subject) !== grid.getTilePlane(interact)) return false;
-
   const pos = grid.getTilePosition(subject);
   const at = grid.getTilePosition(interact);
   if (Math.sqrt(
