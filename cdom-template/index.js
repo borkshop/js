@@ -54,8 +54,9 @@ dmg.grid.buildTile({
   text: 'V',
   data: {
     name: 'void rune',
-    morph_spawn: {plane: 'solid', kind: 'char', classList: ['mover', 'input', 'support', 'focus'], text: '*'},
-    morph_subject: '-focus',
+    proc: 'morph spawn',
+    morphSubject: '-focus',
+    spawn: {plane: 'solid', kind: 'char', classList: ['mover', 'input', 'support', 'focus'], text: '*'},
   },
 });
 

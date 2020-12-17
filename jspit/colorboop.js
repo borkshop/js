@@ -69,7 +69,8 @@ function reset(grid) {
       style: {color: `var(--${color})`},
       data: {
         name: `fg:${color}`,
-        morph_subject: {
+        proc: 'morph',
+        morphSubject: {
           style: {color: `var(--${color})`},
         },
       },
@@ -82,7 +83,8 @@ function reset(grid) {
       style: {backgroundColor: `var(--${color})`},
       data: {
         name: `bg:${color}`,
-        morph_subject: {
+        proc: 'morph',
+        morphSubject: {
           style: {backgroundColor: `var(--${color})`},
         },
       },

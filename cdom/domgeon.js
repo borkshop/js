@@ -112,20 +112,6 @@ function procInteraction(dmg, grid, subject, objects) {
       subProcs = Array.from(procsFor(dmg, grid, subject));
     if (runAllProcs(subProcs, {grid, subject, object})) return true;
     if (runAllProcs(procsFor(dmg, grid, object), {grid, subject, object})) return true;
-
-    // TODO refactor into a Proc
-    const spawn = grid.getTileData(object, 'morph_spawn');
-    if (spawn) {
-      const kind = grid.getTileKind(object);
-      const tile = grid.buildTile({pos, kind, ...spawn});
-      if (tile.id === subject.id) return true;
-    }
-
-    // TODO refactor into a Proc
-    applyMorph(grid, object, grid.getTileData(object, 'morph_target'));
-    applyMorph(grid, subject, grid.getTileData(object, 'morph_subject'));
-
-    return true;
   }
   return false;
 }
@@ -546,10 +532,29 @@ export class DOMgeon extends EventTarget {
   /** @type {Object<string, TileMoverProc>} */
   moveProcs = {
     '': procMove,
-  };
+  }
 
   /** @type {Object<string, Proc>} */
-  procs = {};
+  procs = {
+
+    /** @param {ProcParams} params */
+    spawn({grid, object}) {
+      const spawn = grid.getTileData(object, 'spawn');
+      if (!spawn) return false; // TODO dev error feedback?
+      const kind = grid.getTileKind(object);
+      const pos = grid.getTilePosition(object);
+      grid.buildTile({pos, kind, ...spawn});
+      return true;
+    },
+
+    /** @param {ProcParams} params */
+    morph({grid, subject, object}) {
+      applyMorph(grid, object, grid.getTileData(object, 'morphTarget'));
+      applyMorph(grid, subject, grid.getTileData(object, 'morphSubject'));
+      return true;
+    },
+
+  }
 
   /** @type {DOMgeonConfig} */
   config = {

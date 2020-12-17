@@ -140,8 +140,9 @@ body:not(.playing) .plane[data-plane="solid"] { display: initial }
 .tile.door {
   background-color: hsl(50, 25%, 15%);
   color: hsl(50, 90%, 30%);
+  --proc: "morph";
   --action: "open";
-  --morph_target: "!passable";
+  --morphTarget: "!passable";
 }
 .tile.door::before { content: "+" }
 .tile.door.passable {
