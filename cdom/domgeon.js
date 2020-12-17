@@ -610,17 +610,16 @@ export class DOMgeon extends EventTarget {
       keys = ui,
       actionBar = ui,
       moveBar = ui,
-
-      /** @type {Object<string, Proc>} */
-      procs = {},
     } = options;
+
     this.ui = ui;
     this.keys = keys;
     this.actionBar = actionBar;
     this.moveBar = moveBar;
-
     this.grid = new TileGrid(grid);
-    this.procs = procs;
+
+    if (options.procs)
+      this.procs = Object.assign(this.procs, options.procs);
 
     this.onKey = new Handlers();
     this.inputs = new ButtonInputs();
