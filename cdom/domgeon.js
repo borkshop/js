@@ -50,11 +50,11 @@ import {GridLighting} from './fov';
 /**
  * @param {DOMgeon} dmg
  * @param {TileGrid} grid
- * @param {HTMLElement[]} interacts
  * @param {HTMLElement} subject
+ * @param {HTMLElement[]} interacts
  * @returns {boolean}
  */
-function procInteraction(dmg, grid, interacts, subject) {
+function procInteraction(dmg, grid, subject, interacts) {
   if (!interacts.length) return false;
   // TODO interaction loop to choose
   if (interacts.length > 1) return false;
@@ -110,7 +110,7 @@ function procMove({dmg, grid, mover, move}) {
   if (action === 'interact') {
     const tileID = data?.tileID;
     const interact = tileID && grid.getTile(tileID);
-    if (interact) procInteraction(dmg, grid, [interact], mover)
+    if (interact) procInteraction(dmg, grid, mover, [interact]);
     return;
   }
 
@@ -128,7 +128,7 @@ function procMove({dmg, grid, mover, move}) {
     !h.classList.contains('passable')
   );
   if (interacts.length) {
-    if (!procInteraction(dmg, grid, interacts, mover)) return;
+    if (!procInteraction(dmg, grid, mover, interacts)) return;
     // re-query over any interaction updates
     present = grid.tilesAt(to).filter(h => grid.getTilePlane(h) === plane);
   }
