@@ -60,32 +60,36 @@ import {GridLighting} from './fov';
  * @returns {boolean}
  */
 function procInteraction(dmg, grid, subject, interacts) {
-  if (!interacts.length) return false;
-  // TODO interaction loop to choose
-  if (interacts.length > 1) return false;
-  const object = interacts[0];
+  const at = grid.getTilePosition(subject);
+  // TODO support subject procs
 
-  const pos = grid.getTilePosition(subject);
-  const at = grid.getTilePosition(object);
-  if (Math.sqrt(
-    Math.pow(at.x - pos.x, 2) +
-    Math.pow(at.y - pos.y, 2)
-  ) >= 2) return false;
+  // interact with the first capable tile
+  // TODO allow subject to choose / disambiguate?
+  // TODO support joint action?
+  for (const object of interacts) {
+    // TODO support ranged/reach abilities; push this check down into specific Procs
+    const pos = grid.getTilePosition(object);
+    const d = Math.sqrt(Math.pow(pos.x - at.x, 2) + Math.pow(pos.y - at.y, 2));
+    if (d >= 2) continue;
 
-  const proc = dmg.procs[grid.getTileKind(object)];
-  if (proc && proc({grid, subject, object})) return true;
+    const proc = dmg.procs[grid.getTileKind(object)];
+    if (proc && proc({grid, subject, object})) return true;
 
-  const spawn = grid.getTileData(object, 'morph_spawn');
-  if (spawn) {
-    const kind = grid.getTileKind(object);
-    const tile = grid.buildTile({pos: at, kind, ...spawn});
-    if (tile.id === subject.id) return true;
+    // TODO refactor into a Proc
+    const spawn = grid.getTileData(object, 'morph_spawn');
+    if (spawn) {
+      const kind = grid.getTileKind(object);
+      const tile = grid.buildTile({pos, kind, ...spawn});
+      if (tile.id === subject.id) return true;
+    }
+
+    // TODO refactor into a Proc
+    applyMorph(grid, object, grid.getTileData(object, 'morph_target'));
+    applyMorph(grid, subject, grid.getTileData(object, 'morph_subject'));
+
+    return true;
   }
-
-  applyMorph(grid, object, grid.getTileData(object, 'morph_target'));
-  applyMorph(grid, subject, grid.getTileData(object, 'morph_subject'));
-
-  return true;
+  return false;
 }
 
 /**
@@ -124,7 +128,7 @@ function procMove({dmg, grid, mover, move}) {
   // interact with any co-planar tiles present
   let present = at.filter(h => grid.getTilePlane(h) === plane);
 
-  // boop-interact with first present .tile.interact:not(.passable)
+  // boop-interact with any present non-passable tiles
   const interacts = present.filter(h =>
     h.classList.contains('interact') &&
     !h.classList.contains('passable')
