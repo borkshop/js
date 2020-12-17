@@ -1210,6 +1210,7 @@ export class DOMgeonInspector extends TileInspector {
  */
 
 /** @typedef {(req:TileMove) => void} TileMoverProc */
+// TODO reconcile with Proc
 
 /**
  * A move has a spatial component and an optional action string.
