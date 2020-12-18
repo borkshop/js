@@ -74,17 +74,17 @@ function procFor(dmg, grid, tile) {
  * @param {DOMgeon} dmg
  * @param {TileGrid} grid
  * @param {HTMLElement} subject
- * @param {HTMLElement[]} interacts
+ * @param {HTMLElement[]} objects
  * @returns {boolean}
  */
-function procInteraction(dmg, grid, subject, interacts) {
+function procInteraction(dmg, grid, subject, objects) {
   const at = grid.getTilePosition(subject);
   const subProc = procFor(dmg, grid, subject);
 
   // interact with the first capable tile
   // TODO allow subject to choose / disambiguate?
   // TODO support joint action?
-  for (const object of interacts) {
+  for (const object of objects) {
     // TODO support ranged/reach abilities; push this check down into specific Procs
     const pos = grid.getTilePosition(object);
     const d = Math.sqrt(Math.pow(pos.x - at.x, 2) + Math.pow(pos.y - at.y, 2));
