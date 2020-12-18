@@ -15,6 +15,7 @@ import {
 } from './tiles';
 import {everyFrame, schedule} from './anim';
 import {GridLighting} from './fov';
+import {neighbors} from './procgen';
 
 /** @typedef { import("./tiles").Point } Point */
 /** @typedef { import("./tiles").Rect } Rect */
@@ -1009,18 +1010,10 @@ export class DOMgeon extends EventTarget {
     const subjectPlane = subject && this.grid.getTilePlane(subject);
     const subjectPos = subject && this.grid.getTilePosition(subject);
 
-    const {x, y} = subjectPos;
-    const actionStencil = subjectPos ? [ // TODO make this stencil configurable
-      {x:  0, y:  0},
-      {x:  0, y:  1},
-      {x:  1, y:  1},
-      {x:  1, y:  0},
-      {x:  1, y: -1},
-      {x:  0, y: -1},
-      {x: -1, y: -1},
-      {x: -1, y:  0},
-      {x: -1, y:  1},
-    ].map(({x: dx, y: dy}) => ({x: x + dx, y: y + dy})) : [];
+    const actionStencil = subjectPos ? [
+      subjectPos,
+      ...neighbors(subjectPos), // TODO make this stencil configurable
+    ] : [];
 
     const actors = Array.from(this.grid.el.querySelectorAll('.mover.input:not(.focus)'))
       .map(el => {
