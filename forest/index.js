@@ -62,10 +62,6 @@ const prng = PRNG.ingest(
   }
 } */
 
-const nextSeedBytes = new Uint8Array(32);
-prng.scribble(nextSeedBytes.buffer);
-const nextSeed = btoa(String.fromCharCode(...nextSeedBytes));
-
 const dmg = new DOMgeon({
   ui: document.body,
   keys: document.body,
@@ -88,8 +84,15 @@ globalThis.dmg = dmg;
 const inspector = find('#inspector');
 if (inspector) new DOMgeonInspector(dmg, inspector);
 
+const nextSeedBytes = new Uint8Array(32);
+prng.scribble(nextSeedBytes.buffer);
+const nextSeed = btoa(String.fromCharCode(...nextSeedBytes));
+
 const floorShader = build.toShader({plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: ''});
 const treeShader = build.toShader({plane: 'solid', kind: 'tree', text: '🌲'});
+
+// TODO may be more useful as a function linkAt(grid, pos, linkSpec) ; see
+// jspit/bsp for examples of fooAt builders
 const linkShader = build.toShader({
   plane: 'solid',
   kind:  'link',
