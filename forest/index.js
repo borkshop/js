@@ -76,8 +76,10 @@ const dmg = new DOMgeon({
 });
 
 Object.assign(dmg.procs, /** @type {Object<string, import('cdom/domgeon').Proc>} */ ({
-  link() {
-    window.location.search = new URLSearchParams({seed: nextSeed}).toString();
+  link({grid, object}) {
+    const params = grid.getTileData(object, 'linkParams');
+    if (typeof params !== 'string') return false;
+    window.location.search = params;
     return true;
   }
 }));
@@ -92,7 +94,9 @@ const linkShader = build.toShader({
   plane: 'solid',
   kind:  'link',
   text: '🔗',
-  data: { proc: 'link' }
+  data: {
+    linkParams: new URLSearchParams({seed: nextSeed}).toString(),
+  }
 });
 
 const distance = prng.random() * 10 + 10;
