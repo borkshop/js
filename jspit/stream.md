@@ -1,4 +1,4 @@
-# 2020-12-17
+# 2020-12-18
 
 ## TODO
 
@@ -41,6 +41,63 @@
 Adding a basic item system to the BSP demo, to enable digging.
 
 ## Done
+
+### Proc Sitrep
+
+A `Proc` implements a bit of behavior when a subject tile interacts with an
+object tile. This currently may happen through two modes: explicitly invoking
+an adjacent tile through the action bar, or by colliding with (booping) with a
+blocking tile. Their return value is `boolean`, false only if they had no
+effect.
+
+That all important return value bit should allow us to do Nystrom-style
+"booping a wall ineffectually does not burn a turn" logic, among other things
+like the subject/object delegation: Proc resolution first looks at the subject
+tile, and then the object tile if no subject proc(s) had any effect.
+
+Each subject and object tile may have any of a `data-proc` attribute or a
+`--proc` css variable defined; lacking either, their `kind` string (primary css
+class name) is treated as a proc spec string. Such proc spec strings are
+space-separated token lists of proc names; obviously, this power is not
+available to kind strings, who can only be a single token.
+
+Spec string tokens are resolved as attributes on the `dmg.procs` object, with
+missing entries being ignored. Each entry that is defined is executed in order;
+all entries are executed, with `any` boolean combination logic over their
+results: false only if all are false.
+
+To sum up:
+- a tile's behavior is defined by either of `data-proc`, `--proc`, or `$kind`
+- such behavior is a chain of procs: all are executed in order
+- subject tile has priority over object tile
+- procs should follow a convention of parametrizing themselves by eponymous
+  prefixing; e.g. how the default `morph` and `spawn` procs work
+
+### Proc Ideas
+
+Maybe the shape of Proc should expand to a Procable object, which can provide
+other info like an stencil for nearby tile interests. Such behavior should be
+possible today, since there's nothing stopping a Proc from querying other grid
+tiles around it. Following on that, maybe we just handle this with a
+StencilProc combinator, that calls an inner proc with such loaded tiles, but
+without outwardly complecting the Proc standard.
+
+Have intentionally revoked Proc's access to the DOMgeon controller object. This
+prevents them from doing things like looking up and invoking other procs. We
+may eventually need to add back a controlled form of this, in case a subject
+proc wants to internally delegate to any object procs (or other specific
+details).
+
+The proc spec string "language" could eventually evolve into something either
+stack based, or with infix operators. Infix operators are probably the more
+likely route, since that's easier to grow without rewriting all extant spec
+strings.
+
+Considering adopting a generalised `href` proc extrapolated from the forest
+demo, but with ability to open in new window, and support beyond just url
+params calling back to the same page.
+
+# 2020-12-17
 
 Revamped the DOMgeon Proc system:
 - both object and subject tiles may now have, in order of precedence:
