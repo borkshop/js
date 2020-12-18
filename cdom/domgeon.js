@@ -1033,8 +1033,12 @@ export class DOMgeon extends EventTarget {
       subjectPos,
       ...neighbors(subjectPos), // TODO make this stencil configurable
     ]
-      .flatMap(pos => this.grid.tilesAt(pos, 'interact'))
-      .filter(tile => this.grid.getTilePlane(tile) === subjectPlane);
+      .flatMap(pos => this.grid.tilesAt(pos))
+      .filter(tile => this.grid.getTilePlane(tile) === subjectPlane)
+      .filter(object => {
+        for (const _ of procsFor(this, this.grid, object)) return true;
+        return false;
+      });
 
     // TODO directional de-dupe: e.g. open door x2 ... W / E, or Left / Right
 
