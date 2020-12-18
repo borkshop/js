@@ -62,7 +62,6 @@ function* procsFor(dmg, grid, tile) {
   for (const spec of [
     grid.getTileData(tile, 'proc'), // TODO feedback on dev error
     grid.getTileKind(tile),
-    'default',
   ]) if (typeof spec === 'string' && spec) {
     for (const part of spec.split(/\s+/g)) {
       const proc = dmg.procs[part];
@@ -95,6 +94,7 @@ export function runAllProcs(procs, params) {
  * @returns {boolean}
  */
 function procInteraction(dmg, grid, subject, objects) {
+  const defaultProc = dmg.procs['default'];
   /** @type {null|Array<Proc>} */
   let subProcs = null;
 
@@ -110,8 +110,10 @@ function procInteraction(dmg, grid, subject, objects) {
     // TODO support joint lookup of a subject X object specific Proc?
     if (subProcs === null)
       subProcs = Array.from(procsFor(dmg, grid, subject));
-    if (runAllProcs(subProcs, {grid, subject, object})) return true;
-    if (runAllProcs(procsFor(dmg, grid, object), {grid, subject, object})) return true;
+    const params = {grid, subject, object};
+    if (runAllProcs(subProcs, params)) return true;
+    if (runAllProcs(procsFor(dmg, grid, object), params)) return true;
+    if (defaultProc && defaultProc(params)) return true;
   }
   return false;
 }
