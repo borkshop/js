@@ -56,18 +56,35 @@ import {GridLighting} from './fov';
  * @param {DOMgeon} dmg
  * @param {TileGrid} grid
  * @param {HTMLElement} tile
- * @returns {Proc|null}
+ * @returns {IterableIterator<Proc>}
  */
-function procFor(dmg, grid, tile) {
-  for (const name of [
+function* procsFor(dmg, grid, tile) {
+  for (const spec of [
     grid.getTileData(tile, 'proc'), // TODO feedback on dev error
     grid.getTileKind(tile),
     'default',
-  ]) if (typeof name === 'string' && name) {
-    const proc = dmg.procs[name];
-    if (proc) return proc;
+  ]) if (typeof spec === 'string' && spec) {
+    for (const part of spec.split(/\s+/g)) {
+      const proc = dmg.procs[part];
+      if (proc) yield proc;
+    }
   }
-  return null;
+}
+
+/** Runs all procs with the given params, returning false only if none of them
+ * had an effect.
+ *
+ * If it's first arg is bound, the resultant partial function is itself a Proc.
+ *
+ * @param {Iterable<Proc>} procs
+ * @param {ProcParams} params
+ * @returns {boolean}
+ */
+export function runAllProcs(procs, params) {
+  let any = false;
+  for (const proc of procs)
+    if (proc(params)) any = true;
+  return any;
 }
 
 /**
@@ -78,8 +95,8 @@ function procFor(dmg, grid, tile) {
  * @returns {boolean}
  */
 function procInteraction(dmg, grid, subject, objects) {
-  /** @type {null|Proc} */
-  let subProc = null;
+  /** @type {null|Array<Proc>} */
+  let subProcs = null;
 
   // interact with the first capable tile
   // TODO allow subject to choose / disambiguate?
@@ -91,11 +108,10 @@ function procInteraction(dmg, grid, subject, objects) {
     const d = Math.sqrt(Math.pow(pos.x - at.x, 2) + Math.pow(pos.y - at.y, 2));
     if (d >= 2) continue;
     // TODO support joint lookup of a subject X object specific Proc?
-    if (subProc === null)
-      subProc = procFor(dmg, grid, subject);
-    if (subProc && subProc({grid, subject, object})) return true;
-    const objProc = procFor(dmg, grid, object);
-    if (objProc && objProc({grid, subject, object})) return true;
+    if (subProcs === null)
+      subProcs = Array.from(procsFor(dmg, grid, subject));
+    if (runAllProcs(subProcs, {grid, subject, object})) return true;
+    if (runAllProcs(procsFor(dmg, grid, object), {grid, subject, object})) return true;
 
     // TODO refactor into a Proc
     const spawn = grid.getTileData(object, 'morph_spawn');
