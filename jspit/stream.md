@@ -1,4 +1,4 @@
-# 2020-12-16
+# 2020-12-17
 
 ## TODO
 
@@ -41,6 +41,25 @@
 Adding a basic item system to the BSP demo, to enable digging.
 
 ## Done
+
+Revamped the DOMgeon Proc system:
+- both object and subject tiles may now have, in order of precedence:
+  1. a `proc` variable set (css or data)
+  2. falling back to their kind string
+  3. falling back to `"default"`
+- such proc spec strings are then processed as a space-separated token list
+- which may name a registered `dmg.procs[name]` Proc callback
+- Proc callbacks are now expected to return `boolean`, false only if they had
+  no effect
+- any subjcet `Proc` effect supercedes object `Proc` attempt
+
+Reworked all existing jspit demos and forest around these Procs, including
+previously builtin "morphic" behavior that drove things like doors.
+
+Finally, interaction processing now attempts all objects present, stopping on
+the first one with an effected Proc.
+
+# 2020-12-16
 
 Added BSP spatial query demo to exercise new `procgen.iterateSpace`. Enabled by
 new `DOMgeon.mayPlay` hook and `TileGrid.translateClient` ex-inspector.
