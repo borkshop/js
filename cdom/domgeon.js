@@ -78,7 +78,8 @@ function procFor(dmg, grid, tile) {
  * @returns {boolean}
  */
 function procInteraction(dmg, grid, subject, objects) {
-  const subProc = procFor(dmg, grid, subject);
+  /** @type {null|Proc} */
+  let subProc = null;
 
   // interact with the first capable tile
   // TODO allow subject to choose / disambiguate?
@@ -89,8 +90,9 @@ function procInteraction(dmg, grid, subject, objects) {
     const pos = grid.getTilePosition(object);
     const d = Math.sqrt(Math.pow(pos.x - at.x, 2) + Math.pow(pos.y - at.y, 2));
     if (d >= 2) continue;
-
     // TODO support joint lookup of a subject X object specific Proc?
+    if (subProc === null)
+      subProc = procFor(dmg, grid, subject);
     if (subProc && subProc({grid, subject, object})) return true;
     const objProc = procFor(dmg, grid, object);
     if (objProc && objProc({grid, subject, object})) return true;
