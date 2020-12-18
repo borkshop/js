@@ -829,7 +829,7 @@ export class DOMgeon extends EventTarget {
     if (this.actionBar) {
       /** @type {NodeListOf<HTMLButtonElement>} */
       const buttons = this.actionBar.querySelectorAll('button[data-action]');
-      const actions = this.collectActions();
+      const actions = Array.from(this.collectActions());
       for (let i=0; i<buttons.length || i<actions.length; i++) {
         const button = buttons[i] || null;
         let action = actions[i] || null;
@@ -1003,18 +1003,28 @@ export class DOMgeon extends EventTarget {
     return actor;
   }
 
-  collectActions() {
-    /** @type {ActionButtonSpec[]} */
-    const actions = [];
-
+  /** @returns {IterableIterator<ActionButtonSpec>} */
+  *collectActions() {
     const subject = this.focusedActor();
     const subjectPlane = subject && this.grid.getTilePlane(subject);
     const subjectPos = subject && this.grid.getTilePosition(subject);
 
-    /** @type {NodeListOf<HTMLElement>} */
-    const actors = this.grid.el.querySelectorAll('.mover.input:not(.focus)');
-    actions.push(...Array.from(actors)
-      .map(actor => {
+    const {x, y} = subjectPos;
+    const actionStencil = subjectPos ? [ // TODO make this stencil configurable
+      {x:  0, y:  0},
+      {x:  0, y:  1},
+      {x:  1, y:  1},
+      {x:  1, y:  0},
+      {x:  1, y: -1},
+      {x:  0, y: -1},
+      {x: -1, y: -1},
+      {x: -1, y:  0},
+      {x: -1, y:  1},
+    ].map(({x: dx, y: dy}) => ({x: x + dx, y: y + dy})) : [];
+
+    const actors = Array.from(this.grid.el.querySelectorAll('.mover.input:not(.focus)'))
+      .map(el => {
+        const actor = /** @type {HTMLElement} */ (el);
         const pos = this.grid.getTilePosition(actor);
         const dsq = subjectPos
           ? Math.pow(pos.x - subjectPos.x, 2) +
@@ -1022,52 +1032,24 @@ export class DOMgeon extends EventTarget {
           : 0;
         return {actor, pos, dsq};
       })
-      .sort(({dsq: da}, {dsq: db}) => da - db)
-      .map(({actor, pos}) => {
-        const text = actor.textContent;
-        const actorID = this.grid.getTileID(actor);
-        return {
-          label: `Focus: ${text} <${pos.x},${pos.y}>`,
-          action: 'actor',
-          data: {actorID},
-        };
-      }));
+      .sort(({dsq: da}, {dsq: db}) => da - db);
 
-    if (subjectPos) {
-      const {x, y} = subjectPos;
-      const interacts = [ // TODO make this stencil configurable
-        {x:  0, y:  0},
-        {x:  0, y:  1},
-        {x:  1, y:  1},
-        {x:  1, y:  0},
-        {x:  1, y: -1},
-        {x:  0, y: -1},
-        {x: -1, y: -1},
-        {x: -1, y:  0},
-        {x: -1, y:  1},
-      ]
-        .flatMap(({x: dx, y: dy}) => {
-          const at = {x: x + dx, y: y + dy};
-          return this.grid.tilesAt(at, 'interact')
-            .filter(tile => this.grid.getTilePlane(tile) === subjectPlane);
-        })
-        .map(tile => ( {tile, pos: this.grid.getTilePosition(tile)} ))
-        .sort(({pos: apos}, {pos: bpos}) => bpos.y - apos.y || bpos.x - apos.x)
-        .map(({tile}) => tile);
+    for (const {actor, pos} of actors) yield {
+      label: `Focus: ${actor.textContent} <${pos.x},${pos.y}>`,
+      action: 'actor',
+      data: {actorID: this.grid.getTileID(actor)},
+    };
 
-      // TODO directional de-dupe: e.g. open door x2 ... W / E, or Left / Right
+    // TODO directional de-dupe: e.g. open door x2 ... W / E, or Left / Right
 
-      actions.push(...interacts.map(interact => {
-        const tileID = this.grid.getTileID(interact);
-        return {
-          label: actionLabel(this.grid, interact),
-          action: 'interact',
-          data: {tileID},
-        };
-      }));
-    }
-
-    return actions;
+    for (const tile of actionStencil
+      .flatMap(pos => this.grid.tilesAt(pos, 'interact'))
+      .filter(tile => this.grid.getTilePlane(tile) === subjectPlane)
+    ) yield {
+      label: actionLabel(this.grid, tile),
+      action: 'interact',
+      data: {tileID: this.grid.getTileID(tile)},
+    };
   }
 }
 
