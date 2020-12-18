@@ -65,7 +65,6 @@ function reset(grid) {
       plane: 'solid',
       pos: {x: 5, y: i},
       kind: 'swatch',
-      classList: 'interact',
       text: '$',
       style: {color: `var(--${color})`},
       data: {
@@ -79,7 +78,6 @@ function reset(grid) {
       plane: 'solid',
       pos: {x: 15, y: i},
       kind: 'swatch',
-      classList: 'interact',
       text: '$',
       style: {backgroundColor: `var(--${color})`},
       data: {

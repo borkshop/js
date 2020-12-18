@@ -353,7 +353,6 @@ const wallShader = build.toShader({
 const doorShader = build.toShader({
   plane,
   kind: 'door',
-  classList: 'interact',
 });
 const roomShader = build.roomShader({
   floors: (grid, pos, shape) => {

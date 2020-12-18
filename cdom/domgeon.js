@@ -150,13 +150,10 @@ function procMove({dmg, grid, mover, move}) {
   // interact with any co-planar tiles present
   let present = at.filter(h => grid.getTilePlane(h) === plane);
 
-  // boop-interact with any present non-passable tiles
-  const interacts = present.filter(h =>
-    h.classList.contains('interact') &&
-    !h.classList.contains('passable')
-  );
-  if (interacts.length) {
-    if (!procInteraction(dmg, grid, mover, interacts)) return;
+  // boop-proc with any non-passable tiles present
+  const hit = present.filter(h => !h.classList.contains('passable'));
+  if (hit.length) {
+    if (!procInteraction(dmg, grid, mover, hit)) return;
     // re-query over any interaction updates
     present = grid.tilesAt(to).filter(h => grid.getTilePlane(h) === plane);
   }
@@ -165,7 +162,6 @@ function procMove({dmg, grid, mover, move}) {
   if (present.some(h => !h.classList.contains('passable'))) return;
 
   // move must be supported:
-
   if (
     // mover is self-supported ( #wedontneedroads )
     mover.classList.contains('support') ||

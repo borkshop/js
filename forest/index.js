@@ -99,7 +99,6 @@ const linkShader = build.toShader({
   plane: 'solid',
   kind:  'link',
   text: '🔗',
-  classList: ['interact'],
   data: { proc: 'link' }
 });
 

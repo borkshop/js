@@ -20,7 +20,7 @@ if (inspector) new DOMgeonInspector(dmg, inspector);
 import * as build from 'cdom/builder';
 const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: '·'};
 const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
-const doorShader = {plane: 'solid', kind: 'door', classList: 'interact'};
+const doorShader = {plane: 'solid', kind: 'door'};
 
 dmg.grid.getPlane('solid').classList.add('lit');
 
@@ -50,7 +50,7 @@ dmg.grid.buildTile({
   pos: {x: 6, y: -8},
   plane: 'solid',
   kind: 'floor',
-  classList: ['rune', 'interact', '-passable'],
+  classList: ['rune', '-passable'],
   text: 'V',
   data: {
     name: 'void rune',
