@@ -42,6 +42,8 @@ Adding a basic item system to the BSP demo, to enable digging.
 
 ## Done
 
+Fixed object interaction action button collection.
+
 ### Proc Sitrep
 
 A `Proc` implements a bit of behavior when a subject tile interacts with an
