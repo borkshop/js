@@ -73,13 +73,15 @@ const dmg = new DOMgeon({
   moveBar: find('.buttonbar.moves'),
   actionBar: find('.buttonbar.actions'),
   lightLimit: 0.2,
-  procs: {
-    link() {
-      window.location.search = new URLSearchParams({seed: nextSeed}).toString();
-      return true;
-    }
-  }
 });
+
+Object.assign(dmg.procs, /** @type {Object<string, import('cdom/domgeon').Proc>} */ ({
+  link() {
+    window.location.search = new URLSearchParams({seed: nextSeed}).toString();
+    return true;
+  }
+}));
+
 globalThis.dmg = dmg;
 const inspector = find('#inspector');
 if (inspector) new DOMgeonInspector(dmg, inspector);
