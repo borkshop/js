@@ -78,11 +78,11 @@ function procFor(dmg, grid, tile) {
  * @returns {boolean}
  */
 function procInteraction(dmg, grid, subject, objects) {
-  const at = grid.getTilePosition(subject);
   const subProc = procFor(dmg, grid, subject);
 
   // interact with the first capable tile
   // TODO allow subject to choose / disambiguate?
+  const at = grid.getTilePosition(subject);
   // TODO support joint action?
   for (const object of objects) {
     // TODO support ranged/reach abilities; push this check down into specific Procs
