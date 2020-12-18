@@ -66,15 +66,6 @@ const nextSeedBytes = new Uint8Array(32);
 prng.scribble(nextSeedBytes.buffer);
 const nextSeed = btoa(String.fromCharCode(...nextSeedBytes));
 
-/** @typedef { import("cdom/tiles").Point } Point */
-/** @typedef { import("cdom/tiles").Rect } Rect */
-/** @typedef { import("cdom/builder").Context } Context */
-
-/**
- * @template T
- * @typedef { import("cdom/builder").Shader<T> } Shader
- */
-
 const dmg = new DOMgeon({
   ui: document.body,
   keys: document.body,
@@ -111,12 +102,7 @@ const linkPos = {
   y: Math.round(distance * Math.sin(angle)),
 };
 
-/**
- * @param {Context} grid
- * @param {Point} pos
- * @param {Rect} rect
- */
-function forestShader(grid, pos, rect) {
+const forestShader = build.toShader((grid, pos, rect) => {
   floorShader(grid, pos, rect);
   if (pos.x === 0 && pos.y === 0) {
   } else if (pos.x == linkPos.x && pos.y === linkPos.y) {
@@ -124,7 +110,7 @@ function forestShader(grid, pos, rect) {
   } else if ((prng.randomUint32() & 0x3) === 0) {
     treeShader(grid, pos, rect);
   }
-}
+});
 
 build.fillRect((dmg.grid), {x: -50, y: -50, w: 101, h: 101}, forestShader);
 
