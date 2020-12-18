@@ -59,15 +59,15 @@ import {GridLighting} from './fov';
  * @returns {Proc|null}
  */
 function procFor(dmg, grid, tile) {
-  const proc = grid.getTileData(tile, 'proc');
-  const tileProc = dmg.procs[proc];
-  if (tileProc) return tileProc; // TODO feedback on dev error
-
-  const kind = grid.getTileKind(tile);
-  const kindProc = dmg.procs[kind];
-  if (kindProc) return kindProc;
-
-  return dmg.procs['default'] || null;
+  for (const name of [
+    grid.getTileData(tile, 'proc'), // TODO feedback on dev error
+    grid.getTileKind(tile),
+    'default',
+  ]) if (typeof name === 'string' && name) {
+    const proc = dmg.procs[name];
+    if (proc) return proc;
+  }
+  return null;
 }
 
 /**
