@@ -15,7 +15,10 @@ import {
 } from './tiles';
 import {everyFrame, schedule} from './anim';
 import {GridLighting} from './fov';
-import {neighbors} from './procgen';
+import {
+  map,
+  neighbors,
+} from './procgen';
 
 /** @typedef { import("./tiles").Point } Point */
 /** @typedef { import("./tiles").Rect } Rect */
@@ -1010,38 +1013,35 @@ export class DOMgeon extends EventTarget {
     const subjectPlane = subject && this.grid.getTilePlane(subject);
     const subjectPos = subject && this.grid.getTilePosition(subject);
 
-    const actionStencil = subjectPos ? [
-      subjectPos,
-      ...neighbors(subjectPos), // TODO make this stencil configurable
-    ] : [];
-
-    const actors = Array.from(this.grid.el.querySelectorAll('.mover.input:not(.focus)'))
-      .map(el => {
-        const actor = /** @type {HTMLElement} */ (el);
-        const pos = this.grid.getTilePosition(actor);
-        const dsq = subjectPos
-          ? Math.pow(pos.x - subjectPos.x, 2) +
-            Math.pow(pos.y - subjectPos.y, 2)
-          : 0;
-        return {actor, pos, dsq};
-      })
-      .sort(({dsq: da}, {dsq: db}) => da - db);
+    const actors = Array.from(map(this.grid.el.querySelectorAll('.mover.input:not(.focus)'), el => {
+      const actor = /** @type {HTMLElement} */ (el);
+      const pos = this.grid.getTilePosition(actor);
+      const d = subjectPos
+        ? Math.pow(pos.x-subjectPos.x, 2) + Math.pow(pos.y-subjectPos.y, 2)
+        : 0;
+      return {actor, pos, d};
+    })).sort((a, b) => a.d - b.d);
 
     for (const {actor, pos} of actors) yield {
       label: `Focus: ${actor.textContent} <${pos.x},${pos.y}>`,
       action: 'actor',
       data: {actorID: this.grid.getTileID(actor)},
     };
+    if (!subjectPos) return;
+
+    const objects = [
+      subjectPos,
+      ...neighbors(subjectPos), // TODO make this stencil configurable
+    ]
+      .flatMap(pos => this.grid.tilesAt(pos, 'interact'))
+      .filter(tile => this.grid.getTilePlane(tile) === subjectPlane);
 
     // TODO directional de-dupe: e.g. open door x2 ... W / E, or Left / Right
 
-    for (const tile of actionStencil
-      .flatMap(pos => this.grid.tilesAt(pos, 'interact'))
-      .filter(tile => this.grid.getTilePlane(tile) === subjectPlane)
-    ) yield {
-      label: actionLabel(this.grid, tile),
+    for (const object of objects) yield {
+      label: actionLabel(this.grid, object),
       action: 'interact',
-      data: {tileID: this.grid.getTileID(tile)},
+      data: {tileID: this.grid.getTileID(object)},
     };
   }
 }
