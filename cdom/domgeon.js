@@ -47,6 +47,15 @@ import {
  * @prop {HTMLElement} object - the tile being acted upon
  */
 
+/** @typedef {Object<string, Proc>} Procs */
+
+/**
+ * @param {Procs} a
+ * @param {Procs} b
+ * @returns {Procs}
+ */
+export function assignProcs(a, b) { return Object.assign(a, b) }
+
 /**
  * @template T
  * @typedef {object} Anim

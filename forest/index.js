@@ -2,7 +2,7 @@
 
 import {find, mustFind} from 'cdom/wiring';
 
-import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
+import {DOMgeon, DOMgeonInspector, assignProcs} from 'cdom/domgeon';
 import * as build from 'cdom/builder';
 import * as PRNG from 'cdom/prng';
 
@@ -71,14 +71,14 @@ const dmg = new DOMgeon({
   lightLimit: 0.2,
 });
 
-Object.assign(dmg.procs, /** @type {Object<string, import('cdom/domgeon').Proc>} */ ({
+assignProcs(dmg.procs, {
   link({grid, object}) {
     const params = grid.getTileData(object, 'linkParams');
     if (typeof params !== 'string') return false;
     window.location.search = params;
     return true;
   }
-}));
+});
 
 globalThis.dmg = dmg;
 const inspector = find('#inspector');
