@@ -32,7 +32,7 @@ export function* filter(it, filter) {
 
 import {
   mortonKey,
-} from 'cdom/tiles';
+} from './tiles';
 
 /** Yields the 4 cardinal neighbors of a point in clockwise order.
  *
