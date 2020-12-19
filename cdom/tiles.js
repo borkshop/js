@@ -373,11 +373,7 @@ export class TileGrid {
         tile.parentNode.removeChild(tile));
     if (spec.pos) this.moveTileTo(tile, spec.pos);
     if (spec.text) tile.textContent = spec.text;
-    if (spec.className) {
-      tile.className = spec.className;
-      tile.classList.add('tile');
-      if (spec.kind) tile.classList.add(spec.kind);
-    }
+    if (spec.className) tile.className = `tile ${spec.kind || ''} ${spec.className}`;
     if (spec.classList) {
       const classList = Array.isArray(spec.classList) ? spec.classList : [spec.classList];
       for (const mut of classList) {
