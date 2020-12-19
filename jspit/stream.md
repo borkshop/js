@@ -38,9 +38,17 @@
 
 ## WIP
 
-Adding a basic item system to the BSP demo, to enable digging.
+Wrote a basic handy proc with a digging pickaxe in the BSP demo, need to at
+least afford UI before "done".
 
 ## Done
+
+Made a few minor fixes to new proc work, revealed by bsp digging: ignore mover
+procs when collecting object actions; fix kindedness of class-named tiles;
+added an assignProcs convenience function.
+
+Fixed broken forest build, due to `cdom/procgen` imporing `cdom/tiles` instead
+of `./tiles`.
 
 Fixed object interaction action button collection.
 
