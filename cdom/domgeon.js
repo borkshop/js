@@ -1034,6 +1034,7 @@ export class DOMgeon extends EventTarget {
       ...neighbors(subjectPos), // TODO make this stencil configurable
     ]
       .flatMap(pos => this.grid.tilesAt(pos))
+      .filter(tile => !tile.classList.contains('mover'))
       .filter(tile => this.grid.getTilePlane(tile) === subjectPlane)
       .filter(object => {
         for (const _ of procsFor(this, this.grid, object)) return true;
