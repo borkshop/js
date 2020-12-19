@@ -45,6 +45,7 @@ import {
  * @prop {TileGrid} grid - the tile grid of reference
  * @prop {HTMLElement} subject - the tile that is performing an action
  * @prop {HTMLElement} object - the tile being acted upon
+ * @prop {(nameOrTile: string|HTMLElement) => Proc|undefined} getProc - named proc lookup
  */
 
 /** @typedef {Object<string, Proc>} Procs */
@@ -75,11 +76,19 @@ function* procsFor(dmg, grid, tile) {
   for (const spec of [
     grid.getTileData(tile, 'proc'), // TODO feedback on dev error
     grid.getTileKind(tile),
-  ]) if (typeof spec === 'string' && spec) {
-    for (const part of spec.split(/\s+/g)) {
-      const proc = dmg.procs[part];
-      if (proc) yield proc;
-    }
+  ]) if (typeof spec === 'string' && spec)
+    yield* parseProcs(dmg, spec);
+}
+
+/**
+ * @param {DOMgeon} dmg
+ * @param {string} spec
+ * @returns {IterableIterator<Proc>}
+ */
+function* parseProcs(dmg, spec) {
+  for (const part of spec.split(/\s+/g)) {
+    const proc = dmg.procs[part];
+    if (proc) yield proc;
   }
 }
 
@@ -123,7 +132,22 @@ function procInteraction(dmg, grid, subject, objects) {
     // TODO support joint lookup of a subject X object specific Proc?
     if (subProcs === null)
       subProcs = Array.from(procsFor(dmg, grid, subject));
-    const params = {grid, subject, object};
+    const params = {
+      grid,
+      subject,
+      object,
+      /** @param {string|HTMLElement} nameOrTile */
+      getProc(nameOrTile) {
+        const procs = Array.from(typeof nameOrTile === 'string'
+          ? parseProcs(dmg, nameOrTile)
+          : procsFor(dmg, grid, nameOrTile));
+        switch (procs.length) {
+          case 0: return undefined;
+          case 1: return procs[0];
+          default: return runAllProcs.bind(null, procs);
+        }
+      },
+    };
     if (runAllProcs(subProcs, params)) return true;
     if (runAllProcs(procsFor(dmg, grid, object), params)) return true;
     if (defaultProc && defaultProc(params)) return true;
