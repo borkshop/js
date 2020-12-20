@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" href="index.css" />
+    <title>Cascading DOMgeon Template</title>
+  </head>
+
+  <!-- NOTE if the game should immediately start running without any sort of
+    introductory screen, simply add class="running" to <body> -->
+  <body>
+
+    <div class="grid">
+      <noscript>
+        <section>
+          <h3 class="error">DOMgeoneering requires JavaScript</h3>
+        </section>
+      </noscript>
+    </div>
+
+    <aside class="menu">
+      <!-- NOTE any .sticky elements under aside.menu will still be shown even
+        when running / the menu is hidden -->
+
+      <!-- Starts and stops the domgeon interaction loop, also causing the
+        aside.menu to be shown when not running (see index.css). If your game
+        has no need to ever not run, you'll want to set the body.running class
+        above, and delete this button. -->
+      <button
+        class="sticky"
+        id="startStop"
+        style="float: right; font-size: 2em; line-height: 0.75"
+        data-keycode="Escape"
+        title="Start/Stop Game ; Hide/Show Menu">☰</button>
+
+      <!-- Toggles playing state:
+        - when playing the player's subjective plane is shown (see index.css)
+        - when not playing the objective world plane (solid) is shown instead, and
+          any player input is discorded by the DOMgeon interaction loop
+        TODO this is mainly here as a development / debugging aide, and should be
+        eliminated in or otherwise managed by a shipping game -->
+      <button
+        class="sticky"
+        id="playPause"
+        style="float: right; font-size: 2em; line-height: 0.75"
+        data-key="@"
+        title="Toggle playing state">@</button>
+
+      <section>
+        <h1>Mine Demo</h1>
+
+        <p>
+          Press &lt;Escape&gt; to start/hide this menu, press it again to return to this menu.
+        </p>
+      </section>
+
+
+      <!-- TODO may comment out or remove this, as it's mostly a development aid -->
+      <fieldset id="inspector">
+        <legend>
+          <label for="inspector-ids">Tiles @<span data-for="pos">X,Y</span>:</label>
+        </legend>
+        <textarea readonly style="border: none; resize: none; user-select: all; width: 100%;"></textarea>
+      </fieldset>
+
+    </aside>
+
+    <div class="buttonbar moves left"></div>
+    <div class="buttonbar actions right float"></div>
+
+    <script type="module" src="./index.js"></script>
+  </body>
+
+</html>
+<!-- vim:set ts=2 sw=2 expandtab -->
