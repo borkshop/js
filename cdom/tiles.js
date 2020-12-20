@@ -344,6 +344,7 @@ export class TileGrid {
       plane.className = 'plane';
       plane.dataset['plane'] = name;
       plane.style.setProperty('--plane', name);
+      plane.id = `${this.idPrefix()}${name}`;
       this.el.appendChild(plane);
     }
     return plane;
