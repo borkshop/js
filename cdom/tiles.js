@@ -116,6 +116,7 @@ export function setElData(el, name, value) {
 /** @typedef {TileSpec&{
  *   id?: string
  *   kind: string
+ *   tag?: string
  * }} NewTileSpec */
 
 /**
@@ -367,7 +368,7 @@ export class TileGrid {
     // const {id, ...rest} = spec;
     let tile = id ? this.getTile(id) : null;
     if (!tile) {
-      tile = this.el.ownerDocument.createElement('div');
+      tile = this.el.ownerDocument.createElement(spec.tag || 'div');
       if (!id) {
         const kind = spec.kind;
         let n = this._kindid.get(kind) || 0;
