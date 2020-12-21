@@ -25,8 +25,6 @@ const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'pass
 const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
 const doorShader = {plane: 'solid', kind: 'door'};
 
-dmg.grid.getPlane('solid').classList.add('lit');
-
 const {
   space,
   rooms,
