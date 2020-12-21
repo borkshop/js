@@ -1,4 +1,4 @@
-# 2020-12-18
+# 2020-12-20
 
 ## TODO
 
@@ -42,6 +42,30 @@ Wrote a basic handy proc with a digging pickaxe in the BSP demo, need to at
 least afford UI before "done".
 
 ## Done
+
+# Week Ending 2020-12-19
+
+- Started prototyping a body system in the BSP demo, allowing items to be
+  picked up and used.
+- Revamped the DOMgeon Proc system: now includes subject procs, support
+  specification by data/css vars, allows default behavior, and allows chains.
+  All prior jspit behavior refactored into `Proc`s.
+- Factored `cdom/procgen.{ cardinals, ordinals, neighbors }` out of the dla
+  demo, but also towards other imminent use in `iterateField`
+- Added `procgen.contains(Rect, ...Point) => boolean`.
+- Refactored FOV iteration to preserve `At` query data, and around iterators.
+- Evolved `cdom/input.KeyChorder` so that it won't eat browser controls.
+- Added BSP spatial query demo to exercise new `procgen.iterateSpace`.
+- Added `DOMgeon.mayPlay` hook to allow demo-games to prevent play; used to BSP
+  to exclude play mode while querying.
+- Added whole-world rejection sampling to the BSP demo, with an
+  error world if generation fails 10 times; there is likely a generalizable
+  "message room" core part here, if only the text-rendition routine.
+- Started factoring out parts of the BSP demo into `cdom/procgen`; but
+  ultimately decided to only do move minor parts out until more hallway
+  building demos are done to prove out common ground.
+
+## 2020-12-18
 
 Made a few minor fixes to new proc work, revealed by bsp digging: ignore mover
 procs when collecting object actions; fix kindedness of class-named tiles;
@@ -107,7 +131,7 @@ Considering adopting a generalised `href` proc extrapolated from the forest
 demo, but with ability to open in new window, and support beyond just url
 params calling back to the same page.
 
-# 2020-12-17
+## 2020-12-17
 
 Revamped the DOMgeon Proc system:
 - both object and subject tiles may now have, in order of precedence:
@@ -126,7 +150,7 @@ previously builtin "morphic" behavior that drove things like doors.
 Finally, interaction processing now attempts all objects present, stopping on
 the first one with an effected Proc.
 
-# 2020-12-16
+## 2020-12-16
 
 Added BSP spatial query demo to exercise new `procgen.iterateSpace`. Enabled by
 new `DOMgeon.mayPlay` hook and `TileGrid.translateClient` ex-inspector.
@@ -139,7 +163,7 @@ Circled back to `fov.iterateField` and added pass through `At` data similar to
 
 Added `procgen.contains(Rect, ...Point) => boolean`, untested but looks right.
 
-# 2020-12-15
+## 2020-12-15
 
 Added whole-world rejection sampling to the BSP demo, with an error world if
 generation fails 10 times.
@@ -148,7 +172,7 @@ Factored out more bits from the BSP demo into cdom/domgeon including:
 - basic iterator tools like `map` and `filter`
 - a weighted random `choose(Iterator<T>) => T` function
 
-# 2020-12-14
+## 2020-12-14
 
 Refactored BSP room selection to never fully reject and into
 `procgen.chosseSubRect`, usable for a "uniform" generator.
@@ -170,7 +194,7 @@ that may be modified per instance if a game wants to embrace things like the
 shift key. There's likely some logic missing to allow for this, since the
 `Shift` key won't (always!) materialize in the resultant event chord set.
 
-# 2020-12-13
+## 2020-12-13
 
 Finished the FOV iteration refactor started yesterday.
 
