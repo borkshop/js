@@ -98,8 +98,8 @@ body:not(.playing) .plane[data-plane="solid"] { display: initial }
  * - ones that are within Field Of View (FOV) have a --light variable
  * - where-as ones that are merely memories of previously seen tiles do not
  */
-.plane.meme .tile[data-light] { opacity: var(--light, 15%); }
-.plane.meme .tile:not([data-light]) { opacity: 15%; }
+.plane.meme:not(.body) .tile[data-light] { opacity: var(--light, 15%); }
+.plane.meme:not(.body) .tile:not([data-light]) { opacity: 15%; }
 
 /* inspector plane should be on top and shown */
 .plane[data-plane="domgeon-inspect"] { display: initial }

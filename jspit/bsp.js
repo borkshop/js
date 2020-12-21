@@ -11,6 +11,117 @@ import {
   chooseSubRect,
 } from 'cdom/procgen';
 
+/// TODO basis for cdom/body ?
+
+/** @typedef { import('cdom/tiles').TileGrid } TileGrid */
+/** @typedef { import('cdom/tiles').NewTileSpec } NewTileSpec */
+/** @typedef { import('cdom/domgeon').ProcParams } ProcParams */
+
+/**
+ * @param {HTMLElement} bodyPlane
+ * @param {ProcParams} params
+ * @returns {boolean}
+ */
+function procBody(bodyPlane, params) {
+  const {grid, subject} = params;
+  const {plane} = bodyPlane.dataset;
+  if (!plane) return false;
+  if (subject.classList.contains('hand'))
+    return procHand(bodyPlane, params);
+  const mainAspect = bodyPlane.dataset['mainAspect'] || 'right';
+  const hands = Array.from(
+    map(grid.queryTiles({plane, className: 'hand'}), hand => {
+      let index = grid.getTileData(hand, 'bodyIndex');
+      if (typeof index !== 'number')
+        index = hand.classList.contains(mainAspect) ? -1 : 0;
+      return {hand, index};
+    })
+  ).sort((a, b) => a.index - b.index);
+  for (const {hand} of hands)
+    if (procHand(bodyPlane, {...params, subject: hand})) return true;
+  return false;
+}
+
+/**
+ * @param {HTMLElement} bodyPlane
+ * @param {ProcParams} params
+ * @returns {boolean}
+ */
+function procHand(bodyPlane, params) {
+  const {grid, subject, object} = params;
+  const pos = grid.getTilePosition(subject);
+  const held = Array.from(filter(grid.tilesAt(pos), t =>
+    t !== subject && grid.getTilePlane(t) === plane));
+
+  if (object.classList.contains('hand')) {
+    // TODO auto-proc actions like drop; inter-hand actions like swap
+    return false;
+  }
+
+  // TODO special behavior when object is from same/other body plane?
+
+  // try to use a held proc
+  for (const t of held) {
+    const proc = params.getProc(t);
+    if (proc && proc(params)) return true;
+  }
+
+  // may take only if empty
+  if (held.length) return false;
+
+  // can take an item
+  if (object.classList.contains('item')) {
+    // TODO should be a cross-plane move
+    object.parentNode?.removeChild(object);
+    bodyPlane.appendChild(object);
+    grid.moveTileTo(object, pos);
+    return true;
+  }
+
+  // TODO other forms of takeables, like a dispenser that mints a new item on demand
+
+  return false;
+}
+
+/**
+ * @param {TileGrid} grid
+ * @param {HTMLElement} tile
+ * @param {NewTileSpec[]} parts
+ * @returns {HTMLElement}
+ */
+function attachBodyPlane(grid, tile, ...parts) {
+  const plane = `body-${grid.getTileID(tile)}`;
+  const bodyPlane = grid.getPlane(plane);
+  bodyPlane.classList.add('body');
+  for (const part of parts)
+    grid.createTile({...part, plane});
+  grid.setTileData(tile, 'bodyPlane', plane);
+  if (!grid.getTileData(tile, 'proc'))
+    grid.setTileData(tile, 'proc', 'planarBody');
+  return bodyPlane;
+}
+
+/**
+ * @param {TileGrid} grid
+ * @param {HTMLElement} tile
+ * @returns {HTMLElement|null}
+ */
+function getBodyPlane(grid, tile) {
+  const plane = grid.getTileData(tile, 'bodyPlane');
+  if (!plane || typeof plane !== 'string') return null;
+  return grid.getPlane(plane);
+}
+
+/**
+ * @param {ProcParams} params
+ * @returns {boolean}
+ */
+function procAttachedBody(params) {
+  const {grid, subject} = params;
+  const bodyPlane = getBodyPlane(grid, subject);
+  return bodyPlane ? procBody(bodyPlane, params) : false;
+}
+
 /// TODO move worthwhile parts into cdom/procgen
 
 /** @typedef { import("cdom/tiles").Point } Point */
@@ -340,58 +451,25 @@ const playerSpec = {
   kind: 'mover',
   classList: ['input', 'focus'],
   text: '@',
-  data: {
-    proc: 'handy',
-    hands: 'right left',
-  },
 };
 
-/**
- * @param {any} datum
- * @returns {Item?}
- */
-function toItem(datum) {
-  if (!datum || typeof datum !== 'string') return null;
-  return items[datum] || null;
-}
-
-/**
- * @param {string} name
- * @returns {string}
- */
-function handVar(name) {
-  return `hand${name.charAt(0).toUpperCase()}${name.slice(1)}`;
-}
+const bodySpec = [
+  {
+    kind: 'hand',
+    pos: {x: -1, y: 0},
+    classList: ['left', 'support', 'passable'],
+    text: '✋',
+  },
+  {
+    kind: 'hand',
+    pos: {x: 1, y: 0},
+    classList: ['right', 'support', 'passable'],
+    text: '✋',
+  },
+];
 
 assignProcs(dmg.procs, {
-  handy(params) {
-    const {grid, subject, object} = params;
-
-    function* hands() {
-      const handsVar = grid.getTileData(subject, 'hands');
-      if (typeof handsVar === 'string') yield* handsVar.split(/\s+/g)
-    }
-
-    // first try to take an item
-    const take = toItem(grid.getTileData(object, 'item'));
-    if (take) for (const hand of hands()) {
-      const dat = handVar(hand);
-      if (toItem(grid.getTileData(subject, dat))) continue;
-      grid.setTileData(subject, dat, take.name);
-      if (!grid.getTileData(object, 'itemYieldsCopy'))
-        object.parentNode?.removeChild(object);
-      return true;
-    }
-
-    // failing that, try to use an item in hand
-    for (const hand of hands()) {
-      const item = toItem(grid.getTileData(subject, handVar(hand)));
-      const proc = item?.proc && params.getProc(item.proc);
-      if (proc && proc(params)) return true;
-    }
-
-    return false;
-  },
+  planarBody: procAttachedBody,
 
   dig({grid, object}) {
     if (grid.getTileKind(object) !== 'wall') return false;
@@ -436,7 +514,7 @@ const roomShader = build.roomShader({
  * @prop {string} title -- user facing label
  * @prop {string} desc -- user facing flavor text
  * @prop {string} text -- for TileSpec.text
- * @prop {string} [proc] -- what do
+ * @prop {Object<string, any>} [data] -- for TileSpec.data
  */
 
 /** @type {Object<string, Item>} */
@@ -446,7 +524,9 @@ const items = {
     title: 'Pick Axe',
     desc: 'You Dig? Dig It!',
     text: '⛏',
-    proc: 'dig',
+    data: {
+      proc: 'dig',
+    }
   },
 };
 
@@ -459,16 +539,14 @@ function itemAt(pos, itemName) {
   if (!item) return;
 
   // NOTE buildTile is unique@pos, so there can only be on item built per location
-  const {name, text} = item;
+  const {name, text, data} = item;
   const tile = dmg.grid.buildTile({
     pos,
     plane,
     kind: 'item',
     className: name,
-    data: {
-      item: name,
-    },
     text,
+    data,
   });
   // TODO support tile titles tile.title = item.title;
   return tile;
@@ -882,9 +960,27 @@ function generateWorld() {
   if (!place) return false;
   itemAt(place, 'pickaxe');
 
-  dmg.updateActorView(dmg.grid.createTile({pos: spawn, ...playerSpec}));
+  const actor = dmg.grid.createTile({pos: spawn, ...playerSpec});
+  attachBodyPlane(dmg.grid, actor, ...bodySpec);
+  dmg.updateActorView(actor);
+
   return true;
 }
+
+dmg.addEventListener('view', () => {
+  const actor = dmg.focusedActor();
+  const actorBody = actor && getBodyPlane(dmg.grid, actor);
+  const actorBodyPlane = actorBody && actorBody.dataset['plane'];
+  if (actorBodyPlane) dmg.view.collectAll(actorBodyPlane); // TODO button-ize support procs
+  const actorBodyViewPlane = actorBodyPlane && dmg.view.planes.get(actorBodyPlane);
+  const actorBodyView = actorBodyViewPlane && dmg.grid.getPlane(actorBodyViewPlane);
+  if (actorBodyView) actorBodyView.classList.add('body', 'focus');
+  for (const el of dmg.grid.el.querySelectorAll('.plane.meme.body.focus')) {
+    if (!(el instanceof HTMLElement)) continue;
+    if (actorBodyViewPlane && el.dataset['plane'] === actorBodyViewPlane) continue;
+    el.classList.remove('focus');
+  }
+});
 
 /**
  * Put the player in a single room with a message written on the floor
