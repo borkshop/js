@@ -21,10 +21,6 @@ import {DOMgeonInspector} from 'cdom/domgeon';
 const inspector = find('#inspector');
 if (inspector) new DOMgeonInspector(dmg, inspector);
 
-const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: '·'};
-const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
-const doorShader = {plane: 'solid', kind: 'door'};
-
 const {
   space,
   rooms,
@@ -42,28 +38,41 @@ const {
   tunnelTurningCost: 1000
 });
 
+const plane = 'solid';
+
 /**
- * @param {Iterable<number>} indexes
- * @param {NewTileSpec} shader
+ * @param {NewTileSpec} spec
+ * @param {Iterable<number>[]} indexes
  */
-function render(indexes, shader) {
-  for (const index of indexes) {
-    dmg.grid.createTile({
-      pos: space.point(index),
-      ...shader
-    });
+function render(spec, ...indexes) {
+  // TODO push the i < index < indexes revolution up and out through iteration.js
+  for (const index of indexes) for (const i of index) {
+    const pos = space.point(i);
+    dmg.grid.createTile({plane, pos, ...spec});
   }
 }
 
-render(select(floors), floorShader);
-render(select(walls), wallShader);
-render(select(doors), doorShader);
+render({
+  kind: 'floor',
+  classList: ['support', 'passable'],
+  text: '·',
+}, select(floors), select(walls));
+
+render({
+  kind: 'wall',
+  text: '#',
+}, select(walls));
+
+render({
+  kind: 'door',
+}, select(doors));
 
 const start = Math.floor(Math.random() * rooms.length);
 
 const actor = dmg.grid.createTile({
+  plane,
   pos: centers[start],
-  plane: 'solid',
+
   kind: 'char',
   classList: ['mover', 'input', 'focus'],
   text: '@'
