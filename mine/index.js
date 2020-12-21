@@ -23,7 +23,7 @@ if (inspector) new DOMgeonInspector(dmg, inspector);
 
 const floorShader = {plane: 'solid', kind: 'floor', classList: ['support', 'passable'], text: '·'};
 const wallShader = {plane: 'solid', kind: 'wall', text: '#'};
-const doorShader = {plane: 'solid', kind: 'door', classList: 'interact'};
+const doorShader = {plane: 'solid', kind: 'door'};
 
 dmg.grid.getPlane('solid').classList.add('lit');
 
