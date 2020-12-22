@@ -307,7 +307,7 @@ export class BSP {
  * @returns {(null|R)[]} - the res(ult) array, an implicit binary tree with any
  * non-null results returned by realize or fill (necessarily at leaf positions)
  */
-function binaryDivide({
+export function binaryDivide({
   regions,
 
   // default to creating a new/empty result set
