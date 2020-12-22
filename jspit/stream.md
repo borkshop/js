@@ -43,6 +43,9 @@ least afford UI before "done".
 
 ## Done
 
+Carved out the core binary partitioning logic from `procgen.BSP` into a form
+that should be even more (re)usable.
+
 Made a couple minor fixes to the new mine level, while thinking about the road
 ahead.
 

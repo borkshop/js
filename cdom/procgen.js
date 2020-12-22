@@ -227,7 +227,7 @@ export class BSP {
     const dir = w > this.limit.w            // if both sizes
               ? h > this.limit.h            // are sufficient
               ? this.chooseSplitDir(region) // choose randomly
-              : false : true;               // otherwise only one is possibel
+              : false : true;               // otherwise only one is possible
     const rand = this.splitOffset + this.splitRange * this.random();
     const point = Math.floor(dir ? y + h * rand : x + w * rand);
     return {point, dir};
@@ -238,37 +238,11 @@ export class BSP {
    * @returns {null|R}
    */
   run(bounds) {
-    const limit = bounds.w * bounds.h;
-
-    /** @type {Rect[]} */
-    const regions = [bounds];
-    /** @type {(null|Split)[]} */
-    const splits = [];
-    /** @type {(null|R)[]} */
-    const res = [];
-    /** @type {number[]} */
-    const q = [0];
-
-    // recursively subdivide, giving fill a chance
-    let round = 0;
-    for (let i = q.shift(); i !== undefined; i = q.shift()) {
-      if (++round > limit)
-        throw new Error(`BSP iteration limit:${limit} exceeded`);
-      const region = regions[i];
-      // skip degenerate regions (possible for extreme values of splitRange + splitOffset)
-      if (region.w <= 0 || region.h <= 0) continue;
-      // done if filled
-      if (res[i] = this.fill(region, i)) continue;
-      // done if cannot sub-divide
-      const split = splits[i] = this.chooseSplit(region);
-      if (!split) continue;
-      // queue sub-regions
-      const li = 2*i + 1, ri = 2*i + 2;
-      const {left, right} = splitRegion(region, split);
-      regions[li] = left, regions[ri] = right;
-      if (left.w * left.h > 0) q.push(li);
-      if (right.w * right.h > 0) q.push(ri);
-    }
+    const res = binaryDivide({
+      regions: [bounds],
+      fill: (region, i) => this.fill(region, i),
+      chooseSplit: region => this.chooseSplit(region),
+    });
 
     // connect back up from the leaves
     /** @param {null|R} a @param {null|R} b */
@@ -279,9 +253,102 @@ export class BSP {
       const a = res.pop() || null;
       res.push(reduce(reduce(a, b), c));
     }
-
     return res.shift() || null;
   }
+}
+
+/** Recursively subdivides regions within a binary tree, stopping descent
+ * once a region has been filled by the given fill function.
+ *
+ * An advanced user may retain and pass all of regions, res, and q along
+ * with a constrained maxRounds to smear recursion across many calls.
+ *
+ * Such a user should check q.length === 0 to know hen to stop.
+ *
+ * Similarly, allocation averse users may retain/clear/reuse the regions, res,
+ * and q arrays.
+ *
+ * @template R - arbitrary result data type, as returned by the fill function
+ * for later processing
+ *
+ * @param {object} params
+ *
+ * @param {Rect[]} params.regions - an implicit binary tree of region
+ * rectangles, all regions[q[i]] elements must be defined; i.e. this should
+ * typically be a singleton array containing the root bounding rectangle.
+ *
+ * @param {(null|R)[]} [params.res] - an implicit binary tree, aligned with
+ * regions, with a result for each (necessarily leaf!) region where fill
+ * returned non-null
+ *
+ * @param {number[]} [params.q] - the iteration/recursion queue, will default
+ * to [0] so as to start division from a root bounding rectangle
+ *
+ * @param {number} [params.maxRounds] - a limit on the number of iteration
+ * rounds allowed, defaults to the total area of all regions indexed by q; a
+ * round creates either a non-null result (fill) or a new split point
+ * (chooseSplit); when this limit is exceeded, the binaryDivide returns
+ * normally; if the caller cares to test for such early exit, they must pass an
+ * explicit q, and then later check if it's not empty when "done"
+ *
+ * @param {(region: Rect, i: number) => null|R} [params.fill] - decides whether
+ * to stop subdivision by populating a region: any non-null value it returns
+ * will be collect as a leaf result in the binary result tree
+ *
+ * @param {(region: Rect, i: number) => null|Split} [params.chooseSplit] -
+ * picks split points within branch regions; each region to the "left" and
+ * "right" of the split point will be queued, and eventually seen by the fill
+ * function in a future round
+ *
+ * @returns {(null|R)[]} - the res(ult) array, an implicit binary tree with any
+ * non-null results returned by fill (necessarily at leaf positions)
+ */
+function binaryDivide({
+  regions,
+
+  // default to creating a new/empty result set
+  res = [],
+
+  // default to starting from a root region
+  q = [0],
+
+  // default to one round for every possible integer location in the initial q
+  maxRounds = q
+    .map(i => regions[i])
+    .map(({w, h}) => w * h)
+    .reduce((a, b) => a + b, 0),
+
+  // no default fill, all splits!
+  fill = () => null,
+
+  // default split to right down the (largest) middle!
+  chooseSplit = ({x, y, w, h}) => {
+    const dir = h >= w;
+    const point = Math.floor(h >= w ? y+h/2 : x+w/2);
+    return {point, dir}
+  },
+}) {
+  let remain = maxRounds;
+  for (let i = q.shift(); i !== undefined; i = q.shift()) if (remain-->0) {
+    // skip degenerate regions (possible for extreme values of splitRange + splitOffset)
+    const region = regions[i];
+    if (region.w <= 0 || region.h <= 0) continue;
+
+    // done if filled
+    if (res[i] = fill(region, i)) continue;
+
+    // done if cannot sub-divide
+    const split = chooseSplit(region, i);
+    if (!split) continue;
+
+    // queue sub-regions
+    const li = 2*i + 1, ri = 2*i + 2;
+    const {left, right} = splitRegion(region, split);
+    regions[li] = left, regions[ri] = right;
+    if (left.w * left.h > 0) q.push(li);
+    if (right.w * right.h > 0) q.push(ri);
+  }
+  return res;
 }
 
 /// General random selection
