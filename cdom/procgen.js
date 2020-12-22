@@ -156,97 +156,37 @@ function splitRegion (region, {point, dir}) {
   return {left, right};
 }
 
-/**
- * Binary Space Partitioning scheme for procedural generation.
+/** Creates a random split choice function, as can be passed to binaryDivide.
  *
- * @template R - regional data type used to pass filled and connection region
- * data up the tree, and out as the final run result
+ * @param {object} params
+ * @param {Size} [params.limit] - sub-division limit
+ * @param {() => number} [params.random] - random chooser, must return a value
+ * in the range [0, 1.0), defaults to Math.random
+ * @param {number} [params.splitRange] - random range to choose split values
+ * over, defaults to 0.2; TODO directionality?
+ * @param {number} [params.splitOffset] - random offset to start choosing
+ * split values from, defaults to 0.4; TODO directionality?
+ * @returns {(region: Rect) => null|Split}
  */
-export class BSP {
-  /**
-   * @template R
-   * @typedef {object} BSPOptions
-   * @prop {(region: Rect, id: number) => null|R} fill - regional fill function,
-   * return null to decline a region, having it further sub-divided
-   * @prop {(a: R, b: R) => R} connect - region connector function,
-   * receives data from two areas that are each either a filled region leaf or
-   * a tree of connected regions
-   * @prop {Size} [limit] - sub-division limit
-   * @prop {() => number} [random] - random chooser, must return a value
-   * in the range [0, 1.0), defaults to Math.random
-   * @prop {number} [splitRange] - random range to choose split values
-   * over, defaults to 0.2; TODO directionality?
-   * @prop {number} [splitOffset] - random offset to start choosing
-   * split values from, defaults to 0.4; TODO directionality?
-   */
-
-  /**
-   * @template R
-   * @param {BSPOptions<R> & {bounds: Rect}} options
-   */
-  static run(options) {
-    const {bounds, ...opts} = options;
-    const bsp = new BSP(opts);
-    return bsp.run(bounds);
-  }
-
-  fill
-  connect
-  limit = {w: 5, h: 5}
-  random = Math.random
-  splitRange = 0.2
-  splitOffset = 0.4
-
-  /** @param {BSPOptions<R>} options */
-  constructor(options) {
-    this.fill = options.fill;
-    this.connect = options.connect;
-    if (options.limit) this.limit = options.limit;
-    if (options.random) this.random = options.random;
-    if (options.splitRange) this.splitRange = options.splitRange;
-    if (options.splitOffset) this.splitOffset = options.splitOffset;
-  }
-
-  /**
-   * @param {Rect} region
-   * @returns {boolean}
-   */
-  chooseSplitDir({w, h}) {
-    return this.random() >= w / h;
-    // return this.random() < w / h;
-  }
-
-  /**
-   * @param {Rect} region
-   * @returns {null|Split}
-   */
-  chooseSplit(region) {
+export function randomSplitChooser(params={}) {
+  const {
+    limit = {w: 5, h: 5},
+    random = Math.random,
+    splitRange = 0.2,
+    splitOffset = 0.4,
+  } = params;
+  return region => {
     let {x, y, w, h} = region;
     // cannot split if neither size is sufficient
-    if (w <= this.limit.w && h <= this.limit.h) return null;
-    const dir = w > this.limit.w            // if both sizes
-              ? h > this.limit.h            // are sufficient
-              ? this.chooseSplitDir(region) // choose randomly
-              : false : true;               // otherwise only one is possible
-    const rand = this.splitOffset + this.splitRange * this.random();
+    if (w <= limit.w && h <= limit.h) return null;
+    const dir = w > limit.w       // if both sizes
+              ? h > limit.h       // are sufficient
+              ? random() >= w / h // choose randomly
+              : false : true;     // otherwise only one is possible
+    const rand = splitOffset + splitRange * random();
     const point = Math.floor(dir ? y + h * rand : x + w * rand);
     return {point, dir};
   };
-
-  /**
-   * @param {Rect} bounds
-   * @returns {null|R}
-   */
-  run(bounds) {
-    return binaryReduce({
-      res: binaryDivide({
-        regions: [bounds],
-        fill: (region, i) => this.fill(region, i),
-        chooseSplit: region => this.chooseSplit(region),
-      }),
-      connect: (a, b) => this.connect(a, b),
-    });
-  }
 }
 
 /** Recursively subdivides regions within a binary tree, stopping descent

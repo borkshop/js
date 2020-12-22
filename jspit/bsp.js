@@ -5,7 +5,9 @@ import {
   choose,
   iterateSpace,
 
-  BSP,
+  randomSplitChooser,
+  binaryDivide,
+  binaryReduce,
   chooseSubRect,
 } from 'cdom/procgen';
 
@@ -460,9 +462,6 @@ function digAt(pos) {
 
 /** @typedef {Rect & {id: number, kind: string}} Region */
 
-/**
- * Implements stateful fill and connect methods usable under BSPOptions.
- */
 class BSPRoomBuilder {
   interiorPoints = new Set()
   regionID = 0
@@ -724,11 +723,6 @@ class BSPRoomBuilder {
 }
 
 const roomBuilder = new BSPRoomBuilder();
-/** @type {BSP<Region[]>} */
-const bsp = new BSP({
-  fill: (region, id) => roomBuilder.fill(region, id),
-  connect: (as, bs) => roomBuilder.connect(as, bs),
-});
 
 function reset() {
   let sanity = 10;
@@ -752,10 +746,23 @@ function generateWorld() {
   };
   dmg.grid.viewPoint = origin;
   roomBuilder.reset();
-  const regions = bsp.run(bounds);
-  if (!regions ||
-      regions.filter(({kind}) => kind === 'room').length < 5) return false;
 
+  // must have at least 5 rooms
+  const rooms = binaryDivide({
+    fill: (region, i) => roomBuilder.fill(region, i),
+    chooseSplit: randomSplitChooser(),
+    regions: [bounds],
+  });
+  if (rooms.filter(room => !!room).length < 5) return false;
+
+  // must successfully connect them all
+  const regions = binaryReduce({
+    res: rooms,
+    connect: (a, b) => roomBuilder.connect(a, b),
+  });
+  if (!regions) return false;
+
+  // must have a player spawn
   const spawn = chooseSpawn();
   if (!spawn) return false;
 
