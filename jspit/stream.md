@@ -1,4 +1,4 @@
-# 2020-12-20
+# 2020-12-21
 
 ## TODO
 
@@ -42,6 +42,16 @@ Wrote a basic handy proc with a digging pickaxe in the BSP demo, need to at
 least afford UI before "done".
 
 ## Done
+
+Made a couple minor fixes to the new mine level, while thinking about the road
+ahead.
+
+# 2020-12-20
+
+More dev branch progress on bsp body prototype, now function internally, but
+need to sort out display and input still. Shaping up a new `ProcParams.getProc`
+provision, which allows a proc to lookup others (by name or for-tile),
+primarily for delegation purposes.
 
 # Week Ending 2020-12-19
 
