@@ -168,7 +168,7 @@ export class BSP {
    * @typedef {object} BSPOptions
    * @prop {(region: Rect, id: number) => null|R} fill - regional fill function,
    * return null to decline a region, having it further sub-divided
-   * @prop {(a: R, b: R) => null|R} connect - region connector function,
+   * @prop {(a: R, b: R) => R} connect - region connector function,
    * receives data from two areas that are each either a filled region leaf or
    * a tree of connected regions
    * @prop {Size} [limit] - sub-division limit
@@ -238,22 +238,14 @@ export class BSP {
    * @returns {null|R}
    */
   run(bounds) {
-    const res = binaryDivide({
-      regions: [bounds],
-      fill: (region, i) => this.fill(region, i),
-      chooseSplit: region => this.chooseSplit(region),
+    return binaryReduce({
+      res: binaryDivide({
+        regions: [bounds],
+        fill: (region, i) => this.fill(region, i),
+        chooseSplit: region => this.chooseSplit(region),
+      }),
+      connect: (a, b) => this.connect(a, b),
     });
-
-    // connect back up from the leaves
-    /** @param {null|R} a @param {null|R} b */
-    const reduce = (a, b) => a ? b ? this.connect(a, b) : a : b;
-    while (res.length > 1) {
-      const c = res.length % 2 === 0 && res.pop() || null;
-      const b = res.pop() || null;
-      const a = res.pop() || null;
-      res.push(reduce(reduce(a, b), c));
-    }
-    return res.shift() || null;
   }
 }
 
@@ -356,6 +348,52 @@ export function binaryDivide({
     if (right.w * right.h > 0) q.push(ri);
   }
   return res;
+}
+
+/** Combines results within a binary tree, starting from the leafs on up.
+ *
+ * Null values are coalesced so that the connect function only sees non-null
+ * results, and the final result is null only if all of the binary tree results
+ * were null.
+ *
+ * Primarily of use for processing the results from binaryDivide.
+ *
+ * @template R
+ * @param {object} params
+ * @param {(R|null)[]} params.res
+ * @param {(a: R, b: R) => R} params.connect
+ * @returns {R|null}
+ */
+export function binaryReduce({res, connect}) {
+  /** @param {null|R} a @param {null|R} b */
+  const reduce = (a, b) => a ? b ? connect(a, b) : a : b;
+  while (res.length > 1)
+    binaryReduceOne({res, reduce});
+  return res.shift() || null;
+}
+
+/** Combines results underneath the deepest full node of an implicit binary
+ * tree, plus any additional odd sibling node.
+ *
+ * Calls the given reduction function one or two times, first on the two child
+ * nodes of the deepest full-node, and maybe an additional time with its result
+ * and an odd sibling node.
+ *
+ * @template R
+ * @param {object} params
+ * @param {(R|null)[]} params.res
+ * @param {(a: R, b: R) => R} [params.connect]
+ * @param {(a: R|null, b: R|null) => R|null} [params.reduce]
+ * @returns {void}
+ */
+export function binaryReduceOne({res, connect,
+  reduce = connect && ((a, b) => a ? b ? connect(a, b) : a : b),
+}) {
+  if (!reduce) throw new Error('procgen.binaryReduceOne: must provide a connect or reduce function');
+  const c = res.length % 2 === 0 && res.pop() || null;
+  const b = res.pop() || null;
+  const a = res.pop() || null;
+  res.push(reduce(reduce(a, b), c));
 }
 
 /// General random selection
