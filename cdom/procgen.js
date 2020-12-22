@@ -268,8 +268,8 @@ export class BSP {
  * Similarly, allocation averse users may retain/clear/reuse the regions, res,
  * and q arrays.
  *
- * @template R - arbitrary result data type, as returned by the fill function
- * for later processing
+ * @template R - arbitrary result data type, as returned by the fill and
+ * realize functions for later processing
  *
  * @param {object} params
  *
@@ -278,18 +278,18 @@ export class BSP {
  * typically be a singleton array containing the root bounding rectangle.
  *
  * @param {(null|R)[]} [params.res] - an implicit binary tree, aligned with
- * regions, with a result for each (necessarily leaf!) region where fill
- * returned non-null
+ * regions, with a result for each (necessarily leaf!) region where realize or
+ * fill returned non-null
  *
  * @param {number[]} [params.q] - the iteration/recursion queue, will default
  * to [0] so as to start division from a root bounding rectangle
  *
  * @param {number} [params.maxRounds] - a limit on the number of iteration
  * rounds allowed, defaults to the total area of all regions indexed by q; a
- * round creates either a non-null result (fill) or a new split point
- * (chooseSplit); when this limit is exceeded, the binaryDivide returns
- * normally; if the caller cares to test for such early exit, they must pass an
- * explicit q, and then later check if it's not empty when "done"
+ * round creates either a non-null result (from realize or fill) or a new split
+ * point (chooseSplit) is queued; when this limit is exceeded, the binaryDivide
+ * returns normally; if the caller cares to test for such early exit, they must
+ * pass an explicit q, and then later check if it's not empty when "done"
  *
  * @param {(region: Rect, i: number) => null|R} [params.fill] - decides whether
  * to stop subdivision by populating a region: any non-null value it returns
@@ -300,8 +300,12 @@ export class BSP {
  * "right" of the split point will be queued, and eventually seen by the fill
  * function in a future round
  *
+ * @param {(region: Rect, split: Split, i: number) => null|R} [params.realize] -
+ * has an opportunity to provide a result for a region split, pre-empting
+ * recursive fill and potential sub-division of its children
+ *
  * @returns {(null|R)[]} - the res(ult) array, an implicit binary tree with any
- * non-null results returned by fill (necessarily at leaf positions)
+ * non-null results returned by realize or fill (necessarily at leaf positions)
  */
 function binaryDivide({
   regions,
@@ -318,8 +322,8 @@ function binaryDivide({
     .map(({w, h}) => w * h)
     .reduce((a, b) => a + b, 0),
 
-  // no default fill, all splits!
-  fill = () => null,
+  fill,
+  realize,
 
   // default split to right down the (largest) middle!
   chooseSplit = ({x, y, w, h}) => {
@@ -335,11 +339,14 @@ function binaryDivide({
     if (region.w <= 0 || region.h <= 0) continue;
 
     // done if filled
-    if (res[i] = fill(region, i)) continue;
+    if (fill && (res[i] = fill(region, i))) continue;
 
     // done if cannot sub-divide
     const split = chooseSplit(region, i);
     if (!split) continue;
+
+    // done if realized
+    if (realize && (res[i] = realize(region, split, i))) continue;
 
     // queue sub-regions
     const li = 2*i + 1, ri = 2*i + 2;
