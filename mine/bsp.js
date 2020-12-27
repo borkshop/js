@@ -7,24 +7,20 @@ import {
   rectForCorners,
   centerOfRect,
 } from './geometry.js';
+import {
+  transform,
+  identity,
+  translate,
+  flipY as flip,
+  transpose,
+  multiply,
+} from './matrix.js';
 
 const mathRandom = () => Math.random();
 
 /** @typedef { import("cdom/tiles").Rect } Rect */
 /** @typedef { import("cdom/tiles").Point } Point */
-
-/** @typedef {(point:Point) => Point} Projection */
-
-// TODO: use homogeneous matrix composition instead of functional composition. 
-
-/** @type {(a:Point, b:Point) => Point} */
-const translate = ({x: dx, y: dy}, {x, y}) => ({x: x + dx, y: y + dy});
-/** @type {Projection} */
-const transpose = ({x, y}) => ({x: y, y: x});
-/** *type {Projection} */
-const flip = (/** @type {Point} */{x, y}) => ({x: -x, y});
-/** @type {Projection} */
-const identity = (point) => point;
+/** @typedef {import('./matrix.js').Matrix} Matrix */
 
 /**
  * @typedef {Object} MineRequirements
@@ -51,26 +47,31 @@ export function planRooms(rect, reqs, random = mathRandom) {
   const { maxRoomCount } = reqs;
   /** @type {Rect[]} */
   const rooms = [];
-  const projectPosition = (/** @type {Point} */{x, y}) => ({x: x+1, y: y+1});
-  const projectSize = identity;
+  const roomToWorldPosition = translate({x: 1, y: 1});
+  const roomToWorldSize = identity;
   const inset = insetRect(rect);
   const size = sizeOfRect(inset);
-  partition(size, projectPosition, projectSize, maxRoomCount, reqs, rooms);
+  partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, reqs, rooms);
   const centers = rooms.map(rect => centerOfRect(rect, random));
   const area = size.x * size.y;
   return { size, area, rooms, centers };
 }
 
 /**
- * @param {Point} size
- * @param {Projection} projectPosition
- * @param {Projection} projectSize
- * @param {number} maxRoomCount
+ * @param {Point} size is the size of the room anchored at the origin in the
+ * room's coordinate space.
+ * @param {Matrix} roomToWorldPosition is a matrix that transforms room
+ * coordinates into world coordinates.
+ * @param {Matrix} roomToWorldSize is a matrix that transforms the room size to
+ * dimensions of the room in the world's coordinate space, which may vary by
+ * transposition and flipping about an axis.
+ * @param {number} maxRoomCount is the number of rooms that should spawn within
+ * the current partition.
  * @param {MineRequirements} reqs
  * @param {Rect[]} rooms
  * @param {() => number} random
  */
-function partition(size, projectPosition, projectSize, maxRoomCount, reqs, rooms, random = mathRandom) {
+function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, reqs, rooms, random = mathRandom) {
   const {minRoomArea, maxRoomArea} = reqs;
   const area = areaOfPoint(size);
 
@@ -81,9 +82,9 @@ function partition(size, projectPosition, projectSize, maxRoomCount, reqs, rooms
     // Always partition across the dominant axis to facilitate alternation of
     // orientation.
     partition(
-      transpose(size),
-      point => projectPosition(transpose(point)),
-      point => projectSize(transpose(point)),
+      transform(size, transpose),
+      multiply(roomToWorldPosition, transpose),
+      multiply(roomToWorldSize, transpose),
       maxRoomCount,
       reqs,
       rooms
@@ -101,8 +102,8 @@ function partition(size, projectPosition, projectSize, maxRoomCount, reqs, rooms
 
     partition(
       {x: left, y: size.y},
-      projectPosition,
-      projectSize,
+      roomToWorldPosition,
+      roomToWorldSize,
       countA,
       reqs,
       rooms
@@ -110,8 +111,8 @@ function partition(size, projectPosition, projectSize, maxRoomCount, reqs, rooms
 
     partition(
       {x: right, y: size.y},
-      point => projectPosition(translate({x: size.x, y: 0}, flip(point))),
-      point => projectSize(flip(point)),
+      multiply(multiply(roomToWorldPosition, translate({x: size.x, y: 0})), flip),
+      multiply(roomToWorldSize, flip),
       countB,
       reqs,
       rooms
@@ -126,8 +127,8 @@ function partition(size, projectPosition, projectSize, maxRoomCount, reqs, rooms
     const x = Math.floor((size.x - w) * random());
     const y = Math.floor((size.y - h) * random());
 
-    const a = projectPosition({x, y});
-    const b = translate(a, projectSize({x: w, y: h}));
+    const a = transform({x, y}, roomToWorldPosition);
+    const b = transform({x: w, y: h}, multiply(translate(a), roomToWorldSize));
     const r = rectForCorners(a, b);
     rooms.push(r);
   }
