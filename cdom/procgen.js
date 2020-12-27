@@ -368,18 +368,22 @@ export function choose(things, options={}) {
 }
 
 /** Selects a random rectangle within a given container rectangle, with at
- * least a minimum size and area.
+ * least a minimum size and area (if possible).
  *
- * @param {Rect} within
- * @param {Size&{a: number}} min
+ * @param {Rect} within - bounding rectangle to choose within
+ * @param {Size&{a: number}} min - minimum size and area; if within does not
+ * suffice, then it is returned immediately, and no sampling happens
  * @param {object} [options]
- * @param {() => number} [options.random]
- * @param {number} [options.sanityLimit]
+ * @param {() => number} [options.random] - Math.random-like function
+ * @param {number} [options.sanityLimit] - maximum number of sampling rounds to
+ * attempt before giving up and returning then given within rect
  * @returns {Rect}
  */
 export function chooseSubRect(within, min, options={}) {
   // if not enough room to even choose, you get what you gave
-  if (within.w * within.h <= min.a) return within;
+  if (within.w <= min.w ||
+      within.h <= min.h ||
+      within.w * within.h <= min.a) return within;
 
   const {
     random=Math.random,
