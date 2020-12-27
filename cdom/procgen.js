@@ -377,6 +377,9 @@ export function choose(things, options={}) {
  * @returns {Rect}
  */
 export function chooseSubRect(within, min, options={}) {
+  // if not enough room to even choose, you get what you gave
+  if (within.w * within.h <= min.a) return within;
+
   const {random=Math.random} = options;
   const w = Math.floor(random() * (within.w - min.w)) + min.w;
   const mh = Math.max(min.h, Math.ceil(min.a/w));
