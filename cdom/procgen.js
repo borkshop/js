@@ -374,17 +374,26 @@ export function choose(things, options={}) {
  * @param {Size&{a: number}} min
  * @param {object} [options]
  * @param {() => number} [options.random]
+ * @param {number} [options.sanityLimit]
  * @returns {Rect}
  */
 export function chooseSubRect(within, min, options={}) {
   // if not enough room to even choose, you get what you gave
   if (within.w * within.h <= min.a) return within;
 
-  const {random=Math.random} = options;
-  const w = Math.floor(random() * (within.w - min.w)) + min.w;
-  const mh = Math.max(min.h, Math.ceil(min.a/w));
-  const h = Math.floor(random() * (within.h - mh)) + mh;
-  const x = within.x + Math.floor(random() * (within.w - w));
-  const y = within.y + Math.floor(random() * (within.h - h));
-  return {x, y, w, h};
+  const {
+    random=Math.random,
+    sanityLimit=10,
+  } = options;
+  for (let sanity=sanityLimit; sanity-->0;) {
+    const w = Math.floor(random() * (within.w - min.w)) + min.w;
+    const h = Math.floor(random() * (within.h - min.h)) + min.h;
+    if (w * h <= min.a) continue; // reject if area insufficient
+    const x = within.x + Math.floor(random() * (within.w - w));
+    const y = within.y + Math.floor(random() * (within.h - h));
+    return {x, y, w, h};
+  }
+
+  // rejected all samples, you get what you gave
+  return within;
 }
