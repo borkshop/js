@@ -3,8 +3,6 @@
 /** @typedef { import("cdom/tiles").Rect } Rect */
 /** @typedef { import("cdom/tiles").Point } Point */
 
-const mathRandom = () => Math.random();
-
 export const north = {x:  0, y: -1};
 export const east =  {x: +1, y:  0};
 export const south = {x:  0, y: +1};
@@ -15,7 +13,7 @@ export const west =  {x: -1, y:  0};
  * @param {() => number} random
  * @returns {number}
  */
-function half(n, random = mathRandom) {
+function half(n, random = Math.random) {
   const h = Math.floor(n / 2);
   if (random() < 0.5) {
     return n - h;
@@ -42,7 +40,7 @@ function ascend(n, m) {
  * @param {() => number} random
  * @returns {Point}
  */
-export function centerOfRect({x, y, w, h}, random = mathRandom) {
+export function centerOfRect({x, y, w, h}, random = Math.random) {
   return {x: x + half(w - 1, random), y: y + half(h - 1, random)};
 }
 
@@ -114,7 +112,7 @@ export function *edges(rect) {
  * @param {() => number} random
  * @returns {Point}
  */
-export function midpoint(a, b, random = mathRandom) {
+export function midpoint(a, b, random = Math.random) {
   return centerOfRect(rectForCorners(a, b), random);
 }
 
@@ -123,7 +121,7 @@ export function midpoint(a, b, random = mathRandom) {
  * @param {() => number} random
  * @yields {Point}
  */
-export function *midpointsForRect(rect, random = mathRandom) {
+export function *midpointsForRect(rect, random = Math.random) {
   for (const [a, b] of edges(rect)) {
     yield midpoint(a, b, random);
   }

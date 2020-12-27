@@ -2,8 +2,6 @@
 
 import {coswap, heapup, heapdown} from './heap.js';
 
-const mathRandom = () => Math.random();
-
 /**
  * @param {number} area The area of the zone to explore, and consequently the
  * length of the following arrays.
@@ -74,7 +72,7 @@ export function computeDistancesDijkstra(
  * @param {() => number} random
  * @yields {number}
  */
-export function *trace(length, distances, neighbors, ends, random = mathRandom) {
+export function *trace(length, distances, neighbors, ends, random = Math.random) {
 
   /**
    * @param {Array<number>} indexes
