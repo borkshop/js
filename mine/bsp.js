@@ -16,8 +16,6 @@ import {
   multiply,
 } from './matrix.js';
 
-const mathRandom = () => Math.random();
-
 /** @typedef { import("cdom/tiles").Rect } Rect */
 /** @typedef { import("cdom/tiles").Point } Point */
 /** @typedef {import('./matrix.js').Matrix} Matrix */
@@ -43,7 +41,7 @@ const mathRandom = () => Math.random();
  * @param {() => number} random
  * @returns {MineDescription}
  */
-export function planRooms(rect, reqs, random = mathRandom) {
+export function planRooms(rect, reqs, random = Math.random) {
   const { maxRoomCount } = reqs;
   /** @type {Rect[]} */
   const rooms = [];
@@ -71,7 +69,7 @@ export function planRooms(rect, reqs, random = mathRandom) {
  * @param {Rect[]} rooms
  * @param {() => number} random
  */
-function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, reqs, rooms, random = mathRandom) {
+function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, reqs, rooms, random = Math.random) {
   const {minRoomArea, maxRoomArea} = reqs;
   const area = areaOfPoint(size);
 
