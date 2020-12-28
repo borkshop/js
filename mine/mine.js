@@ -1,9 +1,9 @@
 // @ts-check
 
-import {neighbors} from 'cdom/procgen';
+import {neighbors, chooseSubRect} from 'cdom/procgen';
 
 import {count, select} from './iteration.js';
-import {sizeOfRect, outerCorners, pointsForRect, border} from './geometry.js';
+import {sizeOfRect, outerCorners, pointsForRect, centerOfRect, border} from './geometry.js';
 import {Space} from './space.js';
 import {fill} from './paint-by-numbers.js';
 import {computeDistancesBreadthFirst} from './bfs.js';
@@ -16,7 +16,7 @@ import {planRooms} from './bsp.js';
 /** @typedef { import("cdom/tiles").Point } Point */
 
 /**
- * @typedef {Object} Reqs
+ * @typedef {Object} Plan
  * @prop {Rect} rect
  * @prop {number} maxRoomCount
  * @prop {number} minRoomCount
@@ -27,7 +27,7 @@ import {planRooms} from './bsp.js';
  */
 
 /**
- * @typedef {Object} Plan
+ * @typedef {Object} Result
  * @prop {number} area
  * @prop {Space} space
  * @prop {Array<Rect>} rooms
@@ -38,19 +38,44 @@ import {planRooms} from './bsp.js';
  */
 
 /**
- * @param {Reqs} reqs
- * @returns {Plan}
+ * @param {Plan} plan
+ * @returns {Result}
  */
-export function planMine(reqs) {
-  const {rect, tunnelTurningCost = 100} = reqs;
-  let {wallBreakingCost = 10} = reqs;
+export function planMine(plan) {
+  const {rect, tunnelTurningCost = 100} = plan;
+  let {wallBreakingCost = 10} = plan;
 
   const area = rect.w * rect.h;
 
-  const { rooms, centers } = planRooms(rect, {
-    maxRoomCount: 20,
-    minRoomArea: 20,
-    maxRoomArea: 40,
+  /** @type {Rect[]} */
+  const rooms = [];
+  /** @type {Point[]} */
+  const centers = [];
+
+  const random = Math.random;
+
+  const minRoomArea = 9;
+  const maxRoomCount = 5;
+  planRooms(rect, {
+    maxRoomCount,
+    minRoomArea,
+    random,
+    /**
+     * @callback
+     * @param {Rect} rect
+     */
+    drawRoom: (rect) => {
+      // const roomArea = minRoomArea + (maxRoomArea - minRoomArea) * random();
+      // const ratio = (4 + random()) / 5;
+      // const w = Math.max(1, Math.min(size.x, Math.floor(Math.sqrt(roomArea) * ratio)));
+      // const h = Math.max(1, Math.min(size.y, Math.floor(roomArea / w)));
+      // const x = Math.floor((size.x - w) * random());
+      // const y = Math.floor((size.y - h) * random());
+      // const {x, y, w, h} = chooseSubRect({x: 0, y: 0, w: size.x, h: size.y}, {w: 3, h: 3, a: minRoomArea}, {random});
+      const subRect = chooseSubRect(rect, {w: 3, h: 3, a: minRoomArea}, {random});
+      rooms.push(subRect);
+      centers.push(centerOfRect(subRect, random));
+    },
   });
 
   const space = new Space(sizeOfRect(rect));
