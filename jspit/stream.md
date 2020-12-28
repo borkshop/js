@@ -1,4 +1,4 @@
-# 2020-12-21
+# 2020-12-28
 
 ## TODO
 
@@ -43,6 +43,24 @@ least afford UI before "done".
 
 ## Done
 
+Retconned lint breaks within `mine`, and added `scripts/qa.bash` to help bug kit-bashing.
+
+# 2020-12-27
+
+Fixed `cdom/procgen.chooseSubRect` to never escape its given rectangle.
+
+# Week Ending 2020-12-26
+
+Holiday week with only a couple of items:
+- completely de-objectified `procgen.BSP`, decomposed into `binaryDivide`,
+  `binaryReduce`, and a random split chooser.
+- More dev branch progress on bsp body prototype, now working internally, but
+  need to sort out display and input still.
+- Made a couple minor fixes to the new mine level, while thinking about the
+  road ahead.
+
+## 2020-12-21
+
 Completely de-objectified `procgen.BSP`, decomposed into `binaryDivide`,
 `binaryReduce`, and a random split chooser. Including an, as yet unused, hook
 to allow directly-resulted splits.
@@ -50,7 +68,7 @@ to allow directly-resulted splits.
 Made a couple minor fixes to the new mine level, while thinking about the road
 ahead.
 
-# 2020-12-20
+## 2020-12-20
 
 More dev branch progress on bsp body prototype, now function internally, but
 need to sort out display and input still. Shaping up a new `ProcParams.getProc`
