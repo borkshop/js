@@ -2,11 +2,11 @@
 
 import {
   sizeOfRect,
-  areaOfPoint,
   insetRect,
   rectForCorners,
-  centerOfRect,
+  origin,
 } from './geometry.js';
+
 import {
   transform,
   identity,
@@ -21,41 +21,47 @@ import {
 /** @typedef {import('./matrix.js').Matrix} Matrix */
 
 /**
- * @typedef {Object} MineRequirements
+ * @template Room
+ * @typedef {Object} BspPlan
  * @prop {number} maxRoomCount
  * @prop {number} minRoomArea
- * @prop {number} maxRoomArea
+ * @prop {(rect:Rect) => Room} [drawRoom]
+ * @prop {(left:Room, right:Room) => Room} [drawHall]
+ * @prop {() => number} [random]
  */
 
 /**
- * @typedef {Object} MineDescription
+ * @template Room
+ * @typedef {Object} BspResult
  * @prop {Point} size
  * @prop {number} area
- * @prop {Rect[]} rooms
- * @prop {Point[]} centers
+ * @prop {Room} room The root room.
  */
 
 /**
+ * @template Room
  * @param {Rect} rect
- * @param {MineRequirements} reqs
- * @param {() => number} random
- * @returns {MineDescription}
+ * @param {BspPlan<Room>} plan
+ * @returns {BspResult<Room>}
  */
-export function planRooms(rect, reqs, random = Math.random) {
-  const { maxRoomCount } = reqs;
-  /** @type {Rect[]} */
-  const rooms = [];
+export function planRooms(rect, plan) {
+  const { maxRoomCount } = plan;
   const roomToWorldPosition = translate({x: 1, y: 1});
   const roomToWorldSize = identity;
-  const inset = insetRect(rect);
-  const size = sizeOfRect(inset);
-  partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, reqs, rooms);
-  const centers = rooms.map(rect => centerOfRect(rect, random));
+  const size = sizeOfRect(insetRect(rect));
+  const room = partition(
+    size,
+    roomToWorldPosition,
+    roomToWorldSize,
+    maxRoomCount,
+    plan
+  );
   const area = size.x * size.y;
-  return { size, area, rooms, centers };
+  return { size, area, room };
 }
 
 /**
+ * @template Room
  * @param {Point} size is the size of the room anchored at the origin in the
  * room's coordinate space.
  * @param {Matrix} roomToWorldPosition is a matrix that transforms room
@@ -65,69 +71,139 @@ export function planRooms(rect, reqs, random = Math.random) {
  * transposition and flipping about an axis.
  * @param {number} maxRoomCount is the number of rooms that should spawn within
  * the current partition.
- * @param {MineRequirements} reqs
- * @param {Rect[]} rooms
- * @param {() => number} random
+ * @param {BspPlan<Room>} plan
+ * @return {Room}
  */
-function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, reqs, rooms, random = Math.random) {
-  const {minRoomArea, maxRoomArea} = reqs;
-  const area = areaOfPoint(size);
+function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) {
+  const {minRoomArea} = plan;
+  const minRoomWidth = Math.ceil(minRoomArea / size.y);
 
-  if (maxRoomCount === 0 || areaOfPoint(size) < minRoomArea) {
-    // Noop.
+  if (size.x === 0 || size.y === 0) {
+    debugger;
+  }
 
-  } else if (size.y > size.x) {
+  if (size.y > size.x) {
     // Always partition across the dominant axis to facilitate alternation of
     // orientation.
-    partition(
+    return partition(
       transform(size, transpose),
       multiply(roomToWorldPosition, transpose),
       multiply(roomToWorldSize, transpose),
       maxRoomCount,
-      reqs,
-      rooms
+      plan,
     );
 
-  } else if (maxRoomCount > 1 && size.x > 7 && area - size.y * 2 > 2 * minRoomArea) {
-    const left = Math.floor(2 + (size.x - 4) * random());
-    const right = size.x - left - 2;
+  } else if (maxRoomCount === 1 || size.x < minRoomWidth * 2 + 1) {
+    // There are two conditions that will produce a leaf room:
+    // 1. The budget calls for only one room, regardless of the
+    // remaining area.
+    // 2. The remaining area, less the area that would be consumed
+    // if we built a partition between to subordinate areas, is
+    // not sufficient to build a single room.
+    return leaf(size, roomToWorldPosition, roomToWorldSize, plan);
 
-    let countA = Math.floor(maxRoomCount * left / (left + right));
-    let countB = maxRoomCount - countA;
-    if (random() < 0.5) {
-      [countB, countA] = [countA, countB];
-    }
-
-    partition(
-      {x: left, y: size.y},
-      roomToWorldPosition,
-      roomToWorldSize,
-      countA,
-      reqs,
-      rooms
-    );
-
-    partition(
-      {x: right, y: size.y},
-      multiply(multiply(roomToWorldPosition, translate({x: size.x, y: 0})), flip),
-      multiply(roomToWorldSize, flip),
-      countB,
-      reqs,
-      rooms
-    );
+  } else if (maxRoomCount >= 2) {
+    return branch(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan);
 
   } else {
-    const roomArea = minRoomArea + (maxRoomArea - minRoomArea) * random();
-
-    const ratio = (4 + random()) / 5;
-    const w = Math.max(1, Math.min(size.x, Math.floor(Math.sqrt(roomArea) * ratio)));
-    const h = Math.max(1, Math.min(size.y, Math.floor(roomArea / w)));
-    const x = Math.floor((size.x - w) * random());
-    const y = Math.floor((size.y - h) * random());
-
-    const a = transform({x, y}, roomToWorldPosition);
-    const b = transform({x: w, y: h}, multiply(translate(a), roomToWorldSize));
-    const r = rectForCorners(a, b);
-    rooms.push(r);
+    throw new Error(`maxRoomCount must be at least 1`);
   }
+}
+
+/**
+ * @template Room
+ * @param {Point} size is the size of the room anchored at the origin in the
+ * room's coordinate space.
+ * @param {Matrix} roomToWorldPosition is a matrix that transforms room
+ * coordinates into world coordinates.
+ * @param {Matrix} roomToWorldSize is a matrix that transforms the room size to
+ * dimensions of the room in the world's coordinate space, which may vary by
+ * transposition and flipping about an axis.
+ * @param {number} maxRoomCount is the number of rooms that should spawn within
+ * the current partition.
+ * @param {BspPlan<Room>} plan
+ * @return {Room}
+ */
+function branch(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) {
+  const {
+    minRoomArea,
+    drawHall = Function.prototype,
+    random = Math.random,
+  } = plan;
+  const minRoomWidth = Math.ceil(minRoomArea / size.y);
+
+  // The size of any child wall will never be more than the height of
+  // this room's wall.
+  // - If a child room is wider than high, the child's wall height will
+  // be the same as this the wall in this room.
+  // - If a child room is higher than wide, the child's wall length will
+  // be less than the height of this room, because we will transpose
+  // the algorithm's orientation such that the wall cuts through
+  // the width instead of the height, from this room's frame of reference.
+  // Supposing we evenly divided the area among the descendent rooms, each
+  // room would need the minimum room area and a wall for every child
+  // room except one.
+  // For a clean division, we add the wall area to both the numerator
+  // and the denominator.
+  const roomCount = Math.min(maxRoomCount, Math.floor((size.x + 1) / (minRoomWidth + 1)));
+
+  // We must produce at least one room on each side of the wall.
+  // The remaining rooms may be divided toward one side or the other.
+  const divisibleRoomCount = roomCount - 2;
+  const leftRoomCountBonus = Math.floor(divisibleRoomCount * random());
+  const rightRoomCountBonus = divisibleRoomCount - leftRoomCountBonus;
+  const leftRoomCount = 1 + leftRoomCountBonus;
+  const rightRoomCount = 1 + rightRoomCountBonus;
+  const spareWidth = size.x - roomCount * minRoomWidth - (roomCount - 1);
+  const fudge = Math.floor(spareWidth * random());
+  // The minimum room width for every room left of the wall, and one
+  // more cell for the wall between every room (leftRoomCount) except
+  // the last (-1) plus some of the room to spare.
+  let wall = minRoomWidth*leftRoomCount + leftRoomCount - 1 + fudge;
+  // Compensate for floorward rounding bias.
+  if (random() < 0.5) {
+    wall = size.x - wall;
+  }
+
+  if (wall === 0 && size.x - wall - 1 == 0) {
+    return leaf(size, roomToWorldPosition, roomToWorldSize, plan);
+  }
+
+  const leftRoom = partition(
+    {x: wall, y: size.y},
+    roomToWorldPosition,
+    roomToWorldSize,
+    leftRoomCount,
+    plan,
+  );
+
+  const rightRoom = partition(
+    {x: size.x - wall - 1, y: size.y},
+    multiply(multiply(roomToWorldPosition, translate({x: size.x, y: 0})), flip),
+    multiply(roomToWorldSize, flip),
+    rightRoomCount,
+    plan,
+  );
+
+  return drawHall(leftRoom, rightRoom);
+}
+
+/**
+ * @template Room
+ * @param {Point} size is the size of the room anchored at the origin in the
+ * room's coordinate space.
+ * @param {Matrix} roomToWorldPosition is a matrix that transforms room
+ * coordinates into world coordinates.
+ * @param {Matrix} roomToWorldSize is a matrix that transforms the room size to
+ * dimensions of the room in the world's coordinate space, which may vary by
+ * transposition and flipping about an axis.
+ * @param {BspPlan<Room>} plan
+ * @return {Room}
+ */
+function leaf(size, roomToWorldPosition, roomToWorldSize, plan) {
+  const {drawRoom = Function.prototype} = plan;
+  const a = transform(origin, roomToWorldPosition);
+  const b = transform(size, multiply(translate(a), roomToWorldSize));
+  const rect = rectForCorners(a, b);
+  return drawRoom(rect);
 }

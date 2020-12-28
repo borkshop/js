@@ -79,7 +79,6 @@ export function *trace(length, distances, neighbors, ends, random = Math.random)
    * @returns {number} index
    */
   function choose(indexes) {
-    console.log(indexes);
     const min = Math.min(...indexes.map(index => distances[index]));
     const options = indexes.filter(index => distances[index] === min);
     const choice = options[Math.floor(random() * options.length)];
