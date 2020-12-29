@@ -392,13 +392,6 @@ function actionLabel(grid, tile) {
 class MemeCollector {
   grid
   memeSpace
-  ignoreVars = ['x', 'y']
-  ignoreClasses = new Map([
-    ['tile', null],
-    ['meme', null],
-    ['input', 'inputable'],
-    ['focus', 'focused'],
-  ])
 
   /**
    * @param {TileGrid} grid
@@ -419,33 +412,12 @@ class MemeCollector {
   freshMemes = new Map()
 
   /**
-   * @param {HTMLElement} tile
-   * @returns {TileSpec}
-   */
-  sense(tile) {
-    const spec = {
-      className: ['tile', 'meme', ...(tile.className
-        .split(/\s+/g)
-        .map(n => {
-          const ign = this.ignoreClasses.get(n);
-          return ign === undefined ? n : ign;
-        })
-        .filter(n => !!n)
-      )].join(' '),
-      text: tile.textContent || undefined,
-      data: {...tile.dataset},
-    };
-    for (const ign of this.ignoreVars)
-      delete spec.data[ign];
-    return spec;
-  }
-
-  /**
    * @param {string} plane
    * @param {Point} pos
    * @param {Iterable<HTMLElement>} tiles
+   * @param {TileSensor} [sense]
    */
-  collectMemesAt(plane, pos, tiles) {
+  collectMemesAt(plane, pos, tiles, sense=defaultSensor) {
     const memePlane = `${plane}-${this.memeSpace}`;
     if (!this.planes.has(plane)) this.planes.set(plane, memePlane);
     for (const meme of this.grid.tilesAt(memePlane, pos, 'meme')) {
@@ -455,10 +427,10 @@ class MemeCollector {
     for (const tile of tiles) {
       const id = `${this.memeSpace}-${this.grid.getTileID(tile)}`;
       this.freshMemes.set(id, {
+        ...sense(this.grid, tile),
         plane: memePlane,
         pos,
         kind: 'meme',
-        ...this.sense(tile),
       });
       this.staleMemes.delete(id);
     }
@@ -488,6 +460,54 @@ class MemeCollector {
     }
   }
 }
+
+/** A tile sensing function provides spec data for meme copying.
+ *
+ * @typedef {(grid: TileGrid, el: HTMLElement) => TileSpec} TileSensor
+ */
+
+/**
+ * @param {object} [options]
+ * @param {string[]} [options.ignoreVars]
+ * @param {Map<string, string|null>} [options.ignoreClasses]
+ */
+function worldSensor(options={}) {
+  const {
+    ignoreVars = ['x', 'y'],
+    ignoreClasses = new Map([
+      ['tile', null],
+      ['meme', null],
+      ['input', 'inputable'],
+      ['focus', 'focused'],
+    ]),
+  } = options;
+
+  /**
+   * @param {TileGrid} _grid
+   * @param {HTMLElement} tile
+   */
+  function sense(_grid, tile) {
+    const spec = {
+      className: ['tile', 'meme', ...(tile.className
+        .split(/\s+/g)
+        .map(n => {
+          const ign = ignoreClasses.get(n);
+          return ign === undefined ? n : ign;
+        })
+        .filter(n => !!n)
+      )].join(' '),
+      text: tile.textContent || undefined,
+      data: {...tile.dataset},
+    };
+    for (const ign of ignoreVars)
+      delete spec.data[ign];
+    return spec;
+  }
+
+  return sense;
+}
+
+const defaultSensor = worldSensor();
 
 /**
  * Carries config data for a DOMgeon.
