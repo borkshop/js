@@ -437,10 +437,8 @@ class MemeCollector {
   }
 
   update() {
-    // TODO better long term storage semantics
-    const store = this.grid.getPlane(`${this.memeSpace}-store`);
-    store.classList.add(this.memeSpace);
-    store.style.display = 'none';
+    // TODO long term memory mechanism for stale tiles, e.g. so that
+    // meme-attached data persists between encounters
     const planes = new Set();
     for (const {plane} of this.freshMemes.values())
       if (plane) planes.add(plane);
@@ -453,9 +451,7 @@ class MemeCollector {
     this.freshMemes.clear();
     if (this.staleMemes.size) {
       for (const meme of this.staleMemes.values())
-        store.appendChild(meme.parentNode
-          ? meme.parentNode.removeChild(meme)
-          : meme);
+        meme.parentNode?.removeChild(meme);
       this.staleMemes.clear();
     }
   }
