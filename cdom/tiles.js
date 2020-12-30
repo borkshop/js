@@ -611,7 +611,7 @@ export class TileGrid {
   }
 
   /** @type TileSpatialIndex */
-  spatialIndex = new TileMortonIndex()
+  spatialIndex = new TileMortonIndex();
 
   /**
    * Returns a list of all tiles at a given point, optionally constrained to
@@ -619,19 +619,17 @@ export class TileGrid {
    *
    * @param {Point} at
    * @param {string[]} className
-   * @return {HTMLElement[]}
+   * @return {IterableIterator<HTMLElement>}
    */
-  tilesAt(at, ...className) {
-    const tiles = [];
+  *tilesAt(at, ...className) {
     for (const id of this.spatialIndex.tilesAt(at)) {
       const el = /** @type{HTMLElement|null} */(this.el.querySelector(`#${id}`));
       if (!el) continue;
       if (className.length &&
           !className.every(name => !name || el.classList.contains(name)))
         continue;
-      tiles.push((el));
+      yield el;
     }
-    return tiles;
   }
 
   /**
@@ -643,14 +641,8 @@ export class TileGrid {
    * @return {HTMLElement|null}
    */
   tileAt(at, ...className) {
-    for (const id of this.spatialIndex.tilesAt(at)) {
-      const el = /** @type {HTMLElement|null} */ (this.el.querySelector(`#${id}`)) ;
-      if (!el) continue;
-      if (className.length &&
-          !className.every(t => el.classList.contains(t))
-      ) continue;
+    for (const el of this.tilesAt(at, ...className))
       return el;
-    }
     return null;
   }
 }

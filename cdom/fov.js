@@ -1,5 +1,18 @@
 import {mortonKey} from './tiles';
 
+/** An Iterator version of Array.prototype.filter
+ *
+ * TODO maybe share with procgen
+ *
+ * @template T
+ * @param {Iterable<T>} it
+ * @param {(t: T) => boolean} filter
+ * @returns {IterableIterator<T>}
+ */
+function* filter(it, filter) {
+  for (const i of it) if (filter(i)) yield i;
+}
+
 /** @typedef { import("./tiles").TileGrid } TileGrid */
 /** @typedef { import("./tiles").Point } Point */
 
@@ -123,7 +136,7 @@ export class GridLighting {
     const selfSupported = !!source.classList.contains('support');
     yield* iterateField(origin, pos => {
       const tiles = this.grid.tilesAt(pos);
-      const at = this.filter ? tiles.filter(this.filter) : tiles;
+      const at = Array.from(this.filter ? filter(tiles, this.filter) : tiles);
       const supported = selfSupported || at.some(t => t.classList.contains('support'));
       const blocked = !supported || at.some(t => !t.classList.contains('passable'));
       return {supported, blocked, at};

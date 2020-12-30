@@ -29,7 +29,7 @@
  * @typedef {object} Context
  * @prop {(spec: NewTileSpec) => HTMLElement} buildTile
  * @prop {(pos: Point, ...className: string[]) => HTMLElement|null} tileAt
- * @prop {(pos: Point, ...className: string[]) => HTMLElement[]} tilesAt
+ * @prop {(pos: Point, ...className: string[]) => Iterable<HTMLElement>} tilesAt
  */
 
 /**
@@ -265,7 +265,7 @@ class buildSpy {
   /**
    * @param {Point} pos
    * @param {string[]} className
-   * @returns {HTMLElement[]}
+   * @returns {Iterable<HTMLElement>}
    */
   tilesAt(pos, ...className) {
     if (!this.ctx) return [];

@@ -12,6 +12,30 @@ import {
   neighbors,
 } from 'cdom/procgen';
 
+/**
+ * @template T
+ * @param {Iterable<T>} it
+ * @param {(t: T) => boolean} where
+ * @returns {boolean}
+ */
+function some(it, where) {
+  for (const thing of it)
+    if (where(thing)) return true;
+  return false;
+}
+
+/**
+ * @template S
+ * @template T
+ * @param {Iterable<S>} it
+ * @param {(s: S) => Iterable<T>} each
+ * @returns {IterableIterator<T>}
+ */
+function *flatmap(it, each) {
+  for (const thing of it)
+    yield* each(thing);
+}
+
 /** @typedef {import('cdom/tiles').Point} Point */
 
 import {DOMgeon, DOMgeonInspector} from 'cdom/domgeon';
@@ -204,9 +228,10 @@ export default class DLA {
         θ = Math.random() * 2 * Math.PI,
         pos = {x: Math.sin(θ) * r, y: Math.cos(θ) * r};
 
-      const at = this.dmg.grid.tilesAt(pos, 'particle')
-        .filter(t => !t.classList.contains('live'));
-      if (!at.length) yield pos;
+      if (!some(
+        this.dmg.grid.tilesAt(pos, 'particle'),
+        t => !t.classList.contains('live')
+      )) yield pos;
     }
   }
 
@@ -313,11 +338,8 @@ export default class DLA {
    * @returns {boolean}
    */
   anyCell(...pts) {
-    for (const pt of pts)
-      if (this.dmg.grid.tilesAt(pt, 'particle')
-          .filter(t => !t.classList.contains('live'))
-          .length) return true;
-    return false;
+    const allTiles = flatmap(pts, pt => this.dmg.grid.tilesAt(pt, 'particle'));
+    return some(allTiles, t => !t.classList.contains('live'));
   }
 
   stepRate() {
@@ -355,13 +377,15 @@ export default class DLA {
 
         // check for phase transition when entering a new grid cell based on
         // any non-live particle prescence
-        const atPos = grid.tilesAt(posCell, 'particle')
-          .filter(t => t.id !== p.id && !t.classList.contains('live'));
-        const atTo = grid.tilesAt(toCell, 'particle')
-          .filter(t => !t.classList.contains('live'));
+        const livePos = some(
+          grid.tilesAt(posCell, 'particle'),
+          t => t.id !== p.id && !t.classList.contains('live'));
+        const liveTo = some(
+          grid.tilesAt(toCell, 'particle'),
+          t => !t.classList.contains('live'));
 
         // in-world particles may forge into the void; aka random walker
-        if (atPos.length && !atTo.length) {
+        if (livePos && !liveTo) {
           // TODO allow for more than 1 step
           grid.updateTile(p, {
             pos: toCell,
@@ -372,8 +396,8 @@ export default class DLA {
         }
 
         // in-void particle aggregating onto world; aka DLA depostion
-        if (!atPos.length && (                   // no current world particle
-          atTo.length ||                         // particle hit the world
+        if (!livePos && (                        // no current world particle
+          liveTo ||                              // particle hit the world
           this.anyCell(...particleNear(posCell)) // or became adjacent
         )) {
           grid.updateTile(p, {
