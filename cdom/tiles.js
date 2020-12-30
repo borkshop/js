@@ -687,7 +687,16 @@ export class TileInspector {
   pinned = null
 
   /** @type {TileFilter} */
-  filter = _ => true
+  filter = _ => true;
+
+  /**
+   * @param {Point} pos
+   * @returns {IterableIterator<HTMLElement>}
+   */
+  *tilesAt(pos) {
+    for (const t of this.grid.tilesAt(pos))
+      if (this.filter(t, this.grid)) yield t;
+  }
 
   /**
    * @param {MouseEvent} ev
@@ -695,7 +704,7 @@ export class TileInspector {
    */
   handleEvent(ev) {
     const pos = this.grid.translateClient({x: ev.clientX, y: ev.clientY});
-    const tiles = this.grid.tilesAt(pos).filter(t => this.filter(t, this.grid));
+    const tiles = Array.from(this.tilesAt(pos));
     switch (ev.type) {
     case 'click':
       if (!tiles.length) this.pinned = null;
@@ -712,7 +721,7 @@ export class TileInspector {
   refresh() {
     if (!this.pinned) return;
     const pos = this.pinned;
-    const tiles = this.grid.tilesAt(pos).filter(t => this.filter(t, this.grid));
+    const tiles = Array.from(this.tilesAt(pos));
     const pinned = !!this.pinned;
     this._lastHandlid = `pinned:${pinned};${pos.x},${pos.y}[${tiles.map(({id}) => id).join(';')}]`;
     this.handler({pos, tiles, pinned});
