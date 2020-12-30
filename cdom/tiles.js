@@ -113,7 +113,7 @@ export function mortonKey(p) {
  *
  * @typedef {Object} TileSpatialIndex
  * @prop {(ids:string[], pos:Point[]) => void} update
- * @prop {(at:Point) => Set<string>|undefined} tilesAt
+ * @prop {(at:Point) => Iterable<string>} tilesAt
  * // TODO range query
  */
 
@@ -167,10 +167,11 @@ class TileMortonIndex {
 
   /**
    * @param {Point} at - query location
-   * @return {Set<string>|undefined} - set of tile IDs present at at
+   * @return {Iterable<string>} - set of tile IDs present at at
    */
-  tilesAt(at) {
-    return this._fore.get(mortonKey(at));
+  *tilesAt(at) {
+    const got = this._fore.get(mortonKey(at));
+    if (got) yield* got;
   }
 }
 
@@ -622,8 +623,7 @@ export class TileGrid {
    */
   tilesAt(at, ...className) {
     const tiles = [];
-    const ids = this.spatialIndex.tilesAt(at);
-    if (ids) for (const id of ids) {
+    for (const id of this.spatialIndex.tilesAt(at)) {
       const el = /** @type{HTMLElement|null} */(this.el.querySelector(`#${id}`));
       if (!el) continue;
       if (className.length &&
@@ -643,8 +643,7 @@ export class TileGrid {
    * @return {HTMLElement|null}
    */
   tileAt(at, ...className) {
-    const ids = this.spatialIndex.tilesAt(at);
-    if (ids) for (const id of ids) {
+    for (const id of this.spatialIndex.tilesAt(at)) {
       const el = /** @type {HTMLElement|null} */ (this.el.querySelector(`#${id}`)) ;
       if (!el) continue;
       if (className.length &&
