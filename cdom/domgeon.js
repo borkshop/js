@@ -164,14 +164,14 @@ function procMove({dmg, grid, mover, move}) {
   const to = {x: x + move.x, y: y + move.y};
 
   // interact with any co-planar tiles present
-  let present = Array.from(grid.tilesAt(to)).filter(h => grid.getTilePlane(h) === plane);
+  let present = Array.from(grid.tilesAt(plane, to));
 
   // boop-proc with any non-passable tiles present
   const hit = present.filter(h => !h.classList.contains('passable'));
   if (hit.length) {
     if (!procInteraction(dmg, grid, mover, hit)) return;
     // re-query over any interaction updates
-    present = Array.from(grid.tilesAt(to)).filter(h => grid.getTilePlane(h) === plane);
+    present = Array.from(grid.tilesAt(plane, to));
   }
 
   // blocked by any present .tile:not(.passable)
@@ -424,11 +424,10 @@ class MemeCollector {
   collectMemesAt(plane, pos, tiles) {
     const memePlane = `${plane}-${this.memeSpace}`;
     if (!this.planes.has(plane)) this.planes.set(plane, memePlane);
-    for (const meme of this.grid.tilesAt(pos, 'meme'))
-      if (this.grid.getTilePlane(meme) === memePlane) {
-        const id = this.grid.getTileID(meme);
-        if (!this.freshMemes.has(id)) this.staleMemes.set(id, meme);
-      }
+    for (const meme of this.grid.tilesAt(memePlane, pos, 'meme')) {
+      const id = this.grid.getTileID(meme);
+      if (!this.freshMemes.has(id)) this.staleMemes.set(id, meme);
+    }
     for (const tile of tiles) {
       const id = `${this.memeSpace}-${this.grid.getTileID(tile)}`;
       this.freshMemes.set(id, {
@@ -962,7 +961,7 @@ export class DOMgeon extends EventTarget {
       for (const actor of otherActors.values()) {
         const plane = this.grid.getTilePlane(actor);
         const pos = this.grid.getTilePosition(actor);
-        const tiles = Array.from(this.grid.tilesAt(pos)).filter(t => this.grid.getTilePlane(t) === plane);
+        const tiles = this.grid.tilesAt(plane, pos);
         mc.collectMemesAt(plane, pos, tiles);
       }
 

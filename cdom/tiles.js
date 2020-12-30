@@ -629,17 +629,19 @@ export class TileGrid {
   spatialIndex = new TileMortonIndex();
 
   /**
-   * Returns a list of all tiles at a given point, optionally constrained to
-   * having all of the given class names.
+   * Returns a list of all tiles at a given point in a plane, optionally
+   * constrained to having all of the given class names.
    *
+   * @param {string|HTMLElement} plane
    * @param {Point} at
    * @param {string[]} className
    * @return {IterableIterator<HTMLElement>}
    */
-  *tilesAt(at, ...className) {
+  *tilesAt(plane, at, ...className) {
+    const pel = typeof plane === 'string' ? this.getPlane(plane) : plane;
     for (const id of this.spatialIndex.tilesAt(at)) {
-      const el = /** @type{HTMLElement|null} */(this.el.querySelector(`#${id}`));
-      if (!el) continue;
+      const el = pel.querySelector(`#${id}`);
+      if (!el || !(el instanceof HTMLElement)) continue;
       if (className.length &&
           !className.every(name => !name || el.classList.contains(name)))
         continue;
@@ -648,15 +650,16 @@ export class TileGrid {
   }
 
   /**
-   * Returns the first tile at a given point, optionally constrained to having
-   * all of the given class names, or null if there is no such tile.
+   * Returns the first tile at a given point in a plane, optionally constrained
+   * to having all of the given class names, or null if there is no such tile.
    *
+   * @param {string|HTMLElement} plane
    * @param {Point} at
    * @param {string[]} className
    * @return {HTMLElement|null}
    */
-  tileAt(at, ...className) {
-    for (const el of this.tilesAt(at, ...className))
+  tileAt(plane, at, ...className) {
+    for (const el of this.tilesAt(plane, at, ...className))
       return el;
     return null;
   }
