@@ -413,6 +413,32 @@ class MemeCollector {
 
   /**
    * @param {string} plane
+   * @param {TileSensor} [sense]
+   */
+  collectAll(plane, sense=defaultSensor) {
+    const memePlane = `${plane}-${this.memeSpace}`;
+    if (!this.planes.has(plane)) this.planes.set(plane, memePlane);
+    for (const meme of this.grid.queryTiles({
+      plane: memePlane,
+      className: 'meme',
+    })) {
+      const id = this.grid.getTileID(meme);
+      if (!this.freshMemes.has(id)) this.staleMemes.set(id, meme);
+    }
+    for (const tile of this.grid.queryTiles({plane})) {
+      const id = `${this.memeSpace}-${this.grid.getTileID(tile)}`;
+      this.freshMemes.set(id, {
+        ...sense(this.grid, tile),
+        plane: memePlane,
+        pos: this.grid.getTilePosition(tile),
+        kind: 'meme',
+      });
+      this.staleMemes.delete(id);
+    }
+  }
+
+  /**
+   * @param {string} plane
    * @param {Point} pos
    * @param {Iterable<HTMLElement>} tiles
    * @param {TileSensor} [sense]
