@@ -613,27 +613,6 @@ export class TileGrid {
   spatialIndex = new TileMortonIndex()
 
   /**
-   * Returns the first tile at a given point, optionally constrained to having
-   * all of the given class names, or null if there is no such tile.
-   *
-   * @param {Point} at
-   * @param {string[]} className
-   * @return {HTMLElement|null}
-   */
-  tileAt(at, ...className) {
-    const ids = this.spatialIndex.tilesAt(at);
-    if (ids) for (const id of ids) {
-      const el = /** @type {HTMLElement|null} */ (this.el.querySelector(`#${id}`)) ;
-      if (!el) continue;
-      if (className.length &&
-          !className.every(t => el.classList.contains(t))
-      ) continue;
-      return el;
-    }
-    return null;
-  }
-
-  /**
    * Returns a list of all tiles at a given point, optionally constrained to
    * having all of the given class names.
    *
@@ -653,6 +632,27 @@ export class TileGrid {
       tiles.push((el));
     }
     return tiles;
+  }
+
+  /**
+   * Returns the first tile at a given point, optionally constrained to having
+   * all of the given class names, or null if there is no such tile.
+   *
+   * @param {Point} at
+   * @param {string[]} className
+   * @return {HTMLElement|null}
+   */
+  tileAt(at, ...className) {
+    const ids = this.spatialIndex.tilesAt(at);
+    if (ids) for (const id of ids) {
+      const el = /** @type {HTMLElement|null} */ (this.el.querySelector(`#${id}`)) ;
+      if (!el) continue;
+      if (className.length &&
+          !className.every(t => el.classList.contains(t))
+      ) continue;
+      return el;
+    }
+    return null;
   }
 }
 
