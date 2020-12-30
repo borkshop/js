@@ -520,6 +520,9 @@ export class DOMgeon extends EventTarget {
   /** @type {TileGrid} */
   grid
 
+  /** @type {MemeCollector} */
+  view
+
   /** @type {HTMLElement|null} */
   moveBar
 
@@ -674,6 +677,7 @@ export class DOMgeon extends EventTarget {
     this.actionBar = actionBar;
     this.moveBar = moveBar;
     this.grid = new TileGrid(grid);
+    this.view = new MemeCollector(this.grid);
 
     this.onKey = new Handlers();
     this.inputs = new ButtonInputs();
@@ -827,6 +831,7 @@ export class DOMgeon extends EventTarget {
       (dt) => {
         this._animView(dt);
         this._runLightAnim(dt);
+        this.view.update();
         return true;
       },
       ...this.animParts,
@@ -948,7 +953,6 @@ export class DOMgeon extends EventTarget {
     if (fovChanged) {
       const {w: vw, h: vh} = this.grid.viewport;
       const viewLimit = Math.ceil(Math.sqrt(vw*vw + vh*vh));
-      const mc = new MemeCollector(this.grid);
       /** @type {Map<string, HTMLElement>} */
       const otherActors = new Map();
       for (const actor of this.grid.el.querySelectorAll('.mover.input'))
@@ -991,7 +995,7 @@ export class DOMgeon extends EventTarget {
           // TODO compute a tighter viewLimit wrt actor position
           scheme.revealViewField(actor, {
             depthLimit: viewLimit,
-            revealView: (tiles, pos) => mc.collectMemesAt(plane, pos, tiles),
+            revealView: (tiles, pos) => this.view.collectMemesAt(plane, pos, tiles),
           });
           otherActors.delete(actor.id);
         }
@@ -1002,17 +1006,15 @@ export class DOMgeon extends EventTarget {
         const plane = this.grid.getTilePlane(actor);
         const pos = this.grid.getTilePosition(actor);
         const tiles = this.grid.tilesAt(plane, pos);
-        mc.collectMemesAt(plane, pos, tiles);
+        this.view.collectMemesAt(plane, pos, tiles);
       }
 
       // clear light within all affected subjective planes
-      for (const plane of mc.planes.values()) {
+      for (const plane of this.view.planes.values()) {
         const scheme = new GridLighting(this.grid, plane);
         scheme.clearLight();
       }
 
-      // copy seen tile data into subjective planes
-      mc.update();
       this._fovID = fovID;
     }
   }
