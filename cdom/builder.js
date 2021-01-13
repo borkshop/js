@@ -28,8 +28,8 @@
  *
  * @typedef {object} Context
  * @prop {(spec: NewTileSpec) => HTMLElement} buildTile
- * @prop {(pos: Point, ...className: string[]) => HTMLElement|null} tileAt
- * @prop {(pos: Point, ...className: string[]) => Iterable<HTMLElement>} tilesAt
+ * @prop {(plane: string, pos: Point, ...className: string[]) => HTMLElement|null} tileAt
+ * @prop {(plane: string, pos: Point, ...className: string[]) => Iterable<HTMLElement>} tilesAt
  */
 
 /**
@@ -253,23 +253,25 @@ class buildSpy {
   }
 
   /**
+   * @param {string} plane
    * @param {Point} pos
    * @param {string[]} className
    * @returns {HTMLElement|null}
    */
-  tileAt(pos, ...className) {
+  tileAt(plane, pos, ...className) {
     if (!this.ctx) return null;
-    return this.ctx.tileAt(pos, ...className);
+    return this.ctx.tileAt(plane, pos, ...className);
   }
 
   /**
+   * @param {string} plane
    * @param {Point} pos
    * @param {string[]} className
    * @returns {Iterable<HTMLElement>}
    */
-  tilesAt(pos, ...className) {
+  tilesAt(plane, pos, ...className) {
     if (!this.ctx) return [];
-    return this.ctx.tilesAt(pos, ...className);
+    return this.ctx.tilesAt(plane, pos, ...className);
   }
 }
 
