@@ -25,6 +25,7 @@ import {
  * @typedef {Object} BspPlan
  * @prop {number} maxRoomCount
  * @prop {number} minRoomArea
+ * @prop {number} [wallThickness]
  * @prop {(rect:Rect) => Room} [drawRoom]
  * @prop {(left:Room, right:Room) => Room} [drawHall]
  * @prop {() => number} [random]
@@ -75,7 +76,7 @@ export function planRooms(rect, plan) {
  * @return {Room}
  */
 function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) {
-  const {minRoomArea} = plan;
+  const {minRoomArea, wallThickness = 1} = plan;
   const minRoomWidth = Math.ceil(minRoomArea / size.y);
 
   if (size.x === 0 || size.y === 0) {
@@ -93,7 +94,7 @@ function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, pla
       plan,
     );
 
-  } else if (maxRoomCount === 1 || size.x < minRoomWidth * 2 + 1) {
+  } else if (maxRoomCount === 1 || size.x < minRoomWidth * 2 + wallThickness) {
     // There are two conditions that will produce a leaf room:
     // 1. The budget calls for only one room, regardless of the
     // remaining area.
@@ -106,6 +107,7 @@ function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, pla
     return branch(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan);
 
   } else {
+    debugger;
     throw new Error(`maxRoomCount must be at least 1`);
   }
 }
@@ -128,6 +130,7 @@ function branch(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) 
   const {
     minRoomArea,
     drawHall = Function.prototype,
+    wallThickness = 1,
     random = Math.random,
   } = plan;
   const minRoomWidth = Math.ceil(minRoomArea / size.y);
@@ -145,7 +148,7 @@ function branch(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) 
   // room except one.
   // For a clean division, we add the wall area to both the numerator
   // and the denominator.
-  const roomCount = Math.min(maxRoomCount, Math.floor((size.x + 1) / (minRoomWidth + 1)));
+  const roomCount = Math.min(maxRoomCount, Math.floor((size.x + wallThickness) / (minRoomWidth + wallThickness)));
 
   // We must produce at least one room on each side of the wall.
   // The remaining rooms may be divided toward one side or the other.
@@ -159,13 +162,13 @@ function branch(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) 
   // The minimum room width for every room left of the wall, and one
   // more cell for the wall between every room (leftRoomCount) except
   // the last (-1) plus some of the room to spare.
-  let wall = minRoomWidth*leftRoomCount + leftRoomCount - 1 + fudge;
+  let wall = minRoomWidth*leftRoomCount + wallThickness*(leftRoomCount - 1) + fudge;
   // Compensate for floorward rounding bias.
   if (random() < 0.5) {
     wall = size.x - wall;
   }
 
-  if (wall === 0 && size.x - wall - 1 == 0) {
+  if (wall === 0 && size.x - wall - wallThickness == 0) {
     return leaf(size, roomToWorldPosition, roomToWorldSize, plan);
   }
 
@@ -178,7 +181,7 @@ function branch(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) 
   );
 
   const rightRoom = partition(
-    {x: size.x - wall - 1, y: size.y},
+    {x: size.x - wall - wallThickness, y: size.y},
     multiply(multiply(roomToWorldPosition, translate({x: size.x, y: 0})), flip),
     multiply(roomToWorldSize, flip),
     rightRoomCount,
