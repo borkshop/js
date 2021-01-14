@@ -80,7 +80,7 @@ function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, pla
   const minRoomWidth = Math.ceil(minRoomArea / size.y);
 
   if (size.x === 0 || size.y === 0) {
-    debugger;
+    throw new Error(`Assertion failed: cannot partition zero-wide or zero-height space`);
   }
 
   if (size.y > size.x) {
@@ -94,7 +94,7 @@ function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, pla
       plan,
     );
 
-  } else if (maxRoomCount === 1 || size.x < minRoomWidth * 2 + wallThickness) {
+  } else if (maxRoomCount === 1 || size.x <= minRoomWidth * 2 + wallThickness) {
     // There are two conditions that will produce a leaf room:
     // 1. The budget calls for only one room, regardless of the
     // remaining area.
@@ -107,7 +107,6 @@ function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, pla
     return branch(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan);
 
   } else {
-    debugger;
     throw new Error(`maxRoomCount must be at least 1`);
   }
 }
@@ -168,7 +167,13 @@ function branch(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) 
     wall = size.x - wall;
   }
 
-  if (wall === 0 && size.x - wall - wallThickness == 0) {
+  if (
+    size.y === 0 ||
+    wall < 2 ||
+    size.x - wall - wallThickness < 2 ||
+    rightRoomCount === 0 ||
+    leftRoomCount === 0
+  ) {
     return leaf(size, roomToWorldPosition, roomToWorldSize, plan);
   }
 

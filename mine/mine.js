@@ -42,8 +42,8 @@ import {planRooms} from './bsp.js';
  * @returns {Result}
  */
 export function planMine(plan) {
-  const {rect, tunnelTurningCost = 100} = plan;
-  let {wallBreakingCost = 10} = plan;
+  const {rect, tunnelTurningCost = 1} = plan;
+  let {wallBreakingCost = 20} = plan;
 
   const area = rect.w * rect.h;
 
@@ -77,18 +77,25 @@ export function planMine(plan) {
   const space = new Space(sizeOfRect(rect));
   const neighborIndexes = (/** @type {number} */index) => space.indexes(neighbors(space.point(index)));
   const centerIndexes = centers.map(point => space.index(point));
-  const cornerDistances = new Array(area); // bfs
   const floors = new Array(area);
+  // Allocations for computeDistancesBreadthFirst.
+  const cornerDistances = new Array(area); // bfs
+  const seen = new Array(area);
+  // Allocations for computeDistancesDijkstra.
+  // The graph we operate on for computing the shortest distance between two
+  // points is twice the area of the region: one layer for vertical travel,
+  // another for horizontal travel, with a fixed cost for switching layers.
   const weights = new Array(area * 2);
   const rook = makeRookSpace(area, space, weights, tunnelTurningCost);
   const distances = new Array(area * 2); // dijkstra
+  const heap = Array.from(count(area * 2));
+  const coheap = Array.from(count(area * 2));
 
   // Compute the distance of every cell to the nearest corner of a room.
   // This creates a gradient, such that we will later favor paths that join
   // rooms toward the center of a wall and tend to travel between rooms
   // in the space toward the middle between them.
   cornerDistances.fill(-1);
-  const seen = new Array(area);
   seen.fill(0);
   computeDistancesBreadthFirst(
     area,
@@ -106,13 +113,14 @@ export function planMine(plan) {
     fill(floors, space.indexes(pointsForRect(room)), 1)
   }
 
+
   // TODO generate pairwise permutations of rooms elsewhere.
   const from = centerIndexes[0];
   for (const to of centerIndexes.slice(1)) {
 
     // Compute path weights for hall-digging over the entire space.
     for (const index of count(area)) {
-      weights[index] = floors[index] ? 1 : 1 + wallBreakingCost / cornerDistances[index];
+      weights[index] = floors[index] ? 1 : 1 + wallBreakingCost + 1 / cornerDistances[index];
     }
     // Dissuade connections at corners.
     for (const rect of rooms) {
@@ -126,8 +134,6 @@ export function planMine(plan) {
     // Find shortest path between these two rooms.
     distances.fill(Infinity);
     if (centerIndexes.length >= 2) {
-      const heap = Array.from(count(area * 2));
-      const coheap = Array.from(count(area * 2));
       computeDistancesDijkstra(
         area * 2,
         distances,

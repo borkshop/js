@@ -48,22 +48,25 @@ function render(spec, ...indexes) {
   // TODO push the i < index < indexes revolution up and out through iteration.js
   for (const index of indexes) for (const i of index) {
     const pos = space.point(i);
-    dmg.grid.createTile({plane, pos, ...spec});
+    dmg.grid.createTile({pos, ...spec});
   }
 }
 
 render({
+  plane,
   kind: 'floor',
   classList: ['support', 'passable'],
   text: '·',
 }, select(floors), select(walls));
 
 render({
+  plane,
   kind: 'wall',
   text: '#',
 }, select(walls));
 
 render({
+  plane,
   kind: 'door',
 }, select(doors));
 
