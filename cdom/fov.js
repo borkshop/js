@@ -1,18 +1,5 @@
 import {mortonKey} from './tiles';
 
-/** An Iterator version of Array.prototype.filter
- *
- * TODO maybe share with procgen
- *
- * @template T
- * @param {Iterable<T>} it
- * @param {(t: T) => boolean} filter
- * @returns {IterableIterator<T>}
- */
-function* filter(it, filter) {
-  for (const i of it) if (filter(i)) yield i;
-}
-
 /** @typedef { import("./tiles").TileGrid } TileGrid */
 /** @typedef { import("./tiles").Point } Point */
 
@@ -20,8 +7,8 @@ export class GridLighting {
   /** @type {TileGrid} */
   grid
 
-  /** @type {null|((tile:HTMLElement)=>boolean)} */
-  filter = null
+  /** @type {string} */
+  plane
 
   fovVar = 'fov'
   lightVar = 'light'
@@ -30,16 +17,18 @@ export class GridLighting {
 
   /**
    * @param {TileGrid} grid
+   * @param {string} plane
    */
-  constructor(grid) {
+  constructor(grid, plane) {
     this.grid = grid;
+    this.plane = plane;
   }
 
   /**
    * @returns {void}
    */
   clearLight() {
-    clearGridLight(this.grid, this.filter, {
+    clearGridLight(this.grid, this.plane, {
       lightVar: this.lightVar,
     });
   }
@@ -48,11 +37,11 @@ export class GridLighting {
    * @returns {void}
    */
   clearView() {
+    const plane = this.grid.getPlane(this.plane);
     /** @type {NodeListOf<HTMLElement>} */
-    const priors = this.grid.el.querySelectorAll(`.tile[data-${this.fovVar}]`);
+    const priors = plane.querySelectorAll(`.tile[data-${this.fovVar}]`);
     for (const tile of priors)
-      if (!this.filter || this.filter(tile))
-        this.grid.setTileData(tile, this.fovVar, null);
+      this.grid.setTileData(tile, this.fovVar, null);
   }
 
   /**
@@ -68,7 +57,7 @@ export class GridLighting {
   }) {
     const origin = this.grid.getTilePosition(source);
     const depthLimit = Math.sqrt(lightInit/this.lightLimit);
-    for (const {at, x, y} of iterateGridField(this.grid, this.filter, source, depthLimit)) {
+    for (const {at, x, y} of iterateGridField(this.grid, this.plane, source, depthLimit)) {
       const dsq = Math.pow(x - origin.x, 2) + Math.pow(y - origin.y, 2)
       const light = lightScale*lightInit/dsq;
       if (light < this.lightLimit) continue;
@@ -97,7 +86,7 @@ export class GridLighting {
    * @returns {void}
    */
   revealViewField(source, options) {
-    revealGridViewField(this.grid, this.filter, source, {
+    revealGridViewField(this.grid, this.plane, source, {
       fovVar: this.fovVar,
       lightVar: this.lightVar,
       lightLimit: this.lightLimit,
@@ -108,25 +97,25 @@ export class GridLighting {
 
 /**
  * @param {TileGrid} grid
- * @param {null|((tile:HTMLElement)=>boolean)} filter
+ * @param {string} plane
  * @param {object} [options]
  * @param {string} [options.lightVar]
  * @returns {void}
  */
-export function clearGridLight(grid, filter, options={}) {
+export function clearGridLight(grid, plane, options={}) {
   const {
     lightVar='light',
   } = options;
+  const el = grid.getPlane(plane);
   /** @type {NodeListOf<HTMLElement>} */
-  const priors = grid.el.querySelectorAll(`.tile[data-${lightVar}]`);
+  const priors = el.querySelectorAll(`.tile[data-${lightVar}]`);
   for (const tile of priors)
-    if (!filter || filter(tile))
-      grid.setTileData(tile, lightVar, null);
+    grid.setTileData(tile, lightVar, null);
 }
 
 /**
  * @param {TileGrid} grid
- * @param {null|((tile:HTMLElement)=>boolean)} filter
+ * @param {string} plane
  * @param {HTMLElement} source
  * @param {object} [options]
  * @param {string} [options.fovVar]
@@ -137,7 +126,7 @@ export function clearGridLight(grid, filter, options={}) {
  * @param {(tiles: Iterable<HTMLElement>, pos: Point, depth: number) => void} [options.revealView]
  * @returns {void}
  */
-export function revealGridViewField(grid, filter, source, options={}) {
+export function revealGridViewField(grid, plane, source, options={}) {
   const {
     fovVar='fov',
     lightVar='light',
@@ -153,7 +142,7 @@ export function revealGridViewField(grid, filter, source, options={}) {
       }
     },
   } = options;
-  for (const {depth, at, ...pos} of iterateGridField(grid, filter, source, depthLimit)) {
+  for (const {depth, at, ...pos} of iterateGridField(grid, plane, source, depthLimit)) {
     const visible = mask ? mask(at) : at;
     if (visible.length) revealView(visible, pos, depth);
   }
@@ -161,17 +150,16 @@ export function revealGridViewField(grid, filter, source, options={}) {
 
 /**
  * @param {TileGrid} grid
- * @param {null|((tile:HTMLElement)=>boolean)} filter
+ * @param {string} plane
  * @param {HTMLElement} source
  * @param {number} [depthLimit]
  * @returns {IterableIterator<DepthPoint & {at: HTMLElement[]}>}
  */
-export function *iterateGridField(grid, filter, source, depthLimit) {
+export function *iterateGridField(grid, plane, source, depthLimit) {
   const origin = grid.getTilePosition(source);
   const selfSupported = !!source.classList.contains('support');
   yield* iterateField(origin, pos => {
-    const tiles = grid.tilesAt(pos);
-    const at = Array.from(filter ? filter(tiles, filter) : tiles);
+    const at = Array.from(grid.tilesAt(plane, pos));
     const supported = selfSupported || at.some(t => t.classList.contains('support'));
     const blocked = !supported || at.some(t => !t.classList.contains('passable'));
     return {supported, blocked, at};
