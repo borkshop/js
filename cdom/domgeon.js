@@ -879,9 +879,6 @@ export class DOMgeon extends EventTarget {
    * @param {number} _dt
    */
   _runLightAnim(_dt) {
-    const scheme = new GridLighting(this.grid);
-    scheme.lightLimit = this.config.lightLimit;
-
     // TODO cache and invalidate on (rare) mutation
     const lightSelectors = Array.from(this._findLightSelectors());
 
@@ -919,12 +916,14 @@ export class DOMgeon extends EventTarget {
         otherActors.set(actor.id, /** @type {HTMLElement} */ (actor));
 
       for (const [plane, {lightScale, actors}] of litPlanes) {
-        scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
-        scheme.clearLight();
-
         // skip plane if its lightScale is below threshold; this makes it so
         // that we leave the light values cleared within a just-exited plane
-        if (lightScale < scheme.lightLimit) continue;
+        if (lightScale < this.config.lightLimit) continue;
+
+        const scheme = new GridLighting(this.grid);
+        scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
+        scheme.lightLimit = this.config.lightLimit;
+        scheme.clearLight();
 
         // add ambient light
         for (const tile of this.grid.queryTiles({plane})) {
@@ -968,6 +967,7 @@ export class DOMgeon extends EventTarget {
 
       // clear light within all affected subjective planes
       for (const plane of mc.planes.values()) {
+        const scheme = new GridLighting(this.grid);
         scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
         scheme.clearLight();
       }
