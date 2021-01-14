@@ -15,9 +15,9 @@ const prng = PRNG.ingest(
 );
 const random = () => prng.random();
 
-const nextSeedBytes = new Uint8Array(32);
-prng.scribble(nextSeedBytes.buffer);
-const nextSeed = btoa(String.fromCharCode(...nextSeedBytes));
+// const nextSeedBytes = new Uint8Array(32);
+// prng.scribble(nextSeedBytes.buffer);
+// const nextSeed = btoa(String.fromCharCode(...nextSeedBytes));
 
 const dmg = new DOMgeon({
   ui: document.body,
