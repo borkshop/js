@@ -19,6 +19,10 @@ function* filter(it, filter) {
 export class GridLighting {
   /** @type {TileGrid} */
   grid
+
+  /** @type {null|((tile:HTMLElement)=>boolean)} */
+  filter = null
+
   fovVar = 'fov'
   lightVar = 'light'
   lightMax = 1.0
@@ -30,9 +34,6 @@ export class GridLighting {
   constructor(grid) {
     this.grid = grid;
   }
-
-  /** @type {null|((tile:HTMLElement)=>boolean)} */
-  filter = null
 
   /**
    * @returns {void}
