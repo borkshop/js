@@ -920,8 +920,7 @@ export class DOMgeon extends EventTarget {
         // that we leave the light values cleared within a just-exited plane
         if (lightScale < this.config.lightLimit) continue;
 
-        const scheme = new GridLighting(this.grid);
-        scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
+        const scheme = new GridLighting(this.grid, plane);
         scheme.lightLimit = this.config.lightLimit;
         scheme.clearLight();
 
@@ -949,10 +948,12 @@ export class DOMgeon extends EventTarget {
         }
 
         // reveal actor view fields by extracting seen tile data
-        scheme.revealView = (tiles, pos) => mc.collectMemesAt(plane, pos, tiles);
         for (const actor of actors) {
           // TODO compute a tighter viewLimit wrt actor position
-          scheme.revealViewField(actor, {depthLimit: viewLimit});
+          scheme.revealViewField(actor, {
+            depthLimit: viewLimit,
+            revealView: (tiles, pos) => mc.collectMemesAt(plane, pos, tiles),
+          });
           otherActors.delete(actor.id);
         }
       }
@@ -967,8 +968,7 @@ export class DOMgeon extends EventTarget {
 
       // clear light within all affected subjective planes
       for (const plane of mc.planes.values()) {
-        const scheme = new GridLighting(this.grid);
-        scheme.filter = tile => this.grid.getTilePlane(tile) === plane;
+        const scheme = new GridLighting(this.grid, plane);
         scheme.clearLight();
       }
 
@@ -1041,7 +1041,7 @@ export class DOMgeon extends EventTarget {
       subjectPos,
       ...neighbors(subjectPos), // TODO make this stencil configurable
     ]
-      .flatMap(pos => Array.from(this.grid.tilesAt(pos)))
+      .flatMap(pos => subjectPlane ? Array.from(this.grid.tilesAt(subjectPlane, pos)) : [])
       .filter(tile => !tile.classList.contains('mover'))
       .filter(tile => this.grid.getTilePlane(tile) === subjectPlane)
       .filter(object => {

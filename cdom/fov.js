@@ -39,11 +39,9 @@ export class GridLighting {
    * @returns {void}
    */
   clearLight() {
-    /** @type {NodeListOf<HTMLElement>} */
-    const priors = this.grid.el.querySelectorAll(`.tile[data-${this.lightVar}]`);
-    for (const tile of priors)
-      if (!this.filter || this.filter(tile))
-        this.grid.setTileData(tile, this.lightVar, null);
+    clearGridLight(this.grid, this.filter, {
+      lightVar: this.lightVar,
+    });
   }
 
   /**
@@ -106,6 +104,24 @@ export class GridLighting {
       ...options,
     });
   }
+}
+
+/**
+ * @param {TileGrid} grid
+ * @param {null|((tile:HTMLElement)=>boolean)} filter
+ * @param {object} [options]
+ * @param {string} [options.lightVar]
+ * @returns {void}
+ */
+export function clearGridLight(grid, filter, options={}) {
+  const {
+    lightVar='light',
+  } = options;
+  /** @type {NodeListOf<HTMLElement>} */
+  const priors = grid.el.querySelectorAll(`.tile[data-${lightVar}]`);
+  for (const tile of priors)
+    if (!filter || filter(tile))
+      grid.setTileData(tile, lightVar, null);
 }
 
 /**
