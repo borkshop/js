@@ -22,6 +22,7 @@ import {planRooms} from './bsp.js';
  * @prop {number} minRoomCount
  * @prop {number} minRoomArea
  * @prop {number} maxRoomArea
+ * @prop {() => number} [random]
  * @prop {number} [wallBreakingCost]
  * @prop {number} [tunnelTurningCost]
  */
@@ -42,7 +43,7 @@ import {planRooms} from './bsp.js';
  * @returns {Result}
  */
 export function planMine(plan) {
-  const {rect, tunnelTurningCost = 1} = plan;
+  const {rect, tunnelTurningCost = 1, random = Math.random} = plan;
   let {wallBreakingCost = 20} = plan;
 
   const area = rect.w * rect.h;
@@ -51,8 +52,6 @@ export function planMine(plan) {
   const rooms = [];
   /** @type {Point[]} */
   const centers = [];
-
-  const random = Math.random;
 
   const minRoomArea = 9;
   const maxRoomCount = 40;

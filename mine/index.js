@@ -2,10 +2,22 @@
 
 /** @typedef { import("cdom/tiles").NewTileSpec } NewTileSpec */
 
-import {DOMgeon} from 'cdom/domgeon';
+import {DOMgeon, DOMgeonInspector, assignProcs} from 'cdom/domgeon';
 import {find, mustFind} from 'cdom/wiring';
+import * as PRNG from 'cdom/prng';
 import {select} from './iteration.js';
 import {planMine} from './mine.js';
+
+const search = new URLSearchParams(location.search);
+const prng = PRNG.ingest(
+  new PRNG.XorShift128Plus(),
+  search.get('seed') || '',
+);
+const random = () => prng.random();
+
+const nextSeedBytes = new Uint8Array(32);
+prng.scribble(nextSeedBytes.buffer);
+const nextSeed = btoa(String.fromCharCode(...nextSeedBytes));
 
 const dmg = new DOMgeon({
   ui: document.body,
@@ -17,7 +29,15 @@ const dmg = new DOMgeon({
 });
 globalThis.dmg = dmg;
 
-import {DOMgeonInspector} from 'cdom/domgeon';
+assignProcs(dmg.procs, {
+  link({grid, object}) {
+    const params = grid.getTileData(object, 'linkParams');
+    if (typeof params !== 'string') return false;
+    window.location.search = params;
+    return true;
+  }
+});
+
 const inspector = find('#inspector');
 if (inspector) new DOMgeonInspector(dmg, inspector);
 
@@ -35,7 +55,8 @@ const {
   minRoomArea: 20,
   maxRoomArea: 40,
   wallBreakingCost: 10,
-  tunnelTurningCost: 1000
+  tunnelTurningCost: 1000,
+  random,
 });
 
 const plane = 'solid';
@@ -70,7 +91,7 @@ render({
   kind: 'door',
 }, select(doors));
 
-const start = Math.floor(Math.random() * rooms.length);
+const start = Math.floor(random() * rooms.length);
 
 const actor = dmg.grid.createTile({
   plane,
