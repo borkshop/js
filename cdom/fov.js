@@ -95,37 +95,51 @@ export class GridLighting {
    * @param {object} [options]
    * @param {number} [options.depthLimit]
    * @param {(tiles: HTMLElement[]) => HTMLElement[]} [options.mask]
+   * @param {(tiles: Iterable<HTMLElement>, pos: Point, depth: number) => void} [options.revealView]
    * @returns {void}
    */
-  revealViewField(source, options={}) {
-    const {
-      depthLimit=1000,
-      mask=(present) => present.filter(
-        t => this.grid.getTileData(t, this.lightVar) >= this.lightLimit),
-    } = options;
-    for (const {depth, at, ...pos} of iterateGridField(this.grid, this.filter, source, depthLimit)) {
-      const visible = mask ? mask(at) : at;
-      if (visible.length) this.revealView(visible, pos, depth);
-    }
+  revealViewField(source, options) {
+    revealGridViewField(this.grid, this.filter, source, {
+      fovVar: this.fovVar,
+      lightVar: this.lightVar,
+      lightLimit: this.lightLimit,
+      ...options,
+    });
   }
+}
 
-  /**
-   * @param {Iterable<HTMLElement>} tiles
-   * @param {Point} _pos
-   * @param {number} depth
-   */
-  revealView(tiles, _pos, depth) {
-    for (const tile of tiles) this.setView(tile, depth);
-  }
-
-  /**
-   * @param {HTMLElement} tile
-   * @param {number} depth
-   */
-  setView(tile, depth) {
-    const prior = this.grid.getTileData(tile, this.fovVar);
-    this.grid.setTileData(tile, this.fovVar,
-      typeof prior === 'number' ? Math.min(prior, depth) : depth);
+/**
+ * @param {TileGrid} grid
+ * @param {null|((tile:HTMLElement)=>boolean)} filter
+ * @param {HTMLElement} source
+ * @param {object} [options]
+ * @param {string} [options.fovVar]
+ * @param {string} [options.lightVar]
+ * @param {number} [options.lightLimit]
+ * @param {number} [options.depthLimit]
+ * @param {(tiles: HTMLElement[]) => HTMLElement[]} [options.mask]
+ * @param {(tiles: Iterable<HTMLElement>, pos: Point, depth: number) => void} [options.revealView]
+ * @returns {void}
+ */
+export function revealGridViewField(grid, filter, source, options={}) {
+  const {
+    fovVar='fov',
+    lightVar='light',
+    lightLimit=0.0001,
+    depthLimit=1000,
+    mask=(present) => present.filter(
+      t => grid.getTileData(t, lightVar) >= lightLimit),
+    revealView=(tiles, _pos, depth) => {
+      for (const tile of tiles) {
+        const prior = grid.getTileData(tile, fovVar);
+        grid.setTileData(tile, fovVar,
+          typeof prior === 'number' ? Math.min(prior, depth) : depth);
+      }
+    },
+  } = options;
+  for (const {depth, at, ...pos} of iterateGridField(grid, filter, source, depthLimit)) {
+    const visible = mask ? mask(at) : at;
+    if (visible.length) revealView(visible, pos, depth);
   }
 }
 
