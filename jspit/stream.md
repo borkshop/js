@@ -1,4 +1,4 @@
-# 2020-12-28
+# 2021-01-14
 
 ## TODO
 
@@ -43,13 +43,27 @@ least afford UI before "done".
 
 ## Done
 
+Have been slowly easing back into development this week, piecing out BSP body
+demo progress, starting with supporting cdom refactor work.
+
+# 2020-12
+
+## 2020-12-28
+
 Retconned lint breaks within `mine`, and added `scripts/qa.bash` to help bug kit-bashing.
 
-# 2020-12-27
+## 2020-12-27
 
-Fixed `cdom/procgen.chooseSubRect` to never escape its given rectangle.
+Fixed `cdom/procgen.chooseSubRect` to never escape its given rectangle. The
+main thrust being to:
+- require a plane argument to all grid operations, preparing for further
+  abstraction/reification of grids spaces
+- decomposing `cdom/fov.GridLighting` into smaller and separate helper
+  functions
 
-# Week Ending 2020-12-26
+- made `TileGrid.tilesAt` return an iterator, rather than an array
+
+## Week Ending 2020-12-26
 
 Holiday week with only a couple of items:
 - completely de-objectified `procgen.BSP`, decomposed into `binaryDivide`,
@@ -59,7 +73,7 @@ Holiday week with only a couple of items:
 - Made a couple minor fixes to the new mine level, while thinking about the
   road ahead.
 
-## 2020-12-21
+### 2020-12-21
 
 Completely de-objectified `procgen.BSP`, decomposed into `binaryDivide`,
 `binaryReduce`, and a random split chooser. Including an, as yet unused, hook
@@ -68,14 +82,14 @@ to allow directly-resulted splits.
 Made a couple minor fixes to the new mine level, while thinking about the road
 ahead.
 
-## 2020-12-20
+### 2020-12-20
 
 More dev branch progress on bsp body prototype, now function internally, but
 need to sort out display and input still. Shaping up a new `ProcParams.getProc`
 provision, which allows a proc to lookup others (by name or for-tile),
 primarily for delegation purposes.
 
-# Week Ending 2020-12-19
+## Week Ending 2020-12-19
 
 - Started prototyping a body system in the BSP demo, allowing items to be
   picked up and used.
@@ -97,7 +111,7 @@ primarily for delegation purposes.
   ultimately decided to only do move minor parts out until more hallway
   building demos are done to prove out common ground.
 
-## 2020-12-18
+### 2020-12-18
 
 Made a few minor fixes to new proc work, revealed by bsp digging: ignore mover
 procs when collecting object actions; fix kindedness of class-named tiles;
@@ -163,7 +177,7 @@ Considering adopting a generalised `href` proc extrapolated from the forest
 demo, but with ability to open in new window, and support beyond just url
 params calling back to the same page.
 
-## 2020-12-17
+### 2020-12-17
 
 Revamped the DOMgeon Proc system:
 - both object and subject tiles may now have, in order of precedence:
@@ -182,7 +196,7 @@ previously builtin "morphic" behavior that drove things like doors.
 Finally, interaction processing now attempts all objects present, stopping on
 the first one with an effected Proc.
 
-## 2020-12-16
+### 2020-12-16
 
 Added BSP spatial query demo to exercise new `procgen.iterateSpace`. Enabled by
 new `DOMgeon.mayPlay` hook and `TileGrid.translateClient` ex-inspector.
@@ -195,7 +209,7 @@ Circled back to `fov.iterateField` and added pass through `At` data similar to
 
 Added `procgen.contains(Rect, ...Point) => boolean`, untested but looks right.
 
-## 2020-12-15
+### 2020-12-15
 
 Added whole-world rejection sampling to the BSP demo, with an error world if
 generation fails 10 times.
@@ -204,7 +218,7 @@ Factored out more bits from the BSP demo into cdom/domgeon including:
 - basic iterator tools like `map` and `filter`
 - a weighted random `choose(Iterator<T>) => T` function
 
-## 2020-12-14
+### 2020-12-14
 
 Refactored BSP room selection to never fully reject and into
 `procgen.chosseSubRect`, usable for a "uniform" generator.
@@ -226,11 +240,11 @@ that may be modified per instance if a game wants to embrace things like the
 shift key. There's likely some logic missing to allow for this, since the
 `Shift` key won't (always!) materialize in the resultant event chord set.
 
-## 2020-12-13
+### 2020-12-13
 
 Finished the FOV iteration refactor started yesterday.
 
-# Week Ending 2020-12-12
+## Week Ending 2020-12-12
 
 - Continued learning from, and standardizing with The Dark Forest
   - everything now uses an externalized page script and style sheet; this is
@@ -249,13 +263,13 @@ Finished the FOV iteration refactor started yesterday.
   cdom/fov; see git for details, and do give the updated BSP and Dark Forest
   worlds another look
 
-## 2020-12-12
+### 2020-12-12
 
 Fixed BSP player teleport action.
 
 Factored out a generator core within `cdom/fov`.
 
-## 2020-12-11
+### 2020-12-11
 
 Generalized the playability-vs-demo toggle used by a couple jspit demos into a
 latent DOMgeon feature.
@@ -270,20 +284,20 @@ Improved template html usage notes, adding many instruction comments.
 
 Fixed a minor bug around clicking buttons with handlers.
 
-## 2020-12-10
+### 2020-12-10
 
 Dropped inspector and explicit walls from forest, sync with template to use cdom/common css.
 
-## 2020-12-08
+### 2020-12-08
 
 Broke up the cdom-template html into a separated js and css file, synced all
 jspit demos and forest with the new scheme.
 
-## 2020-12-07
+### 2020-12-07
 
 Ejected page level script code from all jspit demos.
 
-# Week Ending 2020-12-05
+## Week Ending 2020-12-05
 
 - Finished a basic/classic version of BSP-drive rooms and hallways procgen;
   next step is to start generalizing many of the demo-internal utilities into
@@ -299,7 +313,7 @@ Ejected page level script code from all jspit demos.
 - Minor improvements to the button input scheme, now explicitly supporting
   aliases, and handler registration by ID.
 
-## 2020-12-04
+### 2020-12-04
 
 Fixed type issues around `cdom/builder.Context` vs `TileSpec.kind` by adding
 `NewTileSpec` required by `createTile` and `buildTile` methods.
@@ -307,7 +321,7 @@ Fixed type issues around `cdom/builder.Context` vs `TileSpec.kind` by adding
 Finally fixed BSP demo hallway building, no longer able to reveal void cells,
 and more often results in a fully-connected level.
 
-## 2020-12-03
+### 2020-12-03
 
 Refactored BSP rooms-and-halls builder, fixing a simple priority reversal bug
 that was causing disconnected levels. There may still be other, now rarer,
@@ -318,7 +332,7 @@ Added by-id button handling, use it in BSP demo.
 Ejected BSP page script module in alignment with forest structure; will work on
 rectifying the `builder.Context` vs `TileSpec` type awkwardness soon.
 
-## 2020-12-02
+### 2020-12-02
 
 Improved button input situation:
 - added proper key/code alias support
@@ -336,25 +350,27 @@ Refactored and flattened the `cdom/prng` module:
 
 Fixed BSP FOV invalidation after a player respawn/move.
 
-## 2020-12-01
+### 2020-12-01
 
 Finished a sufficient version of the BSP generator, be declaring it's remaining
 bugs to be "fun".
 
-## 2020-11-30
+### 2020-11-30
 
 Made the BSP demo resetable and playable:
 - press `<Backspace>` to regenerate the world
 - press `@` to spawn a player
 
-## 2020-11-29
+### 2020-11-29
 
 Finished BSP wall simplification and door placement. Started developing hallway
 connections, but wasn't able to finish that part completely...
 
 Made cdom-template buttons semi-translucent.
 
-# Week Ending 2020-11-28
+# 2020-11
+
+## Week Ending 2020-11-28
 
 - finished half of a classic BSP dungeon gen, on top of a flexible BSP
   iteration core, and a new jspit demo page; for now it's just rooms, next up
@@ -375,14 +391,14 @@ Made cdom-template buttons semi-translucent.
 - further solidifed the subjectvie plane notion, so that it is the only thing
   rendered now, rather than compositing with the objective plane
 
-## 2020-11-28
+### 2020-11-28
 
 BSP demo progress:
 - elaborated in-page status text
 - fixed all remaining off-by-one (lol ob1) errors in adjacent room edge 
 - added cdom toggle button support, and used it fro BSP's debug plane
 
-## 2020-11-27
+### 2020-11-27
 
 Fixed cdom-template's snowpack config by syncing it from jspit, and dropped the
 problematic cdom symlink; pain points revealed by the new forest demo.
@@ -394,18 +410,18 @@ Adopted viewport transform update from forest demo: now done with a planar CSS
 transform, rather than being calculated on each tile. Have not tried to measure
 any difference yet, but this just seems more intrinsically correct.
 
-## 2020-11-26
+### 2020-11-26
 
 Started out on a jspit BSP demo page.
 
-## 2020-11-25
+### 2020-11-25
 
 Got a basic BSP harness working under a development version of the cdom-template demo.
 Not quite sure what to do with it yet, and the hallway connector is as yet unexercised.
 
 Minor improvements to tile creation and meme copying.
 
-## 2020-11-24
+### 2020-11-24
 
 Made minor fixes and improvements while researching action and procgen systems:
 - pushed stream behaviors WIP section into the past
@@ -414,7 +430,7 @@ Made minor fixes and improvements while researching action and procgen systems:
 - fixed template grid background, which was supposed to be hard black, rather
   than a bright black, after the recent color
 
-## 2020-11-23
+### 2020-11-23
 
 Finished out sporadic progress made over the last couple days: the demo now
 renders exclusively from the subjective (meme) plane, with light values copied
@@ -426,7 +442,7 @@ must add a `--lightInit` to movers if desired.
 Recolored the template domgeon demo over HSL space, rather than a limited
 discrete palette.
 
-# Week Ending 2020-11-21
+## Week Ending 2020-11-21
 
 Reworked FOV system to work by copying tiles into a subjective plane of "meme"
 tiles, while the underlying "solid" plane remains hidden; supporting notes:
@@ -447,7 +463,7 @@ tiles, while the underlying "solid" plane remains hidden; supporting notes:
 - fixed view move animation and easing
 - sorted actor switch actions by distance
 
-## 2020-11-20
+### 2020-11-20
 
 Further improved FOV propagation to not reveal unlit tiles.
 
@@ -464,7 +480,7 @@ filled gaps like inability to query tiles by plane.
 Fixed initial flash of unlit tiles, and made the domgeon demo start out
 centered on the `@` rather than panning in by accident.
 
-## 2020-11-19
+### 2020-11-19
 
 While developing and debugging the new meme plane feature, made movement keys
 configurable from page-level data passed to the `DOMgeon` constructor, and also
@@ -472,7 +488,7 @@ persisted to local storage for user customization. This further revealed that
 movement button input support for keycodes, like for the actual arrow keys, was
 incomplete; fixed as part of the new config driven scheme.
 
-## 2020-11-18
+### 2020-11-18
 
 Finished prep scope from yesterday, FOV recompute now only happes on
 change/move, and lighting recompute stops after the animations are done. Also
@@ -484,13 +500,13 @@ tiers.
 
 Next up: meme plane(s).
 
-## 2020-11-17
+### 2020-11-17
 
 Developing towards a memory layer/plane, fell off a perf cliff due to layout
 churn and force reflow / style recomputes. Left progress in dev for next, but
 prototyped non-text content tiles and meme-tile copying driven by FOV.
 
-## 2020-11-16
+### 2020-11-16
 
 Cleaned up common page structures while fiddling around with flex box, and
 reading large swaths of MDN et al:
@@ -499,7 +515,7 @@ reading large swaths of MDN et al:
 - move status display out of footer into main grid, which gives it top-left
   conventional layout for now
 
-## 2020-11-15
+### 2020-11-15
 
 Several minor fixes while exploring / researching next step:
 - view move animation wasn't eased as intended, fixed, and adjusted the easing
@@ -507,7 +523,7 @@ Several minor fixes while exploring / researching next step:
 - don't highlight disabled keys
 - sort actor switch actions by distance so that nearer ones are numbered lower
 
-# Week Ending 2020-11-14
+## Week Ending 2020-11-14
 
 The updated [jspit/DLA](https://jspit.vercel.app/dla.html) demo is the real
 star of the week, best showcasing most of the features; the
@@ -536,7 +552,7 @@ out also, especially for actor focus swapping.
 - Added event integration points for "about to move" to give AI a chance, and
   "view" which should be usable for infinite procgen
 
-## 2020-11-14
+### 2020-11-14
 
 Decomposed `input.KeyCtl` into:
 - `input.Handlers`: affords easy one-off key handlers, e.g. `Escape` menu
@@ -566,12 +582,12 @@ Validated, debugged, and finished yesterdays's scope into main. Added a
 toplevel npm test script to aid minimal automated type checking, and fixed a
 latent bug from the recent queryTiles refactor.
 
-## 2020-11-13
+### 2020-11-13
 
 Refactored most of the way through input/move parsing and handling in dev
 branch, to set the stage for more complicated / general actions.
 
-## 2020-11-12
+### 2020-11-12
 
 Did no coding today, but did assemble some thoughts about behaviors:
 
@@ -632,13 +648,13 @@ So how about expanding the current tile scheme:
 - the children may have behaviors attached, or may serve simply as data for
   other behaviors
 
-## 2020-11-11
+### 2020-11-11
 
 Further reworked lighting to separate FOV revelation from light casting, then
 added ambient and non-actor light sources. Demonstrated best by an update to
 the DLA demo.
 
-## 2020-11-10
+### 2020-11-10
 
 Lighting Inspection
 
@@ -657,7 +673,7 @@ Fixed a tile inspector bug introduced by yesterday's `TileGrid.viewOffset`
 un-flooring, by re-introducing the floor math within tile inspector
 positioning.
 
-## 2020-11-09
+### 2020-11-09
 
 Improved viewport movement
 
@@ -670,7 +686,7 @@ quick movements, and then catches up when the player stops moving.
 Dropped the floor from `TileGrid.viewOffset` updates, as otherwise animating
 with sub-tile accuracy isn't feasible.
 
-## 2020-11-08
+### 2020-11-08
 
 Viewport animation and extension points
 
@@ -690,7 +706,7 @@ Added two other DM extension points:
   basis for an infinite-space procgen to build tiles right before the viewport
   shifts
 
-# Week Ending 2020-11-07
+## Week Ending 2020-11-07
 
 - added ability for interactable tiles to spawn a new tile
 - added focus control when multiple actors are present
@@ -711,7 +727,7 @@ Added two other DM extension points:
   simplifying the demos
 - added click-to-pin behavior to the domgeon inspector
 
-## 2020-11-07
+### 2020-11-07
 
 Many actors, Such input
 
@@ -756,7 +772,7 @@ diagonal moves. Some points to look into going forward:
   `<button>`s sticky, so they stay depressed until tapped again, synthesizing
   our own up/down scheme?
 
-## 2020-11-06
+### 2020-11-06
 
 The FOV has rolled in: now used in both the DLA demo (when playing) and in the
 cdom template.
@@ -777,7 +793,7 @@ Other possibilities for next include:
 - allowing light to transmit through the void when originating from a
   self-supported tile (e.g. the void walking player)
 
-## 2020-11-05
+### 2020-11-05
 
 Now with even more use of CSS
 
@@ -804,7 +820,7 @@ to walk out the door to nowhere... and on!
 Oh the "void rune" is now literally drawn on to a floor tile, not its own
 separate tile, to demonstrate that possibility.
 
-## 2020-11-04
+### 2020-11-04
 
 Completed rework of input handling to be defined by, and accept clicks of,
 button elements. Movement is now defined by a set of static buttons, with
@@ -822,7 +838,7 @@ Other future ideas:
 - could eventually support clicking of more than just buttons, like say
   directly clicking a tile to move
 
-## 2020-11-03
+### 2020-11-03
 
 Had realization that `<button>` elements may suffice for input configuration:
 user can add buttons, domgeon can create add defaults if none exist, either way
@@ -849,19 +865,21 @@ Will likely do something something similar to `.passable` to generalize the
 space-defining nature of floor tiles, instead making them `.support` for their
 plane.
 
-## 2020-11-02
+### 2020-11-02
 
 - jspit
   - ported DLA to also use DOMgeon, and translated it from TS to JS
   - ported colorboop to domgeon morphs interactions, eliminating its external
     (type)script, further exercising higher level cdom code
 
-## 2020-11-01
+### 2020-11-01
 
 - prototyped actionbar based interaction
 - improved the domgeon inspector to support click-to-pin with details
 
-# Week Ending 2020-10-31
+# 2020-10
+
+## Week Ending 2020-10-31
 
 Dialed beck the level of tooling artifice:
 - mostly switching away from directly written TypeScript, to ts-check annotated
@@ -904,7 +922,7 @@ called Physarum:
 - but it may provide a useful procgen setting eventually, especially if
   iterated infrequently, or out-of-dom for better performance
 
-## 2020-10-31
+### 2020-10-31
 
 - finished initial cut of "morphic interaction" system:
   - tiles may now be tagged `.interact` and carry `"morph_target"` and
@@ -921,11 +939,11 @@ called Physarum:
 - finished initial tile shader oriented builder module, now used to build build
   two rooms connect by a hallway and doors
 
-## 2020-10-30
+### 2020-10-30
 
 - started development of door interaction and room buiilder code
 
-## 2020-10-29
+### 2020-10-29
 
 - explored further options in physarum design space, like a variable decay
   field, but decided to set that line of polish work aside for now
@@ -934,7 +952,7 @@ called Physarum:
 - improved DLA's player viewport scrolling
 - fixed initial overly eager input capture
 
-## 2020-10-28
+### 2020-10-28
 
 - spent a lot of time watching and tuning physarim settings: found that if you
   widen the sensor spread, but tighten its turning range, it presents much more
@@ -945,7 +963,7 @@ called Physarum:
   movement/deposition scheme
 - translated jspit `particels` and `config` modules to proper js
 
-## 2020-10-27
+### 2020-10-27
 
 - dropped ultra-modern private `#field` notation for better compatibility with
   things like FireFox
@@ -955,7 +973,7 @@ called Physarum:
   - TODO read the original <https://uwe-repository.worktribe.com/output/980579>
     for more ideas
 
-## 2020-10-26
+### 2020-10-26
 
 Started a local/uncommitted Physarum prototype: got diffusion and decay
 working, before getting hung up on heading trig vs coordinate system bugs.
@@ -1021,7 +1039,7 @@ So in summary, what we now have:
   when it tries `../cdom/*` after failing to find `./cdom/*` from an `import
   yada from 'cdom/thing'`
 
-# Week Ending 2020-10-24
+## Week Ending 2020-10-24
 
 - moved jspit deployment to vercel, which ended up simpliying away all of the
   common "ui" module code shared between demos, since it was 90% concerned with
@@ -1113,13 +1131,13 @@ So in summary, what we now have:
     can eventually accrete things like: spawning routines adapted from the DLA
     demo and aceelerated/out-of-DOM versions for procgen
 
-## 2020-10-24
+### 2020-10-24
 
 - wrote a weekly stream summary
 - stored the jspit "game" TODOs down in a new stream Basement section; calling
   DLA "done for now ™"
 
-## 2020-10-23
+### 2020-10-23
 
 - domgeon
   - reified everything to expose an object off which custom DM logic may hang
@@ -1127,7 +1145,7 @@ So in summary, what we now have:
 - tiles
   - provide auto generated tile ids, easing domgeon inline creation scripts
 
-## 2020-10-22
+### 2020-10-22
 
 - wrote a small domgeon skeleton with a hardcoded 5x5 room
 - added `TileGrid` support for pre-existing tiles
@@ -1139,7 +1157,7 @@ So in summary, what we now have:
 - tried a last few tricks for initial DLA void point selection, without much
   result other than a `mortonCompact1` function
 
-## 2020-10-21
+### 2020-10-21
 
 - factored out particles module with the core underlying update logic from the
   DLA demo
@@ -1151,7 +1169,7 @@ So in summary, what we now have:
   - refactored viewport management, reducing surface are, and adding resize
     handling to keep the requested point centered
 
-## 2020-10-20
+### 2020-10-20
 
 - moved deployment to vercel, dropping version display for now
 - dropped lit-html dependency; generalized dla's inspector dumping, but decided
@@ -1162,7 +1180,7 @@ So in summary, what we now have:
 - factored out general move processing routine into tiles module
 - de-objectified ColorBoop
 
-## 2020-10-19
+### 2020-10-19
 
 - TileGrid
   - expanded inspector so that it can be toggled on and off after creation
@@ -1179,7 +1197,7 @@ So in summary, what we now have:
 
 # Pre history
 
-## 2020-10-17
+### 2020-10-17
 
 - added latest verion detection and link display to all pages
 - read <http://paulbourke.net/fractals/dla/> for more background and
@@ -1214,13 +1232,13 @@ We can:
   0.9100805259796224
 ```
 
-## 2020-10-16
+### 2020-10-16
 
 - fixed DLA demo to actually do DLA, preserving the random walker behavior as
   well
 - revamped and generalized settings module
 
-## 2020-10-15
+### 2020-10-15
 
 - added initial heading controls for DLA particles
 - fixed DLA particle movement: particels now take on fractional positions, but
@@ -1230,7 +1248,7 @@ We can:
 - Sketched a new page-module pattern around bindings and state
 - Improved menu system, no longer just modal, with a shared ui bindings module
 
-## 2020-10-14
+### 2020-10-14
 
 - fully erased the `Sim` abstraction from `ColorBoop`; TODO follow through with
   DLA tomorrow, then drop the `sim` module
@@ -1239,19 +1257,19 @@ We can:
 - started disaggregating modules, broke out `input`, `tiles`, `anim`, `state`,
   `sim`, `dla`, and `colorboop` modules
 
-## 2020-10-13
+### 2020-10-13
 
 - refactored `Sim` plumbing to decouple from the multi-Scenario demo use case
 - revamped `DLA` settings, now persisted through location hash
 
-## 2020-10-12
+### 2020-10-12
 
 - emptied out old jcorbin rep with a notice, stil publishing built game to
   jcorbin github pages
 - switched fully to snowpack and ESNext standards
 - moved into brave new borkshop monorepo
 
-## 2020-10-09
+### 2020-10-09
 
 - added player drop and dig to DLA demo
 - improved DLA turning arc: dual ended control
@@ -1259,7 +1277,7 @@ We can:
 - added a morton-curve spatial index to TileGrid
 - added tile inspection support to Sim/Scenario, example use in ColorBoop
 
-## 2020-10-08
+### 2020-10-08
 
 - wrote a DLA demo, which was a great way to furher experiment with modal UI,
   and also quickly hit the limits of the current brute force spatial query (guess)
@@ -1271,7 +1289,7 @@ We can:
 - factored out TileGrid to reify the grid sketched yesterday
 - sorted out details for building and pushing to github pages
 
-## 2020-10-07
+### 2020-10-07
 
 - NOTE: current plan is to code from the bottom-up or outside-in, while
   continuing to ruminate on and expand design thoughts here in markdown land.
@@ -1286,7 +1304,7 @@ We can:
   <https://eager.io/blog/communicating-between-javascript-and-css-with-css-variables/>
   via @kris, built a minimal infinite-scrolling CSS tile grid
 
-## 2020-10-06
+### 2020-10-06
 
 - more ecs and other lore research
   - NOTE ape-ecs seems designed around a mono world... `world.registerCopmonet`
@@ -1296,7 +1314,7 @@ We can:
 - starting collecting resources at top
 - digested thoughts on ape-ecs below
 
-## 2020-10-05
+### 2020-10-05
 
 - wrote down some scant design notes into ios note app
 
