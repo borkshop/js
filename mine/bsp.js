@@ -45,12 +45,12 @@ import {
  * @param {BspPlan<Room>} plan
  * @returns {BspResult<Room>}
  */
-export function planRooms(rect, plan) {
+export function partition(rect, plan) {
   const { maxRoomCount } = plan;
   const roomToWorldPosition = translate({x: 1, y: 1});
   const roomToWorldSize = identity;
   const size = sizeOfRect(insetRect(rect));
-  const room = partition(
+  const room = choose(
     size,
     roomToWorldPosition,
     roomToWorldSize,
@@ -75,7 +75,7 @@ export function planRooms(rect, plan) {
  * @param {BspPlan<Room>} plan
  * @return {Room}
  */
-function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) {
+function choose(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) {
   const {minRoomArea, wallThickness = 1} = plan;
   const minRoomWidth = Math.ceil(minRoomArea / size.y);
 
@@ -86,7 +86,7 @@ function partition(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, pla
   if (size.y > size.x) {
     // Always partition across the dominant axis to facilitate alternation of
     // orientation.
-    return partition(
+    return choose(
       transform(size, transpose),
       multiply(roomToWorldPosition, transpose),
       multiply(roomToWorldSize, transpose),
@@ -177,7 +177,7 @@ function branch(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) 
     return leaf(size, roomToWorldPosition, roomToWorldSize, plan);
   }
 
-  const leftRoom = partition(
+  const leftRoom = choose(
     {x: wall, y: size.y},
     roomToWorldPosition,
     roomToWorldSize,
@@ -185,7 +185,7 @@ function branch(size, roomToWorldPosition, roomToWorldSize, maxRoomCount, plan) 
     plan,
   );
 
-  const rightRoom = partition(
+  const rightRoom = choose(
     {x: size.x - wall - wallThickness, y: size.y},
     multiply(multiply(roomToWorldPosition, translate({x: size.x, y: 0})), flip),
     multiply(roomToWorldSize, flip),

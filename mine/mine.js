@@ -10,7 +10,7 @@ import {computeDistancesBreadthFirst} from './bfs.js';
 import {computeDistancesDijkstra, trace} from './dijkstra.js';
 import {makeRookSpace} from './rook.js';
 
-import {planRooms} from './bsp.js';
+import {partition} from './bsp.js';
 
 /** @typedef { import("cdom/tiles").Rect } Rect */
 /** @typedef { import("cdom/tiles").Point } Point */
@@ -56,7 +56,7 @@ export function planMine(plan) {
   const minRoomArea = 9;
   const maxRoomCount = 40;
   const wallThickness = 3;
-  planRooms(rect, {
+  partition(rect, {
     maxRoomCount,
     minRoomArea,
     wallThickness,
