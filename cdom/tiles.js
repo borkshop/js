@@ -349,8 +349,8 @@ export class TileGrid {
    * @returns {HTMLElement}
    */
   buildTile(spec) {
-    if (spec.pos) {
-      const tile = this.tileAt(spec.pos, spec.kind);
+    if (spec.plane && spec.pos) {
+      const tile = this.tileAt(spec.plane, spec.pos, spec.kind);
       if (tile) return this.updateTile(tile, spec);
     }
     // TODO garbage re-use
@@ -700,7 +700,9 @@ export class TileInspector {
    * @returns {IterableIterator<HTMLElement>}
    */
   *tilesAt(pos) {
-    yield* this.grid.tilesAt(pos);
+    for (const plane of this.grid.el.querySelectorAll('.plane'))
+      if (plane instanceof HTMLElement)
+        yield* this.grid.tilesAt(plane, pos);
   }
 
   /**
