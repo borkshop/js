@@ -690,18 +690,14 @@ export class TileInspector {
   }
 
   /** @type {Point|null} */
-  pinned = null
-
-  /** @type {TileFilter} */
-  filter = _ => true;
+  pinned = null;
 
   /**
    * @param {Point} pos
    * @returns {IterableIterator<HTMLElement>}
    */
   *tilesAt(pos) {
-    for (const t of this.grid.tilesAt(pos))
-      if (this.filter(t, this.grid)) yield t;
+    yield* this.grid.tilesAt(pos);
   }
 
   /**
