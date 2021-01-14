@@ -55,24 +55,20 @@ export function planMine(plan) {
   const random = Math.random;
 
   const minRoomArea = 9;
-  const maxRoomCount = 5;
+  const maxRoomCount = 40;
+  const wallThickness = 3;
   planRooms(rect, {
     maxRoomCount,
     minRoomArea,
-    random,
+    wallThickness,
+    random: () => (random() + random() + random() + random()) / 4,
     /**
      * @callback
      * @param {Rect} rect
      */
     drawRoom: (rect) => {
-      // const roomArea = minRoomArea + (maxRoomArea - minRoomArea) * random();
-      // const ratio = (4 + random()) / 5;
-      // const w = Math.max(1, Math.min(size.x, Math.floor(Math.sqrt(roomArea) * ratio)));
-      // const h = Math.max(1, Math.min(size.y, Math.floor(roomArea / w)));
-      // const x = Math.floor((size.x - w) * random());
-      // const y = Math.floor((size.y - h) * random());
-      // const {x, y, w, h} = chooseSubRect({x: 0, y: 0, w: size.x, h: size.y}, {w: 3, h: 3, a: minRoomArea}, {random});
       const subRect = chooseSubRect(rect, {w: 3, h: 3, a: minRoomArea}, {random});
+      // const subRect = rect;
       rooms.push(subRect);
       centers.push(centerOfRect(subRect, random));
     },
