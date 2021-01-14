@@ -1,5 +1,55 @@
 // @ts-check
 
+// TODO some sort of element data util module?
+
+/** Load element data, first from its dataset, falling back to a computed CSS
+ * --name variable.
+ *
+ * @param {HTMLElement} el
+ * @param {string} name
+ * @return {any}
+ */
+export function getElData(el, name) {
+  let val = el?.dataset[name];
+  if (val === undefined || val === '') {
+    val = getComputedStyle(el).getPropertyValue(`--${name}`);
+    if (val === '') return null;
+  }
+  if (val === undefined) return null;
+  if (val === '') return '';
+  try {
+    return JSON.parse(val);
+  } catch(e) {
+    return val;
+  }
+}
+
+/** Set element data: strings and numbers are stored directly, all else is JSON
+ * encoded. Data is stored both into the element's dataset and to a CSS
+ * --name variable on its inline style declaration.
+ *
+ * @param {HTMLElement} el
+ * @param {string} name
+ * @param {any} value
+ * @return {void}
+ */
+export function setElData(el, name, value) {
+  if (!el) return;
+  if (value === null || value === undefined) {
+    delete el.dataset[name];
+    el.style.removeProperty(`--${name}`);
+  } else {
+    const dval =
+      typeof value === 'string'
+      ? value
+      : typeof value === 'number'
+      ? value.toString()
+      : JSON.stringify(value);
+    el.dataset[name] = dval;
+    el.style.setProperty(`--${name}`, dval);
+  }
+}
+
 /**
  * @typedef {Object} Point
  * @prop {number} x
@@ -505,54 +555,19 @@ export class TileGrid {
   }
 
   /**
-   * Load tile data, first from the tile's dataset, falling back to a computed
-   * CSS --name variable.
-   *
    * @param {HTMLElement} tile
    * @param {string} name
    * @return {any}
    */
-  getTileData(tile, name) {
-    let val = tile?.dataset[name];
-    if (val === undefined || val === '') {
-      val = getComputedStyle(tile).getPropertyValue(`--${name}`);
-      if (val === '') return null;
-    }
-    if (val === undefined) return null;
-    if (val === '') return '';
-    try {
-      return JSON.parse(val);
-    } catch(e) {
-      return val;
-    }
-  }
+  getTileData(tile, name) { return getElData(tile, name) }
 
   /**
-   * Save tile data: strings and numbers are stored directly, all else is JSON
-   * encoded. Data is stored both into the element's dataset and to a CSS
-   * --name variable on its inline style declaration.
-   *
    * @param {HTMLElement} tile
    * @param {string} name
    * @param {any} value
    * @return {void}
    */
-  setTileData(tile, name, value) {
-    if (!tile) return;
-    if (value === null || value === undefined) {
-      delete tile.dataset[name];
-      tile.style.removeProperty(`--${name}`);
-    } else {
-      const dval =
-        typeof value === 'string'
-        ? value
-        : typeof value === 'number'
-        ? value.toString()
-        : JSON.stringify(value);
-      tile.dataset[name] = dval;
-      tile.style.setProperty(`--${name}`, dval);
-    }
-  }
+  setTileData(tile, name, value) { setElData(tile, name, value) }
 
   /**
    * @param {HTMLElement} tile
