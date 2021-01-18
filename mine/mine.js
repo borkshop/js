@@ -40,9 +40,9 @@ import {partition} from './bsp.js';
 
 /**
  * @param {Plan} plan
- * @returns {Result}
+ * @param {(result: Result) => void} draw
  */
-export function planMine(plan) {
+export function *planMineStepwise(plan, draw) {
   const {rect, tunnelTurningCost = 1, random = Math.random} = plan;
   let {wallBreakingCost = 20} = plan;
 
@@ -76,7 +76,6 @@ export function planMine(plan) {
   const space = new Space(sizeOfRect(rect));
   const neighborIndexes = (/** @type {number} */index) => space.indexes(neighbors(space.point(index)));
   const centerIndexes = centers.map(point => space.index(point));
-  const floors = new Array(area);
   // Allocations for computeDistancesBreadthFirst.
   const cornerDistances = new Array(area); // bfs
   const seen = new Array(area);
@@ -89,6 +88,10 @@ export function planMine(plan) {
   const distances = new Array(area * 2); // dijkstra
   const heap = Array.from(count(area * 2));
   const coheap = Array.from(count(area * 2));
+  // Render bitmaps.
+  const floors = new Array(area);
+  const doors = new Array(area);
+  const walls = new Array(area);
 
   // Compute the distance of every cell to the nearest corner of a room.
   // This creates a gradient, such that we will later favor paths that join
@@ -112,6 +115,8 @@ export function planMine(plan) {
     fill(floors, space.indexes(pointsForRect(room)), 1)
   }
 
+  redraw();
+  yield;
 
   // TODO generate pairwise permutations of rooms elsewhere.
   const from = centerIndexes[0];
@@ -121,6 +126,7 @@ export function planMine(plan) {
     for (const index of count(area)) {
       weights[index] = floors[index] ? 1 : 1 + wallBreakingCost + 1 / cornerDistances[index];
     }
+
     // Dissuade connections at corners.
     for (const rect of rooms) {
       for (const corner of outerCorners(rect)) {
@@ -150,10 +156,12 @@ export function planMine(plan) {
     // TODO this will not likely have any effect until some room pairs
     // are revisited to create more optimal routes.
     wallBreakingCost *= 2;
+
+    redraw();
+    yield;
   }
 
   // Compute wall mask.
-  const walls = new Array(area);
   walls.fill(0);
   for (const index of select(floors)) {
     for (const neighbor of neighborIndexes(index)) {
@@ -164,7 +172,6 @@ export function planMine(plan) {
   }
 
   // Compute door mask.
-  const doors = new Array(area);
   doors.fill(0);
   for (const rect of rooms) {
     for (const point of border(rect)) {
@@ -173,5 +180,17 @@ export function planMine(plan) {
     }
   }
 
-  return {area, space, rooms, centers, floors, walls, doors};
+  redraw();
+
+  function redraw() {
+    draw({area, space, rooms, centers, floors, walls, doors});
+  }
+}
+
+/**
+ * @param {Plan} plan
+ * @param {(result: Result) => void} draw
+ */
+export function planMine(plan, draw) {
+  for (const _ of planMineStepwise(plan, draw)) {}
 }
