@@ -23,7 +23,7 @@ import {partition} from './bsp.js';
  * @prop {number} minRoomArea
  * @prop {number} maxRoomArea
  * @prop {() => number} [random]
- * @prop {number} [wallBreakingCost]
+ * @prop {number} [tunnelDiggingCost]
  * @prop {number} [tunnelTurningCost]
  */
 
@@ -36,15 +36,17 @@ import {partition} from './bsp.js';
  * @prop {Array<number>} floors
  * @prop {Array<number>} walls
  * @prop {Array<number>} doors
+ * @prop {Array<number>} weights
  */
 
 /**
  * @param {Plan} plan
  * @param {(result: Result) => void} draw
+ * @param {boolean} [noStep]
  */
-export function *planMineStepwise(plan, draw) {
+export function *planMineStepwise(plan, draw, noStep = false) {
   const {rect, tunnelTurningCost = 1, random = Math.random} = plan;
-  let {wallBreakingCost = 20} = plan;
+  let {tunnelDiggingCost = 20} = plan;
 
   const area = rect.w * rect.h;
 
@@ -115,16 +117,42 @@ export function *planMineStepwise(plan, draw) {
     fill(floors, space.indexes(pointsForRect(room)), 1)
   }
 
-  redraw();
-  yield;
+  if (!noStep) {
+    redraw();
+    yield;
+  }
 
-  // TODO generate pairwise permutations of rooms elsewhere.
-  const from = centerIndexes[0];
-  for (const to of centerIndexes.slice(1)) {
+  /**
+   * @param {Array<number>} options
+   */
+  function *permute(options) {
+    for (let s = 0; s < 4; s += 1) {
+      for (let i = 0; i < options.length; i += 1) {
+        const j = (i + s) % options.length;
+        yield [options[i], options[j]];
+      }
+    }
+  }
+
+  for (const [from, to] of permute(centerIndexes)) {
+
+    // Compute wall mask.
+    walls.fill(0);
+    for (const index of select(floors)) {
+      for (const neighbor of neighborIndexes(index)) {
+        if (floors[neighbor] === 0) {
+          walls[neighbor] = 1;
+        }
+      }
+    }
 
     // Compute path weights for hall-digging over the entire space.
     for (const index of count(area)) {
-      weights[index] = floors[index] ? 1 : 1 + wallBreakingCost + 1 / cornerDistances[index];
+      const weight = floors[index] ? 1 :
+        walls[index] ? tunnelDiggingCost * 2 + 1 :
+        tunnelDiggingCost + tunnelDiggingCost / cornerDistances[index];
+      weights[index] = weight;
+      weights[index + area] = weight;
     }
 
     // Dissuade connections at corners.
@@ -153,12 +181,11 @@ export function *planMineStepwise(plan, draw) {
       }
     }
 
-    // TODO this will not likely have any effect until some room pairs
-    // are revisited to create more optimal routes.
-    wallBreakingCost *= 2;
-
-    redraw();
-    yield;
+    if (!noStep) {
+      walls.fill(0);
+      redraw();
+      yield;
+    }
   }
 
   // Compute wall mask.
@@ -183,7 +210,7 @@ export function *planMineStepwise(plan, draw) {
   redraw();
 
   function redraw() {
-    draw({area, space, rooms, centers, floors, walls, doors});
+    draw({area, space, rooms, centers, floors, walls, doors, weights});
   }
 }
 
@@ -192,5 +219,5 @@ export function *planMineStepwise(plan, draw) {
  * @param {(result: Result) => void} draw
  */
 export function planMine(plan, draw) {
-  for (const _ of planMineStepwise(plan, draw)) {}
+  for (const _ of planMineStepwise(plan, draw, true)) {}
 }

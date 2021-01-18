@@ -6,7 +6,7 @@ import {DOMgeon, DOMgeonInspector, assignProcs} from 'cdom/domgeon';
 import {find, mustFind} from 'cdom/wiring';
 import * as PRNG from 'cdom/prng';
 import {select} from './iteration.js';
-import {planMineStepwise} from './mine.js';
+import {planMine} from './mine.js';
 
 const search = new URLSearchParams(location.search);
 const prng = PRNG.ingest(
@@ -42,16 +42,16 @@ assignProcs(dmg.procs, {
 const inspector = find('#inspector');
 if (inspector) new DOMgeonInspector(dmg, inspector);
 
-const generator = planMineStepwise({
+planMine({
   rect: {x: 0, y: 0, w: 40, h: 30},
   minRoomCount: 3,
   maxRoomCount: 20,
   minRoomArea: 20,
   maxRoomArea: 40,
-  wallBreakingCost: 10,
-  tunnelTurningCost: 1000,
+  tunnelDiggingCost: 10,
+  tunnelTurningCost: 10,
   random,
-}, ({space, rooms, centers, floors, walls, doors}) => {
+}, ({space, rooms, centers, floors, walls, doors, weights}) => {
   dmg.grid.clear();
 
   const plane = 'solid';
@@ -66,6 +66,18 @@ const generator = planMineStepwise({
       const pos = space.point(i);
       dmg.grid.createTile({pos, ...spec});
     }
+  }
+
+  for (let i = 0; i < weights.length; i++) {
+    const pos = space.point(i);
+    dmg.grid.createTile({
+      pos,
+      kind: 'debug',
+      plane: 'debug',
+      data: {
+        weight: weights[i]
+      }
+    });
   }
 
   render({
@@ -100,20 +112,20 @@ const generator = planMineStepwise({
   dmg.updateActorView(actor);
 });
 
-/**
- * @param {Event} event
- */
-dmg.onKey.byID.genNext = ({type}) => {
-  if (type === 'keyup') {
-    generator.next();
-  }
-};
-
-/**
- * @param {Event} event
- */
-dmg.onKey.byID.genToEnd = ({type}) => {
-  if (type === 'keyup') {
-    generator.next();
-  }
-};
+// /**
+//  * @param {Event} event
+//  */
+// dmg.onKey.byID.genNext = ({type}) => {
+//   if (type === 'keyup') {
+//     generator.next();
+//   }
+// };
+//
+// /**
+//  * @param {Event} event
+//  */
+// dmg.onKey.byID.genToEnd = ({type}) => {
+//   if (type === 'keyup') {
+//     for (const _ of generator) {}
+//   }
+// };
