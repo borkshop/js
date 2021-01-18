@@ -12,8 +12,6 @@ import {makeRookSpace} from './rook.js';
 
 import {partition} from './bsp.js';
 
-const MAX32 = 0xFFFFFFFF;
-
 /** @typedef { import("cdom/tiles").Rect } Rect */
 /** @typedef { import("cdom/tiles").Point } Point */
 
@@ -35,10 +33,10 @@ const MAX32 = 0xFFFFFFFF;
  * @prop {Space} space
  * @prop {Array<Rect>} rooms
  * @prop {Array<Point>} centers
- * @prop {Uint8Array} floors
- * @prop {Uint8Array} walls
- * @prop {Uint8Array} doors
- * @prop {Uint32Array} weights
+ * @prop {Array<number>} floors
+ * @prop {Array<number>} walls
+ * @prop {Array<number>} doors
+ * @prop {Array<number>} weights
  */
 
 /**
@@ -81,21 +79,21 @@ export function *planMineStepwise(plan, draw, noStep = false) {
   const neighborIndexes = (/** @type {number} */index) => space.indexes(neighbors(space.point(index)));
   const centerIndexes = centers.map(point => space.index(point));
   // Allocations for computeDistancesBreadthFirst.
-  const cornerDistances = new Uint32Array(area); // bfs
-  const seen = new Uint8Array(area);
+  const cornerDistances = new Array(area); // bfs
+  const seen = new Array(area);
   // Allocations for computeDistancesDijkstra.
   // The graph we operate on for computing the shortest distance between two
   // points is twice the area of the region: one layer for vertical travel,
   // another for horizontal travel, with a fixed cost for switching layers.
-  const weights = new Uint32Array(area * 2);
+  const weights = new Array(area * 2);
   const rook = makeRookSpace(area, space, weights, tunnelTurningCost);
-  const distances = new Uint32Array(area * 2); // dijkstra
+  const distances = new Array(area * 2); // dijkstra
   const heap = Array.from(count(area * 2));
   const coheap = Array.from(count(area * 2));
   // Render bitmaps.
-  const floors = new Uint8Array(area);
-  const doors = new Uint8Array(area);
-  const walls = new Uint8Array(area);
+  const floors = new Array(area);
+  const doors = new Array(area);
+  const walls = new Array(area);
 
   // Compute the distance of every cell to the nearest corner of a room.
   // This creates a gradient, such that we will later favor paths that join
@@ -161,13 +159,13 @@ export function *planMineStepwise(plan, draw, noStep = false) {
     for (const rect of rooms) {
       for (const corner of outerCorners(rect)) {
         const index = space.index(corner);
-        weights[index] = MAX32;
-        weights[index + area] = MAX32;
+        weights[index] = Infinity;
+        weights[index + area] = Infinity;
       }
     }
 
     // Find shortest path between these two rooms.
-    distances.fill(MAX32);
+    distances.fill(Infinity);
     if (centerIndexes.length >= 2) {
       computeDistancesDijkstra(
         area * 2,
