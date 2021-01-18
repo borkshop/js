@@ -475,6 +475,7 @@ class MemeCollector {
  * @prop {ActionButtonSpec[]} moveButtons - movement button definitions;
  * defaults to WASD cardinal moves
  * @prop {number} lightLimit
+ * @prop {boolean} [playing] - whether the DOMgeon starts in a play state.
  */
 
 export class DOMgeon extends EventTarget {
@@ -628,6 +629,8 @@ export class DOMgeon extends EventTarget {
       keys = ui,
       actionBar = ui,
       moveBar = ui,
+
+      playing,
     } = options;
 
     this.ui = ui;
@@ -682,6 +685,10 @@ export class DOMgeon extends EventTarget {
     this.onKey.byID['playPause'] = ({type}) => {
       if (type === 'keyup') dmg.playing = !dmg.playing;
     };
+
+    if (playing === false) {
+      this.playing = false;
+    }
 
     this.ui.classList.toggle('playing', this.playing);
     if (this.ui.classList.contains('running')) setTimeout(() => this.start(), 0);
