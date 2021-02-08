@@ -14,6 +14,27 @@ class Sched {
     this.steps = steps;
   }
 
+  /** trimStart removes any beginning delay.
+   * Returns this for easy chaining at construction time.
+   */
+  trimStart() {
+    if (typeof this.steps[0] === 'number') {
+      this.steps.shift();
+      if (this.i > 0) this.i--;
+    }
+    return this;
+  }
+
+  /** trimEnd removes any ending delay.
+   * Returns this for easy chaining at construction time.
+   */
+  trimEnd() {
+    if (typeof this.steps[this.steps.length-1] === 'number') {
+      this.steps.pop();
+    }
+    return this;
+  }
+
   start() { if (!this._timer) this.next() }
   stop() {
     if (this._timer !== null) clearTimeout(this._timer);
@@ -218,3 +239,15 @@ function record(under, options={}) {
     rec.start();
   });
 }
+
+// TODO: typical use case for further elaboration in some sort of a AutoCtl?
+// record(document.body)
+//   .then(rec => new Sched(...rec.steps()))
+//   .then(sched => sched.trimStart())
+//   .then(sched => {
+//     if (lol?.stop) lol.stop();
+//     lol = sched;
+//     lol.start();
+//     return lol;
+//   })
+//   .then(sched => console.log(sched.steps))
