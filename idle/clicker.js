@@ -1,5 +1,9 @@
 // @ts-check
 
+// NOTE: currently this code is meant to by copy-pasted into a browser console,
+// so no exports are defined until some sort of better bundling / deployment
+// strategy is determined
+
 /** Sched is a delay sleeping and function calling machine.
   * It always sleeps at least 0 between each function.
   * Functions are invoked with the schedule object as this.
