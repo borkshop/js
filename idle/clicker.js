@@ -103,12 +103,21 @@ class Recorder {
   /** until determines when recording stops.
    * The trigerring event is ignored, but a time is still recorded.
    * May be overridden by constructor option.
+   * Custom implementations, especially of key event recognizers, probably
+   * should cancel event propagation and default behavior.
    *
    * @param {Event} ev
    * @returns {boolean}
    */
   until(ev) {
-    return ev instanceof KeyboardEvent && ev.type === 'keydown' && ev.key === 'Escape';
+    if (!(ev instanceof KeyboardEvent)) return false;
+    const {type, key} = ev;
+    if (type === 'keydown' && key === 'Escape') {
+      ev.stopPropagation();
+      ev.preventDefault();
+      return true;
+    }
+    return false;
   }
 
   /** ignore determines events elide from recording.
@@ -189,8 +198,6 @@ class Recorder {
     if (this.until(ev)) {
       this.times.push(time);
       this.events.push(null);
-      ev.stopPropagation();
-      ev.preventDefault();
       this.stop();
       if (this.ondone) this.ondone(this)
     } else if (!this.ignore(ev)) {
