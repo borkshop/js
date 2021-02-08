@@ -54,3 +54,17 @@ class Sched {
     this.i = 0;
   }
 }
+
+/** clickit creates a Sched to click an html element with given delay(s)
+ * between successive clicks; the schedule starts with a click, followed by the
+ * first delay.
+ *
+ * @param {HTMLElement} el
+ * @param {number[]} every
+ */
+function clickit(el, ...every) {
+  const click = () => el.click();
+  const it = new Sched(...every.flatMap(n => [click, n]));
+  it.start();
+  return it;
+}
