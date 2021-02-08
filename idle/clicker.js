@@ -189,21 +189,25 @@ class Recorder {
   /** @type {(null|Event)[]} */
   events = []
 
+  /** @param {null|Event} ev */
+  collect(ev) {
+    this.times.push(this.now());
+    this.events.push(ev);
+  }
+
   /** @type {null|((rec: Recorder) => void)} */
   ondone = null
 
   /** @param {Event} ev */
   handleEvent(ev) {
-    const time = this.now();
-    if (this.until(ev)) {
-      this.times.push(time);
-      this.events.push(null);
-      this.stop();
-      if (this.ondone) this.ondone(this)
-    } else if (!this.ignore(ev)) {
-      this.times.push(time);
-      this.events.push(ev);
-    }
+    if      (  this.until(ev)) this.finish();
+    else if (!this.ignore(ev)) this.collect(ev);
+  }
+
+  finish() {
+    this.collect(null);
+    this.stop();
+    if (this.ondone) this.ondone(this)
   }
 
   /** @param {(number|function)[]} steps */
