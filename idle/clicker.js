@@ -253,19 +253,33 @@ class Recorder {
  * @param {RecorderOptions} [options]
  * @returns {Promise<Recorder>}
  */
-function record(under, options={}) {
+function record(under, options) {
   return new Promise(resolve =>
     new Recorder(under, options).start(resolve));
 }
 
+/**
+ * @param {null|Sched} sched
+ * @param {Element} under
+ * @param {RecorderOptions} [options]
+ * @returns {Promise<Sched>}
+ */
+async function recordSched(sched, under, options) {
+  if (sched?.stop) sched.stop();
+  const rec = await record(under, options);
+  if (sched) sched.steps.splice(0);
+  else sched = new Sched();
+  rec.addSteps(sched.steps);
+  sched.trimStart();
+  return sched;
+}
+
 // TODO: typical use case for further elaboration in some sort of a AutoCtl?
-// record(document.body)
-//   .then(rec => new Sched(...rec.steps()))
-//   .then(sched => sched.trimStart())
-//   .then(sched => {
-//     if (lol?.stop) lol.stop();
-//     lol = sched;
-//     lol.start();
-//     return lol;
-//   })
-//   .then(sched => console.log(sched.steps))
+/*
+let lol = null;
+recordSched(lol, document.body).then(sched => {
+  console.log(sched.steps);
+  sched.start();
+  return lol = sched;
+})
+*/
