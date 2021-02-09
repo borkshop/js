@@ -94,6 +94,21 @@ function clickit(el, ...every) {
   return it;
 }
 
+/**
+ * @param {string} type
+ * @param {(ev: Event) => boolean} [where]
+ * @returns {(ev: Event) => boolean}
+ */
+function nomEvent(type, where) {
+  return ev => {
+    if (ev.type !== type) return false;
+    if (where && !where(ev)) return false;
+    ev.stopPropagation();
+    ev.preventDefault();
+    return true;
+  };
+}
+
 /** Recorder supports recording DOM events under some element.
  */
 class Recorder {
@@ -109,16 +124,8 @@ class Recorder {
    * @param {Event} ev
    * @returns {boolean}
    */
-  until(ev) {
-    if (!(ev instanceof KeyboardEvent)) return false;
-    const {type, key} = ev;
-    if (type === 'keydown' && key === 'Escape') {
-      ev.stopPropagation();
-      ev.preventDefault();
-      return true;
-    }
-    return false;
-  }
+  until = nomEvent('keydown', ev =>
+    ev instanceof KeyboardEvent && ev.key === 'Escape')
 
   /** ignore determines events elide from recording.
    * May be overridden by constructor option.
