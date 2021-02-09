@@ -167,7 +167,9 @@ class Recorder {
 
   started = 0
 
-  start() {
+  /** @param {(rec: Recorder) => void} [ondone] */
+  start(ondone) {
+    if (ondone) this.ondone = ondone;
     for (const type of this.types) {
       this.under.addEventListener(type, this, {capture: true});
       this.listening.add(type);
@@ -242,13 +244,11 @@ class Recorder {
 /**
  * @param {Element} under
  * @param {RecorderOptions} [options]
+ * @returns {Promise<Recorder>}
  */
 function record(under, options={}) {
-  return new Promise(resolve => {
-    const rec = new Recorder(under, options);
-    rec.ondone = () => resolve(rec);
-    rec.start();
-  });
+  return new Promise(resolve =>
+    new Recorder(under, options).start(resolve));
 }
 
 // TODO: typical use case for further elaboration in some sort of a AutoCtl?
