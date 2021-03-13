@@ -19,9 +19,9 @@
 
   "workspaces": [
     "cdom-template",
-    "jspit",
+    "cube",
     "forest",
-    "mine",
-    "cube"
+    "jspit",
+    "mine"
   ]
 }
