@@ -1,0 +1,31 @@
+{
+  "name": "scan",
+  "version": "0.1.0",
+  "description": "An experiment in byte scanning",
+  "author": "Joshua T Corbin <jcorbin@wunjo.org>",
+  "license": "BSD-3-Clause",
+  "main": "index.js",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/borkshop/js.git",
+    "directory": "scan"
+  },
+  "private": true,
+  "scripts": {
+    "lint": "tsc",
+    "test": "ava",
+    "cover": "nyc npm test"
+  },
+  "ava": {
+    "require": [
+      "esm"
+    ]
+  },
+  "devDependencies": {
+    "ava": "^3.15.0",
+    "esm": "^3.2.25",
+    "nyc": "^15.1.0",
+    "typescript": "^4.0.3"
+  }
+}

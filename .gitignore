@@ -3,3 +3,4 @@ build/
 .cache/
 Session.vim
 yarn-error.log
+.nyc_output/
