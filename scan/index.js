@@ -1,3 +1,5 @@
+import * as bytes from './bytes.js';
+
 /** @callback RecognizerFunc -- a function that may skip or recognize token
  * bytes from the prefix of a byte buffer.
  *
@@ -29,10 +31,10 @@
 export class Scanner {
   /**
    * @param {AsyncIterator<Uint8Array>|AsyncIterable<Uint8Array>} stream
-   * @param {Recognizer|RecognizerFunc} rec
+   * @param {Recognizer|RecognizerFunc} [rec]
    * @param {number|Uint8Array} [buffer]
    */
-  constructor(stream, rec, buffer=4*1024) {
+  constructor(stream, rec=new FixedRecognizer("\n", "\r\n"), buffer=4*1024) {
     if (!('next' in stream)) stream = stream[Symbol.asyncIterator]();
     this._rec = rec;
     this._stream = stream;
@@ -173,5 +175,87 @@ export class Scanner {
     this._offset += this._consumed;
     this._bufred -= this._consumed;
     this._consumed = 0;
+  }
+}
+
+/** Recognizes fixed string tokens and runs of unmatched content between such
+ * matches.
+ */
+export class FixedRecognizer {
+  /**
+   * @param {Array<Uint8Array|string>} delims
+   */
+  constructor(...delims) {
+    this.finders = delims.map(delim => new bytes.Finder(delim));
+    this.delims = delims.map(delim => bytes.toString(delim));
+    this.maxLength = Math.max.apply(null, this.finders.map(f => f.pattern.length));
+  }
+
+  id = -1
+  fragment = false
+  maxToken = 64 * 1024 // ought to be enough; after that, yield fragment tokens
+
+  /**
+   * @param {Uint8Array} buf
+   * @param {boolean} done
+   * @returns {number}
+   */
+  recognize(buf, done) {
+    // reset match state to baseline (terminal unmatched token)
+    this.id = -1;
+    this.fragment = false
+
+    // find the earliest occurrence of any pattern
+    // TODO support other policies like longest match?
+    let priori = -1;
+    for (let id = 0; id < this.finders.length; id++) {
+      const i = this.finders[id].find(buf);
+      if (i < 0) continue; // no match
+      // keep a match if prior is not better
+      if (!(0 <= priori && priori <= i)) {
+        priori = i;
+        this.id = id;
+      }
+    }
+
+    // none match
+    if (this.id < 0) {
+      if (done) return buf.length; // final undelimited token
+
+      // fragment unmatched tokens if necessary
+      if (buf.length > this.maxToken) {
+        let n = this.maxToken;
+        // TODO this only needs to happen if any hasPrefix
+        if (this.maxLength > 1)
+          n = Math.floor(n / this.maxLength) * this.maxLength;
+        this.fragment = true;
+        return n;
+      }
+
+      return 0; // wait for more input to match
+    }
+
+    // wait for more input if a potentially ambiguous pattern matched
+    const matchLength = this.finders[this.id].pattern.length;
+    if (!done && this.finders.length > 1) {
+      const end = priori + matchLength;
+      if (matchLength < this.maxLength && end == buf.length) return 0;
+      // TODO this is actually only possible if they share a prefix
+    }
+
+    // emit a matched token only at start of buffer
+    if (priori == 0) return matchLength;
+
+    // emit an unmatched token up to match
+    this.id = -1;
+
+    // fragment for consistency so that the downstream never sees a token over
+    // limit, even if we happened to buffer it all anyhow
+    if (priori > this.maxToken) {
+      this.fragment = true;
+      return this.maxToken;
+    }
+
+    return priori;
   }
 }

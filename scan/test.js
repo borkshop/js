@@ -1,6 +1,6 @@
 import test from 'ava';
 
-import {Scanner} from './index.js';
+import {Scanner, FixedRecognizer} from './index.js';
 import * as bytes from './bytes.js';
 
 /**
@@ -124,3 +124,89 @@ test('fizz buzz', testFizzBuzz, 5, [
   {text: '15', say: 'FizzBuzz'},
   {text: null, say: 'FizzBuzz'},
 );
+
+/**
+ * @param {ExecutionContext} t
+ * @param {FixedRecognizer} rec
+ * @param {number} chunkSize
+ * @param {string} input
+ * @param {Array<{offset: number, type: number, fragment?: boolean, text: null|string}>} expected
+ */
+async function testFixed(t, rec, chunkSize, input, ...expected) {
+  const stream = chunked(chunkSize, input);
+  const sc = new Scanner(stream, rec, 1);
+  await testScanner(t, sc, () => {
+    const offset = sc.offset;
+    const type = rec.id;
+    const fragment = rec.fragment;
+    const text = bytes.toString(sc.bytes);
+    return {offset, type, fragment, text}
+  }, expected);
+}
+
+/**
+ * @param {string} providedTitle
+ * @param {FixedRecognizer} _rec
+ * @param {number} chunkSize
+ */
+testFixed.title = (providedTitle = '', _rec, chunkSize) => `${providedTitle} chunkSize=${chunkSize}`.trim();
+
+for (let chunkSize=1; chunkSize<13; chunkSize++) {
+  const rec = new FixedRecognizer("\n");
+  rec.maxToken = 8;
+  test('unix lines', testFixed,
+    rec,
+    chunkSize,
+    'it was the best of times\n' +
+    'it was the worst of times\n',
+
+    {offset: 0,  type: -1, text: 'it was t', fragment: true},
+    {offset: 8,  type: -1, text: 'he best ', fragment: true},
+    {offset: 16, type: -1, text: 'of times', fragment: false},
+    {offset: 24, type:  0, text: '\n', fragment: false},
+
+    {offset: 25, type: -1, text: 'it was t', fragment: true},
+    {offset: 33, type: -1, text: 'he worst', fragment: true},
+    {offset: 41, type: -1, text: ' of time', fragment: true},
+    {offset: 49, type: -1, text: 's', fragment: false},
+    {offset: 50, type:  0, text: '\n', fragment: false},
+
+    {offset: 51, type:  0, text: null},
+  );
+}
+
+for (let chunkSize=1; chunkSize<13; chunkSize++) {
+  const rec = new FixedRecognizer("\n", "\r\n");
+  rec.maxToken = 8;
+  test('mixed lines', testFixed,
+    rec,
+    chunkSize,
+    'it was the best of times\n' +
+    'it was the worst of times\n\r\n' +
+    'lorem ipsum\r\n' +
+    'dolor\r\n' +
+    'sit amet',
+
+    {offset: 0,  type: -1, text: 'it was t', fragment: true},
+    {offset: 8,  type: -1, text: 'he best ', fragment: true},
+    {offset: 16, type: -1, text: 'of times', fragment: false},
+    {offset: 24, type:  0, text: '\n', fragment: false},
+
+    {offset: 25, type: -1, text: 'it was t', fragment: true},
+    {offset: 33, type: -1, text: 'he worst', fragment: true},
+    {offset: 41, type: -1, text: ' of time', fragment: true},
+    {offset: 49, type: -1, text: 's', fragment: false},
+    {offset: 50, type:  0, text: '\n', fragment: false},
+    {offset: 51, type:  1, text: '\r\n', fragment: false},
+
+    {offset: 53, type: -1, text: 'lorem ip', fragment: true},
+    {offset: 61, type: -1, text: 'sum', fragment: false},
+    {offset: 64, type:  1, text: '\r\n', fragment: false},
+
+    {offset: 66, type: -1, text: 'dolor'},
+    {offset: 71, type:  1, text: '\r\n'},
+
+    {offset: 73, type: -1, text: 'sit amet'},
+    {offset: 81, type: -1, text: null},
+  );
+}
