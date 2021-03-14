@@ -14,7 +14,8 @@
 
   "scripts": {
     "lint": "yarn workspaces run lint",
-    "test": "yarn workspaces run test"
+    "test": "yarn workspaces run test",
+    "ci": "yarn workspaces run ci"
   },
 
   "workspaces": [
