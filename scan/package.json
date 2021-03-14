@@ -5,7 +5,6 @@
   "author": "Joshua T Corbin <jcorbin@wunjo.org>",
   "license": "BSD-3-Clause",
   "main": "index.js",
-  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/borkshop/js.git",
@@ -20,11 +19,22 @@
     "ci": "npm run lint && npm run test"
   },
   "ava": {
+    "babel": {
+      "testOptions": {
+        "plugins": [
+          "@babel/plugin-syntax-class-properties"
+        ]
+      }
+    },
     "require": [
+      "@babel/register",
       "esm"
     ]
   },
   "devDependencies": {
+    "@ava/babel": "^1.0.1",
+    "@babel/plugin-syntax-class-properties": "^7.12.13",
+    "@babel/register": "^7.13.8",
     "ava": "^3.15.0",
     "esm": "^3.2.25",
     "nyc": "^15.1.0",
