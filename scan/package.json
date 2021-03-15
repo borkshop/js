@@ -16,7 +16,7 @@
     "test": "ava",
     "cover": "nyc npm test",
     "view-cover": "nyc report -r html && open coverage/index.html",
-    "ci": "npm run lint && npm run test"
+    "ci": "npm run lint && npm run cover && nyc check-coverage"
   },
   "ava": {
     "babel": {
