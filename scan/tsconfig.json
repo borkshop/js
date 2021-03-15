@@ -2,5 +2,8 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "moduleResolution": "node"
-  }
+  },
+  "exclude": [
+    "coverage"
+  ]
 }
