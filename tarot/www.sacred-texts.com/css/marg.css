@@ -1,0 +1,4 @@
+body {margin-left: 20%; margin-right: 20%;}
+span.margnote {position: absolute; left: 1%; right: 81%;}
+span.rmargnote {position: absolute; left: 81%; right: 100%;}
+span.contnote {position: absolute; left: 81%; right: 100%;}
