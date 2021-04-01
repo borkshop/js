@@ -3,14 +3,17 @@
   <title>Tarot Demo</title>
   <style>
 
+  * {
+    user-select: none;
+  }
+
   /* generic card things */
   .card {
+    position: relative;
+
     perspective: 1000px;
     perspective-origin: center;
 
-    position: relative;
-    width: 100%;
-    height: 100%;
     transition: transform 0.4s; /* TODO wat */
     transform-style: preserve-3d;
     /* transform-origin: center; */
@@ -46,73 +49,85 @@
 
 <script>
 
-const cardBack = 'www.sacred-texts.com/tarot/pkt/img/verso.jpg';
-const colorBase = 'www.sacred-texts.com/tarot/pkt/img';
-const bwBase = 'www.sacred-texts.com/tarot/pkt/tn';
-const minorTitles = [
-  'Ace', 'Two', 'Three', 'Four', 'Five',
-  'Six', 'Seven', 'Eight', 'Nine', 'Ten',
-  'Page', 'Knight', 'Queen', 'King',
-];
-const smithCards = [
-  {id: 'ar00', title: 'The Fool'},
-  {id: 'ar01', title: 'The Magician'},
-  {id: 'ar02', title: 'The High Priestess'},
-  {id: 'ar03', title: 'The Empress'},
-  {id: 'ar04', title: 'The Emperor'},
-  {id: 'ar05', title: 'The Hierophant'},
-  {id: 'ar06', title: 'The Lovers'},
-  {id: 'ar07', title: 'The Chariot'},
-  {id: 'ar08', title: 'Strength'},
-  {id: 'ar09', title: 'The Hermit'},
-  {id: 'ar10', title: 'Wheel of Fortune'},
-  {id: 'ar11', title: 'Justice'},
-  {id: 'ar12', title: 'The Hanged Man'},
-  {id: 'ar13', title: 'Death'},
-  {id: 'ar14', title: 'Temperance'},
-  {id: 'ar15', title: 'The Devil'},
-  {id: 'ar16', title: 'The Tower'},
-  {id: 'ar17', title: 'The Star'},
-  {id: 'ar18', title: 'The Moon'},
-  {id: 'ar19', title: 'The Sun'},
-  {id: 'ar20', title: 'Judgement'},
-  {id: 'ar21', title: 'The World'},
-].concat(
-  [
-    'cuac', 'cu02', 'cu03', 'cu04', 'cu05',
-    'cu06', 'cu07', 'cu08', 'cu09', 'cu10',
-    'cupa', 'cukn', 'cuqu', 'cuki',
-  ].map((id, i) => ({id, title: `${minorTitles[i]} of Cups`})),
-  [
-    'peac', 'pe02', 'pe03', 'pe04', 'pe05',
-    'pe06', 'pe07', 'pe08', 'pe09', 'pe10',
-    'pepa', 'pekn', 'pequ', 'peki',
-  ].map((id, i) => ({id, title: `${minorTitles[i]} of Pentacles`})),
-  [
-    'swac', 'sw02', 'sw03', 'sw04', 'sw05',
-    'sw06', 'sw07', 'sw08', 'sw09', 'sw10',
-    'swpa', 'swkn', 'swqu', 'swki',
-  ].map((id, i) => ({id, title: `${minorTitles[i]} of Swords`})),
-  [
-    'waac', 'wa02', 'wa03', 'wa04', 'wa05',
-    'wa06', 'wa07', 'wa08', 'wa09', 'wa10',
-    'wapa', 'wakn', 'waqu', 'waki',
-  ].map((id, i) => ({id, title: `${minorTitles[i]} of Cups`})),
-);
+const smithDeck = {
+  cards: [
+    {id: 'ar00', title: 'The Fool'},
+    {id: 'ar01', title: 'The Magician'},
+    {id: 'ar02', title: 'The High Priestess'},
+    {id: 'ar03', title: 'The Empress'},
+    {id: 'ar04', title: 'The Emperor'},
+    {id: 'ar05', title: 'The Hierophant'},
+    {id: 'ar06', title: 'The Lovers'},
+    {id: 'ar07', title: 'The Chariot'},
+    {id: 'ar08', title: 'Strength'},
+    {id: 'ar09', title: 'The Hermit'},
+    {id: 'ar10', title: 'Wheel of Fortune'},
+    {id: 'ar11', title: 'Justice'},
+    {id: 'ar12', title: 'The Hanged Man'},
+    {id: 'ar13', title: 'Death'},
+    {id: 'ar14', title: 'Temperance'},
+    {id: 'ar15', title: 'The Devil'},
+    {id: 'ar16', title: 'The Tower'},
+    {id: 'ar17', title: 'The Star'},
+    {id: 'ar18', title: 'The Moon'},
+    {id: 'ar19', title: 'The Sun'},
+    {id: 'ar20', title: 'Judgement'},
+    {id: 'ar21', title: 'The World'},
+  ].concat(...[
+    ['cu', `Cups`],
+    ['pe', 'Pentacles'],
+    ['sw', `Swords`],
+    ['wa', 'Cups'],
+  ].map(([idSpace, suit]) => [
+    {id: `${idSpace}ac`, title: `Ace of ${suit}`},
+    {id: `${idSpace}02`, title: `Two of ${suit}`},
+    {id: `${idSpace}03`, title: `Three of ${suit}`},
+    {id: `${idSpace}04`, title: `Four of ${suit}`},
+    {id: `${idSpace}05`, title: `Five of ${suit}`},
+    {id: `${idSpace}06`, title: `Six of ${suit}`},
+    {id: `${idSpace}07`, title: `Seven of ${suit}`},
+    {id: `${idSpace}08`, title: `Eight of ${suit}`},
+    {id: `${idSpace}09`, title: `Nine of ${suit}`},
+    {id: `${idSpace}10`, title: `Ten of ${suit}`},
+    {id: `${idSpace}pa`, title: `Page of ${suit}`},
+    {id: `${idSpace}kn`, title: `Knight of ${suit}`},
+    {id: `${idSpace}qu`, title: `Queen of ${suit}`},
+    {id: `${idSpace}ki`, title: `King of ${suit}`},
+  ])),
+  className: 'rws',
+  buildCardFront: ({id, title}) => `<img class="card-front" draggable="false" alt="${title}" src="www.sacred-texts.com/tarot/pkt/img/${id}.jpg">`,
+  buildCardBack: () => '<img class="card-back" draggable="false" src="www.sacred-texts.com/tarot/pkt/img/verso.jpg">',
+  // icon: `www.sacred-texts.com/tarot/pkt/tn/${id}.jpg`,
+};
 
-for (const {id, title} of smithCards) document.write(`
-  <div class="card rws" style="float: left">
-    <img class="card-front" src="${colorBase}/${id}.jpg" data-title="${title}">
-    <img class="card-back" src="${cardBack}">
-  </div>
-`);
+function buildCards({
+  cards,
+  className,
+  buildCardFront=() => '<div class="card-front"></div>',
+  buildCardBack=() => '<div class="card-back"></div>',
+  buildCard=(card, i, cards) => `
+    <div class="card ${className} ${className}-${card.id}" style="--flip: 0deg; z-index: ${cards.length - i++}">
+      ${buildCardFront(card)}${buildCardBack(card)}
+    </div>
+  `,
+}) {
+  return cards.map(buildCard).join('')
+}
+
+document.write(buildCards(smithDeck));
+
+function root(el, where) {
+  let last = null;
+  for (; el; el=el.parentNode)
+    if (el && where(el)) last = el;
+  return last;
+}
 
 document.body.addEventListener('click', ({target}) => {
-  for (let el=target; el; el=el.parentNode)
-    if (el.classList?.contains('card')) {
-      el.style.setProperty('--flip', el.style.getPropertyValue('--flip') ? '' : '180deg');
-      break;
-    }
+  const cardEl = root(target, el => el.classList?.contains('card'));
+  if (cardEl) {
+    cardEl.style.setProperty('--flip', cardEl.style.getPropertyValue('--flip') ? '' : '180deg');
+  }
 });
 
 </script>
@@ -122,16 +137,26 @@ document.body.addEventListener('click', ({target}) => {
 
 # TODO
 
+- mixing
+- spreading
 - riffle
 - cut
-- spreading
 - draw
-- flip stack
-- stacks
 
 # WIP
 
+- how to stack and flip
+
 # Done
+
+- minor cleanups and refactors while exploring interaction side paths
+- experimented with a stack-based acceptor/invoker abstraction, which may still
+  be worthwhile, but discovered that z-ordering doesn't invert by rotateY
+  transform, so having formal piles of cards may not be useful
+- prototyped a click-menu system, but holding it back until more than one
+  interaction warrants it
+
+# 2021-03-30
 
 - let cards be flipped
 - scraped https://www.sacred-texts.com/tarot/xr/index.htm
