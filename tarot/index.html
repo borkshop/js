@@ -9,27 +9,13 @@
 import {
   smithDeck,
   buildCards,
+  Controller,
 } from './index.js';
-
-function root(el, where) {
-  let last = null;
-  for (; el; el=el.parentNode)
-    if (el && where(el)) last = el;
-  return last;
-}
-
-function onclick({target}) {
-  const cardEl = root(target, el => el.classList?.contains('card'));
-  if (cardEl) {
-    const style = getComputedStyle(cardEl);
-    const value = style.getPropertyValue('--flip')?.trim();
-    cardEl.style.setProperty('--flip', value == '180deg' ? '0deg' : '180deg');
-  }
-}
 
 window.addEventListener('DOMContentLoaded', () => {
   const contEl = document.body;
-  contEl.addEventListener('click', onclick);
+  const ctl = new Controller();
+  contEl.addEventListener('click', ctl);
   contEl.innerHTML = buildCards(smithDeck);
 });
 

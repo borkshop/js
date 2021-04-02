@@ -85,3 +85,45 @@ export function buildCards({
     cards.map(buildCard).join('')
   }</div>`;
 }
+
+/**
+ * @param {Element} el
+ * @param {(el: Element) => boolean} where
+ * @returns {Element|null}
+ */
+function root(el, where) {
+  /** @type {Element|null} */
+  let last = null;
+  /** @type {Node|null} */
+  let node = el;
+  for (; node; node=node.parentNode)
+    if (node instanceof Element && where(node)) last = node;
+  return last;
+}
+
+export class Controller {
+  /**
+   * @param {Event} ev
+   */
+  handleEvent(ev) {
+    if (ev.type == 'click' && ev instanceof MouseEvent) {
+      const {target} = ev;
+      if (!(target instanceof Element)) return;
+
+      const cardEl = root(target, el => el.classList?.contains('card'));
+      if (cardEl) return this.clickCard(ev, cardEl);
+    }
+  }
+
+  /**
+   * @param {MouseEvent} _ev
+   * @param {Element} cardEl
+   */
+  clickCard(_ev, cardEl) {
+    if (cardEl instanceof HTMLElement) {
+      const style = getComputedStyle(cardEl);
+      const value = style.getPropertyValue('--flip')?.trim();
+      cardEl.style.setProperty('--flip', value == '180deg' ? '0deg' : '180deg');
+    }
+  }
+}
