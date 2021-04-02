@@ -1,0 +1,50 @@
+:root {
+  background-color: #333;
+  color: #ddd;
+}
+
+* {
+  user-select: none;
+}
+
+/* generic card things */
+.card-pile, .card {
+  position: absolute;
+
+  perspective: 1000px;
+  perspective-origin: center;
+
+  transition: transform 0.4s;
+  transform-style: preserve-3d;
+}
+
+.card-pile .card {
+  top: 0 !important;
+  left: 0 !important;
+  perspective: none;
+}
+
+.card .card-front,
+.card .card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+}
+
+.card .card-back { transform: rotateY(180deg); }
+
+.card {
+  --flip: 0deg; /* cards default to flipped face down 180deg to turn them up */
+  --spin: 0deg; /* 180deg for a reversal; 90deg or 270deg to cross */
+
+  transform: rotateY(calc(180deg + var(--flip))) rotateZ(calc(0deg + var(--spin)));
+}
+
+/* deck specifics */
+
+.card.rws,
+.card.rws img {
+  width: 300px;
+  height: 517px;
+}

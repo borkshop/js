@@ -1,132 +1,15 @@
 <!doctype html>
 <html><head>
   <title>Tarot Demo</title>
-  <style>
-
-  :root {
-    background-color: #333;
-    color: #ddd;
-  }
-
-  * {
-    user-select: none;
-  }
-
-  /* generic card things */
-  .card-pile, .card {
-    position: absolute;
-
-    perspective: 1000px;
-    perspective-origin: center;
-
-    transition: transform 0.4s;
-    transform-style: preserve-3d;
-  }
-
-  .card-pile .card {
-    top: 0 !important;
-    left: 0 !important;
-    perspective: none;
-  }
-
-  .card .card-front,
-  .card .card-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backface-visibility: hidden;
-  }
-
-  .card .card-back { transform: rotateY(180deg); }
-
-  .card {
-    --flip: 0deg; /* cards default to flipped face down 180deg to turn them up */
-    --spin: 0deg; /* 180deg for a reversal; 90deg or 270deg to cross */
-
-    transform: rotateY(calc(180deg + var(--flip))) rotateZ(calc(0deg + var(--spin)));
-  }
-
-  /* deck specifics */
-
-  .card.rws,
-  .card.rws img {
-    width: 300px;
-    height: 517px;
-  }
-
-  </style>
+  <link rel="stylesheet" href="index.css">
 </head><body>
 
-<script>
+<script type="module">
 
-const smithDeck = {
-  cards: [
-    {id: 'ar00', title: 'The Fool'},
-    {id: 'ar01', title: 'The Magician'},
-    {id: 'ar02', title: 'The High Priestess'},
-    {id: 'ar03', title: 'The Empress'},
-    {id: 'ar04', title: 'The Emperor'},
-    {id: 'ar05', title: 'The Hierophant'},
-    {id: 'ar06', title: 'The Lovers'},
-    {id: 'ar07', title: 'The Chariot'},
-    {id: 'ar08', title: 'Strength'},
-    {id: 'ar09', title: 'The Hermit'},
-    {id: 'ar10', title: 'Wheel of Fortune'},
-    {id: 'ar11', title: 'Justice'},
-    {id: 'ar12', title: 'The Hanged Man'},
-    {id: 'ar13', title: 'Death'},
-    {id: 'ar14', title: 'Temperance'},
-    {id: 'ar15', title: 'The Devil'},
-    {id: 'ar16', title: 'The Tower'},
-    {id: 'ar17', title: 'The Star'},
-    {id: 'ar18', title: 'The Moon'},
-    {id: 'ar19', title: 'The Sun'},
-    {id: 'ar20', title: 'Judgement'},
-    {id: 'ar21', title: 'The World'},
-  ].concat(...[
-    ['cu', `Cups`],
-    ['pe', 'Pentacles'],
-    ['sw', `Swords`],
-    ['wa', 'Cups'],
-  ].map(([idSpace, suit]) => [
-    {id: `${idSpace}ac`, title: `Ace of ${suit}`},
-    {id: `${idSpace}02`, title: `Two of ${suit}`},
-    {id: `${idSpace}03`, title: `Three of ${suit}`},
-    {id: `${idSpace}04`, title: `Four of ${suit}`},
-    {id: `${idSpace}05`, title: `Five of ${suit}`},
-    {id: `${idSpace}06`, title: `Six of ${suit}`},
-    {id: `${idSpace}07`, title: `Seven of ${suit}`},
-    {id: `${idSpace}08`, title: `Eight of ${suit}`},
-    {id: `${idSpace}09`, title: `Nine of ${suit}`},
-    {id: `${idSpace}10`, title: `Ten of ${suit}`},
-    {id: `${idSpace}pa`, title: `Page of ${suit}`},
-    {id: `${idSpace}kn`, title: `Knight of ${suit}`},
-    {id: `${idSpace}qu`, title: `Queen of ${suit}`},
-    {id: `${idSpace}ki`, title: `King of ${suit}`},
-  ])),
-  className: 'rws',
-  buildCardFront: ({id, title}) => `<img class="card-front" draggable="false" alt="${title}" src="www.sacred-texts.com/tarot/pkt/img/${id}.jpg">`,
-  buildCardBack: () => '<img class="card-back" draggable="false" src="www.sacred-texts.com/tarot/pkt/img/verso.jpg">',
-  // icon: `www.sacred-texts.com/tarot/pkt/tn/${id}.jpg`,
-};
-
-function buildCards({
-  cards,
-  className,
-  buildCardFront=() => '<div class="card-front"></div>',
-  buildCardBack=() => '<div class="card-back"></div>',
-  buildCard=(card, i, cards) => `
-    <div class="card ${className} ${className}-${card.id}" style="--flip: 0deg; z-index: ${cards.length - i++}">
-      ${buildCardFront(card)}${buildCardBack(card)}
-    </div>
-  `,
-}) {
-  return cards.map(buildCard).join('')
-}
-
-document.write(`
-  <div class="card-pile">${buildCards(smithDeck)}</div>
-`);
+import {
+  smithDeck,
+  buildCards,
+} from './index.js';
 
 function root(el, where) {
   let last = null;
@@ -135,13 +18,19 @@ function root(el, where) {
   return last;
 }
 
-document.body.addEventListener('click', ({target}) => {
+function onclick({target}) {
   const cardEl = root(target, el => el.classList?.contains('card'));
   if (cardEl) {
     const style = getComputedStyle(cardEl);
     const value = style.getPropertyValue('--flip')?.trim();
     cardEl.style.setProperty('--flip', value == '180deg' ? '0deg' : '180deg');
   }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const contEl = document.body;
+  contEl.addEventListener('click', onclick);
+  contEl.innerHTML = buildCards(smithDeck);
 });
 
 </script>
@@ -149,7 +38,7 @@ document.body.addEventListener('click', ({target}) => {
 </body></html>
 <!--
 
-# 2021-04-01
+# 2021-04-02
 
 ## TODO
 
@@ -164,6 +53,10 @@ document.body.addEventListener('click', ({target}) => {
 - how to stack and flip
 
 ## Done
+
+- broke out index.{css and js}
+
+# 2021-04-01
 
 - pile cards up initially
 
