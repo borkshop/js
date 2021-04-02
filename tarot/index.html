@@ -3,20 +3,30 @@
   <title>Tarot Demo</title>
   <style>
 
+  :root {
+    background-color: #333;
+    color: #ddd;
+  }
+
   * {
     user-select: none;
   }
 
   /* generic card things */
-  .card {
-    position: relative;
+  .card-pile, .card {
+    position: absolute;
 
     perspective: 1000px;
     perspective-origin: center;
 
-    transition: transform 0.4s; /* TODO wat */
+    transition: transform 0.4s;
     transform-style: preserve-3d;
-    /* transform-origin: center; */
+  }
+
+  .card-pile .card {
+    top: 0 !important;
+    left: 0 !important;
+    perspective: none;
   }
 
   .card .card-front,
@@ -114,7 +124,9 @@ function buildCards({
   return cards.map(buildCard).join('')
 }
 
-document.write(buildCards(smithDeck));
+document.write(`
+  <div class="card-pile">${buildCards(smithDeck)}</div>
+`);
 
 function root(el, where) {
   let last = null;
@@ -126,7 +138,9 @@ function root(el, where) {
 document.body.addEventListener('click', ({target}) => {
   const cardEl = root(target, el => el.classList?.contains('card'));
   if (cardEl) {
-    cardEl.style.setProperty('--flip', cardEl.style.getPropertyValue('--flip') ? '' : '180deg');
+    const style = getComputedStyle(cardEl);
+    const value = style.getPropertyValue('--flip')?.trim();
+    cardEl.style.setProperty('--flip', value == '180deg' ? '0deg' : '180deg');
   }
 });
 
@@ -135,7 +149,9 @@ document.body.addEventListener('click', ({target}) => {
 </body></html>
 <!--
 
-# TODO
+# 2021-04-01
+
+## TODO
 
 - mixing
 - spreading
@@ -143,11 +159,15 @@ document.body.addEventListener('click', ({target}) => {
 - cut
 - draw
 
-# WIP
+## WIP
 
 - how to stack and flip
 
-# Done
+## Done
+
+- pile cards up initially
+
+# 2021-03-31
 
 - minor cleanups and refactors while exploring interaction side paths
 - experimented with a stack-based acceptor/invoker abstraction, which may still
