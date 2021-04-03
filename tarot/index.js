@@ -110,20 +110,44 @@ export class Controller {
       const {target} = ev;
       if (!(target instanceof Element)) return;
 
+      const pileEl = root(target, el => el.classList?.contains('card-pile'));
+      if (pileEl) return this.clickPile(ev, pileEl);
+
       const cardEl = root(target, el => el.classList?.contains('card'));
       if (cardEl) return this.clickCard(ev, cardEl);
     }
   }
 
   /**
-   * @param {MouseEvent} _ev
-   * @param {Element} cardEl
+   * @param {MouseEvent} ev
+   * @param {Element} el
    */
-  clickCard(_ev, cardEl) {
-    if (cardEl instanceof HTMLElement) {
-      const style = getComputedStyle(cardEl);
-      const value = style.getPropertyValue('--flip')?.trim();
-      cardEl.style.setProperty('--flip', value == '180deg' ? '0deg' : '180deg');
+  clickPile(ev, el) {
+    if (el instanceof HTMLElement) {
+      /** @type {HTMLElement[]} */
+      const cards = Array.from((el.querySelectorAll('.card')));
+      cards.sort((
+        {style:{zIndex:a}},
+        {style:{zIndex:b}},
+      ) => parseInt(b) - parseInt(a));
+      if (cards.length > 0) return this.clickCard(ev, cards[0]);
     }
+  }
+
+  /**
+   * @param {MouseEvent} _ev
+   * @param {Element} el
+   */
+  clickCard(_ev, el) {
+    if (el instanceof HTMLElement) return this.flipCard(el);
+  }
+
+  /**
+   * @param {HTMLElement} card
+   */
+  flipCard(card) {
+    const style = getComputedStyle(card);
+    const value = style.getPropertyValue('--flip')?.trim();
+    card.style.setProperty('--flip', value == '180deg' ? '0deg' : '180deg');
   }
 }
