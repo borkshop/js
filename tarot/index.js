@@ -1,6 +1,87 @@
 // @ts-check
 
 /**
+ * @param {Element} el
+ * @returns {string}
+ */
+function elementIdSpace(el) {
+  let space = '';
+  for (const name of el.classList) {
+    if (name.indexOf('-') >= 0) continue;
+    if (space) space += '-';
+    space += name;
+  }
+  return space;
+}
+
+/**
+ * @param {DataTransfer|null} dt
+ * @param {string} type
+ * @param {Object<string,any>} dat
+ */
+function setTypedData(dt, type, dat) {
+  if (!dt) return;
+  const json = JSON.stringify({...dat, type});
+  dt.setData('text/uri-list', `data:application/json;base64,${btoa(json)}`);
+  dt.setData('application/json', json);
+}
+
+/**
+ * @param {DataTransfer|null} dt
+ * @returns {{type: string} & Object<string,any>|null}
+ */
+function getTypedData(dt) {
+  if (!dt) return null;
+  let parseErr = null;
+
+  const json = dt.getData('application/json');
+  if (typeof json == 'string' && json) {
+    try {
+      return JSON.parse(json);
+    } catch(error) {
+      parseErr = {type: 'error', error};
+    }
+  }
+
+  const url = dt.getData('URL');
+  if (typeof url == 'string' && url) {
+    const match = /data:application\/json(;base64)?,(.+)/.exec(url);
+    if (!match) return {type: 'link', url};
+    const json = match[1] ? atob(match[2]) : match[2];
+    try {
+      return JSON.parse(json);
+    } catch(error) {
+      parseErr = parseErr || {type: 'error', error};
+    }
+  }
+
+  if (parseErr) return parseErr;
+
+  const text = dt.getData('text/plain');
+  if (typeof text == 'string' && text) {
+    return {type: 'text', text};
+  }
+
+  return null;
+}
+
+/**
+ * @param {Element} el
+ * @returns {Object<string, any>|null}
+ */
+function getCardData(el) {
+  let dat = null
+  if (el instanceof HTMLElement && el.dataset['card']) {
+    try {
+      dat = JSON.parse(atob(el.dataset['card']));
+    } catch(e) {
+    }
+    if (typeof dat != 'object' || Array.isArray(dat)) dat = null;
+  }
+  return dat;
+}
+
+/**
  * @typedef {Object} Card
  * @property {string} id
  * @property {string} title
@@ -75,8 +156,8 @@ export function buildCards({
   className,
   buildCardFront=() => '<div class="card-front"></div>',
   buildCardBack=() => '<div class="card-back"></div>',
-  buildCard=(card) => `
-    <div class="card ${className} ${className}-${card.id}" style="--flip: 0deg">
+  buildCard=(card, i) => `
+    <div class="card ${className} ${className}-${card.id}" data-card="${btoa(JSON.stringify({...card, index: i}))}" draggable="true" style="--flip: 0deg">
       ${buildCardFront(card)}${buildCardBack(card)}
     </div>
   `,
@@ -111,14 +192,56 @@ export class Controller {
     this.deck = deck;
     for (const eventType of [
       'click',
+      'dragstart',
+      'dragover',
+      'drop',
     ]) this.root.addEventListener(eventType, this);
     this.root.innerHTML = buildCards(this.deck);
+  }
+
+  /** @type {Map<string, number>} */
+  idCounter = new Map()
+
+  /**
+   * @param {Element} el
+   */
+  elId(el) {
+    if (!el.id) {
+      const idSpace = elementIdSpace(el);
+      const n = (this.idCounter.get(idSpace) || 0) + 1;
+      this.idCounter.set(idSpace, n)
+      el.id = `${idSpace}_${n}`;
+    }
+    return el.id;
   }
 
   /**
    * @param {Event} ev
    */
   handleEvent(ev) {
+    if (ev instanceof DragEvent) {
+      const {type, target} = ev;
+      if (!(target instanceof Element)) return;
+      switch (type) {
+
+      case 'dragstart':
+        if (!ev.dataTransfer || !this.startDrag(target, ev.dataTransfer, ev))
+          ev.preventDefault();
+        break;
+
+      case 'dragover':
+        if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
+        ev.preventDefault();
+        break;
+
+      case 'drop':
+        if (!ev.dataTransfer || !this.handleDrop(target, ev.dataTransfer, ev))
+          ev.preventDefault();
+        break;
+      }
+      return;
+    }
+
     if (ev instanceof MouseEvent) {
       switch (ev.type) {
 
@@ -136,6 +259,66 @@ export class Controller {
       }
       return;
     }
+  }
+
+  /**
+   * @param {Element} target
+   * @param {DataTransfer} dt
+   * @param {MouseEvent} ev
+   * @returns {boolean}
+   */
+  startDrag(target, dt, ev) {
+    const elementId = this.elId(target);
+    const {offsetX: x, offsetY: y} = ev;
+    const dragOffset = {x, y};
+    const cardData = getCardData(target);
+    if (cardData) {
+      setTypedData(dt, 'card', {card: cardData, elementId, dragOffset});
+      if (typeof cardData.title == 'string' && cardData.title)
+        dt.setData('text/plain', cardData.title);
+    } else {
+      setTypedData(dt, 'element', {elementId, dragOffset});
+    }
+    return true;
+  }
+
+  /**
+   * @param {Element} target
+   * @param {DataTransfer} dt
+   * @param {MouseEvent} ev
+   * @returns {boolean}
+   */
+  handleDrop(target, dt, ev) {
+    const data = getTypedData(dt);
+    if (data?.type == 'card') {
+      let {elementId, dragOffset} = data;
+      const dropEl = typeof elementId == 'string' && document.getElementById(elementId);
+      if (!dropEl) return false;
+
+      // TODO if target is card, convert to singleton pile
+      // TODO if target is pile, insert at top
+      // TODO if target is place, occupy
+
+      // TODO maybe with grid snap
+      const {offsetX: x, offsetY: y} = ev;
+      const dx = typeof dragOffset?.x == 'number' ? dragOffset.x : 0;
+      const dy = typeof dragOffset?.y == 'number' ? dragOffset.y : 0;
+      // TDOD offset seems a little off
+
+      // TODO update ex-parent: decrement pile depth; maybe erase if singleton
+      dropEl.parentNode?.removeChild(dropEl);
+
+      target.appendChild(dropEl);
+      dropEl.style.left = `${x-dx}px`;
+      dropEl.style.top = `${y-dy}px`;
+
+      if (dropEl.matches('.card') &&
+          getComputedStyle(dropEl).getPropertyValue('--flip')?.trim() == '0deg')
+        setTimeout(() => this.flipCard(dropEl), 0);
+
+      return true;
+    }
+    return false;
   }
 
   /**
