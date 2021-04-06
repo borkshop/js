@@ -3,6 +3,8 @@
   color: #ddd;
 }
 
+:root, body { height: 100%; }
+
 * {
   user-select: none;
 }
@@ -18,10 +20,20 @@
   transform-style: preserve-3d;
 }
 
+.card-pile {
+  border: 1em outset #ccc;
+}
+
 .card-pile .card {
+  position: relative;
   top: 0 !important;
   left: 0 !important;
   perspective: none;
+  display: none;
+}
+
+.card-pile .card:first-of-type {
+  display: block;
 }
 
 .card .card-front,

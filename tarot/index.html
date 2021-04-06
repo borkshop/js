@@ -2,29 +2,26 @@
 <html><head>
   <title>Tarot Demo</title>
   <link rel="stylesheet" href="index.css">
+  <script type="module">
+
+  import {
+    smithDeck,
+    buildCards,
+    Controller,
+  } from './index.js';
+
+  window.addEventListener('DOMContentLoaded', () => {
+    new Controller(document.body, smithDeck);
+  });
+
+  </script>
 </head><body>
 
-<script type="module">
-
-import {
-  smithDeck,
-  buildCards,
-  Controller,
-} from './index.js';
-
-window.addEventListener('DOMContentLoaded', () => {
-  const contEl = document.body;
-  const ctl = new Controller();
-  contEl.addEventListener('click', ctl);
-  contEl.innerHTML = buildCards(smithDeck);
-});
-
-</script>
 
 </body></html>
 <!--
 
-# 2021-04-02
+# 2021-04-04
 
 ## TODO
 
@@ -32,14 +29,20 @@ window.addEventListener('DOMContentLoaded', () => {
 - spreading
 - riffle
 - cut
-- draw
 
 ## WIP
 
-- how to stack and flip
+- dnd wrt piles and grid space
 
 ## Done
 
+# 2021-04-03
+
+- minor plumbing changes while exploring dnd
+
+# 2021-04-02
+
+- added pile click plumbing, ensuring that the top card gets clicked
 - broke out index.{css and js}
 
 # 2021-04-01

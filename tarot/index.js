@@ -75,8 +75,8 @@ export function buildCards({
   className,
   buildCardFront=() => '<div class="card-front"></div>',
   buildCardBack=() => '<div class="card-back"></div>',
-  buildCard=(card, i, cards) => `
-    <div class="card ${className} ${className}-${card.id}" style="--flip: 0deg; z-index: ${cards.length - i++}">
+  buildCard=(card) => `
+    <div class="card ${className} ${className}-${card.id}" style="--flip: 0deg">
       ${buildCardFront(card)}${buildCardBack(card)}
     </div>
   `,
@@ -103,18 +103,38 @@ function root(el, where) {
 
 export class Controller {
   /**
+   * @param {HTMLElement} root
+   * @param {Deck} deck
+   */
+  constructor(root, deck) {
+    this.root = root;
+    this.deck = deck;
+    for (const eventType of [
+      'click',
+    ]) this.root.addEventListener(eventType, this);
+    this.root.innerHTML = buildCards(this.deck);
+  }
+
+  /**
    * @param {Event} ev
    */
   handleEvent(ev) {
-    if (ev.type == 'click' && ev instanceof MouseEvent) {
-      const {target} = ev;
-      if (!(target instanceof Element)) return;
+    if (ev instanceof MouseEvent) {
+      switch (ev.type) {
 
-      const pileEl = root(target, el => el.classList?.contains('card-pile'));
-      if (pileEl) return this.clickPile(ev, pileEl);
+      case 'click':
+        const {target} = ev;
+        if (!(target instanceof Element)) return;
 
-      const cardEl = root(target, el => el.classList?.contains('card'));
-      if (cardEl) return this.clickCard(ev, cardEl);
+        const pileEl = root(target, el => el.classList?.contains('card-pile'));
+        if (pileEl) return this.clickPile(ev, pileEl);
+
+        const cardEl = root(target, el => el.classList?.contains('card'));
+        if (cardEl) return this.clickCard(ev, cardEl);
+        break;
+
+      }
+      return;
     }
   }
 
@@ -124,13 +144,8 @@ export class Controller {
    */
   clickPile(ev, el) {
     if (el instanceof HTMLElement) {
-      /** @type {HTMLElement[]} */
-      const cards = Array.from((el.querySelectorAll('.card')));
-      cards.sort((
-        {style:{zIndex:a}},
-        {style:{zIndex:b}},
-      ) => parseInt(b) - parseInt(a));
-      if (cards.length > 0) return this.clickCard(ev, cards[0]);
+      const card = el.querySelector('.card');
+      if (card) return this.clickCard(ev, card);
     }
   }
 
