@@ -23,44 +23,96 @@ function setTypedData(dt, type, dat) {
   if (!dt) return;
   const json = JSON.stringify({...dat, type});
   dt.setData('text/uri-list', `data:application/json;base64,${btoa(json)}`);
-  dt.setData('application/json', json);
+  dt.setData(`application/json;type=${type}`, json);
 }
 
 /**
  * @param {DataTransfer|null} dt
- * @returns {{type: string} & Object<string,any>|null}
+ * @returns {string}
  */
-function getTypedData(dt) {
-  if (!dt) return null;
-  let parseErr = null;
-
-  const json = dt.getData('application/json');
-  if (typeof json == 'string' && json) {
+function hasTypedData(dt) {
+  if (!dt) return '';
+  for (const type of dt.types) {
+    const match = /application\/json;type=([^,;]+)/.exec(type);
+    if (match) return match[1]
+  }
+  for (const json of typedDataBlobs(dt)) {
     try {
-      return JSON.parse(json);
+      const data = JSON.parse(json);
+      if (typeof data == 'object' && data?.type == 'string')
+        return data.type;
     } catch(error) {
-      parseErr = {type: 'error', error};
+      continue;
     }
   }
+  return '';
+}
+
+/**
+ * @param {DataTransfer} dt
+ * @param {string[]} types
+ * @returns {IterableIterator<string>}
+ */
+function* typedDataBlobs(dt, ...types) {
+  for (const type of types) {
+    const json = dt.getData(`application/json;type=${type}`);
+    if (typeof json == 'string' && json) yield json;
+  }
+
+  const json = dt.getData('application/json');
+  if (typeof json == 'string' && json) yield json;
 
   const url = dt.getData('URL');
   if (typeof url == 'string' && url) {
     const match = /data:application\/json(;base64)?,(.+)/.exec(url);
-    if (!match) return {type: 'link', url};
-    const json = match[1] ? atob(match[2]) : match[2];
+    if (match) yield match[1] ? atob(match[2]) : match[2];
+  }
+}
+
+/**
+ * @param {DataTransfer|null} dt
+ * @param {string[]} types
+ * @returns {null|{type: string} & Object<string,any>}
+ */
+function getTypedData(dt, ...types) {
+  if (!dt) return null;
+  console.log('? get json', dt.types);
+
+  /** @type {null|{type: string} & Object<string, any>} */
+  let fallback = null;
+  for (const json of typedDataBlobs(dt, ...types)) {
+    let data = null;
     try {
-      return JSON.parse(json);
+      data = JSON.parse(json);
     } catch(error) {
-      parseErr = parseErr || {type: 'error', error};
+      fallback = fallback || {type: 'error', error};
+      continue;
     }
-  }
 
-  if (parseErr) return parseErr;
+    // must have an object
+    if (typeof data != 'object' || !data) {
+      fallback = fallback || {type: 'error', error: 'json data is not an object'};
+      continue;
+    }
 
-  const text = dt.getData('text/plain');
-  if (typeof text == 'string' && text) {
-    return {type: 'text', text};
+    // with a type string
+    if (data.type != 'string') {
+      if (!types.length && !fallback) fallback = data;
+      continue;
+    }
+
+    // that matches any given type arg
+    if (types.length && !types.includes(data.type)) continue;
+
+    return data;
   }
+  if (fallback) return fallback;
+
+  const url = dt?.getData('URL');
+  const text = dt?.getData('text/plain');
+
+  if (typeof url == 'string' && url) return {type: 'link', text, url};
+  if (typeof text == 'string' && text) return {type: 'text', text};
 
   return null;
 }
@@ -182,6 +234,33 @@ function root(el, where) {
   return last;
 }
 
+/**
+ * @param {Element} el
+ * @param {Object<string, string>} typedSelectors
+ * @returns {null|{type: string, el: Element}}
+ */
+function rootify(el, typedSelectors) {
+  for (const [type, selector] of Object.entries(typedSelectors)) {
+    const rootEl = root(el, e => e.matches(selector));
+    if (rootEl) return {type, el: rootEl};
+  }
+  return null;
+}
+
+/**
+ * @param {Node} n
+ * @returns {boolean}
+ */
+function isEmpty(n) {
+  if (!n.childNodes.length) return true;
+  for (const cn of n.childNodes) {
+    if (cn.nodeType == cn.COMMENT_NODE) continue;
+    if (cn.nodeType != cn.TEXT_NODE) return false;
+    if (cn.textContent?.trim().length) return false;
+  }
+  return true;
+}
+
 export class Controller {
   /**
    * @param {HTMLElement} root
@@ -193,6 +272,10 @@ export class Controller {
     for (const eventType of [
       'click',
       'dragstart',
+      // 'drag',
+      // 'dragend',
+      // 'dragenter',
+      // 'dragleave',
       'dragover',
       'drop',
     ]) this.root.addEventListener(eventType, this);
@@ -230,8 +313,10 @@ export class Controller {
         break;
 
       case 'dragover':
-        if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'move';
-        ev.preventDefault();
+        if (ev.dataTransfer && this.mayDrop(target, ev.dataTransfer, ev)) {
+          ev.dataTransfer.dropEffect = 'move';
+          ev.preventDefault();
+        }
         break;
 
       case 'drop':
@@ -249,13 +334,19 @@ export class Controller {
         const {target} = ev;
         if (!(target instanceof Element)) return;
 
-        const pileEl = root(target, el => el.classList?.contains('card-pile'));
-        if (pileEl) return this.clickPile(ev, pileEl);
+        const root = rootify(target, {
+          pile: '.card-pile',
+          card: '.card',
+        });
+        switch (root?.type) {
+        case 'pile': return this.clickPile(ev, root.el);
+        case 'card': return this.clickCard(ev, root.el);
+        }
 
-        const cardEl = root(target, el => el.classList?.contains('card'));
-        if (cardEl) return this.clickCard(ev, cardEl);
         break;
 
+      default:
+        console.log('wat mouse', ev.type, ev);
       }
       return;
     }
@@ -268,9 +359,30 @@ export class Controller {
    * @returns {boolean}
    */
   startDrag(target, dt, ev) {
-    const elementId = this.elId(target);
+
     const {offsetX: x, offsetY: y} = ev;
     const dragOffset = {x, y};
+
+    const pile = root(target, el => el.matches('.card-pile'));
+    if (pile) {
+      /** @type {Element[]} */
+      const cards = (Array.from(pile.childNodes)
+        .filter(n => n instanceof Element && n.matches('.card')));
+      const {offsetX, offsetY} = ev;
+      const {clientWidth, clientHeight} = target;
+      const p = Math.max(offsetX / clientWidth, offsetY / clientHeight);
+      const n = Math.max(1, Math.round(p * cards.length));
+      const take = cards.slice(0, n);
+      setTypedData(dt, 'pile', {
+        cards: take.map(el => getCardData(el)),
+        elementIds: take.map(el => this.elId(el)),
+        dragOffset,
+      });
+      return true;
+    }
+
+
+    const elementId = this.elId(target);
     const cardData = getCardData(target);
     if (cardData) {
       setTypedData(dt, 'card', {card: cardData, elementId, dragOffset});
@@ -279,6 +391,30 @@ export class Controller {
     } else {
       setTypedData(dt, 'element', {elementId, dragOffset});
     }
+
+    return true;
+  }
+
+  /**
+   * @param {Element} target
+   * @param {DataTransfer} dt
+   * @param {MouseEvent} ev
+   * @returns {boolean}
+   */
+  mayDrop(target, dt, ev) {
+    // TODO target X type filter
+
+    // const root = rootify(target, {
+    //   pile: '.card-pile',
+    //   card: '.card',
+    // });
+    // switch (root?.type) {
+    // case 'pile': return this.clickPile(ev, root.el);
+    // case 'card': return this.clickCard(ev, root.el);
+    // }
+
+    const type = hasTypedData(dt);
+    console.log('drop', type);
     return true;
   }
 
@@ -289,36 +425,82 @@ export class Controller {
    * @returns {boolean}
    */
   handleDrop(target, dt, ev) {
-    const data = getTypedData(dt);
-    if (data?.type == 'card') {
-      let {elementId, dragOffset} = data;
-      const dropEl = typeof elementId == 'string' && document.getElementById(elementId);
-      if (!dropEl) return false;
+    const {type, ...data} = getTypedData(dt) || {type: 'undefined'};
 
-      // TODO if target is card, convert to singleton pile
-      // TODO if target is pile, insert at top
-      // TODO if target is place, occupy
+    const dropEl = function() {
+      switch (type) {
 
-      // TODO maybe with grid snap
-      const {offsetX: x, offsetY: y} = ev;
-      const dx = typeof dragOffset?.x == 'number' ? dragOffset.x : 0;
-      const dy = typeof dragOffset?.y == 'number' ? dragOffset.y : 0;
-      // TDOD offset seems a little off
+        case 'card':
+          const {elementId} = data;
+          if (typeof elementId != 'string') return null;
 
-      // TODO update ex-parent: decrement pile depth; maybe erase if singleton
-      dropEl.parentNode?.removeChild(dropEl);
+          const el = document.getElementById(elementId);
+          if (!el) return null;
 
-      target.appendChild(dropEl);
-      dropEl.style.left = `${x-dx}px`;
-      dropEl.style.top = `${y-dy}px`;
+          // TODO update ex-parent: decrement pile depth; maybe erase if singleton
+          el.parentNode?.removeChild(el);
 
-      if (dropEl.matches('.card') &&
-          getComputedStyle(dropEl).getPropertyValue('--flip')?.trim() == '0deg')
-        setTimeout(() => this.flipCard(dropEl), 0);
+          return el;
 
-      return true;
-    }
-    return false;
+        case 'pile':
+          let {elementIds} = data;
+          if (!Array.isArray(elementIds)) return null;
+
+          /** @type {HTMLElement[]} */
+          const els = [];
+          /** @type {Set<Node>} */
+          const pars = new Set();
+          for (const elementId of elementIds) {
+            if (typeof elementId != 'string') return null;
+            const el = document.getElementById(elementId);
+            if (!el) return null;
+            els.push(el);
+            if (el.parentNode) pars.add(el.parentNode);
+          }
+
+          // TODO use a deck builder function?
+          const pile = document.createElement('div');
+          pile.className = 'card-pile';
+
+          for (const el of els) {
+            el.parentNode?.removeChild(el);
+            pile.appendChild(el);
+          }
+
+          for (const par of pars)
+            if (isEmpty(par)) par.parentNode?.removeChild(par);
+
+          return pile;
+
+        default:
+          console.log('TODO handle drop', type, data, target);
+          return null;
+
+      }
+    }();
+    if (!dropEl) return false;
+
+    // TODO if target is card, convert to singleton pile
+    // TODO if target is pile, insert at top
+    // TODO if target is place, occupy
+    target.appendChild(dropEl);
+
+    const {dragOffset} = data;
+    const dx = typeof dragOffset?.x == 'number' ? dragOffset.x : 0;
+    const dy = typeof dragOffset?.y == 'number' ? dragOffset.y : 0;
+
+    // TODO maybe with grid snap
+    const {offsetX: x, offsetY: y} = ev;
+    // TDOD offset seems a little off
+
+    dropEl.style.left = `${x-dx}px`;
+    dropEl.style.top = `${y-dy}px`;
+
+    if (dropEl.matches('.card') &&
+        getComputedStyle(dropEl).getPropertyValue('--flip')?.trim() == '0deg')
+      setTimeout(() => this.flipCard(dropEl), 0);
+
+    return true;
   }
 
   /**
@@ -327,6 +509,7 @@ export class Controller {
    */
   clickPile(ev, el) {
     if (el instanceof HTMLElement) {
+      // if (ev.shiftKey) return this.flipPile(el);
       const card = el.querySelector('.card');
       if (card) return this.clickCard(ev, card);
     }
