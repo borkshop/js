@@ -1,0 +1,8 @@
+{
+  "plugins": [
+    "@babel/plugin-syntax-class-properties"
+  ],
+  "presets": [
+    "@ava/babel/stage-4"
+  ]
+}
