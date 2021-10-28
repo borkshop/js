@@ -49,7 +49,7 @@
 // TODO boolean expressions
 
 /**
- * @template {number} N
+ * @template N
  * @typedef {N
  *   | {neg: Numeric<N>}
  *   | {add: Numeric<N>[]}
@@ -62,12 +62,12 @@
  */
 
 /**
- * @template {number} N
- *
+ * @template N
  * @param {Numeric<N>} expr
+ * @param {(term: Exclude<N, number>) => number} resolve
  * @returns {number}
  */
-export function evaluateNumeric(expr) {
+export function evaluateNumeric(expr, resolve) {
     return term(expr);
 
     /**
@@ -88,7 +88,10 @@ export function evaluateNumeric(expr) {
                 return term(a) % term(b);
             }
         }
-        assertNever(expr, 'invalid numeric expression');
+        return resolve(/**
+            @type {Exclude<N, number>} by first typeof guard above
+            FIXME why is this cast necessary? why can't typescript narrow expr's type?
+        */(expr));
     }
 
     /**
@@ -103,15 +106,4 @@ export function evaluateNumeric(expr) {
             value = op(value, term(terms[i]));
         return value;
     }
-}
-
-// TODO evaluation within an extension universe
-
-/**
- * @param {never} _
- * @param {string} [mess]
- * @returns {never}
- */
-function assertNever(_, mess) {
-    throw new Error(mess);
 }
