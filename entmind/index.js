@@ -46,7 +46,19 @@
 // TODO do we need a pathological "first until completion" executor?
 // TODO compute budget accounting and management
 
-// TODO boolean expressions
+/**
+ * @template U
+ * @typedef {(
+ *   | Numeric<number|U>
+ *   | LogicExpression<U>
+ * )} Expression
+ */
+
+/**
+ * @template U
+ * @typedef {Logic<boolean|U|Comparison<Numeric<number|U>>>} LogicExpression
+ * FIXME exclude numbers
+ */
 
 /**
  * @template N
@@ -62,21 +74,48 @@
  */
 
 /**
- * @template N
- * @param {Numeric<N>} expr
- * @param {(term: Exclude<N, number>) => number} resolve
- * @returns {number}
+ * @template U
+ * @typedef {(
+ *   | {eq: [U, U]}
+ *   | {neq: [U, U]}
+ *   | {lt: [U, U]}
+ *   | {gt: [U, U]}
+ *   | {lte: [U, U]}
+ *   | {gte: [U, U]}
+ * )} Comparison
  */
-export function evaluateNumeric(expr, resolve) {
+
+/**
+ * @template B
+ * @typedef {B
+ *   | {not: Logic<B>}
+ *   | {or: Logic<B>[]}
+ *   | {and: Logic<B>[]}
+ * } Logic -- so named because "Boolean" is a global
+ *
+ * NOTE: the primary use case for this type is control flow predicates, so
+ *       we've intentionally elided any {xor: ...} construct, as that's likely
+ *       better served by a higher level switch/case construct.
+ */
+
+/**
+ * @template U
+ * @param {Expression<U>} expr
+ * @param {(u: Exclude<U, number|boolean>) => number|boolean} resolve
+ * @returns {number|boolean}
+ */
+export function evaluate(expr, resolve) {
     return term(expr);
 
     /**
-     * @param {Numeric<N>} expr
-     * @returns {number}
+     * @param {Expression<U>} expr
+     * @returns {number|boolean}
      */
     function term(expr) {
         if (typeof expr == 'number') return expr;
+        if (typeof expr == 'boolean') return expr;
         if (typeof expr == 'object') {
+            // Numeric<...>
             if ('neg' in expr) return -term(expr.neg);
             if ('add' in expr) return binop(expr.add, (a, b) => a + b);
             if ('sub' in expr) return binop(expr.sub, (a, b) => a - b);
@@ -85,25 +124,78 @@ export function evaluateNumeric(expr, resolve) {
             if ('pow' in expr) return binop(expr.pow, (a, b) => Math.pow(a, b));
             if ('mod' in expr) {
                 const [a, b] = expr.mod;
-                return term(a) % term(b);
+                return numericTerm(a) % numericTerm(b);
+            }
+
+            // Comparison<...>
+            if ('eq' in expr) {
+                const [a, b] = expr.eq;
+                return numericTerm(a) === numericTerm(b);
+            }
+            if ('neq' in expr) {
+                const [a, b] = expr.neq;
+                return numericTerm(a) !== numericTerm(b);
+            }
+            if ('lt' in expr) {
+                const [a, b] = expr.lt;
+                return numericTerm(a) < numericTerm(b);
+            }
+            if ('gt' in expr) {
+                const [a, b] = expr.gt;
+                return numericTerm(a) > numericTerm(b);
+            }
+            if ('lte' in expr) {
+                const [a, b] = expr.lte;
+                return numericTerm(a) <= numericTerm(b);
+            }
+            if ('gte' in expr) {
+                const [a, b] = expr.gte;
+                return numericTerm(a) >= numericTerm(b);
+            }
+
+            // Logic<...>
+            if ('not' in expr) return !booleanTerm(expr.not);
+            if ('or' in expr) {
+                for (const sub of expr.or)
+                    if (booleanTerm(sub)) return true;
+                return false;
+            }
+            if ('and' in expr) {
+                for (const sub of expr.and)
+                    if (!booleanTerm(sub)) return false;
+                return true;
             }
         }
         return resolve(/**
-            @type {Exclude<N, number>} by first typeof guard above
+            @type {Exclude<U, number|boolean>} by the first two typeof cases above
             FIXME why is this cast necessary? why can't typescript narrow expr's type?
         */(expr));
     }
 
     /**
-     * @param {Numeric<N>[]} terms
+     * @param {Numeric<number|U>[]} terms
      * @param {(a: number, b: number) => number} op
      * @returns {number}
      */
     function binop(terms, op) {
         if (!terms.length) return NaN;
-        let value = term(terms[0]);
+        let value = numericTerm(terms[0]);
         for (let i = 1; i < terms.length; ++i)
-            value = op(value, term(terms[i]));
+            value = op(value, numericTerm(terms[i]));
         return value;
+    }
+
+    /** @type {(sub: Numeric<number|U>) => number} */
+    function numericTerm(sub) {
+        const subVal = term(sub);
+        if (typeof subVal == 'number') return subVal;
+        throw new Error('boolean value used in numeric expression');
+    }
+
+    /** @type {(sub: Logic<boolean|U|Comparison<Numeric<number|U>>>) => boolean} */
+    function booleanTerm(sub) {
+        const subVal = term(sub);
+        if (typeof subVal == 'boolean') return subVal;
+        throw new Error('numeric value used in boolean expression');
     }
 }

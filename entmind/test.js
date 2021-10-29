@@ -1,9 +1,9 @@
 import test from 'ava';
 
-import {evaluateNumeric} from './index.js';
+import {evaluate} from './index.js';
 
 /** @template T
- * @typedef {import('./index.js').Numeric<T>} Numeric<T> */
+ * @typedef {import('./index.js').Expression<T>} Expression<T> */
 
 /**
  * @param {number} x
@@ -17,34 +17,41 @@ function blend(x) {
 
 /**
  * @template N
- * @typedef {Numeric<N>
+ * @typedef {Expression<N
  *   | {blend: Maths<N>}
- * } Maths
+ * >} Maths
  */
 
 /**
  * @param {Maths<number|string>} expr
  * @param {{get: (name: string) => number|undefined}} scope
- * @returns {number}
+ * @returns {number|boolean}
  */
 function calculate(expr, scope={get() {return undefined}}) {
     return term(expr);
 
     /**
      * @param {Maths<number|string>} expr
-     * @returns {number}
+     * @returns {number|boolean}
      */
     function term(expr) {
-        return evaluateNumeric(expr, expr => {
+        return evaluate(expr, expr => {
             if (typeof expr == 'string') {
                 const value = scope.get(expr);
                 return value == undefined ? NaN : value;
             }
             if (typeof expr == 'object') {
-                if ('blend' in expr) return blend(term(expr.blend));
+                if ('blend' in expr) return blend(numericTerm(expr.blend));
             }
             assertNever(expr, 'invalid maths expression');
         });
+    }
+
+    /** @type {(sub: Maths<number|string>) => number} */
+    function numericTerm(sub) {
+        const subVal = term(sub);
+        if (typeof subVal == 'number') return subVal;
+        throw new Error('boolean value used in numeric expression');
     }
 }
 
@@ -82,6 +89,55 @@ test('maths', t => {
         {expr: {sub: [{mul: [7, "much"]}, "doge"]}, expected: NaN},
         {expr: {blend: 42}, expected: blend(42)},
         {expr: {blend: {add: ["such", 9]}}, expected: blend(10 + 9)},
+
+        // comparisons
+        {expr: {eq: [1, 2]}, expected: false},
+        {expr: {eq: [1, 1]}, expected: true},
+
+        {expr: {neq: [1, 2]}, expected: true},
+        {expr: {neq: [1, 1]}, expected: false},
+
+        {expr: {lt: [1, 2]}, expected: true},
+        {expr: {lt: [2, 1]}, expected: false},
+        {expr: {lt: [2, 2]}, expected: false},
+
+        {expr: {gt: [1, 2]}, expected: false},
+        {expr: {gt: [2, 1]}, expected: true},
+        {expr: {gt: [2, 2]}, expected: false},
+
+        {expr: {lte: [1, 2]}, expected: true},
+        {expr: {lte: [2, 1]}, expected: false},
+        {expr: {lte: [2, 2]}, expected: true},
+
+        {expr: {gte: [1, 2]}, expected: false},
+        {expr: {gte: [2, 1]}, expected: true},
+        {expr: {gte: [2, 2]}, expected: true},
+
+        // logic
+        {expr: {not: {lt: [1, 2]}}, expected: false},
+        {expr: {not: {lt: [2, 1]}}, expected: true},
+        {expr: {not: {lt: [2, 2]}}, expected: true},
+
+        {expr: {and: [false, true]}, expected: false},
+        {expr: {and: [{lt: [1, 2]}, {lt: [2, 3]}]}, expected: true},
+        {expr: {and: [{gt: [1, 2]}, {lt: [2, 3]}]}, expected: false},
+        {expr: {and: [{lt: [1, 2]}, {gt: [2, 3]}]}, expected: false},
+        {expr: {and: [{gt: [1, 2]}, {gt: [2, 3]}]}, expected: false},
+
+        {expr: {or: [true, false]}, expected: true},
+        {expr: {or: [{lt: [1, 2]}, {lt: [2, 3]}]}, expected: true},
+        {expr: {or: [{gt: [1, 2]}, {lt: [2, 3]}]}, expected: true},
+        {expr: {or: [{lt: [1, 2]}, {gt: [2, 3]}]}, expected: true},
+        {expr: {or: [{gt: [1, 2]}, {gt: [2, 3]}]}, expected: false},
+
+        // boolean extensions
+        {expr: {lt: ["such", "much"]}, expected: true},
+
+        // unexpected numeric
+        {expr: {and: [3, false]}, throws: 'numeric value used in boolean expression'},
+
+        // @ts-ignore: unexpected boolean
+        {expr: {add: [3, false]}, throws: 'boolean value used in numeric expression'},
 
         // @ts-ignore: invalid typed data
         {expr: {such: "NOPE"}, throws: 'invalid maths expression'},
