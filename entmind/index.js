@@ -42,9 +42,113 @@
 // resemble event sourcing, and would allow automated simulation testing with
 // faked or recorded events...
 
-// TODO rebuild task system once we get a working evaluator core
-// TODO do we need a pathological "first until completion" executor?
-// TODO compute budget accounting and management
+// TODO task executor over a range of taskable entities
+
+export const TaskDone = 0;
+export const TaskFail = 1;
+export const TaskContinue = 2;
+export const TaskYield = 3;
+
+/**
+ * @template {object} U, E
+ * @typedef {(
+ *   | DoneResult<U, E>
+ *   | FailResult<U, E>
+ *   | ContinueResult<U, E>
+ *   | YieldResult<U, E>
+ * )} TaskResult
+ */
+
+/**
+ * @template {object} U, E
+ * @typedef {object} DoneResult
+ * @prop {TaskDone} code
+ * @prop {string} [reason]
+ * @prop {Task<U, E>} [next]
+ */
+
+/**
+ * @template {object} U, E
+ * @typedef {object} FailResult
+ * @prop {TaskFail} code
+ * @prop {string} reason
+ * @prop {Task<U, E>} [next]
+ */
+
+/**
+ * @template {object} U, E
+ * @typedef {object} ContinueResult
+ * @prop {TaskContinue} code
+ * @prop {string} [reason]
+ * @prop {Task<U, E>} [next]
+ */
+
+/**
+ * @template {object} U, E
+ * @typedef {object} YieldResult
+ * @prop {TaskYield} code
+ * @prop {string} reason
+ * @prop {Task<U, E>} [next]
+ */
+
+/**
+ * @template {object} U, E
+ * @typedef {U
+ *   | TerminalTask<U, E>
+ * } Task
+ */
+
+/**
+ * @template {object} U, E
+ * @typedef {(
+ *   | {halt: string, then?: Task<U, E>}  // generates a DoneResult
+ *   | {fail: string, then?: Task<U, E>}  // generates a FailResult
+ *   | {continue: Task<U, E>}             // generates a ContinueResult
+ *   | {yield: string, then?: Task<U, E>} // generates a YieldResult
+ * )} TerminalTask
+ */
+
+/**
+ * @template {object} U, E
+ * @typedef {object} TaskDomain
+ * @prop {(u: U) => TaskResult<U, E>} execute
+ * @prop {(e: E) => number|boolean} resolve
+ * TODO other domain facilities like random() and time()
+ */
+
+/**
+ * @template {object} U, E
+ * @param {Task<U, E>} task
+ * @param {TaskDomain<U, E>} domain
+ */
+export function execute(task, domain) {
+    // TODO control tasks (check, sub)
+    // TODO loop tasks (while, until)
+    // TODO timing tasks (sleep, timeout, deadline)
+    // TODO random choice task?
+    // TODO defined routine calling
+
+    // terminals
+    if ('halt' in task) {
+        const {halt: reason, then: next} = task;
+        return {code: TaskDone, reason, next};
+    }
+    if ('fail' in task) {
+        const {fail: reason, then: next} = task;
+        return {code: TaskFail, reason, next};
+    }
+    if ('continue' in task) {
+        const {continue: next} = task;
+        return {code: TaskContinue, next};
+    }
+    if ('yield' in task) {
+        const {yield: reason, then: next} = task;
+        return {code: TaskYield, reason, next};
+    }
+
+    // domain specific task
+    return domain.execute(task);
+}
 
 /**
  * @template U
