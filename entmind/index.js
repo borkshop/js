@@ -63,6 +63,7 @@
 /**
  * @template N
  * @typedef {N
+ *   | number
  *   | {neg: Numeric<N>}
  *   | {add: Numeric<N>[]}
  *   | {sub: Numeric<N>[]}

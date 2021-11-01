@@ -23,7 +23,7 @@ function blend(x) {
  */
 
 /**
- * @param {Maths<number|string>} expr
+ * @param {Maths<string>} expr
  * @param {{get: (name: string) => number|undefined}} scope
  * @returns {number|boolean}
  */
@@ -31,7 +31,7 @@ function calculate(expr, scope={get() {return undefined}}) {
     return term(expr);
 
     /**
-     * @param {Maths<number|string>} expr
+     * @param {Maths<string>} expr
      * @returns {number|boolean}
      */
     function term(expr) {
@@ -47,7 +47,7 @@ function calculate(expr, scope={get() {return undefined}}) {
         });
     }
 
-    /** @type {(sub: Maths<number|string>) => number} */
+    /** @type {(sub: Maths<string>) => number} */
     function numericTerm(sub) {
         const subVal = term(sub);
         if (typeof subVal == 'number') return subVal;
@@ -66,7 +66,7 @@ function assertNever(_, mess) {
 
 test('maths', t => {
     /** @type {(
-     * {expr: Numeric<number>} & (
+     * {expr: Maths<string>} & (
      *   | {expected: number|boolean}
      *   | {throws: string}
      * ))[]} */
@@ -133,7 +133,7 @@ test('maths', t => {
         // boolean extensions
         {expr: {lt: ["such", "much"]}, expected: true},
 
-        // unexpected numeric
+        // @ts-ignore: unexpected numeric
         {expr: {and: [3, false]}, throws: 'numeric value used in boolean expression'},
 
         // @ts-ignore: unexpected boolean
