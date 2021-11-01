@@ -94,8 +94,16 @@ export const TaskYield = 3;
 /**
  * @template {object} U, E
  * @typedef {U
+ *   | ControlTask<U, E>
  *   | TerminalTask<U, E>
  * } Task
+ */
+
+/**
+ * @template {object} U, E
+ * @typedef {(
+ *   | {check: LogicExpression<E>, then?: Task<U, E>, else?: Task<U, E>}
+ * )} ControlTask
  */
 
 /**
@@ -122,7 +130,27 @@ export const TaskYield = 3;
  * @param {TaskDomain<U, E>} domain
  */
 export function execute(task, domain) {
-    // TODO control tasks (check, sub)
+    // controls
+    if ('check' in task) {
+        const {check, then: pass, else: fail} = task;
+        const value = evaluate(check, domain.resolve);
+        // TODO require boolean
+        if (!value) {
+            if (fail) return {
+                code: TaskContinue, next: fail,
+                reason: 'check continues in false branch',
+            };
+            return {code: TaskFail, reason: 'check failed'};
+        }
+        // else value
+        if (pass) return {
+            code: TaskContinue, next: pass,
+            reason: 'check continues in true branch',
+        };
+        return {code: TaskDone, reason: 'check passed'};
+    }
+    // TODO other control primitives like sub
+
     // TODO loop tasks (while, until)
     // TODO timing tasks (sleep, timeout, deadline)
     // TODO random choice task?
