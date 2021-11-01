@@ -3,21 +3,17 @@
   "version": "0.1.0",
   "description": "Borkshop monorepo",
   "license": "BSD-3-Clause",
-
   "type": "module",
   "private": true,
-
   "repository": {
     "type": "git",
     "url": "https://github.com/borkshop/js.git"
   },
-
   "scripts": {
     "lint": "yarn workspaces run lint",
     "test": "yarn workspaces run test",
     "ci": "yarn workspaces run ci"
   },
-
   "workspaces": [
     "cdom-template",
     "cube",
@@ -25,5 +21,6 @@
     "jspit",
     "mine",
     "scan"
-  ]
+  ],
+  "dependencies": {}
 }
