@@ -89,6 +89,7 @@
 /**
  * @template B
  * @typedef {B
+ *   | boolean
  *   | {not: Logic<B>}
  *   | {or: Logic<B>[]}
  *   | {and: Logic<B>[]}
