@@ -102,8 +102,19 @@ export const TaskYield = 3;
 /**
  * @template {object} U, E
  * @typedef {(
- *   | {check: LogicExpression<E>, then?: Task<U, E>, else?: Task<U, E>}
+ *   | {sub: Task<U, E>, then: Task<U, E>, else?: Task<U, E>}
+ *   | {check: Boolic<E>, then?: Task<U, E>, else?: Task<U, E>}
+ *   | SwitchTask<U, E>
  * )} ControlTask
+ */
+
+/**
+ * @template {object} U, E
+ * @typedef {object} SwitchTask
+ * @prop {Expression<E>} switch
+ * @prop {[Expression<E>, Task<U, E>][]} cases
+ * @prop {Task<U, E>} [then]
+ * @prop {Task<U, E>} [else]
  */
 
 /**
@@ -128,9 +139,59 @@ export const TaskYield = 3;
  * @template {object} U, E
  * @param {Task<U, E>} task
  * @param {TaskDomain<U, E>} domain
+ * @returns {TaskResult<U, E>}
  */
 export function execute(task, domain) {
-    // controls
+    //// controls
+
+    if ('sub' in task) {
+        const {sub, ...rest} = task;
+        const {code, next, reason} = execute(sub, domain);
+        switch (code) {
+            case TaskDone: return next
+                ? {code: TaskContinue,
+                   next: {sub: next, ...rest},
+                   reason: 'sub task continues'}
+                : {code: TaskContinue,
+                   next: task.then,
+                   reason: 'sub task done'};
+            case TaskFail: return next
+                ? {code: TaskContinue,
+                   next: {sub: next, ...rest},
+                   reason: 'sub task failed'}
+                : task.else
+                    ? {code: TaskContinue,
+                       next: task.else,
+                       reason: reason || 'sub task failed'}
+                    : {code: TaskFail, reason: reason || 'sub task failed'};
+            case TaskContinue: return {
+                code: TaskContinue,
+                next: next && {sub: next, ...rest},
+                reason: 'sub task continues'};
+            case TaskYield: return {
+                code: TaskYield,
+                next: next && {sub: next, ...rest},
+                reason: 'sub task yields'};
+            default:
+                assertNever(code, 'invalid result code');
+        }
+    }
+
+    if ('switch' in task) {
+        const {switch: expr, cases} = task;
+        const actual = evaluate(expr, domain.resolve);
+        for (const [expr, match] of cases) {
+            const expect = evaluate(expr, domain.resolve);
+            if (expect == actual) return {
+                code: TaskContinue,
+                next: task.then ? {sub: match, then: task.then} : match,
+                reason: 'switch case matched'};
+        }
+        return task.else
+            ? {code: TaskContinue, next: task.else, reason: 'switch case unmatched'}
+            : {code: TaskFail, reason: 'switch case unmatched'};
+    }
+
     if ('check' in task) {
         const {check, then: pass, else: fail} = task;
         const value = evaluate(check, domain.resolve);
@@ -149,6 +210,7 @@ export function execute(task, domain) {
         };
         return {code: TaskDone, reason: 'check passed'};
     }
+
     // TODO other control primitives like sub
 
     // TODO loop tasks (while, until)
@@ -156,53 +218,65 @@ export function execute(task, domain) {
     // TODO random choice task?
     // TODO defined routine calling
 
-    // terminals
+    //// terminals
+
     if ('halt' in task) {
         const {halt: reason, then: next} = task;
         return {code: TaskDone, reason, next};
     }
+
     if ('fail' in task) {
         const {fail: reason, then: next} = task;
         return {code: TaskFail, reason, next};
     }
+
     if ('continue' in task) {
         const {continue: next} = task;
         return {code: TaskContinue, next};
     }
+
     if ('yield' in task) {
         const {yield: reason, then: next} = task;
         return {code: TaskYield, reason, next};
     }
 
-    // domain specific task
+    //// domain specific task
     return domain.execute(task);
 }
 
 /**
  * @template U
  * @typedef {(
- *   | Numeric<number|U>
- *   | LogicExpression<U>
+ *   | Numeric<U>
+ *   | Boolic<U>
  * )} Expression
  */
 
 /**
  * @template U
- * @typedef {Logic<boolean|U|Comparison<Numeric<number|U>>>} LogicExpression
- * FIXME exclude numbers
+ * @typedef {U
+ *   | number
+ *   | {neg: Numeric<U>}
+ *   | {add: Numeric<U>[]}
+ *   | {sub: Numeric<U>[]}
+ *   | {mul: Numeric<U>[]}
+ *   | {div: Numeric<U>[]}
+ *   | {mod: [Numeric<U>, Numeric<U>]}
+ * } Numeric
  */
 
 /**
- * @template N
- * @typedef {N
- *   | number
- *   | {neg: Numeric<N>}
- *   | {add: Numeric<N>[]}
- *   | {sub: Numeric<N>[]}
- *   | {mul: Numeric<N>[]}
- *   | {div: Numeric<N>[]}
- *   | {mod: [Numeric<N>, Numeric<N>]}
- * } Numeric
+ * @template U
+ * @typedef {Logic<LogicTerm<U>>} Boolic
+ */
+
+/**
+ * @template U
+ * @typedef {(
+ *   | boolean
+ *   | U
+ *   | Comparison<Numeric<U>>
+ * )} LogicTerm
  */
 
 /**
@@ -285,7 +359,7 @@ export function evaluate(expr, resolve) {
                 return numericTerm(a) >= numericTerm(b);
             }
 
-            // Logic<...>
+            // Boolic<...>
             if ('not' in expr) return !booleanTerm(expr.not);
             if ('or' in expr) {
                 for (const sub of expr.or)
@@ -305,7 +379,7 @@ export function evaluate(expr, resolve) {
     }
 
     /**
-     * @param {Numeric<number|U>[]} terms
+     * @param {Numeric<U>[]} terms
      * @param {(a: number, b: number) => number} op
      * @returns {number}
      */
@@ -317,17 +391,26 @@ export function evaluate(expr, resolve) {
         return value;
     }
 
-    /** @type {(sub: Numeric<number|U>) => number} */
+    /** @type {(sub: Numeric<U>) => number} */
     function numericTerm(sub) {
         const subVal = term(sub);
         if (typeof subVal == 'number') return subVal;
         throw new Error('boolean value used in numeric expression');
     }
 
-    /** @type {(sub: Logic<boolean|U|Comparison<Numeric<number|U>>>) => boolean} */
+    /** @type {(sub: Logic<LogicTerm<U>>) => boolean} */
     function booleanTerm(sub) {
         const subVal = term(sub);
         if (typeof subVal == 'boolean') return subVal;
         throw new Error('numeric value used in boolean expression');
     }
+}
+
+/**
+ * @param {never} _
+ * @param {string} [mess]
+ * @returns {never}
+ */
+function assertNever(_, mess) {
+    throw new Error(mess);
 }
