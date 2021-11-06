@@ -249,6 +249,7 @@ export function execute(task, domain) {
  * @typedef {(
  *   | Numeric<U>
  *   | Boolic<U>
+ *   | Textic<U>
  * )} Expression
  */
 
@@ -262,6 +263,10 @@ export function execute(task, domain) {
  *   | {mul: Numeric<U>[]}
  *   | {div: Numeric<U>[]}
  *   | {mod: [Numeric<U>, Numeric<U>]}
+ *   | {charCodeAt: Numeric<U>, in: Textic<U>}
+ *   | {codePointAt: Numeric<U>, in: Textic<U>}
+ *   | {indexOf: Textic<U>, in: Textic<U>, position?: Numeric<U>}
+ *   | {lastIndexOf: Textic<U>, in: Textic<U>, position?: Numeric<U>}
  * } Numeric
  */
 
@@ -276,7 +281,41 @@ export function execute(task, domain) {
  *   | boolean
  *   | U
  *   | Comparison<Numeric<U>>
+ *   | Comparison<Textic<U>>
+ *   | TextBools<U>
  * )} LogicTerm
+ */
+
+/**
+ * @template U
+ * @typedef {(
+ *   | {includes: Textic<U>, in: Textic<U>, position?: Numeric<U>}
+ *   | {endsWith: Textic<U>, in: Textic<U>, position?: Numeric<U>}
+ *   | {startsWith: Textic<U>, in: Textic<U>, position?: Numeric<U>}
+ * )} TextBools
+ */
+
+/**
+ * @template U
+ * @typedef {U
+ *   | string
+ *   | {fromCodePoint: Numeric<U>[]}
+ *   | {concat: Textic<U>[]}
+ *   | {join: Expression<U>[], with?: Textic<U>}
+ *   | {lower: Textic<U>, locale?: Textic<U>}
+ *   | {upper: Textic<U>, locale?: Textic<U>}
+ *   | {slice: Textic<U>, start?: Numeric<U>}
+ *   | {slice: Textic<U>, start?: Numeric<U>, end: Numeric<U>}
+ *   | {slice: Textic<U>, start?: Numeric<U>, length: Numeric<U>}
+ *   | {repeat: Textic<U>, count: Numeric<U>}
+ *   | {replace: Textic<U>, in: Textic<U>, with: Textic<U>, all?: true}
+ *   | {charAt: Numeric<U>, in: Textic<U>}
+ *   | {trim: Textic<U>}
+ *   | {trimEnd: Textic<U>}
+ *   | {trimStart: Textic<U>}
+ *   | {padStart: Textic<U>, length: Numeric<U>, fill?: Textic<U>}
+ *   | {padEnd: Textic<U>, length: Numeric<U>, fill?: Textic<U>}
+ * } Textic
  */
 
 /**
@@ -309,20 +348,22 @@ export function execute(task, domain) {
  * @template U
  * @param {Expression<U>} expr
  * @param {(u: Exclude<U, number|boolean>) => number|boolean} resolve
- * @returns {number|boolean}
+ * @returns {number|boolean|string}
  */
 export function evaluate(expr, resolve) {
     return term(expr);
 
     /**
      * @param {Expression<U>} expr
-     * @returns {number|boolean}
+     * @returns {number|boolean|string}
      */
     function term(expr) {
         if (typeof expr == 'number') return expr;
         if (typeof expr == 'boolean') return expr;
+        if (typeof expr == 'string') return expr;
         if (typeof expr == 'object') {
-            // Numeric<...>
+
+            //// Numeric<...>
             if ('neg' in expr) return -term(expr.neg);
             if ('add' in expr) return binop(expr.add, (a, b) => a + b);
             if ('sub' in expr) return binop(expr.sub, (a, b) => a - b);
@@ -332,34 +373,56 @@ export function evaluate(expr, resolve) {
                 const [a, b] = expr.mod;
                 return numericTerm(a) % numericTerm(b);
             }
+            if ('charCodeAt' in expr) {
+                const s = stringTerm(expr.in);
+                const i = numericTerm(expr.charCodeAt);
+                return s.charCodeAt(i);
+            }
+            if ('codePointAt' in expr) {
+                const s = stringTerm(expr.in);
+                const i = numericTerm(expr.codePointAt);
+                return s.codePointAt(i) || 0xfffd;
+            }
+            if ('indexOf' in expr) {
+                const s = stringTerm(expr.in);
+                const search = stringTerm(expr.indexOf);
+                const pos = expr.position && numericTerm(expr.position);
+                return s.indexOf(search, pos);
+            }
+            if ('lastIndexOf' in expr) {
+                const s = stringTerm(expr.in);
+                const search = stringTerm(expr.lastIndexOf);
+                const pos = expr.position && numericTerm(expr.position);
+                return s.lastIndexOf(search, pos);
+            }
 
-            // Comparison<...>
+            //// Comparison<...>
             if ('eq' in expr) {
                 const [a, b] = expr.eq;
-                return numericTerm(a) === numericTerm(b);
+                return term(a) === term(b);
             }
             if ('neq' in expr) {
                 const [a, b] = expr.neq;
-                return numericTerm(a) !== numericTerm(b);
+                return term(a) !== term(b);
             }
             if ('lt' in expr) {
                 const [a, b] = expr.lt;
-                return numericTerm(a) < numericTerm(b);
+                return term(a) < term(b);
             }
             if ('gt' in expr) {
                 const [a, b] = expr.gt;
-                return numericTerm(a) > numericTerm(b);
+                return term(a) > term(b);
             }
             if ('lte' in expr) {
                 const [a, b] = expr.lte;
-                return numericTerm(a) <= numericTerm(b);
+                return term(a) <= term(b);
             }
             if ('gte' in expr) {
                 const [a, b] = expr.gte;
-                return numericTerm(a) >= numericTerm(b);
+                return term(a) >= term(b);
             }
 
-            // Boolic<...>
+            //// Logic<...>
             if ('not' in expr) return !booleanTerm(expr.not);
             if ('or' in expr) {
                 for (const sub of expr.or)
@@ -371,6 +434,100 @@ export function evaluate(expr, resolve) {
                     if (!booleanTerm(sub)) return false;
                 return true;
             }
+
+            //// TextBools<...>
+            if ('includes' in expr) {
+                const search = stringTerm(expr.includes);
+                const s = stringTerm(expr.in);
+                const pos = expr.position && numericTerm(expr.position);
+                return s.includes(search, pos);
+            }
+            if ('endsWith' in expr) {
+                const search = stringTerm(expr.endsWith);
+                const s = stringTerm(expr.in);
+                const pos = expr.position && numericTerm(expr.position);
+                return s.endsWith(search, pos);
+            }
+            if ('startsWith' in expr) {
+                const search = stringTerm(expr.startsWith);
+                const s = stringTerm(expr.in);
+                const pos = expr.position && numericTerm(expr.position);
+                return s.startsWith(search, pos);
+            }
+
+            //// Textic<...>
+            if ('fromCodePoint' in expr) {
+                const codePoints = expr.fromCodePoint.map(ne => numericTerm(ne));
+                return String.fromCodePoint(...codePoints);
+            }
+            if ('concat' in expr) {
+                const ss = expr.concat.map(se => stringTerm(se));
+                if (!ss.length) return '';
+                const [s, ...rest] = ss;
+                return s.concat(...rest);
+            }
+            if ('join' in expr) {
+                const values = expr.join.map(e => term(e));
+                const sep = expr.with && stringTerm(expr.with);
+                return values.join(sep);
+            }
+            if ('lower' in expr) {
+                const s = stringTerm(expr.lower);
+                return expr.locale
+                    ? s.toLocaleLowerCase(stringTerm(expr.locale))
+                    : s.toLowerCase();
+            }
+            if ('upper' in expr) {
+                const s = stringTerm(expr.upper);
+                return expr.locale
+                    ? s.toLocaleUpperCase(stringTerm(expr.locale))
+                    : s.toUpperCase();
+            }
+            if ('slice' in expr) {
+                const s = stringTerm(expr.slice);
+                const start = expr.start && numericTerm(expr.start);
+                const end =
+                    'end' in expr
+                    ? numericTerm(expr.end)
+                    : 'length' in expr
+                    ? (start || 0) + numericTerm(expr.length)
+                    : undefined;
+                return s.slice(start, end);
+            }
+            if ('repeat' in expr) {
+                const s = stringTerm(expr.repeat);
+                const n = numericTerm(expr.count);
+                return s.repeat(n);
+            }
+            if ('replace' in expr) {
+                const search = stringTerm(expr.replace);
+                const s = stringTerm(expr.in);
+                const replace = stringTerm(expr.with);
+                return expr.all
+                    ? s.replaceAll(search, replace)
+                    : s.replace(search, replace);
+            }
+            if ('charAt' in expr) {
+                const n = numericTerm(expr.charAt);
+                const s = stringTerm(expr.in);
+                return s.charAt(n);
+            }
+            if ('trim' in expr) return stringTerm(expr.trim).trim();
+            if ('trimEnd' in expr) return stringTerm(expr.trimEnd).trimEnd();
+            if ('trimStart' in expr) return stringTerm(expr.trimStart).trimStart();
+            if ('padStart' in expr) {
+                const s = stringTerm(expr.padStart);
+                const fill = expr.fill && stringTerm(expr.fill);
+                const n = numericTerm(expr.length);
+                return s.padStart(n, fill);
+            }
+            if ('padEnd' in expr) {
+                const s = stringTerm(expr.padEnd);
+                const fill = expr.fill && stringTerm(expr.fill);
+                const n = numericTerm(expr.length);
+                return s.padEnd(n, fill);
+            }
+
         }
         return resolve(/**
             @type {Exclude<U, number|boolean>} by the first two typeof cases above
@@ -403,6 +560,12 @@ export function evaluate(expr, resolve) {
         const subVal = term(sub);
         if (typeof subVal == 'boolean') return subVal;
         throw new Error('numeric value used in boolean expression');
+    }
+
+    /** @type {(sub: Textic<U>) => string} */
+    function stringTerm(sub) {
+        const subVal = term(sub);
+        return typeof subVal == 'string' ? subVal : '' + subVal;
     }
 }
 
