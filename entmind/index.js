@@ -348,7 +348,7 @@ export function execute(task, domain) {
 /**
  * @template U
  * @param {Expression<U>} expr
- * @param {(u: Exclude<U, number|boolean>) => number|boolean} resolve
+ * @param {(u: Exclude<U, number|boolean|string>) => number|boolean} resolve
  * @returns {number|boolean|string}
  */
 export function evaluate(expr, resolve) {
