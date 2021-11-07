@@ -25,7 +25,7 @@ function blend(x) {
 /**
  * @param {Maths} expr
  * @param {{get: (name: string) => number|undefined}} scope
- * @returns {number|boolean}
+ * @returns {string|number|boolean}
  */
 function calculate(expr, scope={get() {return undefined}}) {
     return term(expr);
