@@ -298,7 +298,7 @@ export function execute(task, domain) {
 
 /**
  * @template U
- * @typedef {U
+ * @typedef {(
  *   | string
  *   | {fromCodePoint: Numeric<U>[]}
  *   | {concat: Textic<U>[]}
@@ -316,7 +316,7 @@ export function execute(task, domain) {
  *   | {trimStart: Textic<U>}
  *   | {padStart: Textic<U>, length: Numeric<U>, fill?: Textic<U>}
  *   | {padEnd: Textic<U>, length: Numeric<U>, fill?: Textic<U>}
- * } Textic
+ * )} Textic
  */
 
 /**
