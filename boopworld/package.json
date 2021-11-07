@@ -1,0 +1,45 @@
+{
+  "name": "boopworld",
+  "version": "0.1.0",
+  "description": "Wrold Of Boopcraft",
+  "author": "Joshua T Corbin <jcorbin@wunjo.org>",
+  "license": "BSD-3-Clause",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/borkshop/js.git",
+    "directory": "boopworld"
+  },
+  "private": true,
+  "scripts": {
+    "lint": "tsc",
+    "test": "ava",
+    "cover": "nyc npm test",
+    "view-cover": "nyc report -r html && open coverage/index.html",
+    "ci": "npm run lint && npm run cover && nyc check-coverage"
+  },
+  "ava": {
+    "babel": {
+      "testOptions": {
+        "plugins": [
+          "@babel/plugin-syntax-class-properties"
+        ]
+      }
+    },
+    "require": [
+      "@babel/register",
+      "esm"
+    ]
+  },
+  "devDependencies": {
+    "@ava/babel": "^1.0.1",
+    "@babel/plugin-syntax-class-properties": "^7.12.13",
+    "@babel/register": "^7.13.8",
+    "ava": "^3.15.0",
+    "esm": "^3.2.25",
+    "nyc": "^15.1.0",
+    "open": "^8.0.2",
+    "typescript": "^4.0.3"
+  }
+}
+
