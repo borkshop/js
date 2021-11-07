@@ -79,7 +79,6 @@ test('maths', t => {
         {expr: {mul: [3, -2, {neg: 5}]}, expected: 3 * -2 * -5},
         {expr: {div: [13, 10]}, expected: 13/10},
         {expr: {mod: [13, 10]}, expected: 13%10},
-        {expr: {pow: [2, 3, 2]}, expected: Math.pow(Math.pow(2, 3), 2)},
 
         // numeric extensions
         {expr: "doge", expected: NaN},

@@ -201,7 +201,6 @@ export function execute(task, domain) {
  *   | {sub: Numeric<N>[]}
  *   | {mul: Numeric<N>[]}
  *   | {div: Numeric<N>[]}
- *   | {pow: Numeric<N>[]}
  *   | {mod: [Numeric<N>, Numeric<N>]}
  * } Numeric
  */
@@ -255,7 +254,6 @@ export function evaluate(expr, resolve) {
             if ('sub' in expr) return binop(expr.sub, (a, b) => a - b);
             if ('mul' in expr) return binop(expr.mul, (a, b) => a * b);
             if ('div' in expr) return binop(expr.div, (a, b) => a / b);
-            if ('pow' in expr) return binop(expr.pow, (a, b) => Math.pow(a, b));
             if ('mod' in expr) {
                 const [a, b] = expr.mod;
                 return numericTerm(a) % numericTerm(b);
