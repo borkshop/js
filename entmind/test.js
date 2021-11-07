@@ -16,38 +16,35 @@ function blend(x) {
 }
 
 /**
- * @template N
- * @typedef {Expression<N
- *   | {blend: Maths<N>}
+ * @typedef {Expression<
+ *   | {$: string}
+ *   | {blend: Maths}
  * >} Maths
  */
 
 /**
- * @param {Maths<string>} expr
+ * @param {Maths} expr
  * @param {{get: (name: string) => number|undefined}} scope
  * @returns {number|boolean}
  */
 function calculate(expr, scope={get() {return undefined}}) {
     return term(expr);
 
-    /**
-     * @param {Maths<string>} expr
-     * @returns {number|boolean}
-     */
+    /** @param {Maths} expr */
     function term(expr) {
         return evaluate(expr, expr => {
-            if (typeof expr == 'string') {
-                const value = scope.get(expr);
-                return value == undefined ? NaN : value;
-            }
             if (typeof expr == 'object') {
+                if ('$' in expr) {
+                    const value = scope.get(expr.$);
+                    return value == undefined ? NaN : value;
+                }
                 if ('blend' in expr) return blend(numericTerm(expr.blend));
             }
             assertNever(expr, 'invalid maths expression');
         });
     }
 
-    /** @type {(sub: Maths<string>) => number} */
+    /** @type {(sub: Maths) => number} */
     function numericTerm(sub) {
         const subVal = term(sub);
         if (typeof subVal == 'number') return subVal;
@@ -66,7 +63,7 @@ function assertNever(_, mess) {
 
 test('maths', t => {
     /** @type {(
-     * {expr: Maths<string>} & (
+     * {expr: Maths} & (
      *   | {expected: number|boolean}
      *   | {throws: string}
      * ))[]} */
@@ -84,10 +81,10 @@ test('maths', t => {
         {expr: "doge", expected: NaN},
         {expr: "such", expected: 10},
         {expr: "much", expected: 10000},
-        {expr: {sub: [{mul: [7, "much"]}, "such"]}, expected: 7 * 10000 - 10},
-        {expr: {sub: [{mul: [7, "much"]}, "doge"]}, expected: NaN},
+        {expr: {sub: [{mul: [7, {$:"much"}]}, {$:"such"}]}, expected: 7 * 10000 - 10},
+        {expr: {sub: [{mul: [7, {$:"much"}]}, {$:"doge"}]}, expected: NaN},
         {expr: {blend: 42}, expected: blend(42)},
-        {expr: {blend: {add: ["such", 9]}}, expected: blend(10 + 9)},
+        {expr: {blend: {add: [{$:"such"}, 9]}}, expected: blend(10 + 9)},
 
         // comparisons
         {expr: {eq: [1, 2]}, expected: false},
