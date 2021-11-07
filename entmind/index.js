@@ -247,6 +247,7 @@ export function execute(task, domain) {
 /**
  * @template U
  * @typedef {(
+ *   | U
  *   | Numeric<U>
  *   | Boolic<U>
  *   | Textic<U>
@@ -255,7 +256,7 @@ export function execute(task, domain) {
 
 /**
  * @template U
- * @typedef {U
+ * @typedef {(
  *   | number
  *   | {neg: Numeric<U>}
  *   | {add: Numeric<U>[]}
@@ -267,7 +268,7 @@ export function execute(task, domain) {
  *   | {codePointAt: Numeric<U>, in: Textic<U>}
  *   | {indexOf: Textic<U>, in: Textic<U>, position?: Numeric<U>}
  *   | {lastIndexOf: Textic<U>, in: Textic<U>, position?: Numeric<U>}
- * } Numeric
+ * )} Numeric
  */
 
 /**
@@ -278,8 +279,8 @@ export function execute(task, domain) {
 /**
  * @template U
  * @typedef {(
- *   | boolean
  *   | U
+ *   | boolean
  *   | Comparison<Numeric<U>>
  *   | Comparison<Textic<U>>
  *   | TextBools<U>
