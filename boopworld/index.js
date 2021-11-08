@@ -1,4 +1,82 @@
 /**
+ * @callback Thunk
+ * @param {ThunkCtx} ctx
+ * @returns {ThunkRes}
+ */
+
+/**
+ * @template Ext
+ * @callback ThunkExt
+ * @param {ThunkCtx} ctx
+ * @param {Ext} ext
+ * @returns {ThunkRes}
+ */
+
+/** @typedef {(
+ *   | {ok: true, reason: string, waitFor?: ThunkWaitFor, next?: Thunk}
+ *   | {ok: false, reason: string, waitFor?: ThunkWaitFor, next?: Thunk}
+ * )} ThunkRes */
+
+/** @param {Thunk} next @returns {ThunkRes} */
+export function thunkExec(next, reason='exec') { return {ok: true, next, reason} }
+
+/** @param {string} [reason] @returns {ThunkRes} */
+export function thunkDone(reason='done') { return {ok: true, reason} }
+
+/**
+ * @param {string} reason
+ * @param {Thunk} [next]
+ * @returns {ThunkRes}
+ */
+export function thunkFail(reason, next) { return {ok: false, reason, next} }
+
+/** @returns {ThunkRes} */
+export function thunkYield(reason='yield') { return {ok: true, reason} }
+
+/**
+ * @param {Thunk} next
+ * @returns {ThunkRes}
+ */
+export function thunkContinue(next, reason='continue') { return {ok: true, next, reason} }
+
+/**
+ * @param {ThunkWaitFor} waitFor
+ * @param {Thunk} [next]
+ * @returns {ThunkRes}
+ */
+export function thunkWait(waitFor, next, reason='wait') { return {ok: true, waitFor, next, reason} }
+
+/**
+ * @typedef {(
+ *   | EventType
+ *   | "input"
+ *   | {time: number}
+ *   | {any: ThunkWaitFor[]}
+ *   | {all: ThunkWaitFor[]}
+ * )} ThunkWaitFor */
+
+/**
+ * @typedef {object} ThunkCtx
+ * @prop {Entity} self
+ * @prop {number} time
+ * @prop {ShardView} view
+ * @prop {Move|undefined} move
+ * @prop {() => IterableIterator<number>} input
+ * @prop {() => IterableIterator<Readonly<Event>>} events
+ * @prop {(ref: EntityRef) => Entity|null} deref
+ * @prop {{
+ *   get: (key: string) => any,
+ *   set: (key: string, value: any) => void,
+ * }} memory
+ */
+
+/** @param {ThunkRes} res */
+function resultContinues(res) {
+    const {next, waitFor} = res;
+    return next || waitFor;
+}
+
+/**
  * @typedef {(
  *   | "up"
  *   | "right"
@@ -19,7 +97,28 @@
  * @prop {(bounds: Rect) => ShardView} makeView
  * @prop {CreatedEntity} root
  * @prop {(spec?: TypeSpec) => IterableIterator<CreatedEntity>} entities
+ * @prop {() => IterableIterator<[CreatedEntity, Event]>} events
+ * @prop {() => IterableIterator<[CreatedEntity, Move]>} moves
+ * @prop {() => IterableIterator<{entity: CreatedEntity, remnant: RemnantCtx}>} reap
+ * @prop {(ref: EntityRef) => CreatedEntity|null} deref
  * @prop {Creator} create
+ */
+
+/**
+ * @typedef {object} RemnantCtx
+ * @prop {boolean} done
+ * @prop {boolean} ok
+ * @prop {string} [reason]
+ * @prop {Thunk} thunk
+ * @prop {ThunkWaitFor} [waitFor]
+ * @prop {number} time
+ * @prop {Move} [move]
+ * @prop {Readonly<Event>[]} events
+ * TODO provide frozen view
+ * @prop {{
+ *   keys: () => IterableIterator<string>,
+ *   get: (key: string) => any,
+ * }} memory
  */
 
 /**
@@ -53,38 +152,45 @@
  */
 
 /**
- * @callback Input
- * @param {InputCtl|null} ctl
- * @returns {void}
+ * @callback InputBinder
+ * @param {((input: string) => void)|null} consumer
  */
 
-/**
- * @typedef {object} InputCtl
- * @prop {Entity} entity
- * @prop {(code: string) => void} queueInput
- * @prop {() => IterableIterator<Readonly<Event>>} events
- *
- * TODO per-input views; however we probably want to have those replace/consume
- *      the events stream, rather than expose it raw; such view would be
- *      canonically to entity memory/mind, and not necessarily transfer
- *      through Input recall; i.e. revoking a ctl should also revoke its view
- */
+export function makeInput() {
+    /** @type {((s: string) => void)|null} */
+    let consume = null;
+
+    return Object.freeze({
+        /** @type {InputBinder} */
+        bind(consumer) { consume = consumer },
+
+        /** @param {string} input */
+        provide(input) {
+            if (!consume) return false;
+            consume(input);
+            return true;
+        },
+    });
+}
 
 /**
  * @typedef {object} CreateSpec
  * @prop {boolean} [isSolid]
  * @prop {boolean} [isVisible]
  * @prop {boolean} [canInteract]
- * @prop {boolean} [hasMind]
- * @prop {Input} [input]
+ * @prop {Thunk} [mind]
+ * @prop {InputBinder} [bindInput]
  * @prop {number|string} [glyph]
  * @prop {Point} [location]
  * @prop {number} [zIndex]
  * @prop {string} [name]
  */
 
+/** @typedef {[number, number]} EntityRef */
+
 /**
  * @typedef {object} Entity
+ * @prop {EntityRef} ref
  * @prop {() => string} toString
  * @prop {boolean} isSolid
  * @prop {boolean} isVisible
@@ -107,43 +213,15 @@
  * @prop {() => void} destroy
  */
 
-/** @typedef {HitEvent|HitByEvent|MoveEvent|InspectEvent|InputEvent} Event */
-
-/**
- * @typedef {object} HitEvent
- * @prop {"hit"} type
- * @prop {number} time
- * @prop {number} target
+/** @typedef {(
+ *   | {time: number, type: "hit", target: EntityRef}
+ *   | {time: number, type: "hitBy", entity: EntityRef}
+ *   | {time: number, type: "move", from: Point, to: Point, here: EntityRef[]}
+ *   | {time: number, type: "inspect", here: EntityRef[]}
+ * )} Event
  */
 
-/**
- * @typedef {object} HitByEvent
- * @prop {"hitBy"} type
- * @prop {number} time
- * @prop {number} actor
- */
-
-/**
- * @typedef {object} MoveEvent
- * @prop {"move"} type
- * @prop {number} time
- * @prop {Point} from
- * @prop {Point} to
- * @prop {number[]} interactables
- */
-
-/**
- * @typedef {object} InspectEvent
- * @prop {"inspect"} type
- * @prop {number} time
- * @prop {number[]} interactables
- */
-
-/**
- * @typedef {object} InputEvent
- * @prop {"input"} type
- * @prop {string} code
- */
+/** @typedef {Event["type"]} EventType */
 
 /**
  * @callback Builder
@@ -190,14 +268,14 @@ export function makeShard({
 
       ;
 
-    /** @type {Map<number, (id: number) => void>} */
-    const typeAllocs = new Map();
-
-    /** @type {Map<number, (id: number) => void>} */
-    const typeDestroys = new Map();
+    //// shard init
+    let time = 0;
 
     /** @type {Map<number, Set<number>>} */
     const typeIndex = new Map();
+
+    /** @type {Map<number, (id: number) => void>} */
+    const typeDestroys = new Map();
 
     let types = new Uint8Array(2 * size);
 
@@ -216,34 +294,76 @@ export function makeShard({
     const events = new Map();
 
     //// input component init
-    /** @type {Map<number, {input: Input, revokes: (() => void)[]}>} */
+    /** @type {Map<number, number[]>} */
+    const inputQueues = new Map();
+
+    /** @type {Map<number, {bind: InputBinder, revoke: (() => void)}>} */
     const inputs = new Map();
-    typeDestroys.set(typeInput, id => {
-        const inputEntry = inputs.get(id);
-        if (!inputEntry) return;
-        const {input, revokes} = inputEntry;
-        input(null);
-        for (const revoke of revokes) revoke();
-        inputs.delete(id);
-    });
     typeIndex.set(typeInput, new Set());
+    typeDestroys.set(typeInput, id => {
+        const input = inputs.get(id);
+        if (input) {
+            input.bind(null);
+            input.revoke();
+            inputs.delete(id);
+            inputQueues.delete(id);
+        }
+    });
 
     //// mind component init
+
+    /** @type {Map<number, () => void>} */
+    const execRevoke = new Map();
+
+    /** @type {Map<number, Thunk>} */
+    const execThunk = new Map();
+
     /** @type {Map<number, Map<string, string>>} */
     const memories = new Map();
-    typeDestroys.set(typeMind, id => memories.delete(id));
+
+    /** @type {Map<number, ThunkCtx>} */
+    const execCtx = new Map();
+
+    // shared overview used by every ctx
+    const execView = makeView(overBounds);
+
+    /** @type {Map<number, number>} */
+    const execTick = new Map();
+
+    /** @type {Map<number, ThunkWaitFor>} */
+    const execWait = new Map();
+
+    /** @type {Map<number, string>} */
+    const names = new Map();
+
+    typeDestroys.set(typeMind, id => {
+        const revoke = execRevoke.get(id);
+        if (revoke) revoke();
+        execRevoke.delete(id);
+        execThunk.delete(id);
+        memories.delete(id);
+        execCtx.delete(id);
+        execTick.delete(id);
+        execWait.delete(id);
+    });
     typeIndex.set(typeMind, new Set());
 
     /**
-     * @typedef {object} execState
-     * @prop {Map<number, number>} ticks
+     * @typedef {object} Remnant
+     * @prop {boolean} done
+     * @prop {boolean} ok
+     * @prop {string} [reason]
+     * @prop {number} time
+     * @prop {number} tick
+     * @prop {Thunk} thunk
+     * @prop {ThunkWaitFor} [waitFor]
+     * @prop {Event[]} events
+     * @prop {Move} [move]
+     * @prop {Map<string, string>} memory]
      */
-
-    /** @type {null|execState} */
-    let exec = null;
-
-    //// shard init
-    let time = 0;
+    
+    /** @type {Map<number, Remnant>} */
+    const remnants = new Map();
 
     // mark the root/zero entity as allocated, and setup some fallbacks
     if (alloc() != 0) throw new Error('inconceivable root allocation');
@@ -254,10 +374,31 @@ export function makeShard({
 
     return freeze({
         update(deadline=now() + defaultTimeout) {
-            runEntities(deadline);
+            // run minds between and to generate moves
+            if (nextMove > time) {
+                const isReady = runMinds(deadline);
+                if (time <= 0 || isReady) {
+                    // start next time slice (immediately at time=0 and once ready after that)
+                    time++;
+                    execTick.clear();
+                    events.clear(); // TODO should this only clear if (time >= nextMove) ?
+                }
+            }
 
-            // NOTE: deadline oblivious, always call user control
-            if (control) control(makeCtl());
+            // process moves when it's time
+            if (time >= nextMove && processMoves(deadline)) {
+                nextMove = time + moveRate;
+                moves.clear();
+            }
+
+            // call user control between moves
+            if (control) {
+                // will happen at the start of each new turn
+                // and after each round of interstitial thought
+
+                // NOTE: deadline oblivious, always call user control
+                if (nextMove > time) control(makeCtl());
+            }
         },
     });
 
@@ -266,19 +407,9 @@ export function makeShard({
         return freeze(guard({
             get time() { return time },
 
-            get bounds() {
-                let minx = NaN, miny = NaN, maxx = NaN, maxy = NaN;
-                for (const id of ids(typeVisible)) {
-                    const {x, y} = getLoc(id);
-                    if (isNaN(minx) || x < minx) minx = x;
-                    if (isNaN(maxx) || x > maxx) maxx = x;
-                    if (isNaN(miny) || y < miny) miny = y;
-                    if (isNaN(maxy) || y > maxy) maxy = y;
-                }
-                return freeze({x: minx, y: miny, w: maxx-minx+1, h: maxy-miny+1});
-            },
+            get bounds() { return overBounds(); },
 
-            makeView,
+            makeView(bounds) { return makeView(bounds) },
 
             get root() { return createEntity(0) },
 
@@ -300,45 +431,89 @@ export function makeShard({
                     yield createEntity(id);
             },
 
+            *events() {
+                for (const [id, es] of events.entries()) {
+                    const ent = createEntity(id);
+                    for (const event of es)
+                        yield [ent, freeze(event)];
+                }
+            },
+
+            *moves() {
+                for (const [id, move] of moves) {
+                    const ent = createEntity(id);
+                    yield [ent, move];
+                }
+            },
+
+            *reap() {
+                for (const [id, remnant] of remnants.entries()) {
+                    remnants.delete(id);
+                    const {
+                        done, ok, reason,
+                        thunk, waitFor,
+                        time, move, events,
+                        memory,
+                    } = remnant;
+                    yield freeze({
+                        entity: createEntity(id),
+                        remnant: {
+                            done, ok, reason,
+                            thunk, waitFor,
+                            time, move, events,
+                            memory: {
+                                keys() { return memory.keys() },
+                                get(key) {
+                                    const json = memory.get(key);
+                                    return json && JSON.parse(json);
+                                },
+                            },
+                        },
+                    });
+                }
+            },
+
+            deref([id, gen]) {
+                if (!checkRef(id, gen)) return null;
+                return createEntity(id);
+            },
+
             create: makeCreator(),
         }, makeTimeGuard('ShardCtl')));
     }
 
     /**
-     * @param {Rect} bounds
+     * @param {Rect | (() => Rect)} bounds
      * @returns {ShardView}
      */
     function makeView(bounds) {
-        let {x, y, w, h} = bounds;
-        let stride = w + 1;        // +1 for a newline terminator
-        let size = stride * h - 1; // except on the final line
-        let zBuffer = new Uint8Array(size);
-        let idAt = new Uint16Array(size);
-        let glyphCache = new Uint32Array(size);
+        let x=0, y=0, w=0, h=0
+        let stride = 0;
+        let size = 0;
+        let zBuffer = new Uint8Array(0);
+        let idAt = new Uint16Array(0);
+        let glyphCache = new Uint32Array(0);
         /** @type {null|string} */
         let stringCache = null;
         let lastUpdate = NaN;
+        setBounds(typeof bounds == 'function' ? bounds() : bounds);
 
-        return freeze({
-            get bounds() { return freeze({x, y, w, h}) },
-            set bounds(bounds) {
-                ({x, y, w, h} = bounds);
-                stride = w + 1;        // +1 for a newline terminator
-                size = stride * h - 1; // except on the final line
-                if (size != zBuffer.length) {
-                    zBuffer = new Uint8Array(size);
-                    idAt = new Uint16Array(size);
-                    glyphCache = new Uint32Array(size);
-                }
-                lastUpdate = NaN;
+        /** @type {ShardView} */
+        const view = {
+            get bounds() {
+                if (typeof bounds == 'function') update();
+                return freeze({x, y, w, h});
             },
 
             at({x: px, y: py}) {
                 update();
                 const i = stride * py + px;
-                if (i < 0 || i >= idAt.length) return null;
+                if (isNaN(i) || i < 0 || i >= idAt.length) {
+                    return null;
+                }
                 const id = idAt[i];
-                return id ? freezeEntity(id, entity(id)) : null;
+                if (!id) return null;
+                return freezeEntity(id, entity(id));
             },
 
             toString() {
@@ -353,10 +528,32 @@ export function makeShard({
                 }
                 return stringCache = String.fromCodePoint(...glyphCache);
             },
-        });
+        };
+
+        if (typeof bounds != 'function')
+            Object.defineProperty(view, 'bounds', {
+                ...Object.getOwnPropertyDescriptor(view, 'bounds'),
+                set: setBounds,
+            });
+
+        return freeze(view);
+
+        /** @param {Rect} bounds */
+        function setBounds(bounds) {
+            ({x, y, w, h} = bounds);
+            stride = w + 1;        // +1 for a newline terminator
+            size = stride * h - 1; // except on the final line
+            if (size != zBuffer.length) {
+                zBuffer = new Uint8Array(size);
+                idAt = new Uint16Array(size);
+                glyphCache = new Uint32Array(size);
+            }
+            lastUpdate = NaN;
+        }
 
         function update() {
             if (lastUpdate == time) return;
+            if (typeof bounds == 'function') setBounds(bounds());
             zBuffer.fill(0);
             idAt.fill(0);
             for (const id of ids(typeVisible)) {
@@ -384,28 +581,142 @@ export function makeShard({
         };
     }
 
-    /** @param {number} _deadline */
-    function runMinds(_deadline) {
-        // minds don't run in prehistory
-        if (time <= 0) return true;
-
-        // TODO generalize this into some sort of entmind.Executor
-        if (!exec) {
-            const minds = Array.from(ids(typeMind));
-            exec = {
-                ticks: new Map(),
-            };
-            for (const id of minds) {
-                exec.ticks.set(id, 0);
+    /** @param {number} deadline */
+    function runMinds(deadline) {
+        // minds run from time=1 and on
+        if (time > 0 && !execTick.size) {
+            for (const id of ids(typeMind)) {
+                const waitFor = execWait.get(id);
+                if (waitFor) {
+                    if (!execRunnable(id, waitFor)) continue;
+                    execWait.delete(id);
+                }
+                execTick.set(id, 0);
             }
         }
 
-        // not done if any mind hasn't had at least once tick
-        for (const ticks of exec.ticks.values())
-            if (ticks < 1) return false;
+        while (execTick.size) {
+            // keep ticking all runnable minds until deadline is exceeded
+            for (const id of execTick.keys()) {
+                if (now() > deadline) return;
+                stepMind(id);
+            }
+            // stop ticking once minds are ready for next move
+            if (ready()) return true;
+        }
 
-        // done if every mind has had at least one tick
-        return true;
+        return false;
+    }
+
+    /**
+     * @param {number} id
+     * @param {object} params
+     * @param {boolean} params.done
+     * @param {boolean} params.ok
+     * @param {string} [params.reason]
+     * @param {Thunk} [params.thunk]
+     * @param {number} [params.tick]
+     * @param {ThunkCtx} [params.ctx]
+     * @param {Map<string, string>} [params.memory]
+     */
+    function reapMind(id, {
+        done, ok, reason,
+        thunk = execThunk.get(id),
+        tick = execTick.get(id) || 0,
+        ctx = execCtx.get(id),
+        memory = memories.get(id),
+    }) {
+        if (!thunk || !ctx) return;
+
+        const {time, move} = ctx;
+        const events = [...ctx.events()];
+
+        remnants.set(id, freeze({
+            // reap note
+            done, ok, reason,
+
+            // thunk state
+            thunk,
+            tick,
+            waitFor: execWait.get(id),
+
+            // ctx state
+            time,
+            events,
+            move,
+            // TODO view state
+
+            // TODO proxy memory to lazily parse gotten keys
+            memory: new Map(memory ? memory.entries() : []),
+        }));
+        updateType(id, t => t & ~typeMind);
+    }
+
+    /**
+     * @param {number} id
+     * @param {ThunkWaitFor} waitFor
+     * @returns {boolean}
+     */
+    function execRunnable(id, waitFor) {
+        if (typeof waitFor == 'string') switch (waitFor) {
+            case 'input':
+                const q = inputQueues.get(id);
+                return q ? q.length > 0 : false;
+
+            default:
+                const es = events.get(id);
+                if (!es) return false;
+                return es.some(({type}) => type == waitFor);
+        }
+        if ('any' in waitFor) return waitFor.any.some(w => execRunnable(id, w));
+        if ('all' in waitFor) return waitFor.all.every(w => execRunnable(id, w));
+        if ('time' in waitFor) return time >= waitFor.time;
+        assertNever(waitFor, 'invalid ThunkWaitFor');
+        return false;
+    }
+
+    /**
+     * @param {number} id
+     * @param {ShardView} view
+     * @returns {ThunkCtx}
+     */
+    function makeThunkCtx(id, view) {
+        return freeze(guard({
+            get self() { return freezeEntity(id, entity(id)) },
+
+            get time() { return time },
+
+            view,
+
+            get move() { return moves.get(id) },
+            set move(m) { setMove(id, m || null) },
+
+            *input() {
+                const q = inputQueues.get(id);
+                if (q) for (;;) {
+                    const codePoint = q.shift();
+                    if (codePoint == undefined) break;
+                    yield codePoint;
+                }
+            },
+
+            *events() {
+                const q = events.get(id);
+                if (q) for (const event of q)
+                    yield freeze(event);
+            },
+
+            deref([id, gen]) {
+                if (!checkRef(id, gen)) return null;
+                return freezeEntity(id, entity(id));
+            },
+
+            memory: {
+                get(key) { return memoryGet(id, key) },
+                set(key, value) { memorySet(id, key, value) },
+            },
+
+        }, makeEntityGuard(id)));
     }
 
     /**
@@ -428,59 +739,36 @@ export function makeShard({
         return memory && memory.get(key);
     }
 
-    // TODO rebuild minds
-    // /**
-    //  * @param {number} id
-    //  * @param {string} key
-    //  * @param {any} value
-    //  */
-    // function memorySet(id, key, value) {
-    //     let memory = memories.get(id);
-    //     if (!memory) memories.set(id, memory = new Map());
-    //     if (value == null) memory.delete(key);
-    //     else memory.set(key, JSON.stringify(value));
-    // }
+    /**
+     * @param {number} id
+     * @param {string} key
+     * @param {any} value
+     */
+    function memorySet(id, key, value) {
+        let memory = memories.get(id);
+        if (!memory) memories.set(id, memory = new Map());
+        if (value == null) memory.delete(key);
+        else memory.set(key, JSON.stringify(value));
+    }
+
+    function ready() {
+        // wait for all runnable minds to have executed at least one tick
+        for (const tick of execTick.values())
+            if (tick < 1) return false;
+
+        // wait for all input-able entities to choose a move
+        // TODO wait for all minds? some minds more than just the player?
+        for (const id of ids(typeInput))
+            if (!moves.has(id)) return false;
+
+        return true;
+    }
 
     /** @param {number} deadline */
-    function runEntities(deadline) {
-        // run entity minds while waiting for the next move
-        if (nextMove > time) {
-            // thoughts and moves may only start at time=1
-            if (time <= 0) {
-                moves.clear();
-            } else {
-                // wait for every mind to execute at least once
-                if (!runMinds(deadline)) return;
-
-                let ready = true;
-                let thinking = false;
-                for (const id of ids(typeInput)) {
-                    if (!moves.has(id)) ready = false;
-                }
-
-                // wait for all input-able entities to choose a move
-                if (!ready) {
-                    // reboot minds if all inputs have yielded for input
-                    if (!thinking) {
-                        events.clear();
-                        exec = null;
-                    }
-                    return; // wait for sufficient input
-                }
-            }
-
-            // clear execution state and events then advance time
-            events.clear();
-            exec = null;
-            time++;
-
-            // wait for nextMove
-            if (nextMove > time) return;
-        }
-
+    function processMoves(deadline) {
         // TODO groupwise conflict resolution or at least hacked via initiative
         for (const [id, move] of moves.entries()) {
-            if (now() > deadline) return;
+            if (now() > deadline) return false;
 
             moves.delete(id);
 
@@ -517,17 +805,19 @@ export function makeShard({
                 if (hit.length) {
                     hit.sort((a, b) => getZ(b) - getZ(a));
                     const hitId = hit[0];
-                    queueEvent(id, {type: "hit", time, target: hitId});
-                    queueEvent(hitId, {type: "hitBy", time, actor: id});
+                    queueEvent(id, {type: "hit", time, target: ref(hitId)});
+                    if (hasType(hitId, typeMind))
+                        queueEvent(hitId, {type: "hitBy", time, entity: ref(id)});
                 } else {
                     setLoc(id, {x: tox, y: toy});
                     queueEvent(id, {
                         type: "move", time,
                         from: {x, y},
                         to: {x: tox, y: toy},
-                        interactables: Array
+                        here: Array
                             .from(at(typeInteract, tox, toy))
-                            .filter(here => here != id),
+                            .filter(here => here != id)
+                            .map(ref),
                     });
                 }
             }
@@ -535,28 +825,25 @@ export function makeShard({
             function inspect() {
                 queueEvent(id, {
                     type: "inspect", time,
-                    interactables: Array
+                    here: Array
                         .from(at(typeInteract, x, y))
-                        .filter(here => here != id),
+                        .filter(here => here != id)
+                        .map(ref),
                 });
             }
-
         }
-
-        // advance nextMove timer
-        nextMove += moveRate;
+        return true;
     }
 
-    // TODO rebuild minds
-    // /**
-    //  * @param {number} id
-    //  * @param {Move|null} move
-    //  * @returns {void}
-    //  */
-    // function setMove(id, move) {
-    //     if (move) moves.set(id, move);
-    //     else moves.delete(id);
-    // }
+    /**
+     * @param {number} id
+     * @param {Move|null} move
+     * @returns {void}
+     */
+    function setMove(id, move) {
+        if (move) moves.set(id, move);
+        else moves.delete(id);
+    }
 
     /**
      * @param {number} id
@@ -623,6 +910,8 @@ export function makeShard({
      */
     function entity(id) {
         return {
+            get ref() { return ref(id) },
+
             toString() {
                 const gen = getTypeGen(id);
                 const {x, y} = getLoc(id), z = getZ(id);
@@ -638,7 +927,7 @@ export function makeShard({
                     [typeInput, 'INPUT'],
                 ])) if (hasType(id, t)) tags.push(tag);
 
-                const name = memoryGet(id, 'name');
+                const name = names.get(id);
                 return `Entity<${name ? `name:${name} ` : ''}id:${id} gen:${gen >> 1} @${x},${y},${z} [${tags.join(' ')}] glyph:${JSON.stringify(glyph)}>`;
             },
 
@@ -650,8 +939,24 @@ export function makeShard({
             get glyph() { return glyphs[id] },
             get location() { return getLoc(id) },
             get zIndex() { return getZ(id) },
-            get name() { return memoryGet(id, 'name') }
+            get name() { return names.get(id) || '' }
         };
+    }
+
+    /**
+     * @param {number} id
+     * @returns {EntityRef}
+     */
+    function ref(id) {
+        return [id, getTypeGen(id)];
+    }
+
+    /**
+     * @param {number} id
+     * @param {number} gen
+     */
+    function checkRef(id, gen) {
+        return getTypeGen(id) == gen && gen & typeAlloc;
     }
 
     /** @template {object} T, S
@@ -684,8 +989,8 @@ export function makeShard({
             isSolid = !!(protoType & typeSolid),
             isVisible = !!(protoType & typeVisible),
             canInteract = !!(protoType & typeInteract),
-            hasMind = !!(protoType & typeMind),
-            input: input,
+            mind,
+            bindInput,
             location: {x, y} = {x: 0, y: 0},
             zIndex: z = getZ(proto),
             glyph = glyphs[proto],
@@ -697,48 +1002,16 @@ export function makeShard({
             | (isSolid ? typeSolid : 0)
             | (isVisible ? typeVisible : 0)
             | (canInteract ? typeInteract : 0)
-            | (hasMind ? typeMind : 0)
-            | (input ? typeInput : 0)
+            | (mind ? typeMind : 0)
+            | (bindInput ? typeInput : 0)
         );
         setLoc(id, {x, y});
         setZ(id, z);
-        glyphs[id] = typeof glyph == 'string' ? (glyph.codePointAt(0) || 0xfffd) : glyph;
-
-        const memory = new Map();
-
-        // TODO consider promoting name to a first class sparse component outside of memory
-        if (name) memory.set('name', JSON.stringify(name));
-
-        if (memory.size) memories.set(id, memory);
-        else memories.delete(id);
-
-        const created = createEntity(id);
-
-        if (input) {
-            /** @type {(() => void)[]} */
-            const revokes = [];
-            inputs.set(id, {input, revokes});
-            const {proxy: ctl, revoke} = Proxy.revocable(({
-                get entity() { return freezeEntity(id, entity(id)) },
-
-                /** @param {string} code */
-                queueInput(code) {
-                    // TODO should the InputCtl just be guarded on this rather than revocable?
-                    if (!hasType(id, typeInput)) throw new Error('entity does not accept input');
-                    queueEvent(id, {type: 'input', code});
-                },
-
-                *events() {
-                    const q = events.get(id);
-                    if (q) for (const event of q)
-                        yield freeze(event);
-                },
-            }), {});
-            input(freeze(ctl));
-            revokes.push(revoke);
-        }
-
-        return created;
+        setGlyph(id, glyph);
+        setName(id, name);
+        setMind(id, mind);
+        setInput(id, bindInput);
+        return createEntity(id);
     }
 
     /**
@@ -823,16 +1096,29 @@ export function makeShard({
     /** @param {number} id */
     function getType(id) { return types[2 * id + 1] }
 
+    /** @param {number} id @param {(t: number) => number} up */
+    function updateType(id, up) {
+        const ot = types[2 * id + 1];
+        const t = up(ot);
+        if (t != ot) {
+            types[2 * id + 1] = t;
+            notifyType(id, ot, t);
+        }
+    }
+
     /** @param {number} id @param {number} t */
     function setType(id, t) {
         const ot = types[2 * id + 1];
         types[2 * id + 1] = t;
+        notifyType(id, ot, t);
+    }
 
-        for (const [typeFilter, typeAlloc] of typeAllocs.entries()) {
-            const was = ot & typeFilter;
-            const is = t & typeFilter;
-            if (is && !was) typeAlloc(id);
-        }
+    /** @param {number} id @param {number} ot @param {number} t */
+    function notifyType(id, ot, t) {
+        // NOTE: intentionally provides no allocation notification
+        // - systems should instead be designed to deal with zero/missing component data
+        // - heritage all the way up from the root entity should suffice
+        //   - e.g. how default glyph=" " flows through
 
         for (const [typeFilter, idx] of typeIndex.entries()) {
             const was = ot & typeFilter;
@@ -846,6 +1132,19 @@ export function makeShard({
             const is = t & typeFilter;
             if (was && !is) typeDestroy(id);
         }
+    }
+
+    function overBounds() {
+        // TODO is it better to just iterate on loc directly?
+        let minx = NaN, miny = NaN, maxx = NaN, maxy = NaN;
+        for (const id of ids(typeVisible)) {
+            const {x, y} = getLoc(id);
+            if (isNaN(minx) || x < minx) minx = x;
+            if (isNaN(maxx) || x > maxx) maxx = x;
+            if (isNaN(miny) || y < miny) miny = y;
+            if (isNaN(maxy) || y > maxy) maxy = y;
+        }
+        return freeze({x: minx, y: miny, w: maxx-minx+1, h: maxy-miny+1});
     }
 
     /** @param {number} id */
@@ -868,6 +1167,102 @@ export function makeShard({
 
     /** @param {number} id @param {number} z */
     function setZ(id, z) { locs[3 * id + 2] = z; }
+
+    /** @param {number} id @param {number|string} glyph */
+    function setGlyph(id, glyph) {
+        glyphs[id] = typeof glyph == 'string' ? (glyph.codePointAt(0) || 0xfffd) : glyph;
+    }
+
+    /** @param {number} id @param {string} [name] */
+    function setName(id, name) {
+        // TODO separate component flag ( currently considered part of mind )
+        // TODO uniqueness / reverse index
+        if (name) names.set(id, name);
+        else names.delete(id);
+    }
+
+    /** @param {number} id @param {Thunk} [mind] */
+    function setMind(id, mind) {
+        if (!mind) {
+            updateType(id, t => t & ~typeMind);
+            return;
+        }
+        const revoke = execRevoke.get(id);
+        if (revoke) revoke();
+        execRevoke.delete(id);
+        execThunk.set(id, mind);
+        // NOTE: any prior memories remain
+        // TODO add optional memory init param
+        execCtx.delete(id);
+        execTick.delete(id);
+        execWait.delete(id);
+    }
+
+    /** @param {number} id */
+    function stepMind(id) {
+        const res = stepThunk(id);
+        const {ok, reason, next, waitFor} = res;
+        if (next) execThunk.set(id, next);
+        if (waitFor && !execRunnable(id, waitFor)) {
+            execWait.set(id, waitFor);
+            execTick.delete(id);
+            return false;
+        }
+        if (!resultContinues(res)) {
+            reapMind(id, {done: true, ok, reason});
+            return false;
+        }
+        return true;
+    }
+
+    /** @param {number} id */
+    function stepThunk(id) {
+        const thunk = execThunk.get(id);
+        if (!thunk) {
+            execTick.delete(id);
+            return thunkFail('no thunk defined');
+        }
+        const ctx = getExecCtx(id);
+        const tick = (execTick.get(id) || 0)+1;
+        execTick.set(id, tick);
+        return thunk(ctx);
+    }
+
+    /** @param {number} id */
+    function getExecCtx(id) {
+        const ctx = execCtx.get(id);
+        if (ctx) return ctx;
+
+        // TODO private view backed by a private shard filled by sensed data
+        const view = execView;
+
+        const {proxy, revoke} = Proxy.revocable(makeThunkCtx(id, view), {});
+        execRevoke.set(id, revoke);
+        execCtx.set(id, proxy);
+        return proxy;
+    }
+
+    /** @param {number} id @param {InputBinder} [bind] */
+    function setInput(id, bind) {
+        if (!bind) {
+            updateType(id, t => t & ~typeInput);
+            return;
+        }
+        let input = inputs.get(id);
+        if (input) input.revoke();
+        let revoked = false;
+        input = {bind, revoke() { revoked = true }};
+        inputs.set(id, input);
+        input.bind(s => {
+            if (revoked) throw new Error('Cannot provide to revoked input consumer');
+            let q = inputQueues.get(id);
+            if (!q) inputQueues.set(id, q = []);
+            for (const glyph of s) {
+                const codePoint = glyph.codePointAt(0);
+                if (codePoint != undefined) q.push(codePoint);
+            }
+        });
+    }
 }
 
 /**
@@ -924,17 +1319,20 @@ export function guard(o, ...guards) {
     return o;
 
     /** @param {O} o */
-    function walk(o, desc='') {
+    function walk(o, path='') {
+        if (Object.isFrozen(o))
+            throw new Error(`cannot guard frozen object${path}`);
+
         if (once.has(o)) return;
         try {
             once.add(o);
         } catch(e) {
-            throw new Error(`${e} in ${desc}`);
+            throw new Error(`${e} in ${path}`);
         }
         for (const [key, desc] of Object.entries(Object.getOwnPropertyDescriptors(o))) {
             const {value, get, set} = desc;
-            if (typeof value === 'object' && desc.writable) {
-                walk(value, `${desc}.${key}`);
+            if (typeof value === 'object' && desc.writable && !Object.isFrozen(value)) {
+                walk(value, `${path}.${key}`);
                 continue;
             }
 
@@ -963,4 +1361,12 @@ export function guard(o, ...guards) {
             if (dirty) Object.defineProperty(o, key, desc);
         }
     }
+}
+
+/**
+ * @param {never} _
+ * @param {string} desc
+ */
+function assertNever(_, desc) {
+    throw new Error(desc);
 }
