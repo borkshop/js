@@ -31,6 +31,12 @@
       "esm"
     ]
   },
+  "nyc": {
+    "lines": 80,
+    "functions": 69,
+    "statements": 76,
+    "branches": 65
+  },
   "devDependencies": {
     "@ava/babel": "^1.0.1",
     "@babel/plugin-syntax-class-properties": "^7.12.13",

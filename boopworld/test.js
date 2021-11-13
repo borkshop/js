@@ -288,6 +288,22 @@ function makeTestStepper(steps, {
 
 test('boops', t => {
     const testSteps = makeTestStepper([
+        /* TODO test coverages goals
+         * - thunk continuation / swapping
+         * - thunk resultors currently unused: thunkExec, thunkDone, thunkFail, thunkYield, and thunkContinue
+         * - mind death / reaping
+         * - input rebind
+         * - either of those 2 will cover component destruction paths
+         * - a thunk that inspects its events
+         * - a thunk that derefs entities (e.g. from such events)
+         * - hitting a cell that contains more than one solid entity
+         *   - e.g. one entity still stood in a doorway it closed, gets hit by another entity
+         *   - e.g. an object buried in a wall
+         * - other lol moves like "left" or "stay"
+         * - sub views, querying view dead space, and such
+         *   - however this should wait for the private view revamp
+         * - all of the banal branches, however many will need dedicated unit tests only once we hit a done-enough point
+         */
 
         {time: 1, expect: {
             overview: [
