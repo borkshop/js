@@ -166,15 +166,20 @@ function makePRNG(seed, inc=12345) {
 
 /** @typedef {({entity: boopworld.EntityRef} & boopworld.Event)} eventRecord */
 
+/** @typedef {Partial<boopworld.Point>} Movement */
+
 /** @typedef {(
- *   | {overview: string|string[]}
- *   | {events: eventRecord[]}
- *   | {moves: [name: string, move: boopworld.Move][]}
- * )} ctlExpect */
+*   | {overview: string|string[]}
+*   | {events: eventRecord[]}
+*   | {moves: [name: string, move: boopworld.Move][]}
+*   | {movement: { [name: string]: Movement}}
+*   | {movements: { [name: string]: MaybeCounted<Movement>[] }}
+* )} ctlExpect */
 
 /** @typedef {(
  *   | "update"
  *   | {input: string}
+ *   | {inputs: MaybeCounted<string>[]}
  * )} ctlDo */
 
 /**
@@ -284,24 +289,26 @@ function makeTestStepper(steps, {
 test('boops', t => {
     const testSteps = makeTestStepper([
 
-        {time: 1, expect: {overview: [
-            '########                ',
-            '#@·····#                ',
-            '#······#                ',
-            '#······##########       ',
-            '#······+········#       ',
-            '#······########·#       ',
-            '#······#      #·#       ',
-            '########      #·#       ',
-            '              #·#       ',
-            '              #·#       ',
-            '            ###+########',
-            '            #··········#',
-            '            #··········#',
-            '            #·········D#',
-            '            ############',
-        ]}},
-        {time: 1, expect: {events: []}},
+        {time: 1, expect: {
+            overview: [
+                '########                ',
+                '#@·····#                ',
+                '#······#                ',
+                '#······##########       ',
+                '#······+········#       ',
+                '#······########·#       ',
+                '#······#      #·#       ',
+                '########      #·#       ',
+                '              #·#       ',
+                '              #·#       ',
+                '            ###+########',
+                '            #··········#',
+                '            #··········#',
+                '            #·········D#',
+                '            ############',
+            ],
+            events: [],
+        }},
 
         {time: 1, do: 'update'},
         {time: 1, expect: {moves: [
@@ -309,41 +316,29 @@ test('boops', t => {
         ]}},
 
         {time: 1, do: {input: 's'}},
-        {time: 2, expect: {overview: [
-            '########                ',
-            '#······#                ',
-            '#@·····#                ',
-            '#······##########       ',
-            '#······+········#       ',
-            '#······########·#       ',
-            '#······#      #·#       ',
-            '########      #·#       ',
-            '              #·#       ',
-            '              #·#       ',
-            '            ###+########',
-            '            #··········#',
-            '            #·········D#',
-            '            #··········#',
-            '            ############',
-        ]}},
-        {time: 2, expect: {events: [
-            {
-                entity: [253,1],
-                time: 2,
-                type: "move",
-                from: {x:22, y:13},
-                to: {x:22, y:12},
-                here: [],
-            },
-            {
-                entity: [252,1],
-                time: 2,
-                type: "move",
-                from: {x:1, y:1},
-                to: {x:1, y:2},
-                here: [],
-            },
-        ]}},
+        {time: 2, expect: {
+            overview: [
+                '########                ',
+                '#······#                ',
+                '#@·····#                ',
+                '#······##########       ',
+                '#······+········#       ',
+                '#······########·#       ',
+                '#······#      #·#       ',
+                '########      #·#       ',
+                '              #·#       ',
+                '              #·#       ',
+                '            ###+########',
+                '            #··········#',
+                '            #·········D#',
+                '            #··········#',
+                '            ############',
+            ], 
+            events: [
+                {entity: [253,1], time: 2, type: "move", from: {x:22, y:13}, to: {x:22, y:12}, here: []},
+                {entity: [252,1], time: 2, type: "move", from: {x:1, y:1}, to: {x:1, y:2}, here: []},
+            ],
+        }},
 
         {time: 2, do: 'update'},
         {time: 2, expect: {moves: [
@@ -351,12 +346,80 @@ test('boops', t => {
         ]}},
 
         {time: 2, do: {input: 'd'}},
-        {time: 3, expect: {overview: [
+        {time: 3, expect: {
+            overview: [
+                '########                ',
+                '#······#                ',
+                '#·@····#                ',
+                '#······##########       ',
+                '#······+········#       ',
+                '#······########·#       ',
+                '#······#      #·#       ',
+                '########      #·#       ',
+                '              #·#       ',
+                '              #·#       ',
+                '            ###+########',
+                '            #·········D#',
+                '            #··········#',
+                '            #··········#',
+                '            ############',
+            ],
+            events: [
+                {entity: [253,1], time: 3, type: "move", from: {x:22, y:12}, to: {x:22, y:11}, here: []},
+                {entity: [252,1], time: 3, type: "move", from: {x:1, y:2}, to: {x:2, y:2}, here: []},
+            ],
+        }},
+
+        {time: 3, do: {inputs: [
+            [2, 'd'], 's',
+            [2, 'd'], 's',
+            'd',
+        ]}},
+
+        {time: 4, expect: {movements: {
+            protagonist: [
+                [2, {x: 1}], {y: 1},
+                [2, {x: 1}], {y: 1},
+                {},
+            ],
+            antagonist: [
+                // FIXME why? doesn't seem very "random" ; also y no left/right?
+                [3, {y: 1}, {y: -1}],
+                {y: 1},
+            ],
+        }}},
+
+        {time: 10, expect: {
+            overview: [
+                '########                ',
+                '#······#                ',
+                '#······#                ',
+                '#······##########       ',
+                '#·····@-········#       ',
+                '#······########·#       ',
+                '#······#      #·#       ',
+                '########      #·#       ',
+                '              #·#       ',
+                '              #·#       ',
+                '            ###+########',
+                '            #··········#',
+                '            #·········D#',
+                '            #··········#',
+                '            ############',
+            ],
+            events: [
+                {entity: [252, 1], time: 10, type: "hit", target: [60, 3]},
+                {entity: [253, 1], time: 10, type: "move", from: {x: 22, y: 11}, to: {x: 22, y: 12}, here: []},
+            ]
+        }},
+
+        {time: 10, do: {input: 'd'}},
+        {time: 11, expect: {overview: [
             '########                ',
             '#······#                ',
-            '#·@····#                ',
+            '#······#                ',
             '#······##########       ',
-            '#······+········#       ',
+            '#······@········#       ',
             '#······########·#       ',
             '#······#      #·#       ',
             '########      #·#       ',
@@ -368,59 +431,120 @@ test('boops', t => {
             '            #··········#',
             '            ############',
         ]}},
-        {time: 3, expect: {events: [
-            {
-                entity: [253,1],
-                time: 3,
-                type: "move",
-                from: {x:22, y:12},
-                to: {x:22, y:11},
-                here: [],
-            },
-            {
-                entity: [252,1],
-                time: 3,
-                type: "move",
-                from: {x:1, y:2},
-                to: {x:2, y:2},
-                here: [],
-            },
+
+        {time: 11, do: {inputs: [
+            [8, 'd'],
+            [6, 's'],
+        ]}},
+        {time: 12, expect: {movements: {
+            protagonist: [
+                [8, {x: 1}],
+                [5, {y: 1}],
+                {},
+            ],
+            antagonist: [
+                // FIXME why? doesn't seem very "random" ; also y no left/right?
+                [7, {y: 1}, {y: -1}],
+            ],
+        }}},
+
+        {time: 19, expect: {overview: [
+            '########                ',
+            '#······#                ',
+            '#······#                ',
+            '#······##########       ',
+            '#······-·······@#       ',
+            '#······########·#       ',
+            '#······#      #·#       ',
+            '########      #·#       ',
+            '              #·#       ',
+            '              #·#       ',
+            '            ###+########',
+            '            #·········D#',
+            '            #··········#',
+            '            #··········#',
+            '            ############',
+        ]}},
+
+        {time: 25, expect: {overview: [
+            '########                ',
+            '#······#                ',
+            '#······#                ',
+            '#······##########       ',
+            '#······-········#       ',
+            '#······########·#       ',
+            '#······#      #·#       ',
+            '########      #·#       ',
+            '              #·#       ',
+            '              #@#       ',
+            '            ###-########',
+            '            #·········D#',
+            '            #··········#',
+            '            #··········#',
+            '            ############',
         ]}},
 
     ], {
         log: t.log
     });
 
+    /** @type {boolean|null} */
+    let tracing = null;
+
+    /**
+     * @param {boolean|null} value
+     * @param {() => void} body
+     */
+    function withTracing(value, body) {
+        const prior = tracing;
+        tracing = value;
+        try { body() }
+        finally { tracing = prior }
+    }
+
     const player = boopworld.makeInput();
 
     /** @type {boopworld.ShardView|null} */
     let overview = null;
 
+    /** @type {{
+     *   movements: Map<string, Partial<boopworld.Point>[]>
+     * }} */
+    const expecting = {
+        movements: new Map(),
+    };
+
     const shard = boopworld.makeShard({
-        build(_root, create) {
-            const floor = create({
+        build(root) {
+            const floor = root.create({
                 glyph: '·', // ·⦁⦂⦙⦚ etc other fences in misc math syms
                 zIndex: 1,
                 isVisible: true,
                 isSolid: false,
             });
 
-            const wall = create({
+            const wall = root.create({
                 glyph: '#',
                 zIndex: 8,
                 isVisible: true,
                 isSolid: true,
             });
 
-            const door = create({
+            const door = root.create({
                 glyph: '+',
                 zIndex: 9,
                 isVisible: true,
                 isSolid: true,
-                // TODO interaction
+                interact: ctx => {
+                    const {subject} = ctx;
+                    const closed = subject.isSolid;
+                    subject.isSolid = !closed;
+                    subject.glyph = closed ? '-' : '+';
+                    // TODO open/close events
+                },
             });
 
-            const char = create({
+            const char = root.create({
                 glyph: 'X',
                 zIndex: 16,
                 isVisible: true,
@@ -543,7 +667,7 @@ test('boops', t => {
                     seed = seeder.next();
                     inc = (seeder.inc + seeder.randint()) % seeder.maxint;
                     rng = makePRNG(seed, inc);
-                    rng.blend(ctx.self.name);
+                    rng.blend(ctx.self.name || 'unnamed');
                 }
 
                 // run the extended thunk passing it just the normative random()
@@ -560,7 +684,7 @@ test('boops', t => {
                 location: {x: 1, y: 1},
                 name: "protagonist",
                 glyph: '@',
-                bindInput: player.bind,
+                input: player.bind,
                 mind: spyThunk('protagonist', ctx => {
                     // TODO present events to user
                     // TODO render from ctx.view
@@ -669,40 +793,73 @@ test('boops', t => {
                         Array.isArray(ov) ? ovs.split('\n') : ovs,
                         ov, `${testSteps.stamp} overview`);
                     ovExpected = true;
-                    continue;
                 }
 
-                if ('moves' in step) {
+                else if ('moves' in step) {
                     t.deepEqual(mvRecords, step.moves, `${testSteps.stamp} moves`);
                     mvExpected = true;
-                    continue;
                 }
 
-                if ('events' in step) {
+                else if ('events' in step) {
                     t.deepEqual(evRecords, step.events, `${testSteps.stamp} events`);
                     evExpected = true;
-                    continue;
                 }
 
-                assertNever(step, 'unimplemented ctl.expect')
+                else if ('movement' in step) {
+                    for (const [name, delta] of Object.entries(step.movement))
+                        t.deepEqual(getMovement(name), delta, `${testSteps.stamp} ${name} movement`)
+                    evExpected = true;
+                }
+
+                else if ('movements' in step) {
+                    for (const [name, deltas] of Object.entries(step.movements))
+                        expecting.movements.set(name, [...expandCounts(deltas)]);
+                }
+
+                else assertNever(step, 'unimplemented control expect');
+            }
+
+            for (const [name, deltas] of expecting.movements) {
+                const delta = deltas.shift();
+                if (!deltas.length) expecting.movements.delete(name);
+                if (delta) t.deepEqual(
+                    getMovement(name), delta,
+                    `${testSteps.stamp} ${name} movement`);
+                evExpected = true;
+            }
+
+            /** @param {string} name */
+            function getMovement(name) {
+                /** @type {Partial<boopworld.Point>} */
+                const d = {};
+                for (const [entity, event] of ctl.events())
+                    if (entity.name == name && event.type == 'move') {
+                        const {from: {x: x1, y: y1}, to: {x: x2, y: y2}} = event;
+                        if (x2 != x1) d.x = x2 - x1;
+                        if (y2 != y1) d.y = y2 - y1;
+                        break;
+                    }
+                return d;
             }
 
             if (testSteps.tick == 0) {
-                if (!ovExpected) {
+                const noExpects = !(ovExpected || evExpected || mvExpected);
+                if ( tracing === true ||
+                    (tracing === null && noExpects)) {
                     t.log(`== ${testSteps.stamp} overview`);
                     t.log('```');
                     t.log(overview.toString());
                     t.log('```');
-                }
-                if (!mvExpected && mvRecords.length) {
-                    t.log(`== ${testSteps.stamp} moves`);
-                    for (const rec of mvRecords)
-                        t.log(`- ${JSON.stringify(rec)}`);
-                }
-                if (!evExpected && evRecords.length) {
-                    t.log(`== ${testSteps.stamp} events`);
-                    for (const rec of evRecords)
-                        t.log(`- ${JSON.stringify(rec)}`);
+                    if (mvRecords.length) {
+                        t.log(`== ${testSteps.stamp} moves`);
+                        for (const rec of mvRecords)
+                            t.log(`- ${JSON.stringify(rec)}`);
+                    }
+                    if (evRecords.length) {
+                        t.log(`== ${testSteps.stamp} events`);
+                        for (const rec of evRecords)
+                            t.log(`- ${JSON.stringify(rec)}`);
+                    }
                 }
             }
 
@@ -728,35 +885,59 @@ test('boops', t => {
 
         },
     });
-    
+
     testSteps.run(() => {
         for (const step of testSteps.take('test do',
             step => 'do' in step ? step.do : null,
         )) {
             t.log(`= ${testSteps.stamp} do ${JSON.stringify(step)}`);
-            if (typeof step == 'string') switch (step) {
 
-            case 'update':
-                t.log(`= ${testSteps.stamp} shard update (explicit)`);
-                shard.update();
-                continue;
+            if (step === 'update')
+                update('explicit');
 
-            }
-
-            else if ('input' in step) {
+            else if ('input' in step)
                 t.true(player.provide(step.input), 'must provide input');
-                continue;
-            }
 
-            assertNever(step, 'unimplemented ctl.do')
+            else if ('inputs' in step) withTracing(false, () => {
+                let first = true;
+                for (const input of expandCounts(step.inputs)) {
+                    if (first) first = false;
+                    else update('inter-input');
+                    t.true(player.provide(input), 'must provide input');
+                }
+            });
+
+            else assertNever(step, 'unimplemented control do')
         }
 
-        t.log(`= ${testSteps.stamp} shard update (implicit)`);
-        shard.update();
+        update();
+
+        function update(why='implicit') {
+            t.log(`= ${testSteps.stamp} shard update (${why})`);
+            shard.update();
+        }
     });
 
     // TODO obsolete prior guard test by testing its effect within shard
 });
+
+/** @template T @typedef {T | [number, ...T[]]} MaybeCounted */
+
+/**
+ * @template T
+ * @param {MaybeCounted<T>[]} items
+ * @returns {Generator<T>}
+ */
+function *expandCounts(items) {
+    for (const item of items) {
+        if (Array.isArray(item)) {
+            const [count, ...values] = item;
+            for (let i=count; i-->0;)
+                yield* values;
+        }
+        else yield item;
+    }
+}
 
 /**
  * @param {never} _

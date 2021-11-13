@@ -1,0 +1,24 @@
+
+  ✔ freeze
+  ✔ guard
+  ✔ boops
+    ℹ = T∄ shard update (implicit)
+    ℹ = T1.0 do "update"
+    ℹ = T1.0 shard update (explicit)
+    ℹ = T1.1 do {"input":"s"}
+    ℹ = T1.1 shard update (implicit)
+    ℹ = T2.0 do "update"
+    ℹ = T2.0 shard update (explicit)
+    ℹ = T2.1 do {"input":"d"}
+    ℹ = T2.1 shard update (implicit)
+    ℹ = T3.0 do {"inputs":["d","d","s","d","d","s","d"]}
+    ℹ = T3.0 shard update (inter-input)
+    ℹ = T4.0 shard update (inter-input)
+    ℹ = T5.0 shard update (inter-input)
+    ℹ = T6.0 shard update (inter-input)
+    ℹ = T7.0 shard update (inter-input)
+    ℹ = T8.0 shard update (inter-input)
+    ℹ = T9.0 shard update (implicit)
+  ─
+
+  3 tests passed

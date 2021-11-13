@@ -1,4 +1,27 @@
 /**
+ * @callback Interaction
+ * @param {InteractCtx} ctx
+ * @returns {void}
+ */
+
+/**
+ * @typedef {object} InteractCtx
+ * @prop {Entity} self
+ * @prop {Entity} subject
+ * @prop {number} time
+ * @prop {(self: Event, subject: Event) => void} queueEvents
+ */
+
+/** @type {Interaction} */
+function defaultInteraction(ctx) {
+    const {time, self, subject} = ctx;
+    ctx.queueEvents(
+        {type: "hit", time, target: subject.ref},
+        {type: "hitBy", time, entity: self.ref},
+    );
+}
+
+/**
  * @callback Thunk
  * @param {ThunkCtx} ctx
  * @returns {ThunkRes}
@@ -57,13 +80,13 @@ export function thunkWait(waitFor, next, reason='wait') { return {ok: true, wait
 
 /**
  * @typedef {object} ThunkCtx
- * @prop {Entity} self
+ * @prop {ROEntity} self
  * @prop {number} time
  * @prop {ShardView} view
  * @prop {Move|undefined} move
  * @prop {() => IterableIterator<number>} input
  * @prop {() => IterableIterator<Readonly<Event>>} events
- * @prop {(ref: EntityRef) => Entity|null} deref
+ * @prop {(ref: EntityRef) => ROEntity|null} deref
  * @prop {{
  *   get: (key: string) => any,
  *   set: (key: string, value: any) => void,
@@ -95,13 +118,12 @@ function resultContinues(res) {
  * @prop {number} time
  * @prop {Rect} bounds
  * @prop {(bounds: Rect) => ShardView} makeView
- * @prop {CreatedEntity} root
- * @prop {(spec?: TypeSpec) => IterableIterator<CreatedEntity>} entities
- * @prop {() => IterableIterator<[CreatedEntity, Event]>} events
- * @prop {() => IterableIterator<[CreatedEntity, Move]>} moves
- * @prop {() => IterableIterator<{entity: CreatedEntity, remnant: RemnantCtx}>} reap
- * @prop {(ref: EntityRef) => CreatedEntity|null} deref
- * @prop {Creator} create
+ * @prop {Entity} root
+ * @prop {(spec?: TypeSpec) => IterableIterator<Entity>} entities
+ * @prop {() => IterableIterator<[Entity, Event]>} events
+ * @prop {() => IterableIterator<[Entity, Move]>} moves
+ * @prop {() => IterableIterator<{entity: Entity, remnant: RemnantCtx}>} reap
+ * @prop {(ref: EntityRef) => Entity|null} deref
  */
 
 /**
@@ -124,7 +146,7 @@ function resultContinues(res) {
 /**
  * @typedef {object} ShardView
  * @prop {Rect} bounds
- * @prop {(p: Point) => Entity|null} at
+ * @prop {(p: Point) => ROEntity|null} at
  * @prop {() => string} toString
  */
 
@@ -173,45 +195,28 @@ export function makeInput() {
     });
 }
 
-/**
- * @typedef {object} CreateSpec
- * @prop {boolean} [isSolid]
- * @prop {boolean} [isVisible]
- * @prop {boolean} [canInteract]
- * @prop {Thunk} [mind]
- * @prop {InputBinder} [bindInput]
- * @prop {number|string} [glyph]
- * @prop {Point} [location]
- * @prop {number} [zIndex]
- * @prop {string} [name]
- */
-
 /** @typedef {[number, number]} EntityRef */
 
 /**
  * @typedef {object} Entity
  * @prop {EntityRef} ref
  * @prop {() => string} toString
- * @prop {boolean} isSolid
- * @prop {boolean} isVisible
- * @prop {boolean} canInteract
- * @prop {boolean} hasMind
- * @prop {boolean} hasInput
- * @prop {number} glyph
  * @prop {Point} location
  * @prop {number} zIndex
- * @prop {string} name
- */
-
-/** @typedef {(spec: CreateSpec) => CreatedEntity} Creator */
-
-/** @typedef {Entity & CreateEntity} CreatedEntity */
-
-/**
- * @typedef {object} CreateEntity
- * @prop {Creator} create
+ * @prop {number|string} glyph
+ * @prop {boolean} isSolid
+ * @prop {boolean} isVisible
+ * @prop {string} [name]
+ * @prop {Interaction} [interact]
+ * @prop {Thunk} [mind]
+ * @prop {InputBinder} [input]
+ * @prop {(spec: EntitySpec) => Entity} create
  * @prop {() => void} destroy
  */
+
+/** @typedef {Readonly<Omit<Entity, "create" | "destroy">>} ROEntity */
+
+/** @typedef {Partial<Omit<Entity, "ref" | "toString">>} EntitySpec */
 
 /** @typedef {(
  *   | {time: number, type: "hit", target: EntityRef}
@@ -225,9 +230,8 @@ export function makeInput() {
 
 /**
  * @callback Builder
- * @param {CreatedEntity} root
- * @param {Creator} create
- * TODO pass an at(Point) => ...CreatedEntity
+ * @param {Entity} root
+ * TODO pass an at(Point) => ...Entity
  * @returns void
  */
 
@@ -310,6 +314,11 @@ export function makeShard({
         }
     });
 
+    //// interaction component init
+
+    /** @type {Map<number, Interaction>} */
+    const interacts = new Map();
+
     //// mind component init
 
     /** @type {Map<number, () => void>} */
@@ -370,7 +379,7 @@ export function makeShard({
     glyphs[0] = 0x20; // ascii <space>
 
     // build all entities at time=0
-    build(createEntity(0), makeCreator());
+    build(createEntity(0));
 
     return freeze({
         update(deadline=now() + defaultTimeout) {
@@ -477,8 +486,6 @@ export function makeShard({
                 if (!checkRef(id, gen)) return null;
                 return createEntity(id);
             },
-
-            create: makeCreator(),
         }, makeTimeGuard('ShardCtl')));
     }
 
@@ -513,7 +520,7 @@ export function makeShard({
                 }
                 const id = idAt[i];
                 if (!id) return null;
-                return freezeEntity(id, entity(id));
+                return entity(id);
             },
 
             toString() {
@@ -570,15 +577,6 @@ export function makeShard({
             lastUpdate = time;
             stringCache = null;
         }
-    }
-
-    /** @returns {Creator} */
-    function makeCreator() {
-        const createGuard = makeEntityGuard(0, ' creator');
-        return spec => {
-            createGuard();
-            return createSpec(0, spec);
-        };
     }
 
     /** @param {number} deadline */
@@ -682,7 +680,7 @@ export function makeShard({
      */
     function makeThunkCtx(id, view) {
         return freeze(guard({
-            get self() { return freezeEntity(id, entity(id)) },
+            get self() { return entity(id) },
 
             get time() { return time },
 
@@ -708,7 +706,7 @@ export function makeShard({
 
             deref([id, gen]) {
                 if (!checkRef(id, gen)) return null;
-                return freezeEntity(id, entity(id));
+                return entity(id);
             },
 
             memory: {
@@ -802,13 +800,7 @@ export function makeShard({
                 const hit =
                     hasType(id, typeSolid) ? Array.from(at(typeSolid, tox, toy))
                     : [];
-                if (hit.length) {
-                    hit.sort((a, b) => getZ(b) - getZ(a));
-                    const hitId = hit[0];
-                    queueEvent(id, {type: "hit", time, target: ref(hitId)});
-                    if (hasType(hitId, typeMind))
-                        queueEvent(hitId, {type: "hitBy", time, entity: ref(id)});
-                } else {
+                if (!hit.length) {
                     setLoc(id, {x: tox, y: toy});
                     queueEvent(id, {
                         type: "move", time,
@@ -819,7 +811,30 @@ export function makeShard({
                             .filter(here => here != id)
                             .map(ref),
                     });
+                    return;
                 }
+
+                else hit.sort((a, b) => getZ(b) - getZ(a));
+                const hitId = hit[0];
+
+                let done = false;
+                const {proxy: ctx, revoke} = Proxy.revocable(
+                    /** @type {InteractCtx} */ ({
+                        self: createEntity(id),
+                        subject: createEntity(hitId),
+                        time,
+                        queueEvents(self, subject) {
+                            queueEvent(id, self);
+                            if (hasType(hitId, typeMind))
+                                queueEvent(hitId, subject);
+                            done = true;
+                        },
+                    }), {});
+
+                const interact = interacts.get(hitId);
+                if (interact) interact(ctx);
+                if (!done) defaultInteraction(ctx);
+                revoke();
             }
 
             function inspect() {
@@ -869,7 +884,7 @@ export function makeShard({
     }
 
     /**
-     * @template {Entity} E
+     * @template {ROEntity} E
      * @param {number} id
      * @param {E} e
      * @returns {E}
@@ -906,41 +921,43 @@ export function makeShard({
 
     /**
      * @param {number} id
-     * @returns {Entity}
+     * @returns {ROEntity}
      */
     function entity(id) {
-        return {
+        return freezeEntity(id, {
+            toString() { return  entityString(id) },
             get ref() { return ref(id) },
-
-            toString() {
-                const gen = getTypeGen(id);
-                const {x, y} = getLoc(id), z = getZ(id);
-                const glyph = String.fromCodePoint(glyphs[id]);
-
-                /** @type {string[]} */
-                const tags = [];
-                for (const [t, tag] of /** @type {[number, string][]} */ ([
-                    [typeSolid, 'SOLID'],
-                    [typeVisible, 'VISIBLE'],
-                    [typeInteract, 'INTERACT'],
-                    [typeMind, 'MIND'],
-                    [typeInput, 'INPUT'],
-                ])) if (hasType(id, t)) tags.push(tag);
-
-                const name = names.get(id);
-                return `Entity<${name ? `name:${name} ` : ''}id:${id} gen:${gen >> 1} @${x},${y},${z} [${tags.join(' ')}] glyph:${JSON.stringify(glyph)}>`;
-            },
-
+            get glyph() { return glyphs[id] },
+            get zIndex() { return getZ(id) },
+            get location() { return getLoc(id) },
             get isSolid() { return hasType(id, typeSolid) },
             get isVisible() { return hasType(id, typeVisible) },
-            get canInteract() { return hasType(id, typeInteract) },
-            get hasMind() { return hasType(id, typeMind) },
-            get hasInput() { return hasType(id, typeInput) },
-            get glyph() { return glyphs[id] },
-            get location() { return getLoc(id) },
-            get zIndex() { return getZ(id) },
-            get name() { return names.get(id) || '' }
-        };
+            get name() { return names.get(id) || '' },
+            get interact() { return interacts.get(id) },
+            get mind() { return execThunk.get(id) },
+            get input() {
+                const input = inputs.get(id);
+                return input && input.bind;
+            },
+        });
+    }
+
+    /** @param {number} id */
+    function entityString(id) {
+        const gen = getTypeGen(id);
+        const {x, y} = getLoc(id), z = getZ(id);
+        const glyph = String.fromCodePoint(glyphs[id]);
+        /** @type {string[]} */
+        const tags = [];
+        for (const [t, tag] of /** @type {[number, string][]} */ ([
+            [typeSolid, 'SOLID'],
+            [typeVisible, 'VISIBLE'],
+            [typeInteract, 'INTERACT'],
+            [typeMind, 'MIND'],
+            [typeInput, 'INPUT'],
+        ])) if (hasType(id, t)) tags.push(tag);
+        const name = names.get(id);
+        return `Entity<${name ? `name:${name} ` : ''}id:${id} gen:${gen >> 1} @${x},${y},${z} [${tags.join(' ')}] glyph:${JSON.stringify(glyph)}>`;
     }
 
     /**
@@ -959,73 +976,126 @@ export function makeShard({
         return getTypeGen(id) == gen && gen & typeAlloc;
     }
 
-    /** @template {object} T, S
-     * @param {T} obj
-     * @param {S} ext
-     * @returns {T & S}
-     */
-    function extendObject(obj, ext) {
-        const props = Object.getOwnPropertyDescriptors(ext);
-        return /** @type {T & S} */ (Object.defineProperties(obj, props));
-    }
-
-    /** @template {object} T
-     * @param {number} id
-     * @param {T} ext
-     * @returns {Entity & T}
-     */
-    function extendedEntity(id, ext) {
-        return freezeEntity(id, extendObject(entity(id), ext));
-    }
-
     /**
      * @param {number} proto
-     * @param {CreateSpec} spec
-     * @returns {CreatedEntity}
+     * @param {EntitySpec} spec
+     * @returns {Entity}
      */
     function createSpec(proto, spec) {
-        const protoType = getType(proto);
         const {
-            isSolid = !!(protoType & typeSolid),
-            isVisible = !!(protoType & typeVisible),
-            canInteract = !!(protoType & typeInteract),
-            mind,
-            bindInput,
-            location: {x, y} = {x: 0, y: 0},
-            zIndex: z = getZ(proto),
+            isSolid = hasType(proto, typeSolid),
+            isVisible = hasType(proto, typeVisible),
+            location,
+            zIndex = getZ(proto),
             glyph = glyphs[proto],
-            name,
+            interact = interacts.get(proto),
         } = spec;
-
-        const id = alloc();
-        setType(id, 0
-            | (isSolid ? typeSolid : 0)
-            | (isVisible ? typeVisible : 0)
-            | (canInteract ? typeInteract : 0)
-            | (mind ? typeMind : 0)
-            | (bindInput ? typeInput : 0)
-        );
-        setLoc(id, {x, y});
-        setZ(id, z);
-        setGlyph(id, glyph);
-        setName(id, name);
-        setMind(id, mind);
-        setInput(id, bindInput);
-        return createEntity(id);
+        const ent = createEntity(alloc());
+        ent.isSolid = isSolid;
+        ent.isVisible = isVisible;
+        if (location) ent.location = location;
+        ent.zIndex = zIndex;
+        ent.glyph = glyph;
+        ent.interact = interact;
+        ent.name = spec.name;
+        ent.mind = spec.mind;
+        ent.input = spec.input;
+        // TODO copy memories
+        return ent;
     }
 
     /**
      * @param {number} id
-     * @returns {CreatedEntity}
+     * @returns {Entity}
      */
     function createEntity(id) {
-        return extendedEntity(id, /** @type {CreateEntity} */({
+        return freezeEntity(id, {
             create(spec) { return createSpec(id, spec); },
             destroy() {
                 if (id == 0) throw new Error('Cannot destroy root entity');
                 destroy(id);
             },
-        }));
+
+            toString() { return  entityString(id) },
+            get ref() { return ref(id) },
+
+            get isSolid() { return hasType(id, typeSolid) },
+            set isSolid(is) { updateType(id, t => is
+                ? t | typeSolid
+                : t & ~typeSolid
+            ) },
+
+            get isVisible() { return hasType(id, typeVisible) },
+            set isVisible(is) { updateType(id, t => is
+                ? t | typeVisible
+                : t & ~typeVisible
+            ) },
+
+            get location() { return getLoc(id) },
+            set location(loc) { setLoc(id, loc) },
+
+            get zIndex() { return getZ(id) },
+            set zIndex(z) { setZ(id, z) },
+
+            get glyph() { return String.fromCodePoint(glyphs[id]) },
+            set glyph(glyph) { setGlyph(id, glyph) },
+
+            get name() { return names.get(id) || '' },
+            set name(name) { setName(id, name) },
+
+            get interact() { return interacts.get(id) },
+            set interact(interact) {
+                updateType(id, t => interact
+                    ? t | typeInteract
+                    : t & ~typeInteract);
+                if (interact) interacts.set(id, interact);
+            },
+
+            get mind() { return execThunk.get(id) },
+            set mind(mind) {
+                updateType(id, t => mind
+                    ? t | typeMind
+                    : t & ~typeMind);
+                if (mind) {
+                    const revoke = execRevoke.get(id);
+                    if (revoke) revoke();
+                    execRevoke.delete(id);
+                    execThunk.set(id, mind);
+                    // NOTE: any prior memories remain
+                    // TODO add optional memory init param
+                    execCtx.delete(id);
+                    execTick.delete(id);
+                    execWait.delete(id);
+                }
+            },
+
+            get input() {
+                const input = inputs.get(id);
+                return input && input.bind;
+            },
+            set input(bind) {
+                updateType(id, t => bind
+                    ? t | typeInput
+                    : t & ~typeInput);
+                if (bind) {
+                    let input = inputs.get(id);
+                    if (input) input.revoke();
+                    let revoked = false;
+                    input = {bind, revoke() { revoked = true }};
+                    inputs.set(id, input);
+                    input.bind(s => {
+                        if (revoked) throw new Error('Cannot provide to revoked input consumer');
+                        let q = inputQueues.get(id);
+                        if (!q) inputQueues.set(id, q = []);
+                        for (const glyph of s) {
+                            const codePoint = glyph.codePointAt(0);
+                            if (codePoint != undefined) q.push(codePoint);
+                        }
+                    });
+                }
+            },
+
+        });
     }
 
     /** @returns {number} */
@@ -1093,9 +1163,6 @@ export function makeShard({
     /** @param {number} id */
     function getTypeGen(id) { return types[2 * id] }
 
-    /** @param {number} id */
-    function getType(id) { return types[2 * id + 1] }
-
     /** @param {number} id @param {(t: number) => number} up */
     function updateType(id, up) {
         const ot = types[2 * id + 1];
@@ -1117,6 +1184,7 @@ export function makeShard({
     function notifyType(id, ot, t) {
         // NOTE: intentionally provides no allocation notification
         // - systems should instead be designed to deal with zero/missing component data
+        //   - e.g. how defaultInteraction is resolved on demand
         // - heritage all the way up from the root entity should suffice
         //   - e.g. how default glyph=" " flows through
 
@@ -1181,23 +1249,6 @@ export function makeShard({
         else names.delete(id);
     }
 
-    /** @param {number} id @param {Thunk} [mind] */
-    function setMind(id, mind) {
-        if (!mind) {
-            updateType(id, t => t & ~typeMind);
-            return;
-        }
-        const revoke = execRevoke.get(id);
-        if (revoke) revoke();
-        execRevoke.delete(id);
-        execThunk.set(id, mind);
-        // NOTE: any prior memories remain
-        // TODO add optional memory init param
-        execCtx.delete(id);
-        execTick.delete(id);
-        execWait.delete(id);
-    }
-
     /** @param {number} id */
     function stepMind(id) {
         const res = stepThunk(id);
@@ -1242,27 +1293,6 @@ export function makeShard({
         return proxy;
     }
 
-    /** @param {number} id @param {InputBinder} [bind] */
-    function setInput(id, bind) {
-        if (!bind) {
-            updateType(id, t => t & ~typeInput);
-            return;
-        }
-        let input = inputs.get(id);
-        if (input) input.revoke();
-        let revoked = false;
-        input = {bind, revoke() { revoked = true }};
-        inputs.set(id, input);
-        input.bind(s => {
-            if (revoked) throw new Error('Cannot provide to revoked input consumer');
-            let q = inputQueues.get(id);
-            if (!q) inputQueues.set(id, q = []);
-            for (const glyph of s) {
-                const codePoint = glyph.codePointAt(0);
-                if (codePoint != undefined) q.push(codePoint);
-            }
-        });
-    }
 }
 
 /**
