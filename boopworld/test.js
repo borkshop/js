@@ -316,7 +316,7 @@ test('boops', t => {
 
         {time: 2, do: 'update'},
         {time: 2, expect: {moves: [
-            ["antagonist", "right"],
+            ["antagonist", "left"],
         ]}},
 
         {time: 2, do: {input: 'd'}},
@@ -335,11 +335,11 @@ test('boops', t => {
                 '            ###+########',
                 '            #··········#',
                 '            #··········#',
-                '            #·········D#',
+                '            #·······D··#',
                 '            ############',
             ],
             events: [
-                {entity: [253,1], time: 3, type: "move", from: {x:21, y:13}, to: {x:22, y:13}, here: []},
+                {entity: [253,1], time: 3, type: "move", from: {x:21, y:13}, to: {x:20, y:13}, here: []},
                 {entity: [252,1], time: 3, type: "move", from: {x:1, y:2}, to: {x:2, y:2}, here: []},
             ],
         }},
@@ -358,12 +358,12 @@ test('boops', t => {
             ],
             antagonist: [
                 {y: -1},
-                {y: 1},
-                {y: -1},
-                {y: 1},
-                {x: -1},
-                {x: -1},
                 {x: 1},
+                {y: -1},
+                {x: 1},
+                {y: 1},
+                {x: -1},
+                {y: 1},
             ],
         }}},
 
@@ -423,18 +423,18 @@ test('boops', t => {
             antagonist: [
                 {x: -1},
                 {y: -1},
-                {y: 1},
                 {x: 1},
-                {y: -1},
-                {y: 1},
                 {x: 1},
                 {y: -1},
                 {x: -1},
+                {x: -1},
                 {y: 1},
+                {x: -1},
+                {y: 1},
+                {x: 1},
+                {x: 1},
                 {y: -1},
-                {y: 1},
-                {y: -1},
-                {y: 1},
+                {x: 1},
             ],
         }}},
 
@@ -451,7 +451,7 @@ test('boops', t => {
             '              #·#       ',
             '            ###+########',
             '            #··········#',
-            '            #········D·#',
+            '            #······D···#',
             '            #··········#',
             '            ############',
         ]}},
@@ -469,8 +469,8 @@ test('boops', t => {
             '              #@#       ',
             '            ###-########',
             '            #··········#',
+            '            #········D·#',
             '            #··········#',
-            '            #·······D··#',
             '            ############',
         ]}},
 
@@ -712,12 +712,29 @@ test('boops', t => {
                 {x: -1}
             ];
 
+            /**
+             * @param {number} id
+             * @param {Partial<boopworld.Point>} movement
+             */
+            function moveReverses(id, {x: dx=0, y: dy=0}) {
+                const {x: mx=0, y: my=0} = moveDeltas[id];
+                return mx == -dx && my == -dy;
+            }
+
             char.create({
                 location: {x: 22, y: 13},
                 name: "antagonist",
                 glyph: 'D',
                 mind: spyThunk('antagonist', withMindRNG((ctx, random) => {
                     // TODO protagonist hunter instead of random walker
+
+                    /** @type {Partial<boopworld.Point>} */
+                    let lastMoved = {};
+                    for (const event of ctx.events())
+                        if (event.type == 'move') {
+                            const {from, to} = event;
+                            lastMoved = movement(from, to);
+                        }
 
                     const {x, y} = ctx.self.location;
                     const {x: vx, y: vy} = ctx.view.bounds;
@@ -731,6 +748,7 @@ test('boops', t => {
 
                     const moveIds = ats
                         .map((_, id) => id)
+                        .filter(id => !moveReverses(id, lastMoved))
                         .filter(id => can[id] && !blocked[id]);
                     if (moveIds.length) {
                         const moveId = moveIds[Math.floor(random() * moveIds.length)];
@@ -820,16 +838,13 @@ test('boops', t => {
 
             /** @param {string} name */
             function getMovement(name) {
-                /** @type {Partial<boopworld.Point>} */
-                const d = {};
                 for (const [entity, event] of ctl.events())
                     if (entity.name == name && event.type == 'move') {
-                        const {from: {x: x1, y: y1}, to: {x: x2, y: y2}} = event;
-                        if (x2 != x1) d.x = x2 - x1;
-                        if (y2 != y1) d.y = y2 - y1;
-                        break;
+                        const {from, to} = event;
+                        return movement(from, to);
                     }
-                return d;
+                return {};
+
             }
 
             if (testSteps.tick == 0) {
@@ -912,6 +927,15 @@ test('boops', t => {
 });
 
 /** @template T @typedef {T | [number, ...T[]]} MaybeCounted */
+
+/** @param {boopworld.Point} p1 @param {boopworld.Point} p2 */
+function movement({x: x1, y: y1}, {x: x2, y: y2}) {
+    /** @type {Partial<boopworld.Point>} */
+    const d = {};
+    if (x2 != x1) d.x = x2 - x1;
+    if (y2 != y1) d.y = y2 - y1;
+    return d;
+}
 
 /**
  * @template T
