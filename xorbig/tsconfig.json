@@ -1,7 +1,30 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "moduleResolution": "node"
+    "module": "es2020",
+    "target": "es2020",
+
+    "allowJs": true,
+    "checkJs": true,
+
+    "declaration": true,
+    "emitDeclarationOnly": true,
+
+    "esModuleInterop": true,
+
+    "moduleResolution": "node",
+    "jsx": "preserve",
+    "allowSyntheticDefaultImports": true,
+    "importsNotUsedAsValues": "error",
+    "isolatedModules": true,
+
+    "strict": true,
+    "forceConsistentCasingInFileNames": true ,
+    "useDefineForClassFields": true,
+
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
   },
   "exclude": [
     "coverage"
