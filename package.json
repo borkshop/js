@@ -21,7 +21,8 @@
     "forest",
     "jspit",
     "mine",
-    "scan"
+    "scan",
+    "xorbig"
   ],
   "dependencies": {}
 }
