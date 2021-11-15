@@ -1,7 +1,7 @@
 {
   "name": "boopworld",
   "version": "0.1.0",
-  "description": "Wrold Of Boopcraft",
+  "description": "World Of Boopcraft",
   "author": "Joshua T Corbin <jcorbin@wunjo.org>",
   "license": "BSD-3-Clause",
   "main": "index.js",
