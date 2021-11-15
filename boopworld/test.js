@@ -1,5 +1,10 @@
 import test from 'ava';
 
+import {
+    generateRandoms,
+    makeRandom,
+} from 'xorbig';
+
 import {freeze} from './index.js';
 
 test('freeze', t => {
@@ -108,53 +113,6 @@ export function buildRect(rect, fill, stroke, corner) {
                 if (corner && (edgex || edgey)) corner({x, y});
                 else stroke({x, y});
             } else fill({x, y});
-        }
-    }
-}
-
-/** @param {number} seed */
-function makePRNG(seed, inc=12345) {
-    const
-        mult = 1103515245
-      , mod  = 0xffffffff
-      , mask = 0x3fffc000
-      , max  = 0x3fffc
-    ;
-
-    return {
-        get seed() { return seed },
-        get inc() { return inc },
-        get maxint() { return max },
-        next,
-        randint,
-        random,
-        mix,
-        blend,
-    };
-
-    function next() {
-        return seed = (seed * mult + inc) & mod;
-    }
-
-    function randint() {
-        return (next() & mask) >> 14;
-    }
-
-    function random() {
-        return randint() / max;
-    }
-
-    /** @param {number} n */
-    function mix(n) {
-        seed = seed ^ n;
-        return next();
-    }
-
-    /** @param {string} s */
-    function blend(s) {
-        for (const glyph of s) {
-            const code = glyph.codePointAt(0);
-            if (code != undefined) mix(code);
         }
     }
 }
@@ -328,7 +286,7 @@ test('boops', t => {
 
         {time: 1, do: 'update'},
         {time: 1, expect: {moves: [
-            ["antagonist", "up"],
+            ["antagonist", "left"],
         ]}},
 
         {time: 1, do: {input: 's'}},
@@ -346,19 +304,19 @@ test('boops', t => {
                 '              #·#       ',
                 '            ###+########',
                 '            #··········#',
-                '            #·········D#',
                 '            #··········#',
+                '            #········D·#',
                 '            ############',
             ], 
             events: [
-                {entity: [253,1], time: 2, type: "move", from: {x:22, y:13}, to: {x:22, y:12}, here: []},
+                {entity: [253,1], time: 2, type: "move", from: {x:22, y:13}, to: {x:21, y:13}, here: []},
                 {entity: [252,1], time: 2, type: "move", from: {x:1, y:1}, to: {x:1, y:2}, here: []},
             ],
         }},
 
         {time: 2, do: 'update'},
         {time: 2, expect: {moves: [
-            ["antagonist", "up"],
+            ["antagonist", "right"],
         ]}},
 
         {time: 2, do: {input: 'd'}},
@@ -375,13 +333,13 @@ test('boops', t => {
                 '              #·#       ',
                 '              #·#       ',
                 '            ###+########',
+                '            #··········#',
+                '            #··········#',
                 '            #·········D#',
-                '            #··········#',
-                '            #··········#',
                 '            ############',
             ],
             events: [
-                {entity: [253,1], time: 3, type: "move", from: {x:22, y:12}, to: {x:22, y:11}, here: []},
+                {entity: [253,1], time: 3, type: "move", from: {x:21, y:13}, to: {x:22, y:13}, here: []},
                 {entity: [252,1], time: 3, type: "move", from: {x:1, y:2}, to: {x:2, y:2}, here: []},
             ],
         }},
@@ -399,9 +357,13 @@ test('boops', t => {
                 {},
             ],
             antagonist: [
-                // FIXME why? doesn't seem very "random" ; also y no left/right?
-                [3, {y: 1}, {y: -1}],
+                {y: -1},
                 {y: 1},
+                {y: -1},
+                {y: 1},
+                {x: -1},
+                {x: -1},
+                {x: 1},
             ],
         }}},
 
@@ -419,8 +381,8 @@ test('boops', t => {
                 '              #·#       ',
                 '            ###+########',
                 '            #··········#',
-                '            #·········D#',
                 '            #··········#',
+                '            #········D·#',
                 '            ############',
             ],
             events: [
@@ -442,9 +404,9 @@ test('boops', t => {
             '              #·#       ',
             '              #·#       ',
             '            ###+########',
-            '            #·········D#',
             '            #··········#',
             '            #··········#',
+            '            #·······D··#',
             '            ############',
         ]}},
 
@@ -459,8 +421,20 @@ test('boops', t => {
                 {},
             ],
             antagonist: [
-                // FIXME why? doesn't seem very "random" ; also y no left/right?
-                [7, {y: 1}, {y: -1}],
+                {x: -1},
+                {y: -1},
+                {y: 1},
+                {x: 1},
+                {y: -1},
+                {y: 1},
+                {x: 1},
+                {y: -1},
+                {x: -1},
+                {y: 1},
+                {y: -1},
+                {y: 1},
+                {y: -1},
+                {y: 1},
             ],
         }}},
 
@@ -476,8 +450,8 @@ test('boops', t => {
             '              #·#       ',
             '              #·#       ',
             '            ###+########',
-            '            #·········D#',
             '            #··········#',
+            '            #········D·#',
             '            #··········#',
             '            ############',
         ]}},
@@ -494,9 +468,9 @@ test('boops', t => {
             '              #·#       ',
             '              #@#       ',
             '            ###-########',
-            '            #·········D#',
             '            #··········#',
             '            #··········#',
+            '            #·······D··#',
             '            ############',
         ]}},
 
@@ -659,7 +633,24 @@ test('boops', t => {
                 };
             }
 
-            const seeder = makePRNG(0xdeadbeef);
+            const rngs = generateRandoms(0xdeadbeef);
+            function nextRNG() {
+                const res = rngs.next();
+                if (res.done) throw new Error('exhausted infinite supply of rngs'); // inconceivable
+                return res.value;
+            }
+
+            /** @param {boopworld.ThunkCtx} ctx */
+            function getMindRNG(ctx) {
+                let mem = ctx.memory.get('rng');
+                if (typeof mem == 'string')
+                    return makeRandom(mem);
+                if (typeof mem == 'object' && mem != null &&
+                    'random' in mem &&
+                    typeof mem.random == 'function'
+                ) return /** @type {ReturnType<makeRandom>} */ (mem);
+                return nextRNG();
+            }
 
             /** Extended thunk wrapper that executes an inner thunk with a
              * deterministic RNG whose states lives in the entity's memory.
@@ -673,27 +664,12 @@ test('boops', t => {
              * @returns {boopworld.Thunk}
              */
             function withMindRNG(thunk) { return ctx => {
-                // load prng from entity memory or init from shared seeder prng
-                let rng = null;
-                let seed = ctx.memory.get('rngSeed');
-                let inc = ctx.memory.get('rngInc');
-                if (typeof seed == 'number' && typeof inc == 'number') {
-                    rng = makePRNG(seed, inc);
-                } else {
-                    seed = seeder.next();
-                    inc = (seeder.inc + seeder.randint()) % seeder.maxint;
-                    rng = makePRNG(seed, inc);
-                    rng.blend(ctx.self.name || 'unnamed');
+                const rng = getMindRNG(ctx);
+                try {
+                    return thunk(ctx, rng.random);
+                } finally {
+                    ctx.memory.set('rng', rng);
                 }
-
-                // run the extended thunk passing it just the normative random()
-                const res = thunk(ctx, rng.random);
-
-                // save prng state back to entity memory
-                ctx.memory.set('rngSeed', rng.seed);
-                ctx.memory.set('rngInc', rng.inc);
-
-                return res;
             } }
 
             char.create({
@@ -754,11 +730,9 @@ test('boops', t => {
                     const blocked = ats.map(at => at ? at.isSolid : false);
 
                     const moveIds = ats
-                        .map((_, i) => i)
-                        .filter(i => can[i] && !blocked[i]);
+                        .map((_, id) => id)
+                        .filter(id => can[id] && !blocked[id]);
                     if (moveIds.length) {
-                        // TODO use ctx-threaded random (i.e. per-mind rng state),
-                        // rather than ambient random
                         const moveId = moveIds[Math.floor(random() * moveIds.length)];
                         ctx.move = moves[moveId];
                     } else {
