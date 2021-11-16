@@ -1,3 +1,8 @@
+import {
+    generateRandoms,
+    makeRandom,
+} from 'xorbig';
+
 /**
  * @callback Interaction
  * @param {InteractCtx} ctx
@@ -87,6 +92,7 @@ export function thunkWait(waitFor, next, reason='wait') { return {ok: true, wait
  * @prop {() => IterableIterator<number>} input
  * @prop {() => IterableIterator<Readonly<Event>>} events
  * @prop {(ref: EntityRef) => ROEntity|null} deref
+ * @prop {() => number} random
  * @prop {{
  *   get: (key: string) => any,
  *   set: (key: string, value: any) => void,
@@ -243,6 +249,7 @@ export function makeInput() {
  * @param {() => number} [options.now]
  * @param {number} [options.defaultTimeout]
  * @param {number} [options.size]
+ * @param {number|bigint|string} [options.seed]
  * @returns {Shard}
  */
 export function makeShard({
@@ -252,7 +259,18 @@ export function makeShard({
     now=Date.now,
     defaultTimeout=100,
     size=64,
+    seed=0,
 }) {
+
+    //// random number generator generator
+    const randoms = generateRandoms(seed);
+    function nextRandom() {
+        const res = randoms.next();
+        if (res.done) throw new Error('exhausted infinite supply of rngs'); // inconceivable
+        return res.value;
+    }
+
+
     //// type system definitions and setup
     const
         maxShardSize = 64 * 1024
@@ -671,50 +689,6 @@ export function makeShard({
         if ('time' in waitFor) return time >= waitFor.time;
         assertNever(waitFor, 'invalid ThunkWaitFor');
         return false;
-    }
-
-    /**
-     * @param {number} id
-     * @param {ShardView} view
-     * @returns {ThunkCtx}
-     */
-    function makeThunkCtx(id, view) {
-        return freeze(guard({
-            get self() { return entity(id) },
-
-            get time() { return time },
-
-            view,
-
-            get move() { return moves.get(id) },
-            set move(m) { setMove(id, m || null) },
-
-            *input() {
-                const q = inputQueues.get(id);
-                if (q) for (;;) {
-                    const codePoint = q.shift();
-                    if (codePoint == undefined) break;
-                    yield codePoint;
-                }
-            },
-
-            *events() {
-                const q = events.get(id);
-                if (q) for (const event of q)
-                    yield freeze(event);
-            },
-
-            deref([id, gen]) {
-                if (!checkRef(id, gen)) return null;
-                return entity(id);
-            },
-
-            memory: {
-                get(key) { return memoryGet(id, key) },
-                set(key, value) { memorySet(id, key, value) },
-            },
-
-        }, makeEntityGuard(id)));
     }
 
     /**
@@ -1287,8 +1261,77 @@ export function makeShard({
         // TODO private view backed by a private shard filled by sensed data
         const view = execView;
 
-        const {proxy, revoke} = Proxy.revocable(makeThunkCtx(id, view), {});
-        execRevoke.set(id, revoke);
+        /** @type {ReturnType<makeRandom>|null} */
+        let rng = null;
+
+        function getRNG() {
+            if (!rng) {
+                const seed = memoryGet(id, 'rngState');
+                rng = seed != null ? makeRandom(seed) : nextRandom();
+            }
+            return rng;
+        }
+
+        const {proxy, revoke} = Proxy.revocable(
+            freeze(guard(/** @type {ThunkCtx} */ ({
+                get self() { return entity(id) },
+
+                get time() { return time },
+
+                view,
+
+                get move() { return moves.get(id) },
+                set move(m) { setMove(id, m || null) },
+
+                *input() {
+                    const q = inputQueues.get(id);
+                    if (q) for (;;) {
+                        const codePoint = q.shift();
+                        if (codePoint == undefined) break;
+                        yield codePoint;
+                    }
+                },
+
+                *events() {
+                    const q = events.get(id);
+                    if (q) for (const event of q)
+                        yield freeze(event);
+                },
+
+                deref([id, gen]) {
+                    if (!checkRef(id, gen)) return null;
+                    return entity(id);
+                },
+
+                random() { return getRNG().random() },
+
+                memory: {
+                    get(key) {
+                        switch (key) {
+                            case 'rngState':
+                                return getRNG().toString();
+                            default:
+                                return memoryGet(id, key);
+                        }
+                    },
+                    set(key, value) {
+                        switch (key) {
+                            case 'rngState':
+                                rng = makeRandom(value);
+                                memorySet(id, 'rngState', rng);
+                                break;
+                            default:
+                                memorySet(id, key, value);
+                        }
+                    },
+                },
+
+            }), makeEntityGuard(id))),
+            {});
+        execRevoke.set(id, () => {
+            revoke();
+            if (rng) memorySet(id, 'rngState', rng);
+        });
         execCtx.set(id, proxy);
         return proxy;
     }

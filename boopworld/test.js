@@ -1,10 +1,5 @@
 import test from 'ava';
 
-import {
-    generateRandoms,
-    makeRandom,
-} from 'xorbig';
-
 import {freeze} from './index.js';
 
 test('freeze', t => {
@@ -501,6 +496,7 @@ test('boops', t => {
     };
 
     const shard = boopworld.makeShard({
+        seed: 0xdeadbeef,
         build(root) {
             const floor = root.create({
                 glyph: '·', // ·⦁⦂⦙⦚ etc other fences in misc math syms
@@ -629,45 +625,6 @@ test('boops', t => {
                 };
             }
 
-            const rngs = generateRandoms(0xdeadbeef);
-            function nextRNG() {
-                const res = rngs.next();
-                if (res.done) throw new Error('exhausted infinite supply of rngs'); // inconceivable
-                return res.value;
-            }
-
-            /** @param {boopworld.ThunkCtx} ctx */
-            function getMindRNG(ctx) {
-                let mem = ctx.memory.get('rng');
-                if (typeof mem == 'string')
-                    return makeRandom(mem);
-                if (typeof mem == 'object' && mem != null &&
-                    'random' in mem &&
-                    typeof mem.random == 'function'
-                ) return /** @type {ReturnType<makeRandom>} */ (mem);
-                return nextRNG();
-            }
-
-            /** Extended thunk wrapper that executes an inner thunk with a
-             * deterministic RNG whose states lives in the entity's memory.
-             *
-             * TODO this is probably a common enough feature that it should be
-             * baked into the underlying system rather than done as an
-             * extension/wrapper on top, but we're starting here and keeping
-             * the core small for now.
-             *
-             * @param {boopworld.ThunkExt<() => number>} thunk
-             * @returns {boopworld.Thunk}
-             */
-            function withMindRNG(thunk) { return ctx => {
-                const rng = getMindRNG(ctx);
-                try {
-                    return thunk(ctx, rng.random);
-                } finally {
-                    ctx.memory.set('rng', rng);
-                }
-            } }
-
             char.create({
                 location: {x: 1, y: 1},
                 name: "protagonist",
@@ -721,7 +678,7 @@ test('boops', t => {
                 location: {x: 22, y: 13},
                 name: "antagonist",
                 glyph: 'D',
-                mind: spyThunk('antagonist', withMindRNG((ctx, random) => {
+                mind: spyThunk('antagonist', ctx => {
                     // TODO protagonist hunter instead of random walker
 
                     /** @type {Partial<boopworld.Point>} */
@@ -747,14 +704,14 @@ test('boops', t => {
                         .filter(id => !moveReverses(id, lastMoved))
                         .filter(id => can[id] && !blocked[id]);
                     if (moveIds.length) {
-                        const moveId = moveIds[Math.floor(random() * moveIds.length)];
+                        const moveId = moveIds[Math.floor(ctx.random() * moveIds.length)];
                         ctx.move = moves[moveId];
                     } else {
                         t.log(`- no moves`);
                     }
 
                     return boopworld.thunkWait({time: ctx.time+1}); // wait for the next turn
-                }))
+                })
             });
 
             floor.destroy();
