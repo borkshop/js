@@ -249,6 +249,14 @@ test('jumps...', t => {
     }
 });
 
+test('round tripping', t => {
+    let rng = xorbig.makeRandom(0);
+    t.is(
+        xorbig.makeRandom(rng.toString()).toString(),
+        rng.toString(),
+        'initial state should round-trip');
+});
+
 test('invalid seed', t => t.throws(
     // @ts-ignore: the point of this is to intentionally pass an ill-typed seed
     () => xorbig.makeRandom({wat: 'even'}),

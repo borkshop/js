@@ -259,10 +259,10 @@ function fromString(s, str) {
     if (str.length != 64) return false;
     let n = 0n;
     try { n = BigInt('0x' + str) } catch(e) { return false }
-    s[0] =  n          & 0xffffffffffffffffn;
-    s[1] = (n >>= 64n) & 0xffffffffffffffffn;
-    s[2] = (n >>= 64n) & 0xffffffffffffffffn;
-    s[3] = (n >>= 64n) & 0xffffffffffffffffn;
+    s[3] =  n          & 0xffff_ffff_ffff_ffffn;
+    s[2] = (n >>= 64n) & 0xffff_ffff_ffff_ffffn;
+    s[1] = (n >>= 64n) & 0xffff_ffff_ffff_ffffn;
+    s[0] = (n >>= 64n) & 0xffff_ffff_ffff_ffffn;
     return true;
 }
 
