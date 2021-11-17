@@ -6,8 +6,7 @@
     "allowJs": true,
     "checkJs": true,
 
-    "declaration": true,
-    "emitDeclarationOnly": true,
+    "noEmit": true,
 
     "esModuleInterop": true,
 

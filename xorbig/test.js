@@ -208,14 +208,24 @@ for (let n = 1; n <= 32; n++) test(testHash,
 
 // TODO trivial test for coverage, make it more statistical
 test('jumps...', t => {
-    const startGen = xorbig.generateStarts(0);
+    const starter = xorbig.generateStarts(0);
+    t.is(JSON.stringify(starter), JSON.stringify(starter.toString()), `starter json`);
+    for (const start of starter) {
+        t.is(JSON.stringify(start), JSON.stringify(start.toString()), `start json`);
+        for (const rng of start) {
+            t.is(JSON.stringify(rng), JSON.stringify(rng.toString()), `rng json`);
+            break;
+        }
+        break;
+    }
+
     const starts = [
-        next(startGen),
-        next(startGen),
-        next(startGen),
+        starter.next().value,
+        starter.next().value,
+        starter.next().value,
     ];
 
-    const gens = starts.flatMap(start => starts.map(_ => next(start)));
+    const gens = starts.flatMap(start => starts.map(_ => start.next().value));
     const seeds = gens.map(gen => gen.toString());
     for (let i = 0; i < seeds.length; ++i)
         for (let j = 0; j < seeds.length; ++j)
@@ -249,12 +259,46 @@ test('jumps...', t => {
     }
 });
 
-test('round tripping', t => {
+test('random <=> string round-trips', t => {
     let rng = xorbig.makeRandom(0);
     t.is(
         xorbig.makeRandom(rng.toString()).toString(),
         rng.toString(),
         'initial state should round-trip');
+
+    rng.random();
+    t.is(
+        xorbig.makeRandom(rng.toString()).toString(),
+        rng.toString(),
+        `next state should round-trip`);
+});
+
+test('jumper <=> string round-trips', t => {
+    let jumper = xorbig.generateRandoms(0);
+    t.is(
+        xorbig.generateRandoms(jumper.toString()).toString(),
+        jumper.toString(),
+        'initial state should round-trip');
+
+    jumper.next();
+    t.is(
+        xorbig.generateRandoms(jumper.toString()).toString(),
+        jumper.toString(),
+        `next state should round-trip`);
+});
+
+test('starter <=> string round-trips', t => {
+    let rng = xorbig.generateStarts(0);
+    t.is(
+        xorbig.generateStarts(rng.toString()).toString(),
+        rng.toString(),
+        'initial state should round-trip');
+
+    rng.next();
+    t.is(
+        xorbig.generateStarts(rng.toString()).toString(),
+        rng.toString(),
+        `next state should round-trip`);
 });
 
 test('invalid seed', t => t.throws(

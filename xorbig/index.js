@@ -180,9 +180,18 @@ export function makeHash() {
 export function generateRandoms(seed) {
     const s = new BigUint64Array(4);
     init(s, seed);
-    return function*() {
-        for (;;jump(s)) yield makeRandom(s.buffer);
-    }();
+    const self = Object.freeze({
+        toString() { return toString(s) },
+        toJSON() { return toString(s) },
+        [Symbol.iterator]() { return self },
+        /** @returns {IteratorYieldResult<ReturnType<makeRandom>>} */
+        next() {
+            const value = makeRandom(s.buffer);
+            jump(s);
+            return {value};
+        },
+    });
+    return self;
 }
 
 /** This generates an (effectively) infinite stream of streams of independent random generators.
@@ -194,9 +203,18 @@ export function generateRandoms(seed) {
 export function generateStarts(seed) {
     const s = new BigUint64Array(4);
     init(s, seed);
-    return function*() {
-        for (;;longJump(s)) yield generateRandoms(s.buffer);
-    }();
+    const self = {
+        toString() { return toString(s) },
+        toJSON() { return toString(s) },
+        [Symbol.iterator]() { return self },
+        /** @returns {IteratorYieldResult<ReturnType<generateRandoms>>} */
+        next() {
+            const value = generateRandoms(s.buffer);
+            longJump(s);
+            return {value};
+        },
+    };
+    return self;
 }
 
 /** This (re)initializes generator state from a supplied seed.

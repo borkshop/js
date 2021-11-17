@@ -47,27 +47,23 @@ export function makeHash(): Readonly<{
 *
 * @param {number|bigint|string|ArrayBuffer} seed
 */
-export function generateRandoms(seed: number | bigint | string | ArrayBuffer): Generator<Readonly<{
+export function generateRandoms(seed: number | bigint | string | ArrayBuffer): Readonly<{
     toString(): string;
     toJSON(): string;
-    random(): number;
-    randomInt(): number;
-    randomBigint(): bigint;
-    /** @param {ArrayBufferLike} buf */
-    writeInto(buf: ArrayBufferLike): number;
-}>, never, unknown>;
+    [Symbol.iterator](): Readonly<any>;
+    /** @returns {IteratorYieldResult<ReturnType<makeRandom>>} */
+    next(): IteratorYieldResult<ReturnType<typeof makeRandom>>;
+}>;
 /** This generates an (effectively) infinite stream of streams of independent random generators.
  * It will technically only generate 2^64 independent stream starting points,
  * each of which can only be used for 2^64 independent generators.
  *
  * @param {number|bigint|string|ArrayBuffer} seed
  */
-export function generateStarts(seed: number | bigint | string | ArrayBuffer): Generator<Generator<Readonly<{
+export function generateStarts(seed: number | bigint | string | ArrayBuffer): {
     toString(): string;
     toJSON(): string;
-    random(): number;
-    randomInt(): number;
-    randomBigint(): bigint;
-    /** @param {ArrayBufferLike} buf */
-    writeInto(buf: ArrayBufferLike): number;
-}>, never, unknown>, never, unknown>;
+    [Symbol.iterator](): any;
+    /** @returns {IteratorYieldResult<ReturnType<generateRandoms>>} */
+    next(): IteratorYieldResult<ReturnType<typeof generateRandoms>>;
+};
