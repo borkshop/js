@@ -85,18 +85,21 @@ export function thunkWait(waitFor, next, reason='wait') { return {ok: true, wait
 
 /**
  * @typedef {object} ThunkCtx
- * @prop {ROEntity} self
  * @prop {number} time
- * @prop {ShardView} view
- * @prop {Move|undefined} move
- * @prop {() => IterableIterator<number>} input
- * @prop {() => IterableIterator<Readonly<Event>>} events
  * @prop {(ref: EntityRef) => ROEntity|null} deref
+ * @prop {ROEntity} self
+ * @prop {ThunkMemory} memory
  * @prop {() => number} random
- * @prop {{
- *   get: (key: string) => any,
- *   set: (key: string, value: any) => void,
- * }} memory
+ * @prop {() => IterableIterator<Readonly<Event>>} events
+ * @prop {ShardView} view
+ * @prop {IterableIterator<number>} [input]
+ * @prop {Move|undefined} move
+ */
+
+/**
+ * @typedef {object} ThunkMemory
+ * @prop {(key: string) => any} get
+ * @prop {(key: string, value: any) => void} set
  */
 
 /** @param {ThunkRes} res */
@@ -316,20 +319,26 @@ export function makeShard({
     const events = new Map();
 
     //// input component init
-    /** @type {Map<number, number[]>} */
-    const inputQueues = new Map();
+    /** @typedef {{has: () => boolean} & IterableIterator<number>} Input */
 
-    /** @type {Map<number, {bind: InputBinder, revoke: (() => void)}>} */
+    /** @type {Map<number, Input>} */
     const inputs = new Map();
+
+    /** @type {Map<number, () => void>} */
+    const inputRevokes = new Map();
+
+    /** @type {Map<number, InputBinder>} */
+    const inputBinds = new Map();
+
     typeIndex.set(typeInput, new Set());
     typeDestroys.set(typeInput, id => {
-        const input = inputs.get(id);
-        if (input) {
-            input.bind(null);
-            input.revoke();
-            inputs.delete(id);
-            inputQueues.delete(id);
-        }
+        const bind = inputBinds.get(id);
+        if (bind) bind(null);
+        const revoke = inputRevokes.get(id);
+        if (revoke) revoke();
+        inputs.delete(id);
+        inputRevokes.delete(id);
+        inputBinds.delete(id);
     });
 
     //// interaction component init
@@ -676,8 +685,7 @@ export function makeShard({
     function execRunnable(id, waitFor) {
         if (typeof waitFor == 'string') switch (waitFor) {
             case 'input':
-                const q = inputQueues.get(id);
-                return q ? q.length > 0 : false;
+                return inputs.get(id)?.has() || false;
 
             default:
                 const es = events.get(id);
@@ -909,10 +917,7 @@ export function makeShard({
             get name() { return names.get(id) || '' },
             get interact() { return interacts.get(id) },
             get mind() { return execThunk.get(id) },
-            get input() {
-                const input = inputs.get(id);
-                return input && input.bind;
-            },
+            get input() { return inputBinds.get(id) },
         });
     }
 
@@ -1043,33 +1048,57 @@ export function makeShard({
                 }
             },
 
-            get input() {
-                const input = inputs.get(id);
-                return input && input.bind;
-            },
+            get input() { return inputBinds.get(id) },
             set input(bind) {
                 updateType(id, t => bind
                     ? t | typeInput
                     : t & ~typeInput);
                 if (bind) {
-                    let input = inputs.get(id);
-                    if (input) input.revoke();
-                    let revoked = false;
-                    input = {bind, revoke() { revoked = true }};
-                    inputs.set(id, input);
-                    input.bind(s => {
-                        if (revoked) throw new Error('Cannot provide to revoked input consumer');
-                        let q = inputQueues.get(id);
-                        if (!q) inputQueues.set(id, q = []);
-                        for (const glyph of s) {
-                            const codePoint = glyph.codePointAt(0);
-                            if (codePoint != undefined) q.push(codePoint);
-                        }
-                    });
+                    const oldBind = inputBinds.get(id);
+                    const oldRevoke = inputRevokes.get(id);
+                    if (oldBind) oldBind(null);
+                    if (oldRevoke) oldRevoke();
+                    const {revoke, give, ...input} = makeInputQueue();
+                    inputs.set(id, Object.freeze(input));
+                    inputRevokes.set(id, revoke);
+                    inputBinds.set(id, bind);
+                    bind(give);
                 }
             },
 
         });
+    }
+
+    function makeInputQueue() {
+        let revoked = false;
+
+        /** @type {number[]} */
+        const buffer = [];
+
+        /** @type {IterableIterator<number>} */
+        const it = Object.freeze({
+            [Symbol.iterator]() { return it },
+            next() {
+                const value = buffer.shift();
+                return value == undefined ? {done: true, value} : {value};
+            },
+        });
+
+        return {
+            revoke() { revoked = true },
+
+            /** @param {string} s */
+            give(s) {
+                if (revoked) throw new Error('Cannot provide to revoked input');
+                for (const glyph of s) {
+                    const codePoint = glyph.codePointAt(0);
+                    if (codePoint != undefined) buffer.push(codePoint);
+                }
+            },
+
+            has() { return buffer.length > 0 },
+            ...it,
+        };
     }
 
     /** @returns {number} */
@@ -1255,9 +1284,16 @@ export function makeShard({
 
     /** @param {number} id */
     function getExecCtx(id) {
-        const ctx = execCtx.get(id);
-        if (ctx) return ctx;
+        const prior = execCtx.get(id);
+        if (prior) return prior;
+        const {ctx, revoke} = makeExecCtx(id);
+        execRevoke.set(id, revoke);
+        execCtx.set(id, ctx);
+        return ctx;
+    }
 
+    /** @param {number} id */
+    function makeExecCtx(id) {
         // TODO private view backed by a private shard filled by sensed data
         const view = execView;
 
@@ -1272,25 +1308,43 @@ export function makeShard({
             return rng;
         }
 
-        const {proxy, revoke} = Proxy.revocable(
-            freeze(guard(/** @type {ThunkCtx} */ ({
-                get self() { return entity(id) },
+        const {proxy: memory, revoke: revokeMemory} = Proxy.revocable(/** @type {ThunkMemory} */ ({
+            get(key) {
+                switch (key) {
+                    case 'rngState':
+                        return getRNG().toString();
+                    default:
+                        return memoryGet(id, key);
+                }
+            },
+            set(key, value) {
+                switch (key) {
+                    case 'rngState':
+                        rng = makeRandom(value);
+                        memorySet(id, 'rngState', rng);
+                        break;
+                    default:
+                        memorySet(id, key, value);
+                }
+            },
+        }), {});
 
+        const input = inputs.get(id);
+
+        const {proxy: ctx, revoke: revokeCtx} = Proxy.revocable(
+            freeze(guard(/** @type {ThunkCtx} */ ({
                 get time() { return time },
 
-                view,
-
-                get move() { return moves.get(id) },
-                set move(m) { setMove(id, m || null) },
-
-                *input() {
-                    const q = inputQueues.get(id);
-                    if (q) for (;;) {
-                        const codePoint = q.shift();
-                        if (codePoint == undefined) break;
-                        yield codePoint;
-                    }
+                deref([id, gen]) {
+                    if (!checkRef(id, gen)) return null;
+                    return entity(id);
                 },
+
+                get self() { return entity(id) },
+
+                memory,
+
+                random() { return getRNG().random() },
 
                 *events() {
                     const q = events.get(id);
@@ -1298,42 +1352,21 @@ export function makeShard({
                         yield freeze(event);
                 },
 
-                deref([id, gen]) {
-                    if (!checkRef(id, gen)) return null;
-                    return entity(id);
-                },
+                view,
 
-                random() { return getRNG().random() },
+                input,
 
-                memory: {
-                    get(key) {
-                        switch (key) {
-                            case 'rngState':
-                                return getRNG().toString();
-                            default:
-                                return memoryGet(id, key);
-                        }
-                    },
-                    set(key, value) {
-                        switch (key) {
-                            case 'rngState':
-                                rng = makeRandom(value);
-                                memorySet(id, 'rngState', rng);
-                                break;
-                            default:
-                                memorySet(id, key, value);
-                        }
-                    },
-                },
+                get move() { return moves.get(id) },
+                set move(m) { setMove(id, m || null) },
 
             }), makeEntityGuard(id))),
             {});
-        execRevoke.set(id, () => {
-            revoke();
+
+        return {ctx, revoke() {
+            revokeCtx();
+            revokeMemory();
             if (rng) memorySet(id, 'rngState', rng);
-        });
-        execCtx.set(id, proxy);
-        return proxy;
+        }};
     }
 
 }

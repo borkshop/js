@@ -635,7 +635,7 @@ test('boops', t => {
                     // TODO render from ctx.view
 
                     // parse moves from input, taking the last parsed move
-                    for (const codePoint of ctx.input()) {
+                    if (ctx.input) for (const codePoint of ctx.input) {
                         const move = ( c => { switch (c) {
                             case 'w': return 'up';
                             case 'a': return 'left';
