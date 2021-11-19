@@ -43,3 +43,288 @@ import {mortonKey, mortonPoint} from './index.js';
     return `${providedTitle} !mortonKey(${x},${y})`;
   }
 }), x, y));
+
+import {makeMortonMap} from './index.js';
+
+/** @typedef {import('./index.js').Point} Point */
+/** @typedef {import('./index.js').Rect} Rect */
+
+/** @template ID @typedef {import('./index.js').ROMortonMap<ID>} ROMortonMap */
+
+test('morton map', t => {
+  /* this is the intended full-up use of how the morton map is currently factored:
+   * - an underlying system with positioned entities
+   * - whose position data is lazily indexed on demand primarily by queries,
+   *   but sometimes by transactional reads if necessary
+   */
+
+  const world = makeTestWorld();
+  t.is(world.spatial.size, 0, 'should start out empty');
+
+  world.create('alice', {x: 2, y: 1, glyph: 0x41});
+  world.create('bob', {x: 8, y: 1, glyph: 0x42});
+  world.create('candice', {x: 8, y: 5, glyph: 0x43});
+  world.create('doug', {x: 2, y: 5, glyph: 0x44});
+
+  // god exists to be unseen (outside of render viewport bounds) to increase
+  // test branch coverage
+  world.create('god', {x: 42, y: 42, glyph: 0x47});
+
+  const view = makeViewport({x: 0, y: 0, w: 10, h: 7});
+  const render = () => {
+    view.clear();
+    for (const [p, ids] of world.spatial.within(view.bounds))
+      view.update(p, prior => {
+        for (const id of ids) {
+          const glyph = world.glyphs.get(id) || 0xfffd;
+          if (prior != 0x20)
+            throw new Error(`glyph collision @${p.x},${p.y} ${ucode(prior)} <=> ${ucode(glyph)}`);
+          prior = glyph;
+        }
+        return prior;
+      });
+    return view.toString();
+  };
+
+  // load and inspect
+  t.is(world.spatial.size, world.scene.size, 'should have scene things');
+  for (const id of world.scene.keys())
+      t.true(world.spatial.has(id), `has ${id}`);
+
+  t.deepEqual(
+      Object.fromEntries(world.spatial.entries()),
+      Object.fromEntries(world.scene), 'get initial scene back');
+  t.is(render(), [
+    '           ',
+    '  A     B  ',
+    '           ',
+    '           ',
+    '           ',
+    '  D     C  ',
+    '           ',
+  ].join('\n'), 'initial scene');
+
+  // bob challenges
+  t.deepEqual(world.spatial.get('bob'), {x: 8, y: 1});
+  t.deepEqual(
+    [...world.spatial.at({x: 5, y: 3})],
+    [],
+    'nothing in mid');
+  world.move('bob', {x: 5, y: 3})
+  t.deepEqual(world.spatial.get('bob'), {x: 5, y: 3});
+  t.deepEqual(
+    [...world.spatial.at({x: 5, y: 3})],
+    ['bob'],
+    'bob in mid');
+  t.is(render(), [
+    '           ',
+    '  A        ',
+    '           ',
+    '     B     ',
+    '           ',
+    '  D     C  ',
+    '           ',
+  ].join('\n'), 'bob move');
+
+  // unseen god move for more coverage
+  world.move('god', {x: 5});
+
+  // doug accepts
+  world.move('doug', {x: 4, y: 3})
+  t.is(render(), [
+    '           ',
+    '  A        ',
+    '           ',
+    '    DB     ',
+    '           ',
+    '        C  ',
+    '           ',
+  ].join('\n'), 'doug move');
+
+  // unseen god move for more coverage
+  world.move('god', {x: 42, y: 3});
+
+  // doug wins
+  world.move('doug', {x: 5, y: 3})
+  t.deepEqual(
+    [...world.spatial.at({x: 5, y: 3})],
+    ['bob', 'doug'],
+    'bob and doug collide in mid');
+
+  // because this implementation has no z-buffering or other way to visually
+  // resolve the conflict, this is an expected unrenderable state
+  t.throws(
+    () => render(),
+    {message: 'glyph collision @5,3 U+0042 <=> U+0044'},
+    'collision cannot be rendered');
+
+  world.delete('bob');
+
+  t.is(render(), [
+    '           ',
+    '  A        ',
+    '           ',
+    '     D     ',
+    '           ',
+    '        C  ',
+    '           ',
+  ].join('\n'), 'doug win');
+
+  // kill god for yet more branch coverage
+  t.is(world.spatial.size, 4, 'with god');
+  t.deepEqual(world.spatial.get('god'), {x: 42, y: 3});
+  world.delete('god');
+  t.is(world.spatial.size, 3, 'sans god');
+  t.is(world.spatial.get('god'), undefined);
+
+  // apocalypse
+  world.clear();
+  t.is(world.spatial.size, 0, 'should be empty after clear');
+
+  for (const id of Object.keys(world.scene))
+    t.false(world.spatial.has(id), `has ${id}`);
+});
+
+function makeTestWorld() {
+  /** @type {Map<string, Point>} */
+  const scene = new Map();
+
+  /** @type {Map<string, number>} */
+  const glyphs = new Map();
+
+  /** @type {Set<string>} */
+  const mmInvalid = new Set();
+
+  /** @type {ROMortonMap<string>} */
+  const spatial = makeMortonMap(() => /*
+    * NOTE: can do any initial load here, but this application has been
+    * designed to not need any since the index is constructed before any entity
+    * creation
+    */
+    sm => {
+      // NOTE: the init function also gets sm, and the freshener could just
+      // close over that reference, but it also gets it passed for convenience
+
+      if (!scene.size) {
+        sm.clear();
+      } else for (const id of mmInvalid) {
+        const p = scene.get(id);
+        if (p == undefined)
+          sm.delete(id);
+        else
+          sm.set(id, p);
+      }
+      mmInvalid.clear();
+    });
+
+  return Object.freeze({
+    // data exposure for test access, normally this shouldn't be here
+    scene,
+    spatial,
+    glyphs,
+
+    /**
+     * @param {string} id
+     * @param {object} spec
+     * @param {number} spec.glyph
+     * @param {number} spec.x
+     * @param {number} spec.y
+     */
+    create(id, {glyph, x, y}) {
+      scene.set(id, {x, y});
+      glyphs.set(id, glyph);
+      mmInvalid.add(id);
+    },
+
+    /** @param {string} id */
+    delete(id) {
+      scene.delete(id);
+      glyphs.delete(id);
+      mmInvalid.add(id);
+    },
+
+    clear() {
+      scene.clear();
+      glyphs.clear();
+    },
+
+    /**
+     * @param {string} id
+     * @param {Partial<Point>} to
+     */
+    move(id, to) {
+      const {x: px=0, y: py=0} = scene.get(id) || {};
+      const {x=px, y=py} = to;
+      scene.set(id, {x, y});
+      mmInvalid.add(id);
+    },
+
+  });
+}
+
+/// TODO utilities to move into an import able module
+
+/** @param {Rect} r */
+function makeViewport({x: atx, y: aty, w, h}) {
+  let stride = w + 2;
+  let codes = new Uint32Array(h * stride - 1);
+  clear();
+
+  function clear() {
+    codes.fill(0x20);
+    for (let i = stride-1; i < codes.length; i += stride)
+      codes[i] = 0x0a;
+  }
+
+  /** @param {Point} p */
+  function loc({x, y}) {
+    x -= atx, y -= aty;
+    if (x < 0 || x > w) return NaN;
+    if (y < 0 || y > h) return NaN;
+    return y * stride + x;
+  }
+
+  return Object.freeze({
+    get bounds() { return {x: atx, y: aty, w, h} },
+    set bounds(r) {
+      const oldSize = w * h;
+      ({x: atx, y: aty, w, h} = r);
+      const newSize = w * h;
+      if (newSize != oldSize) {
+        stride = w + 2;
+        codes = new Uint32Array(h * stride - 1);
+      }
+      clear();
+    },
+
+    clear,
+    toString() { return String.fromCodePoint(...codes) },
+
+    /** @param {Point} p */
+    has(p) { return !isNaN(loc(p)) },
+
+    /** @param {Point} p */
+    get(p) {
+      const i = loc(p);
+      return isNaN(i) ? undefined : codes[i];
+    },
+
+    /** @param {Point} p @param {number} code */
+    set(p, code) {
+      const i = loc(p);
+      if (!isNaN(i)) codes[i] = code;
+    },
+
+    /** @param {Point} p @param {(prior: number) => number} f */
+    update(p, f) {
+      const i = loc(p);
+      if (!isNaN(i)) codes[i] = f(codes[i]);
+    },
+
+  });
+}
+
+/** @param {number} code */
+function ucode(code) {
+    return `U+${code.toString(16).padStart(4, '0')}`;
+}
