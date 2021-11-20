@@ -26,6 +26,7 @@
     "branches": 65
   },
   "dependencies": {
+    "morty-mc-fov": "0.9.0",
     "xorbig": "0.9.0"
   },
   "devDependencies": {

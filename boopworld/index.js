@@ -1,4 +1,10 @@
 import {
+    makeMortonMap,
+} from 'morty-mc-fov';
+
+/** @template ID @typedef {import('morty-mc-fov').PointQuery<ID>} PointQuery */
+
+import {
     generateRandoms,
     makeRandom,
 } from 'xorbig';
@@ -307,6 +313,37 @@ export function makeShard({
     //// dense components
     let locs = new Int16Array(3 * size);
     let glyphs = new Uint32Array(size);
+    /** @type {Set<number>} */
+    const locInvalid = new Set(); // TODO this would probably be better as an id list that we insort into
+    const {at: locAt, within: locWithin} = /** @type {PointQuery<number>} */ (makeMortonMap(() => ps => {
+        for (const id of locInvalid) {
+            if (!(getTypeGen(id) & typeAlloc)) {
+                ps.delete(id);
+                continue;
+            }
+
+            // translate from int16 loc space to uint32 index space
+            const {x, y} = getLoc(id);
+            ps.set(id, {
+                x: x + 0x7fff,
+                y: y + 0x7fff,
+            });
+        }
+        locInvalid.clear();
+    }));
+
+    /** narrowed and translated location index query facet
+     * @type {PointQuery<number>} */
+    const locQuery = Object.freeze({
+        /** @param {Point} pos */
+        *at({x, y}) { yield* locAt({x: x + 0x7fff, y: y + 0x7fff}) },
+        /** @param {Rect} r */
+        *within({x, y, w, h}) {
+            const qr = {x: x + 0x7fff, y: y + 0x7fff, w, h};
+            for (const [{x, y}, it] of locWithin(qr))
+                yield [{x: x - 0x7fff, y: y - 0x7fff}, it];
+        },
+    });
 
     //// movement component init 
     /** @type {Map<number, Move>} */
@@ -524,7 +561,6 @@ export function makeShard({
         let x=0, y=0, w=0, h=0
         let stride = 0;
         let size = 0;
-        let zBuffer = new Uint8Array(0);
         let idAt = new Uint16Array(0);
         let glyphCache = new Uint32Array(0);
         /** @type {null|string} */
@@ -577,8 +613,7 @@ export function makeShard({
             ({x, y, w, h} = bounds);
             stride = w + 1;        // +1 for a newline terminator
             size = stride * h - 1; // except on the final line
-            if (size != zBuffer.length) {
-                zBuffer = new Uint8Array(size);
+            if (size != glyphCache.length) {
                 idAt = new Uint16Array(size);
                 glyphCache = new Uint32Array(size);
             }
@@ -588,18 +623,15 @@ export function makeShard({
         function update() {
             if (lastUpdate == time) return;
             if (typeof bounds == 'function') setBounds(bounds());
-            zBuffer.fill(0);
             idAt.fill(0);
-            for (const id of ids(typeVisible)) {
-                const vx = getX(id) - x;
+            for (const [{x: px, y: py}, idsIt] of locQuery.within({x, y, w, h})) {
+                const vx = px - x;
                 if (vx < 0 || vx > w) continue;
-                const vy = getY(id) - y;
+                const vy = py - y;
                 if (vy < 0 || vy > h) continue;
-                const z = getZ(id);
                 const i = stride * vy + vx;
-                if (idAt[i] && z < zBuffer[i]) continue; // last z-tie wins
-                idAt[i] = id;
-                zBuffer[i] = z;
+                const ids = [...idsIt];
+                idAt[i] = ids[bestIndex(ids.map(getZ), (a, b) => a >= b)];
             }
             lastUpdate = time;
             stringCache = null;
@@ -1129,13 +1161,23 @@ export function makeShard({
 
         types[i]++;
         types[i+1] = 0;
-        return i/2;
+
+        const id = i/2;
+
+        // TODO base alloc notification for systems that don't care about a particular type
+        locInvalid.add(id);
+
+        return id;
     }
 
     /** @param {number} id */
     function destroy(id) {
         if (!(types[2 * id] & typeAlloc)) return;
         setType(id, 0); // to run any component destructors
+
+        // TODO base destroy notification for systems that don't care about a particular type
+        locInvalid.add(id);
+
         types[2 * id]++;
     }
 
@@ -1222,10 +1264,12 @@ export function makeShard({
     function getLoc(id) { return {x: locs[3 * id], y: locs[3 * id + 1]} }
 
     /** @param {number} id @param {Point} p */
-    function setLoc(id, p) { ({
-        x: locs[3 * id],
-        y: locs[3 * id + 1]
-    } = p) }
+    function setLoc(id, p) {
+        ({ x: locs[3 * id],
+           y: locs[3 * id + 1]
+        } = p);
+        locInvalid.add(id);
+    }
 
     /** @param {number} id */
     function getX(id) { return locs[3 * id] }
@@ -1467,6 +1511,19 @@ export function guard(o, ...guards) {
             if (dirty) Object.defineProperty(o, key, desc);
         }
     }
+}
+
+/**
+ * @template T
+ * @param {T[]} data
+ * @param {(a: T, b: T) => boolean} prefer
+ */
+function bestIndex(data, prefer) {
+    if (!data.length) return NaN;
+    let i = 0;
+    for (let j = 1; j < data.length; j++)
+        if (prefer(data[j], data[i])) i = j;
+    return i;
 }
 
 /**
