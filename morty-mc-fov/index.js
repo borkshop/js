@@ -233,3 +233,172 @@ function mortonCompact1(x) {
   x = BigInt.asUintN(32, x);
   return x;
 }
+
+/** @template At
+ * @typedef {object} FOVDatum -- describes a single position within a field of
+ * view iteration
+ *
+ * @prop {boolean} blocked -- whether field of view is blocked here
+ *
+ * @prop {At} at -- passthru spatial data so that the field consumer need not
+ * re-query here
+ */
+
+/** Symmetric Shadowcasting field of view iterator
+ *
+ * Adapted from https://www.albertford.com/shadowcasting/
+ *
+ * @template At
+ *
+ * @param {Point} origin
+ *
+ * @param {object} params
+ *
+ * @param {(pos: Point, depth: number) => FOVDatum<At>|null} params.query --
+ * spatial query callback, may return null if space is not defined at the
+ * given point, or may return whether field is blocked, and any passthru At
+ * data
+ *
+ * @param {number} [params.maxDepth] -- maximum cardinal distance from origin: no
+ * point yielded will have its x or y component differ from origin's by more
+ * than maxDepth; defaults to 100, may be set to NaN to disable any explicit
+ * limit.
+ *
+ * @returns {Generator<{pos: Point, at: At}>} -- depth is the row
+ * number within the first quadrant to encounter each location.
+ */
+export function* shadowField(origin, {query, maxDepth=100}) {
+  // TODO support casting from walls:
+  // > So here are the modifications for casting field of view from a wall tile:
+  // > - Make slopes originate from the edges of the tile instead of the center.
+  // > - Change the comparisons in isSymmetric to strict inequalities.
+
+  // query origin
+  {
+    const res = query(origin, 0);
+    if (!res) return;
+
+    const {blocked, at} = res;
+    yield {pos: origin, at};
+    if (blocked) return;
+  }
+
+  // Used to dedupe calls to update so that the caller only sees any position
+  // at most once. Ideally we'd get the quadrant boundary maths below fixed to
+  // not produce duplicates, but for now a visited set prevents visual
+  // artifacts (e.g. so what addGridLight doesn't add to the same cell twice).
+  const visited = new Set([mortonKey(origin)]);
+
+  // work in cardinally aligned quadrants around origin; each quadrant is
+  // essentially a π/2 section centered around each +/- x/y axis
+  for (const quadrant of quadrantsAround(origin)) {
+    // iterate row (sub-)arcs within each quadrant
+    const rows = makeStack(
+      {depth: 1, startSlope: -1, endSlope: 1},
+    );
+    for (const {depth, startSlope, endSlope} of rows) {
+      // scan columns within each row (sub-)arc
+
+      /** @type {null|boolean} */
+      let wasBlocked = null;                               // tri-value "was last row-cell blocked?"
+      let restartSlope = startSlope;                       // next row.startSlope
+      const minCol = Math.floor(depth * startSlope + 0.5); // round ties up
+      const maxCol = Math.ceil(depth * endSlope    - 0.5); // round ties down
+
+      for (let col = minCol; col <= maxCol; col++) {
+        const pos = quadrant(depth, col);
+        const res = query(pos, depth);
+        if (!res) continue;
+
+        const {blocked, at} = res;
+
+        if (blocked) {
+
+          // visit terminal cell if supported
+          if (visit(pos))
+            yield {pos, at};
+
+          // continue to scan sub-arc in next row
+          if (wasBlocked === false && depth < maxDepth) rows.enqueue({
+            depth: depth + 1,
+            startSlope: restartSlope,
+            endSlope: (2*col - 1) / (2*depth), // tileSlope
+          });
+
+        } else {
+
+            // TODO this symmetric check seems awfully redundant... either I
+            // messed something up in translation, or just don't understand the
+            // edge case semantics yet...
+            if (isSymmetric(col, depth, restartSlope, endSlope) && visit(pos))
+              yield {pos, at};
+
+          // sub-arc starts here in the next row
+          if (wasBlocked) restartSlope = (2*col - 1) / (2*depth); // tileSlope
+
+        }
+
+        wasBlocked = blocked;
+      }
+
+      // continue to scan (sub-)arc in next row
+      if (wasBlocked === false && depth < maxDepth) rows.enqueue({
+        depth: depth + 1,
+        startSlope: restartSlope,
+        endSlope,
+      });
+
+    }
+  }
+
+  /**
+   * @param {number} col
+   * @param {number} depth
+   * @param {number} restartSlope
+   * @param {number} endSlope
+   */
+  function isSymmetric(col, depth, restartSlope, endSlope) {
+    return col >= depth * restartSlope && col <= depth * endSlope;
+  }
+
+  /** @param {Point} pos */
+  function visit(pos) {
+    const key = mortonKey(pos);
+    if (visited.has(key)) return false;
+    visited.add(key);
+    return true;
+  }
+}
+
+/**
+ * @param {Point} origin
+ * @returns {Generator<(row: number, col:number) => Point>}
+ */
+function *quadrantsAround({x, y}) {
+  yield (row, col) => ({x: x + col, y: y - row}) // north quadrant
+  yield (row, col) => ({x: x + col, y: y + row}) // east  quadrant
+  yield (row, col) => ({x: x + row, y: y + col}) // south quadrant
+  yield (row, col) => ({x: x - row, y: y + col}) // west  quadrant
+}
+
+/** @template T
+ * @param {T[]} init
+ * @returns {IterableIterator<T> & {enqueue: (...ts: T[]) => void}}
+ */
+function makeStack(...init) {
+  const stack = [...init];
+  /** @type {IterableIterator<T>} */
+  const it = Object.freeze({
+    [Symbol.iterator]() { return it },
+    next() {
+      const value = stack.pop();
+      return value !== undefined ? {value} : {done: true, value};
+    }
+  });
+  return Object.freeze({
+    ...it,
+    enqueue(...next) {
+      for (const item of next) stack.push(item);
+    }
+  });
+}

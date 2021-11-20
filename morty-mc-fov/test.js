@@ -185,6 +185,185 @@ test('morton map', t => {
     t.false(world.spatial.has(id), `has ${id}`);
 });
 
+import {shadowField} from './index.js';
+
+test('shadowField', t => {
+  /**
+   * @typedef {object} EntDef
+   * @prop {string} kind
+   * @prop {boolean} solid
+   */
+
+  /** @type {Map<string, EntDef>} */
+  const lexicon = new Map([
+    ['#', {kind: 'wall', solid: true}],
+    ['·', {kind: 'floor', solid: false}],
+    ['+', {kind: 'door', solid: true}],
+    ['-', {kind: 'door', solid: false}],
+    ['@', {kind: 'player', solid: true}],
+    ['X', {kind: 'npc', solid: true}],
+  ]);
+
+  const world = makeTestWorld();
+
+  build({x: 0, y: 0}, [
+    '##########',
+    '#········#     #####',
+    '#········#######X··#',
+    '#··@·X··X+··X··+···#',
+    '#········#######X··#',
+    '#········#     #####',
+    '##########',
+  ].join('\n'));
+
+  t.deepEqual(
+    world.scene.get('player1'),
+    {x: 3, y: 3},
+    'player start');
+
+  // TODO render with shadow field
+
+  const view = makeViewport({x: 0, y: 0, w: 20, h: 7});
+
+  /**
+   * @param {Point} p
+   * @param {number} _depth
+   * @param {string|Point} pov
+   */
+  function shadeWorldGlyphs(p, _depth, pov) {
+    const ids = [...world.spatial.at(p)];
+    const show = ids.length > 0 ? ids[ids.length-1] : undefined;
+    const at = show ? world.glyphs.get(show) || 0xfffd : 0x20;
+    const defs = ids
+      .map(id => world.glyphs.get(id))
+      .map(glyph => glyph ? lexicon.get(String.fromCodePoint(glyph)) : undefined);
+    const blocked = defs.some((def, i) => def?.solid && ids[i] != pov);
+    return {blocked, at};
+  }
+
+  /**
+   * @param {string|Point} pov
+   * @param {(p: Point, depth: number, pov: string|Point) => number|{blocked?: boolean, at: number}} shader
+   */
+  const render = (pov, shader=shadeWorldGlyphs) => {
+    view.clear();
+    const origin = typeof pov == 'string' ? world.scene.get(pov) : pov;
+    if (origin) for (const {pos, at} of shadowField(origin, {
+      query(p, depth) {
+        if (!view.has(p)) return null;
+        const res = shader(p, depth, pov);
+        const {blocked=false, at} = typeof res == 'number' ? {at: res} : res;
+        return {blocked, at};
+      },
+    })) view.set(pos, at);
+    return view.toString();
+  }
+
+  t.is(render('player1', (_, depth) => 0x40 + depth), [
+    'CCCCCCCDEFGHIJKLMNOPQ',
+    'CBBBBBCDEFGHIJKLMNOPQ',
+    'CBAAABCDEFGHIJKLMNOPQ',
+    'CBA@ABCDEFGHIJKLMNOPQ',
+    'CBAAABCDEFGHIJKLMNOPQ',
+    'CBBBBBCDEFGHIJKLMNOPQ',
+    'CCCCCCCDEFGHIJKLMNOPQ',
+  ].join('\n'), 'depth coding');
+
+  t.is(render('player1'), [
+    '##########           ',
+    '#········#           ',
+    '#·······             ',
+    '#··@·X               ',
+    '#·······             ',
+    '#········#           ',
+    '##########           ',
+  ].join('\n'), '#player1 view');
+
+  t.is(render('npc1'), [
+    '                     ',
+    '               ##### ',
+    '               #X··# ',
+    '               +···# ',
+    '               #X··# ',
+    '                 ### ',
+    '                     ',
+  ].join('\n'), '#npc1 view');
+
+  t.is(render('npc4'), [
+    '                     ',
+    '                     ',
+    '         #######     ',
+    '         +··X··+     ',
+    '         #######     ',
+    '                     ',
+    '                     ',
+  ].join('\n'), '#npc4 view');
+
+  t.is(render({x: 6, y: 0}), [
+    '      #              ',
+    '                     ',
+    '                     ',
+    '                     ',
+    '                     ',
+    '                     ',
+    '                     ',
+  ].join('\n'), 'stuck in a wall view (origin blocked)');
+
+  t.is(render({x: 42, y: 42}), [
+    '                     ',
+    '                     ',
+    '                     ',
+    '                     ',
+    '                     ',
+    '                     ',
+    '                     ',
+  ].join('\n'), 'view from outside (origin not supported)');
+
+  /**
+   * @param {Point} at
+   * @param {string} content
+   */
+  function build({x, y}, content) {
+    /** @type {Map<string, number>} */
+    const kindCounts = new Map();
+
+    const initX = x;
+
+    for (const unit of content) switch (unit) {
+
+      case ' ':
+        x++;
+        continue;
+
+      case '\n':
+        x = initX, y++;
+        continue;
+
+      default:
+        const def = lexicon.get(unit)
+        if (!def) throw new Error(`undefined content unit ${JSON.stringify(unit)}`);
+        const id = nextID(def.kind);
+        const glyph = unit.codePointAt(0) || 0xfffd;
+        world.create(id, {glyph, x, y});
+        x++;
+        continue;
+
+    }
+
+    /** @param {string} kind */
+    function nextID(kind) {
+      let count = kindCounts.get(kind) || 1;
+      let id = `${kind}${count}`;
+      while (world.scene.has(id))
+        id = `${kind}${++count}`;
+      kindCounts.set(kind, count);
+      return id;
+    }
+
+  }
+
+});
+
 function makeTestWorld() {
   /** @type {Map<string, Point>} */
   const scene = new Map();
