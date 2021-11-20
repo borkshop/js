@@ -25,6 +25,9 @@
     "statements": 76,
     "branches": 65
   },
+  "dependencies": {
+    "xorbig": "0.9.0"
+  },
   "devDependencies": {
     "ava": "^4.0.0-rc.1",
     "c8": "^7.10.0",
