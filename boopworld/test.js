@@ -123,7 +123,6 @@ export function buildRect(rect, fill, stroke, corner) {
 
 /** @typedef {(
 *   | {overview: string|string[]}
-*   | {events: eventRecord[]}
 *   | {moves: [name: string, move: boopworld.Move][]}
 *   | {movement: { [name: string]: Movement}}
 *   | {movements: { [name: string]: MaybeCounted<Movement>[] }}
@@ -276,7 +275,6 @@ test('boops', t => {
                 '            #·········D#',
                 '            ############',
             ],
-            events: [],
         }},
 
         {time: 1, do: 'update'},
@@ -329,10 +327,6 @@ test('boops', t => {
                 '            #··········#',
                 '            ############',
             ],
-            events: [
-                {entity: [253,1], time: 3, type: "move", from: {x:21, y:13}, to: {x:20, y:13}, here: []},
-                {entity: [252,1], time: 3, type: "move", from: {x:1, y:2}, to: {x:2, y:2}, here: []},
-            ],
         }},
 
         {time: 3, do: {inputs: [
@@ -376,10 +370,6 @@ test('boops', t => {
                 '            #··········#',
                 '            ############',
             ],
-            events: [
-                {entity: [252, 1], time: 10, type: "hit", target: [60, 3]},
-                {entity: [253, 1], time: 10, type: "move", from: {x: 22, y: 11}, to: {x: 22, y: 12}, here: []},
-            ]
         }},
 
         {time: 10, do: {input: 'd'}},
@@ -759,11 +749,6 @@ test('boops', t => {
                 else if ('moves' in step) {
                     t.deepEqual(mvRecords, step.moves, `${testSteps.stamp} moves`);
                     mvExpected = true;
-                }
-
-                else if ('events' in step) {
-                    t.deepEqual(evRecords, step.events, `${testSteps.stamp} events`);
-                    evExpected = true;
                 }
 
                 else if ('movement' in step) {

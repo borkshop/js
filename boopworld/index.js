@@ -19,10 +19,10 @@ import {
 
 /** @type {Interaction} */
 function defaultInteraction(ctx) {
-    const {time, self, subject} = ctx;
+    const {self, subject} = ctx;
     ctx.queueEvents(
-        {type: "hit", time, target: subject.ref},
-        {type: "hitBy", time, entity: self.ref},
+        {type: "hit", target: subject.ref},
+        {type: "hitBy", entity: self.ref},
     );
 }
 
@@ -228,10 +228,10 @@ export function makeInput() {
 /** @typedef {Partial<Omit<Entity, "ref" | "toString">>} EntitySpec */
 
 /** @typedef {(
- *   | {time: number, type: "hit", target: EntityRef}
- *   | {time: number, type: "hitBy", entity: EntityRef}
- *   | {time: number, type: "move", from: Point, to: Point, here: EntityRef[]}
- *   | {time: number, type: "inspect", here: EntityRef[]}
+ *   | {type: "hit", target: EntityRef}
+ *   | {type: "hitBy", entity: EntityRef}
+ *   | {type: "move", from: Point, to: Point, here: EntityRef[]}
+ *   | {type: "inspect", here: EntityRef[]}
  * )} Event
  */
 
@@ -785,7 +785,7 @@ export function makeShard({
                 if (!hit.length) {
                     setLoc(id, {x: tox, y: toy});
                     queueEvent(id, {
-                        type: "move", time,
+                        type: "move",
                         from: {x, y},
                         to: {x: tox, y: toy},
                         here: Array
@@ -821,7 +821,7 @@ export function makeShard({
 
             function inspect() {
                 queueEvent(id, {
-                    type: "inspect", time,
+                    type: "inspect",
                     here: Array
                         .from(at(typeInteract, x, y))
                         .filter(here => here != id)
