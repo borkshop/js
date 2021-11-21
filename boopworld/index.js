@@ -133,6 +133,8 @@ function resultContinues(res) {
  * @prop {number} time
  * @prop {Entity} root
  * @prop {(spec?: TypeSpec) => IterableIterator<Entity>} entities
+ * @prop {(p: Point) => IterableIterator<Entity>} at
+ * @prop {(r: Rect) => IterableIterator<[Point, Iterable<Entity>]>} within
  * @prop {() => IterableIterator<[Entity, Event]>} events
  * @prop {() => IterableIterator<[Entity, Move]>} moves
  * @prop {() => IterableIterator<{entity: Entity, remnant: RemnantCtx}>} reap
@@ -522,6 +524,20 @@ export function makeShard({
                     | (hasInput ? typeInput : 0);
                 for (const id of ids(typeFilter))
                     yield createEntity(id);
+            },
+
+            *at(p) {
+                for (const id of locQuery.at(p)) 
+                    yield createEntity(id);
+            },
+
+            *within(r) {
+                for (const [pos, ids] of locQuery.within(r)) {
+                    const ents = [];
+                    for (const id of ids)
+                        ents.push(createEntity(id));
+                    yield [pos, ents];
+                }
             },
 
             *events() {
