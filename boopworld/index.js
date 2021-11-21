@@ -1,5 +1,6 @@
 import {
     makeMortonMap,
+    shadowField,
 } from 'morty-mc-fov';
 
 /** @template ID @typedef {import('morty-mc-fov').PointQuery<ID>} PointQuery */
@@ -97,7 +98,6 @@ export function thunkWait(waitFor, next, reason='wait') { return {ok: true, wait
  * @prop {ThunkMemory} memory
  * @prop {() => number} random
  * @prop {() => IterableIterator<Readonly<Event>>} events
- * @prop {ShardView} view
  * @prop {IterableIterator<number>} [input]
  * @prop {Move|undefined} move
  */
@@ -131,8 +131,6 @@ function resultContinues(res) {
 /**
  * @typedef {object} ShardCtl
  * @prop {number} time
- * @prop {Rect} bounds
- * @prop {(bounds: Rect) => ShardView} makeView
  * @prop {Entity} root
  * @prop {(spec?: TypeSpec) => IterableIterator<Entity>} entities
  * @prop {() => IterableIterator<[Entity, Event]>} events
@@ -156,13 +154,6 @@ function resultContinues(res) {
  *   keys: () => IterableIterator<string>,
  *   get: (key: string) => any,
  * }} memory
- */
-
-/**
- * @typedef {object} ShardView
- * @prop {Rect} bounds
- * @prop {(p: Point) => ROEntity|null} at
- * @prop {() => string} toString
  */
 
 /**
@@ -238,6 +229,7 @@ export function makeInput() {
  *   | {type: "hitBy", entity: EntityRef}
  *   | {type: "move", from: Point, to: Point, here: EntityRef[]}
  *   | {type: "inspect", here: EntityRef[]}
+ *   | {type: "view", view: Viewport}
  * )} Event
  */
 
@@ -345,10 +337,37 @@ export function makeShard({
         },
     });
 
+    /**
+     * @param {Point} at
+     * @param {number} r
+     */
+    function clampedViewBox({x, y}, r) {
+        x -= r, y -= r;
+        let w = 2 * r, h = 2 * r;
+        if (x < -0x7fff) {
+            w -= -0x7fff - x;
+            x = -0x7fff;
+        }
+        if (x + w > 0x7fff) {
+            w -= x + w - 0x7fff
+            x = 0x7fff;
+        }
+        if (y < -0x7fff) {
+            h -= -0x7fff - y;
+            y = -0x7fff;
+        }
+        if (y + h > 0x7fff) {
+            h -= y + h - 0x7fff
+            y = 0x7fff;
+        }
+        return {x, y, w, h};
+    }
+
     //// movement component init 
     /** @type {Map<number, Move>} */
     const moves = new Map();
     let nextMove = 1;
+    let nextSense = 1;
     typeIndex.set(typeSolid, new Set()); // TODO replace this with a location index
 
     //// events component init
@@ -400,9 +419,6 @@ export function makeShard({
     /** @type {Map<number, ThunkCtx>} */
     const execCtx = new Map();
 
-    // shared overview used by every ctx
-    const execView = makeView(overBounds);
-
     /** @type {Map<number, number>} */
     const execTick = new Map();
 
@@ -451,7 +467,7 @@ export function makeShard({
     return freeze({
         update(deadline=now() + defaultTimeout) {
             // run minds between and to generate moves
-            if (nextMove > time) {
+            if (nextMove > time && nextSense > time) {
                 const isReady = runMinds(deadline);
                 if (time <= 0 || isReady) {
                     // start next time slice (immediately at time=0 and once ready after that)
@@ -466,6 +482,10 @@ export function makeShard({
             if (time >= nextMove && processMoves(deadline)) {
                 nextMove = time + moveRate;
                 moves.clear();
+            }
+
+            if (nextMove > time && time >= nextSense && processSenses(deadline)) {
+                nextSense = nextMove;
             }
 
             // call user control between moves
@@ -483,10 +503,6 @@ export function makeShard({
     function makeCtl() {
         return freeze(guard({
             get time() { return time },
-
-            get bounds() { return overBounds(); },
-
-            makeView(bounds) { return makeView(bounds) },
 
             get root() { return createEntity(0) },
 
@@ -555,91 +571,6 @@ export function makeShard({
                 return id ? createEntity(id) : null;
             },
         }, makeTimeGuard('ShardCtl')));
-    }
-
-    /**
-     * @param {Rect | (() => Rect)} bounds
-     * @returns {ShardView}
-     */
-    function makeView(bounds) {
-        let x=0, y=0, w=0, h=0
-        let stride = 0;
-        let size = 0;
-        let idAt = new Uint16Array(0);
-        let glyphCache = new Uint32Array(0);
-        /** @type {null|string} */
-        let stringCache = null;
-        let lastUpdate = NaN;
-        setBounds(typeof bounds == 'function' ? bounds() : bounds);
-
-        /** @type {ShardView} */
-        const view = {
-            get bounds() {
-                if (typeof bounds == 'function') update();
-                return freeze({x, y, w, h});
-            },
-
-            at({x: px, y: py}) {
-                update();
-                const i = stride * py + px;
-                if (isNaN(i) || i < 0 || i >= idAt.length) {
-                    return null;
-                }
-                const id = idAt[i];
-                if (!id) return null;
-                return entity(id);
-            },
-
-            toString() {
-                update();
-                if (stringCache != null) return stringCache;
-                glyphCache.fill(0x20); // ascii space TODO maybe fill with "A" in dev mode
-                for (let i = 0; i < idAt.length; ++i) {
-                    const n = (i % stride) + 1;
-                    glyphCache[i] = n < stride
-                        ? glyphs[idAt[i]] // rows of view glyphs...
-                        : 0x0a;           // ...terminated by ascii nl
-                }
-                return stringCache = String.fromCodePoint(...glyphCache);
-            },
-        };
-
-        if (typeof bounds != 'function')
-            Object.defineProperty(view, 'bounds', {
-                ...Object.getOwnPropertyDescriptor(view, 'bounds'),
-                set: setBounds,
-            });
-
-        return freeze(view);
-
-        /** @param {Rect} bounds */
-        function setBounds(bounds) {
-            ({x, y, w, h} = bounds);
-            stride = w + 1;        // +1 for a newline terminator
-            size = stride * h - 1; // except on the final line
-            if (size != glyphCache.length) {
-                idAt = new Uint16Array(size);
-                glyphCache = new Uint32Array(size);
-            }
-            lastUpdate = NaN;
-        }
-
-        function update() {
-            if (lastUpdate == time) return;
-            if (typeof bounds == 'function') setBounds(bounds());
-            idAt.fill(0);
-            for (const [{x: px, y: py}, idsIt] of locQuery.within({x, y, w, h})) {
-                const vx = px - x;
-                if (vx < 0 || vx > w) continue;
-                const vy = py - y;
-                if (vy < 0 || vy > h) continue;
-                const i = stride * vy + vx;
-                const ids = [...idsIt];
-                idAt[i] = ids[bestIndex(ids.map(getZ), (a, b) => a >= b)];
-            }
-            lastUpdate = time;
-            stringCache = null;
-        }
     }
 
     /** @param {number} deadline */
@@ -865,6 +796,64 @@ export function makeShard({
                         .map(refs.ref),
                 });
             }
+        }
+        return true;
+    }
+
+    /** @param {number} deadline */
+    function processSenses(deadline) {
+        // NOTE: currently sight is the only sense, which is automatically
+        // granted to every minded entity, an "obvious" generalization would be
+        // to make it multi-modal and/or independently granted to entities
+        for (const id of execThunk.keys()) {
+            if (now() > deadline) return false;
+            const loc = getLoc(id);
+            const refs = getExecRefs(id);
+
+            // NOTE: we could also vary these threshold per entity
+            const idThreshold   = .1;
+            const seeThreshold = .001;
+
+            // NOTE: currently everything is fully lit all the time, so field
+            // depth is the only thing that matters; really this should be
+            // "light present, attenuated by field depth"
+            const maxIDDepth    = Math.floor(Math.sqrt(1 / idThreshold));
+            const maxGlyphDepth = Math.floor(Math.sqrt(1 / seeThreshold));
+
+            const {update, ...view} = makeViewport();
+            update(({resize, set}) => {
+                resize(clampedViewBox(loc, maxGlyphDepth), 1);
+                for (const entry of shadowField(loc, {
+                    maxDepth: maxGlyphDepth,
+                    query(pos, depth) {
+                        if (!view.contains(pos)) return null;
+
+                        const ids = [...locQuery.at(pos)];
+                        const blocked = ids.some(atID => hasType(atID, typeSolid) && atID != id);
+                        const visible = ids.filter(atID => hasType(atID, typeVisible));
+
+                        // NOTE: here's the point where we could stratify things
+                        // into layers, a good approach would be to filter visible
+                        // into several z-range buckets, and take the max-z within
+                        // each; altho, one could imagine other bucket compositors,
+                        // e.g. to dynamically create ground tiles from parts
+                        const see = visible.length
+                            ? visible[bestIndex(visible.map(getZ), (a, b) => a > b)]
+                            : 0;
+
+                        return {blocked, at: {
+                            glyph: glyphs[see],
+                            id: depth > maxIDDepth ? 0 : see,
+                        }};
+                    },
+                })) {
+                    const {pos, at: {glyph, id}} = entry;
+                    const ref = refs.ref(id);
+                    set(pos, glyph, ref);
+                }
+            });
+
+            queueEvent(id, {type: 'view', view});
         }
         return true;
     }
@@ -1331,19 +1320,6 @@ export function makeShard({
         }
     }
 
-    function overBounds() {
-        // TODO is it better to just iterate on loc directly?
-        let minx = NaN, miny = NaN, maxx = NaN, maxy = NaN;
-        for (const id of ids(typeVisible)) {
-            const {x, y} = getLoc(id);
-            if (isNaN(minx) || x < minx) minx = x;
-            if (isNaN(maxx) || x > maxx) maxx = x;
-            if (isNaN(miny) || y < miny) miny = y;
-            if (isNaN(maxy) || y > maxy) maxy = y;
-        }
-        return freeze({x: minx, y: miny, w: maxx-minx+1, h: maxy-miny+1});
-    }
-
     /** @param {number} id */
     function getLoc(id) { return {x: locs[3 * id], y: locs[3 * id + 1]} }
 
@@ -1434,9 +1410,6 @@ export function makeShard({
     function makeExecCtx(id) {
         const refs = getExecRefs(id);
 
-        // TODO private view backed by a private shard filled by sensed data
-        const view = execView;
-
         /** @type {ReturnType<makeRandom>|null} */
         let rng = null;
 
@@ -1492,8 +1465,6 @@ export function makeShard({
                         yield freeze(event);
                 },
 
-                view,
-
                 input,
 
                 get move() { return moves.get(id) },
@@ -1509,6 +1480,91 @@ export function makeShard({
         }};
     }
 
+}
+
+/**
+ * @typedef {object} Viewport
+ * @prop {() => Rect} bounds
+ * @prop {(p: Point) => boolean} contains
+ * @prop {(p: Point) => {glyph: number, id?: number}|undefined} at
+ * @prop {() => string} toString
+ */
+
+/**
+ * @callback ViewportUpdate
+ * @param {{
+ *   clear: () => void,
+ *   set: (pos: Point, glyph: number, id?: number) => void,
+ *   resize: (bounds: Rect, virtual?: number) => void,
+ * }} params
+ * @returns {void}
+ */
+
+/** @returns {Viewport & {update: (f: ViewportUpdate) => void}} */
+export function makeViewport() {
+    let x = 0, y = 0, w = 0, h = 0,
+        stride = w,
+        size = stride * h,
+        glyphAt = new Uint32Array(size),
+        idAt = new Uint32Array(size);
+
+    /** @param {Point} p */
+    function loc({x: px, y: py}) {
+        if (px < x || px > x + w) return NaN;
+        if (py < y || py > y + h) return NaN;
+        const vx = px - x;
+        const vy = py - y;
+        return stride * vy + vx;
+    }
+
+    return Object.freeze({
+        bounds() { return Object.freeze({x, y, w, h}) },
+        toString() { return String.fromCodePoint(...glyphAt) },
+
+        contains(pos) { return !isNaN(loc(pos)) },
+
+        at(pos) {
+            const i = loc(pos);
+            if (isNaN(i)) return undefined;
+            const glyph = glyphAt[i];
+            const id = idAt[i] || undefined;
+            return {glyph, id};
+        },
+
+        update(up) {
+            function clear() {
+                idAt.fill(0);
+                glyphAt.fill(0x20);
+                // fill in line terminators if extra room has been left after each row
+                if (stride > w)
+                    for (let i = stride-1; i < glyphAt.length; i += stride)
+                        glyphAt[i] = 0x0a;
+            }
+            up({
+                clear,
+
+                resize(bounds, virtual=0) {
+                    ({x, y, w, h} = bounds);
+                    stride = w + virtual;
+                    if (size < stride * h) {
+                        size = stride * h;
+                        glyphAt = new Uint32Array(size);
+                        idAt = new Uint32Array(size);
+                    }
+                    clear();
+                },
+
+                set(pos, glyph, id) {
+                    const i = loc(pos);
+                    if (!isNaN(i)) {
+                        glyphAt[i] = glyph;
+                        idAt[i] = id || 0;
+                    }
+                },
+            });
+        },
+
+    });
 }
 
 /**

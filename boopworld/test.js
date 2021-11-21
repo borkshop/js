@@ -122,7 +122,7 @@ export function buildRect(rect, fill, stroke, corner) {
 /** @typedef {Partial<boopworld.Point>} Movement */
 
 /** @typedef {(
-*   | {overview: string|string[]}
+*   | {view: {[name: string]: string}}
 *   | {moves: [name: string, move: boopworld.Move][]}
 *   | {movement: { [name: string]: Movement}}
 *   | {movements: { [name: string]: MaybeCounted<Movement>[] }}
@@ -258,23 +258,26 @@ test('boops', t => {
          */
 
         {time: 1, expect: {
-            overview: [
-                '########                ',
-                '#@·····#                ',
-                '#······#                ',
-                '#······##########       ',
-                '#······+········#       ',
-                '#······########·#       ',
-                '#······#      #·#       ',
-                '########      #·#       ',
-                '              #·#       ',
-                '              #·#       ',
-                '            ###+########',
-                '            #··········#',
-                '            #··········#',
-                '            #·········D#',
-                '            ############',
-            ],
+            view: {
+                protagonist: [
+                    '########',
+                    '#@·····#',
+                    '#······#',
+                    '#······#',
+                    '#······+',
+                    '#······#',
+                    '#······#',
+                    '########',
+                ].join('\n'),
+
+                antagonist: [
+                    '###+########',
+                    '#··········#',
+                    '#··········#',
+                    '#·········D#',
+                    '############',
+                ].join('\n'),
+            },
         }},
 
         {time: 1, do: 'update'},
@@ -284,23 +287,26 @@ test('boops', t => {
 
         {time: 1, do: {input: 's'}},
         {time: 2, expect: {
-            overview: [
-                '########                ',
-                '#······#                ',
-                '#@·····#                ',
-                '#······##########       ',
-                '#······+········#       ',
-                '#······########·#       ',
-                '#······#      #·#       ',
-                '########      #·#       ',
-                '              #·#       ',
-                '              #·#       ',
-                '            ###+########',
-                '            #··········#',
-                '            #··········#',
-                '            #········D·#',
-                '            ############',
-            ],
+            view: {
+                protagonist: [
+                    '########',
+                    '#······#',
+                    '#@·····#',
+                    '#······#',
+                    '#······+',
+                    '#······#',
+                    '#······#',
+                    '########',
+                ].join('\n'),
+
+                antagonist: [
+                    '###+########',
+                    '#··········#',
+                    '#··········#',
+                    '#········D·#',
+                    '############',
+                ].join('\n'),
+            }
         }},
 
         {time: 2, do: 'update'},
@@ -310,23 +316,26 @@ test('boops', t => {
 
         {time: 2, do: {input: 'd'}},
         {time: 3, expect: {
-            overview: [
-                '########                ',
-                '#······#                ',
-                '#·@····#                ',
-                '#······##########       ',
-                '#······+········#       ',
-                '#······########·#       ',
-                '#······#      #·#       ',
-                '########      #·#       ',
-                '              #·#       ',
-                '              #·#       ',
-                '            ###+########',
-                '            #··········#',
-                '            #········D·#',
-                '            #··········#',
-                '            ############',
-            ],
+            view: {
+                protagonist: [
+                    '########',
+                    '#······#',
+                    '#·@····#',
+                    '#······#',
+                    '#······+',
+                    '#······#',
+                    '#······#',
+                    '########',
+                ].join('\n'),
+
+                antagonist: [
+                    '###+########',
+                    '#··········#',
+                    '#········D·#',
+                    '#··········#',
+                    '############',
+                ].join('\n'),
+            },
         }},
 
         {time: 3, do: {inputs: [
@@ -353,43 +362,49 @@ test('boops', t => {
         }}},
 
         {time: 10, expect: {
-            overview: [
-                '########                ',
-                '#······#                ',
-                '#······#                ',
-                '#······##########       ',
-                '#·····@-········#       ',
-                '#······########·#       ',
-                '#······#      #·#       ',
-                '########      #·#       ',
-                '              #·#       ',
-                '              #·#       ',
-                '            ###+########',
-                '            #··········#',
-                '            #·········D#',
-                '            #··········#',
-                '            ############',
-            ],
+            view: {
+                protagonist: [
+                    '########         ',
+                    '#······#         ',
+                    '#······#         ',
+                    '#······##########',
+                    '#·····@-········#',
+                    '#······######## #',
+                    '#······#         ',
+                    '########         ',
+                ].join('\n'),
+
+                antagonist: [
+                    '###+########',
+                    '#··········#',
+                    '#·········D#',
+                    '#··········#',
+                    '############',
+                ].join('\n'),
+            },
         }},
 
         {time: 10, do: {input: 'd'}},
-        {time: 11, expect: {overview: [
-            '########                ',
-            '#······#                ',
-            '#······#                ',
-            '#······##########       ',
-            '#······@········#       ',
-            '#······########·#       ',
-            '#······#      #·#       ',
-            '########      #·#       ',
-            '              #·#       ',
-            '              #·#       ',
-            '            ###+########',
-            '            #··········#',
-            '            #··········#',
-            '            #·········D#',
-            '            ############',
-        ]}},
+        {time: 11, expect: {view: {
+            protagonist: [
+                '######           ',
+                '#·····           ',
+                '#······          ',
+                '#······##########',
+                '#······@········#',
+                '#······######## #',
+                '#······          ',
+                '######           ',
+            ].join('\n'),
+
+            antagonist: [
+                '###+########',
+                '#··········#',
+                '#··········#',
+                '#·········D#',
+                '############',
+            ].join('\n'),
+        }}},
 
         {time: 11, do: {inputs: [
             [8, 'd'],
@@ -419,41 +434,52 @@ test('boops', t => {
             ],
         }}},
 
-        {time: 19, expect: {overview: [
-            '########                ',
-            '#······#                ',
-            '#······#                ',
-            '#······##########       ',
-            '#······-·······@#       ',
-            '#······########·#       ',
-            '#······#      #·#       ',
-            '########      #·#       ',
-            '              #·#       ',
-            '              #·#       ',
-            '            ###+########',
-            '            #··········#',
-            '            #····D·····#',
-            '            #··········#',
-            '            ############',
-        ]}},
+        {time: 19, expect: {view: {
+            protagonist: [
+                '#      ##########',
+                '#······-·······@#',
+                '#      ########·#',
+                '              #·#',
+                '              #·#',
+                '              #·#',
+                '              #·#',
+                '              #+#',
+            ].join('\n'),
 
-        {time: 25, expect: {overview: [
-            '########                ',
-            '#······#                ',
-            '#······#                ',
-            '#······##########       ',
-            '#······-········#       ',
-            '#······########·#       ',
-            '#······#      #·#       ',
-            '########      #·#       ',
-            '              #·#       ',
-            '              #@#       ',
-            '            ###-########',
-            '            #·D········#',
-            '            #··········#',
-            '            #··········#',
-            '            ############',
-        ]}},
+            antagonist: [
+                '###+########',
+                '#··········#',
+                '#····D·····#',
+                '#··········#',
+                '############',
+            ].join('\n'),
+        }}},
+
+        {time: 25, expect: {view: {
+            protagonist: [
+                '### ',
+                ' ·# ',
+                '#·# ',
+                '#·# ',
+                '#·# ',
+                '#·# ',
+                '#@# ',
+                '#-# ',
+                'D·· ',
+                ' ·· ',
+                '····',
+                '####',
+            ].join('\n'),
+
+            antagonist: [
+                '   @#       ',
+                '###-########',
+                '#·D········#',
+                '#··········#',
+                '#··········#',
+                '############',
+            ].join('\n'),
+        }}},
 
     ], {
         log: t.log
@@ -474,9 +500,6 @@ test('boops', t => {
     }
 
     const player = boopworld.makeInput();
-
-    /** @type {boopworld.ShardView|null} */
-    let overview = null;
 
     /** @type {{
      *   movements: Map<string, Partial<boopworld.Point>[]>
@@ -621,8 +644,8 @@ test('boops', t => {
                 glyph: '@',
                 input: player.bind,
                 mind: spyThunk('protagonist', ctx => {
+                    // TODO accumulate view events into an over-time view
                     // TODO present events to user
-                    // TODO render from ctx.view
 
                     // parse moves from input, taking the last parsed move
                     if (ctx.input) for (const codePoint of ctx.input) {
@@ -671,23 +694,29 @@ test('boops', t => {
                 mind: spyThunk('antagonist', ctx => {
                     // TODO protagonist hunter instead of random walker
 
+                    const {x, y} = ctx.self.location;
+
+                    let ats = moveDeltas.map(() => 0);
+
                     /** @type {Partial<boopworld.Point>} */
                     let lastMoved = {};
-                    for (const event of ctx.events())
-                        if (event.type == 'move') {
+                    for (const event of ctx.events()) switch (event.type) {
+                        case 'move':
                             const {from, to} = event;
                             lastMoved = movement(from, to);
-                        }
+                            break;
 
-                    const {x, y} = ctx.self.location;
-                    const {x: vx, y: vy} = ctx.view.bounds;
-                    const ats = moveDeltas.map(({x: dx=0, y: dy=0}) => ctx.view.at({
-                        x: x + dx - vx,
-                        y: y + dy - vy
-                    }));
+                        case 'view':
+                            const {view: {at}} = event;
+                            ats = moveDeltas.map(({x: dx=0, y: dy=0}) => at({
+                                x: x + dx,
+                                y: y + dy,
+                            })?.id || 0);
+                            break;
+                    }
 
-                    const can = ats.map(at => at != null);
-                    const blocked = ats.map(at => at ? at.isSolid : false);
+                    const can = ats.map(at => at != 0);
+                    const blocked = ats.map(at => ctx.deref(at)?.isSolid);
 
                     const moveIds = ats
                         .map((_, id) => id)
@@ -718,9 +747,7 @@ test('boops', t => {
 
             // TODO tron/troff rather than expected-or-log
 
-            if (!overview) overview = ctl.makeView(ctl.bounds);
-            else overview.bounds = ctl.bounds;
-            let ovExpected = false;
+            let viewExpected = false;
 
             /** @type {eventRecord[]} */
             const evRecords = [];
@@ -737,13 +764,12 @@ test('boops', t => {
             for (const step of testSteps.take('control expect',
                 step => 'expect' in step ? step.expect : null
             )) {
-                if ('overview' in step) {
-                    const ovs = overview.toString();
-                    const ov = step.overview;
+                if ('view' in step) for (const [name, ov] of Object.entries(step.view)) {
+                    const view = getView(name);
                     t.deepEqual(
-                        Array.isArray(ov) ? ovs.split('\n') : ovs,
-                        ov, `${testSteps.stamp} overview`);
-                    ovExpected = true;
+                        viewString(view),
+                        ov, `${testSteps.stamp} view.${name}`);
+                    viewExpected = true;
                 }
 
                 else if ('moves' in step) {
@@ -774,6 +800,53 @@ test('boops', t => {
                 evExpected = true;
             }
 
+            /** @param {boopworld.Viewport|null} view */
+            function viewString(view) {
+                if (!view) return '';
+                let lines = view.toString().split(/\n/);
+
+                // trim header
+                for (let i=0; i < lines.length; i++)
+                    if (!/^ *$/.test(lines[i])) {
+                        lines.splice(0, i);
+                        break;
+                    }
+
+                // trim footer
+                for (let i=lines.length-1; i >= 0; i--)
+                    if (!/^ *$/.test(lines[i])) {
+                        lines.splice(i+1);
+                        break;
+                    }
+
+                // trim left margin
+                const pre = lines.map(line => {
+                    const a = /^ +/.exec(line);
+                    const pre = a ? a[0].length : 0;
+                    return pre;
+                }).reduce((a, b) => Math.min(a, b));
+                if (pre > 0) lines = lines.map(line => line.slice(pre));
+
+                // trim right margin
+                const post = lines.map(line => {
+                    const b = / +$/.exec(line);
+                    const post = b ? b[0].length : 0;
+                    return post;
+                }).reduce((a, b) => Math.min(a, b));
+                if (post > 0) lines = lines.map(line => line.slice(0, -post));
+
+                return lines.join('\n');
+            }
+
+            /** @param {string} name */
+            function getView(name) {
+                for (const [entity, event] of ctl.events())
+                    if (entity.name == name && event.type == 'view') {
+                        return event.view;
+                    }
+                return null;
+            }
+
             /** @param {string} name */
             function getMovement(name) {
                 for (const [entity, event] of ctl.events())
@@ -782,17 +855,18 @@ test('boops', t => {
                         return movement(from, to);
                     }
                 return {};
-
             }
 
             if (testSteps.tick == 0) {
-                const noExpects = !(ovExpected || evExpected || mvExpected);
+                const noExpects = !(viewExpected || evExpected || mvExpected);
                 if ( tracing === true ||
                     (tracing === null && noExpects)) {
-                    t.log(`== ${testSteps.stamp} overview`);
-                    t.log('```');
-                    t.log(overview.toString());
-                    t.log('```');
+                    for (const [entity, event] of ctl.events()) if (event.type == 'view') {
+                        t.log(`== ${testSteps.stamp} view.${entity.name}`);
+                        t.log('```');
+                        t.log(viewString(event.view));
+                        t.log('```');
+                    }
                     if (mvRecords.length) {
                         t.log(`== ${testSteps.stamp} moves`);
                         for (const rec of mvRecords)
