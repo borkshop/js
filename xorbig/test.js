@@ -36,7 +36,9 @@ const testRandomInt = test.macro({
         const rounds = 16 * 1024-1;
         for (let i = 0; i < rounds; ++i) {
             for (;;) {
-                const n = r.randomInt() & 0x7f;
+                const ri = r.randomInt();
+                t.true(ri >= 0 && ri < Math.pow(2, 32), 'randomInt must be in uint32 range');
+                const n = ri & 0x7f;
                 if (n < 100) {
                     buckets[n]++;
                     break;

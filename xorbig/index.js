@@ -32,7 +32,7 @@ export function makeRandom(seed) {
         randomInt() {
             const result = s[0] + s[3];
             advance(s);
-            return Number(result >> 32n);
+            return Number((result >> 32n) & 0xffffffffn);
         },
 
         randomBigint() {
