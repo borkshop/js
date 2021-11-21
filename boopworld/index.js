@@ -210,7 +210,7 @@ export function makeInput() {
     });
 }
 
-/** @typedef {[number, number]} EntityRef */
+/** @typedef {number} EntityRef */
 
 /**
  * @typedef {object} Entity
@@ -279,7 +279,6 @@ export function makeShard({
         return res.value;
     }
 
-
     //// type system definitions and setup
     const
         maxShardSize = 64 * 1024
@@ -301,6 +300,7 @@ export function makeShard({
 
     //// shard init
     let time = 0;
+    const turnRefs = makeEntityRefScope();
 
     /** @type {Map<number, Set<number>>} */
     const typeIndex = new Map();
@@ -394,6 +394,9 @@ export function makeShard({
     /** @type {Map<number, Map<string, string>>} */
     const memories = new Map();
 
+    /** @type Map<number, ReturnType<makeEntityRefScope>> */
+    const execRefs = new Map();
+
     /** @type {Map<number, ThunkCtx>} */
     const execCtx = new Map();
 
@@ -453,8 +456,9 @@ export function makeShard({
                 if (time <= 0 || isReady) {
                     // start next time slice (immediately at time=0 and once ready after that)
                     time++;
-                    execTick.clear();
-                    events.clear(); // TODO should this only clear if (time >= nextMove) ?
+                    turnRefs.clear(); // revoke all issued EntityRefs
+                    events.clear();   // clear mind event sources
+                    execTick.clear(); // reset ticking minds, all may now have another turn
                 }
             }
 
@@ -546,9 +550,9 @@ export function makeShard({
                 }
             },
 
-            deref([id, gen]) {
-                if (!checkRef(id, gen)) return null;
-                return createEntity(id);
+            deref(ref) {
+                const id = turnRefs.deref(ref);
+                return id ? createEntity(id) : null;
             },
         }, makeTimeGuard('ShardCtl')));
     }
@@ -781,6 +785,7 @@ export function makeShard({
         // TODO groupwise conflict resolution or at least hacked via initiative
         for (const [id, move] of moves.entries()) {
             if (now() > deadline) return false;
+            const refs = getExecRefs(id);
 
             moves.delete(id);
 
@@ -823,7 +828,7 @@ export function makeShard({
                         here: Array
                             .from(at(typeInteract, tox, toy))
                             .filter(here => here != id)
-                            .map(ref),
+                            .map(refs.ref),
                     });
                     return;
                 }
@@ -834,8 +839,8 @@ export function makeShard({
                 let done = false;
                 const {proxy: ctx, revoke} = Proxy.revocable(
                     /** @type {InteractCtx} */ ({
-                        self: createEntity(id),
-                        subject: createEntity(hitId),
+                        self: createEntity(id, refs),
+                        subject: createEntity(hitId, refs),
                         time,
                         queueEvents(self, subject) {
                             queueEvent(id, self);
@@ -857,7 +862,7 @@ export function makeShard({
                     here: Array
                         .from(at(typeInteract, x, y))
                         .filter(here => here != id)
-                        .map(ref),
+                        .map(refs.ref),
                 });
             }
         }
@@ -937,10 +942,10 @@ export function makeShard({
      * @param {number} id
      * @returns {ROEntity}
      */
-    function entity(id) {
+    function entity(id, scope=turnRefs) {
         return freezeEntity(id, {
             toString() { return  entityString(id) },
-            get ref() { return ref(id) },
+            get ref() { return scope.ref(id) },
             get glyph() { return glyphs[id] },
             get zIndex() { return getZ(id) },
             get location() { return getLoc(id) },
@@ -972,19 +977,98 @@ export function makeShard({
     }
 
     /**
-     * @param {number} id
-     * @returns {EntityRef}
+     * @param {object} [params]
+     * @param {() => number} [params.randomInt]
+     * @param {(ref: number, to: number) => void} [params.publish]
+     * @param {(ref: number) => boolean} [params.defined]
      */
-    function ref(id) {
-        return [id, getTypeGen(id)];
-    }
+    function makeEntityRefScope({
+        randomInt=nextRandom().randomInt,
+        publish=() => {},
+        defined=() => false,
+    }={}) {
+        /** @type {Map<number, EntityRef>} */
+        const idToRef = new Map();
 
-    /**
-     * @param {number} id
-     * @param {number} gen
-     */
-    function checkRef(id, gen) {
-        return getTypeGen(id) == gen && gen & typeAlloc;
+        /** @type {Map<EntityRef, EntityRef>} */
+        const refToRef = new Map();
+
+        return Object.freeze({
+
+            /**
+             * @param {object} [params]
+             * @param {() => number} [params.randomInt]
+             */
+            sub({
+                randomInt=nextRandom().randomInt,
+            }={}) {
+                return makeEntityRefScope({
+                    randomInt,
+                    publish(ref, to) {
+                        refToRef.set(ref, to);
+                        publish(ref, to);
+                    },
+                    defined(ref) {
+                        return refToRef.has(ref) || defined(ref);
+                    },
+                });
+            },
+
+            clear() {
+                idToRef.clear();
+                refToRef.clear();
+            },
+
+            /**
+             * @param {number} id
+             * @returns {EntityRef}
+             */
+            ref(id) {
+                let ref = idToRef.get(id);
+                if (ref == undefined) {
+                    // generate a random ref
+                    do {
+                        ref = randomInt();
+                    } while (ref == 0 || refToRef.has(ref) || defined(ref));
+
+                    // store packed ref
+                    const to = id << 8 | getTypeGen(id);
+                    refToRef.set(ref, to);
+                    publish(ref, to);
+
+                    // save the random token
+                    idToRef.set(id, ref);
+                }
+                return ref;
+            },
+
+            /**
+             * @param {EntityRef} ref
+             * @returns {number|null}
+             */
+            deref(ref) {
+                if (ref == 0) return null;
+
+                // ref invalid or revoked (via clear)
+                const rr = refToRef.get(ref);
+                if (rr == undefined) return null;
+                ref = rr;
+
+                // unpack stored ref and validate
+                const id = ref >> 8;
+                const refGen = ref & 0xff;
+
+                // should be rare, since this would mean we ref()ed a deallocated id
+                if (!(refGen & typeAlloc)) return null;
+
+                // this is the primary thing we're protecting against: id reuse
+                const gen = getTypeGen(id);
+                if (gen != refGen) return null;
+
+                return id;
+            },
+
+        });
     }
 
     /**
@@ -992,7 +1076,7 @@ export function makeShard({
      * @param {EntitySpec} spec
      * @returns {Entity}
      */
-    function createSpec(proto, spec) {
+    function createSpec(proto, spec, scope=turnRefs) {
         const {
             isSolid = hasType(proto, typeSolid),
             isVisible = hasType(proto, typeVisible),
@@ -1001,7 +1085,7 @@ export function makeShard({
             glyph = glyphs[proto],
             interact = interacts.get(proto),
         } = spec;
-        const ent = createEntity(alloc());
+        const ent = createEntity(alloc(), scope);
         ent.isSolid = isSolid;
         ent.isVisible = isVisible;
         if (location) ent.location = location;
@@ -1019,16 +1103,16 @@ export function makeShard({
      * @param {number} id
      * @returns {Entity}
      */
-    function createEntity(id) {
+    function createEntity(id, scope=turnRefs) {
         return freezeEntity(id, {
-            create(spec) { return createSpec(id, spec); },
+            create(spec) { return createSpec(id, spec, scope); },
             destroy() {
                 if (id == 0) throw new Error('Cannot destroy root entity');
                 destroy(id);
             },
 
-            toString() { return  entityString(id) },
-            get ref() { return ref(id) },
+            toString() { return entityString(id) },
+            get ref() { return scope.ref(id) },
 
             get isSolid() { return hasType(id, typeSolid) },
             set isSolid(is) { updateType(id, t => is
@@ -1337,7 +1421,19 @@ export function makeShard({
     }
 
     /** @param {number} id */
+    function getExecRefs(id) {
+        let scope = execRefs.get(id);
+        if (!scope) {
+            scope = turnRefs.sub();
+            execRefs.set(id, scope);
+        }
+        return scope;
+    }
+
+    /** @param {number} id */
     function makeExecCtx(id) {
+        const refs = getExecRefs(id);
+
         // TODO private view backed by a private shard filled by sensed data
         const view = execView;
 
@@ -1379,12 +1475,12 @@ export function makeShard({
             freeze(guard(/** @type {ThunkCtx} */ ({
                 get time() { return time },
 
-                deref([id, gen]) {
-                    if (!checkRef(id, gen)) return null;
-                    return entity(id);
+                deref(ref) {
+                    const id = refs.deref(ref);
+                    return id ? entity(id, refs) : null;
                 },
 
-                get self() { return entity(id) },
+                get self() { return entity(id, refs) },
 
                 memory,
 
