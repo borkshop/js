@@ -94,7 +94,7 @@ export function thunkWait(waitFor, next, reason='wait') { return {ok: true, wait
  * @typedef {object} ThunkCtx
  * @prop {number} time
  * @prop {(ref: EntityRef) => ROEntity|null} deref
- * @prop {ROEntity} self
+ * @prop {Entity} self
  * @prop {ThunkMemory} memory
  * @prop {() => number} random
  * @prop {() => IterableIterator<Readonly<Event>>} events
@@ -216,6 +216,7 @@ export function makeInput() {
  * @prop {number|string} glyph
  * @prop {boolean} isSolid
  * @prop {boolean} isVisible
+ *
  * @prop {Interaction} [interact]
  * @prop {Thunk} [mind]
  * @prop {InputBinder} [input]
@@ -223,7 +224,18 @@ export function makeInput() {
  * @prop {() => void} destroy
  */
 
-/** @typedef {Readonly<Omit<Entity, "create" | "destroy">>} ROEntity */
+/**
+ * @typedef {object} ROEntity
+ * @prop {EntityRef} ref
+ * @prop {string} [name]
+ * @prop {() => string} toString
+ * @prop {Point} location
+ * @prop {number} zIndex
+ * @prop {number|string} glyph
+ * @prop {boolean} isSolid
+ * @prop {boolean} isVisible
+ * @prop {boolean} canInteract
+ */
 
 /** @typedef {Partial<Omit<Entity, "ref" | "toString">>} EntitySpec */
 
@@ -932,7 +944,7 @@ export function makeShard({
     }
 
     /**
-     * @template {ROEntity} E
+     * @template {Entity|ROEntity} E
      * @param {number} id
      * @param {E} e
      * @returns {E}
@@ -981,9 +993,7 @@ export function makeShard({
             get location() { return getLoc(id) },
             get isSolid() { return hasType(id, typeSolid) },
             get isVisible() { return hasType(id, typeVisible) },
-            get interact() { return interacts.get(id) },
-            get mind() { return execThunk.get(id) },
-            get input() { return inputBinds.get(id) },
+            get canInteract() { return interacts.has(id) },
         });
     }
 
@@ -1518,7 +1528,7 @@ export function makeShard({
                     return id ? roEntity(id, refs) : null;
                 },
 
-                get self() { return roEntity(id, refs) },
+                get self() { return fullEntity(id, refs) },
 
                 memory,
 
