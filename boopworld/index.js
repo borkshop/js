@@ -415,7 +415,7 @@ export function makeShard({
     /** @type {Map<number, Map<string, string>>} */
     const memories = new Map();
 
-    /** @type Map<number, ReturnType<makeEntityRefScope>> */
+    /** @type Map<number, RefScope> */
     const execRefs = new Map();
 
     /** @type {Map<number, ThunkCtx>} */
@@ -474,9 +474,12 @@ export function makeShard({
                 if (time <= 0 || isReady) {
                     // start next time slice (immediately at time=0 and once ready after that)
                     time++;
-                    turnRefs.clear(); // revoke all issued EntityRefs
                     events.clear();   // clear mind event sources
                     execTick.clear(); // reset ticking minds, all may now have another turn
+                    // revoke all issued EntityRefs
+                    turnRefs.clear();
+                    for (const refs of execRefs.values())
+                        refs.clear();
                 }
             }
 
@@ -584,7 +587,7 @@ export function makeShard({
 
             deref(ref) {
                 const id = turnRefs.deref(ref);
-                return id ? createEntity(id) : null;
+                return id == null ? null : createEntity(id);
             },
         }, makeTimeGuard('ShardCtl')));
     }
@@ -980,6 +983,8 @@ export function makeShard({
         const name = names.get(id);
         return `Entity<${name ? `name:${name} ` : ''}id:${id} gen:${gen >> 1} @${x},${y},${z} [${tags.join(' ')}] glyph:${JSON.stringify(glyph)}>`;
     }
+
+    /** @typedef {ReturnType<makeEntityRefScope>} RefScope */
 
     /**
      * @param {object} [params]
