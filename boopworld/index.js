@@ -143,6 +143,14 @@ function resultContinues(res) {
  */
 
 /**
+ * @typedef {object} MindState
+ * @prop {Thunk} thunk
+ * @prop {ThunkCtx} ctx
+ * @prop {ThunkWaitFor|undefined} waitFor
+ * @prop {number|undefined} tick
+ */
+
+/**
  * @typedef {object} RemnantCtx
  * @prop {boolean} done
  * @prop {boolean} ok
@@ -219,6 +227,7 @@ export function makeInput() {
  *
  * @prop {Interaction} [interact]
  * @prop {Thunk} [mind]
+ * @prop {MindState} [mindState]
  * @prop {InputBinder} [input]
  * @prop {(spec: EntitySpec) => Entity} create
  * @prop {() => void} destroy
@@ -718,38 +727,6 @@ export function makeShard({
         return false;
     }
 
-    /**
-     * @param {number} id
-     * @param {string} key
-     * @returns {any}
-     */
-    function memoryGet(id, key) {
-        const meme = memoryRead(id, key);
-        return meme ? JSON.parse(meme) : null;
-    }
-
-    /**
-     * @param {number} id
-     * @param {string} key
-     * @returns {string|undefined}
-     */
-    function memoryRead(id, key) {
-        const memory = memories.get(id);
-        return memory && memory.get(key);
-    }
-
-    /**
-     * @param {number} id
-     * @param {string} key
-     * @param {any} value
-     */
-    function memorySet(id, key, value) {
-        let memory = memories.get(id);
-        if (!memory) memories.set(id, memory = new Map());
-        if (value == null) memory.delete(key);
-        else memory.set(key, JSON.stringify(value));
-    }
-
     function ready() {
         // wait for all runnable minds to have executed at least one tick
         for (const tick of execTick.values())
@@ -1222,6 +1199,17 @@ export function makeShard({
                 }
             },
 
+            get mindState() {
+                const thunk = execThunk.get(id);
+                if (!thunk) return undefined;
+                return freeze({
+                    thunk,
+                    ctx: getExecCtx(id),
+                    tick: execTick.get(id),
+                    waitFor: execWait.get(id),
+                });
+            },
+
             get input() { return inputBinds.get(id) },
             set input(bind) {
                 updateType(id, t => bind
@@ -1437,6 +1425,7 @@ export function makeShard({
         const {ok, reason, next, waitFor} = res;
         if (next) execThunk.set(id, next);
         if (waitFor && !execRunnable(id, waitFor)) {
+            if (typeof waitFor == 'object') freeze(waitFor);
             execWait.set(id, waitFor);
             execTick.delete(id);
             return false;
@@ -1553,8 +1542,23 @@ export function makeShard({
             revokeMemory();
             if (rng) memorySet(id, 'rngState', rng);
         }};
-    }
 
+        /** @param {number} id @param {string} key */
+        function memoryGet(id, key) {
+            const memory = memories.get(id);
+            const meme = memory && memory.get(key);
+            return meme ? JSON.parse(meme) : null;
+        }
+
+        /** @param {number} id @param {string} key @param {any} value */
+        function memorySet(id, key, value) {
+            let memory = memories.get(id);
+            if (!memory) memories.set(id, memory = new Map());
+            if (value == null) memory.delete(key);
+            else memory.set(key, JSON.stringify(value));
+        }
+
+    }
 }
 
 /**
