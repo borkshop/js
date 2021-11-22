@@ -253,7 +253,7 @@ export function makeInput() {
  *   | {type: "hitBy", entity: EntityRef}
  *   | {type: "move", from: Point, to: Point, here: EntityRef[]}
  *   | {type: "inspect", here: EntityRef[]}
- *   | {type: "view", view: Viewport}
+ *   | {type: "view", view: ViewportRead}
  * )} Event
  */
 
@@ -849,38 +849,36 @@ export function makeShard({
             const maxIDDepth    = Math.floor(Math.sqrt(1 / idThreshold));
             const maxGlyphDepth = Math.floor(Math.sqrt(1 / seeThreshold));
 
-            const {update, ...view} = makeViewport();
-            update(({resize, set}) => {
-                resize(clampedViewBox(loc, maxGlyphDepth), 1);
-                for (const entry of shadowField(loc, {
-                    maxDepth: maxGlyphDepth,
-                    query(pos, depth) {
-                        if (!view.contains(pos)) return null;
+            const {view, update} = makeViewport();
+            update.resize(clampedViewBox(loc, maxGlyphDepth));
+            for (const entry of shadowField(loc, {
+                maxDepth: maxGlyphDepth,
+                query(pos, depth) {
+                    if (!view.contains(pos)) return null;
 
-                        const ids = [...locQuery.at(pos)];
-                        const blocked = ids.some(atID => hasType(atID, typeSolid) && atID != id);
-                        const visible = ids.filter(atID => hasType(atID, typeVisible));
+                    const ids = [...locQuery.at(pos)];
+                    const blocked = ids.some(atID => hasType(atID, typeSolid) && atID != id);
+                    const visible = ids.filter(atID => hasType(atID, typeVisible));
 
-                        // NOTE: here's the point where we could stratify things
-                        // into layers, a good approach would be to filter visible
-                        // into several z-range buckets, and take the max-z within
-                        // each; altho, one could imagine other bucket compositors,
-                        // e.g. to dynamically create ground tiles from parts
-                        const see = visible.length
-                            ? visible[bestIndex(visible.map(getZ), (a, b) => a > b)]
-                            : 0;
+                    // NOTE: here's the point where we could stratify things
+                    // into layers, a good approach would be to filter visible
+                    // into several z-range buckets, and take the max-z within
+                    // each; altho, one could imagine other bucket compositors,
+                    // e.g. to dynamically create ground tiles from parts
+                    const see = visible.length
+                        ? visible[bestIndex(visible.map(getZ), (a, b) => a > b)]
+                        : 0;
 
-                        return {blocked, at: {
-                            glyph: glyphs[see],
-                            id: depth > maxIDDepth ? 0 : see,
-                        }};
-                    },
-                })) {
-                    const {pos, at: {glyph, id}} = entry;
-                    const ref = refs.ref(id);
-                    set(pos, glyph, ref);
-                }
-            });
+                    return {blocked, at: {
+                        glyph: glyphs[see],
+                        id: depth > maxIDDepth ? 0 : see,
+                    }};
+                },
+            })) {
+                const {pos, at: {glyph, id}} = entry;
+                const ref = refs.ref(id);
+                update.set(pos, glyph, ref);
+            }
 
             queueEvent(id, {type: 'view', view});
         }
@@ -1563,6 +1561,12 @@ export function makeShard({
 
 /**
  * @typedef {object} Viewport
+ * @prop {ViewportRead} view
+ * @prop {ViewportUpdate} update
+ */
+
+/**
+ * @typedef {object} ViewportRead
  * @prop {() => Rect} bounds
  * @prop {(p: Point) => boolean} contains
  * @prop {(p: Point) => {glyph: number, id?: number}|undefined} at
@@ -1570,16 +1574,14 @@ export function makeShard({
  */
 
 /**
- * @callback ViewportUpdate
- * @param {{
- *   clear: () => void,
- *   set: (pos: Point, glyph: number, id?: number) => void,
- *   resize: (bounds: Rect, virtual?: number) => void,
- * }} params
+ * @typedef {object} ViewportUpdate
+ * @prop {() => void} clear
+ * @prop {(bounds: Rect, virtual?: number) => void} resize
+ * @prop {(pos: Point, glyph: number, id?: number) => void} set
  * @returns {void}
  */
 
-/** @returns {Viewport & {update: (f: ViewportUpdate) => void}} */
+/** @returns {Viewport} */
 export function makeViewport() {
     let x = 0, y = 0, w = 0, h = 0,
         stride = w,
@@ -1596,51 +1598,51 @@ export function makeViewport() {
         return stride * vy + vx;
     }
 
-    return Object.freeze({
-        bounds() { return Object.freeze({x, y, w, h}) },
-        toString() { return String.fromCodePoint(...glyphAt) },
+    function clear() {
+        idAt.fill(0);
+        glyphAt.fill(0x20);
+        // fill in line terminators if extra room has been left after each row
+        if (stride > w)
+            for (let i = stride-1; i < glyphAt.length; i += stride)
+                glyphAt[i] = 0x0a;
+    }
 
-        contains(pos) { return !isNaN(loc(pos)) },
+    return freeze({
 
-        at(pos) {
-            const i = loc(pos);
-            if (isNaN(i)) return undefined;
-            const glyph = glyphAt[i];
-            const id = idAt[i] || undefined;
-            return {glyph, id};
+        // read facet
+        view: {
+            bounds() { return Object.freeze({x, y, w, h}) },
+            toString() { return String.fromCodePoint(...glyphAt) },
+            contains(pos) { return !isNaN(loc(pos)) },
+            at(pos) {
+                const i = loc(pos);
+                if (isNaN(i)) return undefined;
+                const glyph = glyphAt[i];
+                const id = idAt[i] || undefined;
+                return {glyph, id};
+            },
         },
 
-        update(up) {
-            function clear() {
-                idAt.fill(0);
-                glyphAt.fill(0x20);
-                // fill in line terminators if extra room has been left after each row
-                if (stride > w)
-                    for (let i = stride-1; i < glyphAt.length; i += stride)
-                        glyphAt[i] = 0x0a;
-            }
-            up({
-                clear,
-
-                resize(bounds, virtual=0) {
-                    ({x, y, w, h} = bounds);
-                    stride = w + virtual;
-                    if (size < stride * h) {
-                        size = stride * h;
-                        glyphAt = new Uint32Array(size);
-                        idAt = new Uint32Array(size);
-                    }
-                    clear();
-                },
-
-                set(pos, glyph, id) {
-                    const i = loc(pos);
-                    if (!isNaN(i)) {
-                        glyphAt[i] = glyph;
-                        idAt[i] = id || 0;
-                    }
-                },
-            });
+        // update facet
+        update: {
+            clear,
+            resize(bounds, virtual=1) {
+                ({x, y, w, h} = bounds);
+                stride = w + virtual;
+                if (size < stride * h) {
+                    size = stride * h;
+                    glyphAt = new Uint32Array(size);
+                    idAt = new Uint32Array(size);
+                }
+                clear();
+            },
+            set(pos, glyph, id) {
+                const i = loc(pos);
+                if (!isNaN(i)) {
+                    glyphAt[i] = glyph;
+                    idAt[i] = id || 0;
+                }
+            },
         },
 
     });
