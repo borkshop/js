@@ -122,7 +122,7 @@ export function buildRect(rect, fill, stroke, corner) {
 /** @typedef {Partial<boopworld.Point>} Movement */
 
 /** @typedef {(
-*   | {view: {[name: string]: string}}
+*   | {saw: {[name: string]: string}}
 *   | {moves: [name: string, move: boopworld.Move][]}
 *   | {movement: { [name: string]: Movement}}
 *   | {movements: { [name: string]: MaybeCounted<Movement>[] }}
@@ -155,6 +155,7 @@ function makeTestStepper(steps, {
         run,
         take,
         next,
+        shouldTick,
     });
 
     /** @param {number} newTime */
@@ -208,6 +209,14 @@ function makeTestStepper(steps, {
         }
     }
 
+    function shouldTick() {
+        if (stepi >= steps.length) return false;
+        const ctl = steps[stepi];
+        if (ctl.time != time) return false;
+        if (ctl.tick == undefined) return true;
+        return ctl.tick > tick
+    }
+
     /**
      * @template T
      * @param {string} what
@@ -258,7 +267,7 @@ test('boops', t => {
          */
 
         {time: 1, expect: {
-            view: {
+            saw: {
                 protagonist: [
                     '########',
                     '#@·····#',
@@ -287,7 +296,7 @@ test('boops', t => {
 
         {time: 1, do: {input: 's'}},
         {time: 2, expect: {
-            view: {
+            saw: {
                 protagonist: [
                     '########',
                     '#······#',
@@ -316,7 +325,7 @@ test('boops', t => {
 
         {time: 2, do: {input: 'd'}},
         {time: 3, expect: {
-            view: {
+            saw: {
                 protagonist: [
                     '########',
                     '#······#',
@@ -362,7 +371,7 @@ test('boops', t => {
         }}},
 
         {time: 10, expect: {
-            view: {
+            saw: {
                 protagonist: [
                     '########         ',
                     '#······#         ',
@@ -385,7 +394,8 @@ test('boops', t => {
         }},
 
         {time: 10, do: {input: 'd'}},
-        {time: 11, expect: {view: {
+
+        {time: 11, expect: {saw: {
             protagonist: [
                 '######           ',
                 '#·····           ',
@@ -434,7 +444,7 @@ test('boops', t => {
             ],
         }}},
 
-        {time: 19, expect: {view: {
+        {time: 19, expect: {saw: {
             protagonist: [
                 '#      ##########',
                 '#······-·······@#',
@@ -455,7 +465,7 @@ test('boops', t => {
             ].join('\n'),
         }}},
 
-        {time: 25, expect: {view: {
+        {time: 25, expect: {saw: {
             protagonist: [
                 '### ',
                 ' ·# ',
@@ -502,7 +512,7 @@ test('boops', t => {
     const player = boopworld.makeInput();
 
     /** @type {{
-     *   movements: Map<string, Partial<boopworld.Point>[]>
+     *   movements: Map<string, {time: number, deltas: Partial<boopworld.Point>[]}>
      * }} */
     const expecting = {
         movements: new Map(),
@@ -764,11 +774,11 @@ test('boops', t => {
             for (const step of testSteps.take('control expect',
                 step => 'expect' in step ? step.expect : null
             )) {
-                if ('view' in step) for (const [name, ov] of Object.entries(step.view)) {
-                    const view = getView(name);
+                if ('saw' in step) for (const [name, s] of Object.entries(step.saw)) {
+                    const view = getSaw(name);
                     t.deepEqual(
-                        viewString(view),
-                        ov, `${testSteps.stamp} view.${name}`);
+                        trimLines(view ? view.toString() : ''),
+                        s, `${testSteps.stamp} view.${name}`);
                     viewExpected = true;
                 }
 
@@ -785,25 +795,29 @@ test('boops', t => {
 
                 else if ('movements' in step) {
                     for (const [name, deltas] of Object.entries(step.movements))
-                        expecting.movements.set(name, [...expandCounts(deltas)]);
+                        expecting.movements.set(name, {time: ctl.time, deltas: [...expandCounts(deltas)]});
                 }
 
                 else assertNever(step, 'unimplemented control expect');
             }
 
-            for (const [name, deltas] of expecting.movements) {
-                const delta = deltas.shift();
-                if (!deltas.length) expecting.movements.delete(name);
-                if (delta) t.deepEqual(
-                    getMovement(name), delta,
-                    `${testSteps.stamp} ${name} movement`);
-                evExpected = true;
-            }
+            for (const [name, {time, deltas}] of expecting.movements)
+                if (ctl.time > time) {
+                    t.fail(`${testSteps.stamp} ${name} movement obsolete`);
+                    expecting.movements.delete(name);
+                } else if (ctl.time == time) {
+                    const [delta, ...rest] = deltas;
+                    if (delta) t.deepEqual(
+                        getMovement(name), delta,
+                        `${testSteps.stamp} ${name} movement`);
+                    evExpected = true;
+                    if (rest.length) expecting.movements.set(name, {time: time+1, deltas: rest});
+                    else expecting.movements.delete(name);
+                }
 
-            /** @param {boopworld.Viewport|null} view */
-            function viewString(view) {
-                if (!view) return '';
-                let lines = view.toString().split(/\n/);
+            /** @param {string} s */
+            function trimLines(s) {
+                let lines = s.split(/\n/);
 
                 // trim header
                 for (let i=0; i < lines.length; i++)
@@ -839,7 +853,7 @@ test('boops', t => {
             }
 
             /** @param {string} name */
-            function getView(name) {
+            function getSaw(name) {
                 for (const [entity, event] of ctl.events())
                     if (entity.name == name && event.type == 'view') {
                         return event.view;
@@ -862,9 +876,10 @@ test('boops', t => {
                 if ( tracing === true ||
                     (tracing === null && noExpects)) {
                     for (const [entity, event] of ctl.events()) if (event.type == 'view') {
+                        const {view} = event;
                         t.log(`== ${testSteps.stamp} view.${entity.name}`);
                         t.log('```');
-                        t.log(viewString(event.view));
+                        t.log(trimLines(view ? view.toString() : ''));
                         t.log('```');
                     }
                     if (mvRecords.length) {
@@ -919,7 +934,8 @@ test('boops', t => {
                 let first = true;
                 for (const input of expandCounts(step.inputs)) {
                     if (first) first = false;
-                    else update('inter-input');
+                    else do update('inter-input');
+                         while (testSteps.shouldTick());
                     t.true(player.provide(input), 'must provide input');
                 }
             });
