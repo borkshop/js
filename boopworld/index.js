@@ -464,7 +464,7 @@ export function makeShard({
     glyphs[0] = 0x20; // ascii <space>
 
     // build all entities at time=0
-    build(createEntity(0));
+    build(fullEntity(0));
 
     return freeze({
         update(deadline=now() + defaultTimeout) {
@@ -509,7 +509,7 @@ export function makeShard({
         return freeze(guard({
             get time() { return time },
 
-            get root() { return createEntity(0) },
+            get root() { return fullEntity(0) },
 
             *entities(spec={}) {
                 const {
@@ -526,26 +526,26 @@ export function makeShard({
                     | (hasMind ? typeMind : 0)
                     | (hasInput ? typeInput : 0);
                 for (const id of ids(typeFilter))
-                    yield createEntity(id);
+                    yield fullEntity(id);
             },
 
             *at(p) {
                 for (const id of locQuery.at(p)) 
-                    yield createEntity(id);
+                    yield fullEntity(id);
             },
 
             *within(r) {
                 for (const [pos, ids] of locQuery.within(r)) {
                     const ents = [];
                     for (const id of ids)
-                        ents.push(createEntity(id));
+                        ents.push(fullEntity(id));
                     yield [pos, ents];
                 }
             },
 
             *events() {
                 for (const [id, es] of events.entries()) {
-                    const ent = createEntity(id);
+                    const ent = fullEntity(id);
                     for (const event of es)
                         yield [ent, freeze(event)];
                 }
@@ -553,7 +553,7 @@ export function makeShard({
 
             *moves() {
                 for (const [id, move] of moves) {
-                    const ent = createEntity(id);
+                    const ent = fullEntity(id);
                     yield [ent, move];
                 }
             },
@@ -568,7 +568,7 @@ export function makeShard({
                         memory,
                     } = remnant;
                     yield freeze({
-                        entity: createEntity(id),
+                        entity: fullEntity(id),
                         remnant: {
                             done, ok, reason,
                             thunk, waitFor,
@@ -587,7 +587,7 @@ export function makeShard({
 
             deref(ref) {
                 const id = turnRefs.deref(ref);
-                return id == null ? null : createEntity(id);
+                return id == null ? null : fullEntity(id);
             },
         }, makeTimeGuard('ShardCtl')));
     }
@@ -789,8 +789,8 @@ export function makeShard({
                 let done = false;
                 const {proxy: ctx, revoke} = Proxy.revocable(
                     /** @type {InteractCtx} */ ({
-                        self: createEntity(id, refs),
-                        subject: createEntity(hitId, refs),
+                        self: fullEntity(id, refs),
+                        subject: fullEntity(hitId, refs),
                         time,
                         queueEvents(self, subject) {
                             queueEvent(id, self);
@@ -950,7 +950,7 @@ export function makeShard({
      * @param {number} id
      * @returns {ROEntity}
      */
-    function entity(id, scope=turnRefs) {
+    function roEntity(id, scope=turnRefs) {
         return freezeEntity(id, {
             toString() { return  entityString(id) },
             get ref() { return scope.ref(id) },
@@ -1095,7 +1095,7 @@ export function makeShard({
             glyph = glyphs[proto],
             interact = interacts.get(proto),
         } = spec;
-        const ent = createEntity(alloc(), scope);
+        const ent = fullEntity(alloc(), scope);
         ent.isSolid = isSolid;
         ent.isVisible = isVisible;
         if (location) ent.location = location;
@@ -1113,7 +1113,7 @@ export function makeShard({
      * @param {number} id
      * @returns {Entity}
      */
-    function createEntity(id, scope=turnRefs) {
+    function fullEntity(id, scope=turnRefs) {
         return freezeEntity(id, {
             create(spec) { return createSpec(id, spec, scope); },
             destroy() {
@@ -1471,10 +1471,10 @@ export function makeShard({
 
                 deref(ref) {
                     const id = refs.deref(ref);
-                    return id ? entity(id, refs) : null;
+                    return id ? roEntity(id, refs) : null;
                 },
 
-                get self() { return entity(id, refs) },
+                get self() { return roEntity(id, refs) },
 
                 memory,
 
