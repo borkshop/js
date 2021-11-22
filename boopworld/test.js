@@ -721,7 +721,7 @@ test('boops', t => {
                             ats = moveDeltas.map(({x: dx=0, y: dy=0}) => at({
                                 x: x + dx,
                                 y: y + dy,
-                            })?.id || 0);
+                            })?.ref || 0);
                             break;
                     }
 

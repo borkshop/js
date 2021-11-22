@@ -253,7 +253,7 @@ export function makeInput() {
  *   | {type: "hitBy", entity: EntityRef}
  *   | {type: "move", from: Point, to: Point, here: EntityRef[]}
  *   | {type: "inspect", here: EntityRef[]}
- *   | {type: "view", view: ViewportRead}
+ *   | {type: "view", view: ViewportRead<{ref?: EntityRef}>}
  * )} Event
  */
 
@@ -849,7 +849,7 @@ export function makeShard({
             const maxIDDepth    = Math.floor(Math.sqrt(1 / idThreshold));
             const maxGlyphDepth = Math.floor(Math.sqrt(1 / seeThreshold));
 
-            const {view, update} = makeViewport();
+            const {view, update} = makeBasicViewport();
             update.resize(clampedViewBox(loc, maxGlyphDepth));
             for (const entry of shadowField(loc, {
                 maxDepth: maxGlyphDepth,
@@ -877,7 +877,7 @@ export function makeShard({
             })) {
                 const {pos, at: {glyph, id}} = entry;
                 const ref = refs.ref(id);
-                update.set(pos, glyph, ref);
+                update.set(pos, {glyph, ref});
             }
 
             queueEvent(id, {type: 'view', view});
@@ -1560,34 +1560,75 @@ export function makeShard({
 }
 
 /**
+ * @template {{[name: string]: unknown}} Datum
  * @typedef {object} Viewport
- * @prop {ViewportRead} view
- * @prop {ViewportUpdate} update
+ * @prop {ViewportRead<Datum>} view
+ * @prop {ViewportUpdate<Datum>} update
  */
 
 /**
+ * @template {{[name: string]: unknown}} Datum
  * @typedef {object} ViewportRead
  * @prop {() => Rect} bounds
  * @prop {(p: Point) => boolean} contains
- * @prop {(p: Point) => {glyph: number, id?: number}|undefined} at
+ * @prop {(p: Point) => ViewportDatum<Datum>|undefined} at
  * @prop {() => string} toString
  */
 
 /**
+ * @template {{[name: string]: unknown}} Datum
+ * @typedef {{glyph: number} & Omit<Datum, "glyph">} ViewportDatum
+ */
+
+/**
+ * @template {{[name: string]: unknown}} Datum
  * @typedef {object} ViewportUpdate
  * @prop {() => void} clear
  * @prop {(bounds: Rect, virtual?: number) => void} resize
- * @prop {(pos: Point, glyph: number, id?: number) => void} set
+ * @prop {(pos: Point, dat: ViewportDatum<Datum>) => void} set
  * @returns {void}
  */
 
-/** @returns {Viewport} */
-export function makeViewport() {
+/** @returns {Viewport<{ref?: EntityRef}>} */
+export function makeBasicViewport() {
+    /** @type {Map<number, EntityRef>} */
+    const refAt = new Map();
+    return makeViewport({
+        alloc() { },
+        clear() {
+            refAt.clear();
+        },
+        load(i) {
+            const ref = refAt.get(i);
+            return {ref};
+        },
+        stor(i, dat) {
+            const ref = dat.ref;
+            if (ref == undefined) refAt.delete(i);
+            else refAt.set(i, ref);
+        },
+    });
+}
+
+/**
+ * @template {{[name: string]: unknown}} Datum
+ * @typedef {object} ViewportDeps
+ * @prop {(size: number) => void} alloc
+ * @prop {() => void} clear
+ * @prop {(i: number, dat: ViewportDatum<Datum>) => void} stor
+ * @prop {(i: number) => Datum} load
+ */
+
+/**
+ * @template {{[name: string]: unknown}} Datum
+ * @param {ViewportDeps<Datum>} deps
+ * @returns {Viewport<Datum>}
+ */
+export function makeViewport(deps) {
     let x = 0, y = 0, w = 0, h = 0,
         stride = w,
         size = stride * h,
-        glyphAt = new Uint32Array(size),
-        idAt = new Uint32Array(size);
+        glyphAt = new Uint32Array(size);
 
     /** @param {Point} p */
     function loc({x: px, y: py}) {
@@ -1599,7 +1640,7 @@ export function makeViewport() {
     }
 
     function clear() {
-        idAt.fill(0);
+        deps.clear();
         glyphAt.fill(0x20);
         // fill in line terminators if extra room has been left after each row
         if (stride > w)
@@ -1618,8 +1659,8 @@ export function makeViewport() {
                 const i = loc(pos);
                 if (isNaN(i)) return undefined;
                 const glyph = glyphAt[i];
-                const id = idAt[i] || undefined;
-                return {glyph, id};
+                const dat = deps.load(i);
+                return {...dat, glyph};
             },
         },
 
@@ -1632,15 +1673,15 @@ export function makeViewport() {
                 if (size < stride * h) {
                     size = stride * h;
                     glyphAt = new Uint32Array(size);
-                    idAt = new Uint32Array(size);
+                    deps.alloc(size);
                 }
                 clear();
             },
-            set(pos, glyph, id) {
+            set(pos, dat) {
                 const i = loc(pos);
                 if (!isNaN(i)) {
-                    glyphAt[i] = glyph;
-                    idAt[i] = id || 0;
+                    glyphAt[i] = dat.glyph || 0xfffd;
+                    deps.stor(i, dat);
                 }
             },
         },
