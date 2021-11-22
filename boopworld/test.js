@@ -123,6 +123,7 @@ export function buildRect(rect, fill, stroke, corner) {
 
 /** @typedef {(
 *   | {saw: {[name: string]: string}}
+*   | {view: {[name: string]: string}}
 *   | {moves: [name: string, move: boopworld.Move][]}
 *   | {movement: { [name: string]: Movement}}
 *   | {movements: { [name: string]: MaybeCounted<Movement>[] }}
@@ -416,6 +417,19 @@ test('boops', t => {
             ].join('\n'),
         }}},
 
+        {time: 11, tick: 2, expect: {view: {
+            protagonist: [
+                '########         ',
+                '#······#         ',
+                '#······#         ',
+                '#······##########',
+                '#······@········#',
+                '#······######## #',
+                '#······#         ',
+                '########         ',
+            ].join('\n'),
+        }}},
+
         {time: 11, do: {inputs: [
             [8, 'd'],
             [6, 's'],
@@ -465,6 +479,22 @@ test('boops', t => {
             ].join('\n'),
         }}},
 
+        {time: 19, tick: 2, expect: {view: {
+            protagonist: [
+                '########         ',
+                '#······#         ',
+                '#······#         ',
+                '#······##########',
+                '#······-·······@#',
+                '#······########·#',
+                '#······#      #·#',
+                '########      #·#',
+                '              #·#',
+                '              #·#',
+                '              #+#',
+            ].join('\n'),
+        }}},
+
         {time: 25, expect: {saw: {
             protagonist: [
                 '### ',
@@ -488,6 +518,26 @@ test('boops', t => {
                 '#··········#',
                 '#··········#',
                 '############',
+            ].join('\n'),
+        }}},
+
+        {time: 25, tick: 2, expect: {view: {
+            protagonist: [
+                '########          ',
+                '#······#          ',
+                '#······#          ',
+                '#······########## ',
+                '#······-········# ',
+                '#······########·# ',
+                '#······#      #·# ',
+                '########      #·# ',
+                '              #·# ',
+                '              #@# ',
+                '              #-# ',
+                '              D·· ',
+                '               ·· ',
+                '              ····',
+                '              ####',
             ].join('\n'),
         }}},
 
@@ -654,8 +704,10 @@ test('boops', t => {
                 glyph: '@',
                 input: player.bind,
                 mind: spyThunk('protagonist', ctx => {
-                    // TODO accumulate view events into an over-time view
-                    // TODO present events to user
+                    ctx.memory.view.integrateEvents(ctx.events(), Object.freeze({
+                        time: ctx.time,
+                        deref: ctx.deref,
+                    }));
 
                     // parse moves from input, taking the last parsed move
                     if (ctx.input) for (const codePoint of ctx.input) {
@@ -774,7 +826,21 @@ test('boops', t => {
             for (const step of testSteps.take('control expect',
                 step => 'expect' in step ? step.expect : null
             )) {
-                if ('saw' in step) for (const [name, s] of Object.entries(step.saw)) {
+                if ('view' in step) for (const [name, s] of Object.entries(step.view)) {
+                    const ent = ctl.byName(name);
+                    const mind = ent?.mindState;
+                    if (!mind) {
+                        t.fail(`${testSteps.stamp} ∄ view.${name}`);
+                    } else {
+                        const {ctx: {memory: {view}}} = mind;
+                        t.deepEqual(
+                            trimLines(view ? view.toString() : ''),
+                            s, `${testSteps.stamp} view.${name}`);
+                        viewExpected = true;
+                    }
+                }
+
+                else if ('saw' in step) for (const [name, s] of Object.entries(step.saw)) {
                     const view = getSaw(name);
                     t.deepEqual(
                         trimLines(view ? view.toString() : ''),
