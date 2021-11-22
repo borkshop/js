@@ -139,6 +139,7 @@ function resultContinues(res) {
  * @prop {() => IterableIterator<[Entity, Move]>} moves
  * @prop {() => IterableIterator<{entity: Entity, remnant: RemnantCtx}>} reap
  * @prop {(ref: EntityRef) => Entity|null} deref
+ * @prop {(name: string) => Entity|null} byName
  */
 
 /**
@@ -208,13 +209,13 @@ export function makeInput() {
 /**
  * @typedef {object} Entity
  * @prop {EntityRef} ref
+ * @prop {string} [name]
  * @prop {() => string} toString
  * @prop {Point} location
  * @prop {number} zIndex
  * @prop {number|string} glyph
  * @prop {boolean} isSolid
  * @prop {boolean} isVisible
- * @prop {string} [name]
  * @prop {Interaction} [interact]
  * @prop {Thunk} [mind]
  * @prop {InputBinder} [input]
@@ -244,6 +245,14 @@ export function makeInput() {
  * @returns void
  */
 
+/** @param {(s: string) => boolean} choose */
+function untitledNameGen(choose) {
+    const name = 'untitled';
+    let nom = name, count = 1;
+    while (!choose(nom))
+        nom = `${name} (${++count})`;
+}
+
 /**
  * @param {object} options
  * @param {Builder} options.build
@@ -253,6 +262,7 @@ export function makeInput() {
  * @param {number} [options.defaultTimeout]
  * @param {number} [options.size]
  * @param {number|bigint|string} [options.seed]
+ * @param {(choose: (s: string) => boolean, ent: ROEntity) => void} [options.chooseName]
  * @returns {Shard}
  */
 export function makeShard({
@@ -263,6 +273,7 @@ export function makeShard({
     defaultTimeout=100,
     size=64,
     seed=0,
+    chooseName=untitledNameGen,
 }) {
 
     //// random number generator generator
@@ -365,6 +376,14 @@ export function makeShard({
         return {x, y, w, h};
     }
 
+    //// name component init
+
+    /** @type {Map<number, string>} */
+    const names = new Map();
+
+    /** @type {Map<string, number>} */
+    const byName = new Map();
+
     //// movement component init 
     /** @type {Map<number, Move>} */
     const moves = new Map();
@@ -426,9 +445,6 @@ export function makeShard({
 
     /** @type {Map<number, ThunkWaitFor>} */
     const execWait = new Map();
-
-    /** @type {Map<number, string>} */
-    const names = new Map();
 
     typeDestroys.set(typeMind, id => {
         const revoke = execRevoke.get(id);
@@ -588,6 +604,11 @@ export function makeShard({
             deref(ref) {
                 const id = turnRefs.deref(ref);
                 return id == null ? null : fullEntity(id);
+            },
+
+            byName(name) {
+                const id = byName.get(name);
+                return id === undefined ? null : fullEntity(id);
             },
         }, makeTimeGuard('ShardCtl')));
     }
@@ -954,12 +975,12 @@ export function makeShard({
         return freezeEntity(id, {
             toString() { return  entityString(id) },
             get ref() { return scope.ref(id) },
+            get name() { return names.get(id) || '' },
             get glyph() { return glyphs[id] },
             get zIndex() { return getZ(id) },
             get location() { return getLoc(id) },
             get isSolid() { return hasType(id, typeSolid) },
             get isVisible() { return hasType(id, typeVisible) },
-            get name() { return names.get(id) || '' },
             get interact() { return interacts.get(id) },
             get mind() { return execThunk.get(id) },
             get input() { return inputBinds.get(id) },
@@ -1109,6 +1130,18 @@ export function makeShard({
         return ent;
     }
 
+    /** @param {number} id */
+    function assignName(id, scope=turnRefs) {
+        if (!names.has(id)) {
+            const ent = roEntity(id, scope);
+            chooseName(name => setName(id, name), ent);
+        }
+        if (!names.has(id)) untitledNameGen(name => setName(id, name));
+        const name = names.get(id);
+        if (!name) throw new Error('Failed to assign a name');
+        return name;
+    }
+
     /**
      * @param {number} id
      * @returns {Entity}
@@ -1123,6 +1156,13 @@ export function makeShard({
 
             toString() { return entityString(id) },
             get ref() { return scope.ref(id) },
+
+            get name() { return names.get(id) || '' },
+            set name(name) {
+                let nom = name, count = 1;
+                while (!setName(id, nom))
+                    nom = `${name} (${++count})`;
+            },
 
             get isSolid() { return hasType(id, typeSolid) },
             set isSolid(is) { updateType(id, t => is
@@ -1144,9 +1184,6 @@ export function makeShard({
 
             get glyph() { return String.fromCodePoint(glyphs[id]) },
             set glyph(glyph) { setGlyph(id, glyph) },
-
-            get name() { return names.get(id) || '' },
-            set name(name) { setName(id, name) },
 
             get interact() { return interacts.get(id) },
             set interact(interact) {
@@ -1171,6 +1208,7 @@ export function makeShard({
                     execCtx.delete(id);
                     execTick.delete(id);
                     execWait.delete(id);
+                    assignName(id, scope)
                 }
             },
 
@@ -1371,10 +1409,16 @@ export function makeShard({
 
     /** @param {number} id @param {string} [name] */
     function setName(id, name) {
-        // TODO separate component flag ( currently considered part of mind )
-        // TODO uniqueness / reverse index
-        if (name) names.set(id, name);
-        else names.delete(id);
+        if (name) {
+            if (byName.has(name)) return false;
+            names.set(id, name);
+            byName.set(name, id);
+        } else {
+            const prior = names.get(id);
+            names.delete(id);
+            if (prior) byName.delete(prior);
+        }
+        return true;
     }
 
     /** @param {number} id */
