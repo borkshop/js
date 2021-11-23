@@ -676,17 +676,13 @@ test('boops', t => {
             buildHall({x: 14, y: 6, w: 3, h: 4}, VWalls);
             buildRoom({x: 12, y: 10, w: 12, h: 5}, {x: 15, y: 10});
 
-            const spyThunks = false;
-
             /**
-             * @param {string} name
              * @param {boopworld.Thunk} thunk
              * @returns {boopworld.Thunk}
              */
-            function spyThunk(name, thunk) {
-                if (!spyThunks) return thunk;
+            function spyThunk(thunk) {
                 return ctx => {
-                    const {time} = ctx;
+                    const {time, self: {name}} = ctx;
                     t.log(`== T${time} ${name}`);
                     if (ctx.move)
                         t.log(`  - move <- ${JSON.stringify(ctx.move)}`);
@@ -696,6 +692,7 @@ test('boops', t => {
                     if (ctx.move)
                         t.log(`  - <- move ${JSON.stringify(ctx.move)}`);
                     t.log(`  - <- res ${JSON.stringify(res)}`);
+                    if (res.next) res.next = spyThunk(thunk);
                     return res;
                 };
             }
@@ -705,7 +702,7 @@ test('boops', t => {
                 name: "protagonist",
                 glyph: '@',
                 input: player.bind,
-                mind: spyThunk('protagonist', ctx => {
+                mind: ctx => {
                     ctx.memory.view.integrateEvents(ctx.events(), Object.freeze({
                         time: ctx.time,
                         deref: ctx.deref,
@@ -728,7 +725,7 @@ test('boops', t => {
                         ? {time: ctx.time+1} // wait for the next turn
                         : "input"            // after input has determined a move
                     );
-                })
+                }
             });
 
             /** @type {boopworld.Move[]} */
@@ -755,7 +752,7 @@ test('boops', t => {
                 location: {x: 22, y: 13},
                 name: "antagonist",
                 glyph: 'D',
-                mind: spyThunk('antagonist', ctx => {
+                mind: ctx => {
                     // TODO protagonist hunter instead of random walker
 
                     const {x, y} = ctx.self.location;
@@ -763,7 +760,7 @@ test('boops', t => {
                     let ats = moveDeltas.map(() => 0);
 
                     /** @type {Partial<boopworld.Point>} */
-                    let lastMoved = {};
+                        let lastMoved = {};
                     for (const event of ctx.events()) switch (event.type) {
                         case 'move':
                             const {from, to} = event;
@@ -794,8 +791,14 @@ test('boops', t => {
                     }
 
                     return boopworld.thunkWait({time: ctx.time+1}); // wait for the next turn
-                })
+                }
             });
+
+            const spyThunks = false;
+            if (spyThunks) {
+                for (const ent of ctl.entities({hasMind: true}))
+                    if (ent.mind) ent.mind = spyThunk(ent.mind);
+            }
 
             floor.destroy();
             wall.destroy();
