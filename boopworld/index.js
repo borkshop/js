@@ -272,8 +272,7 @@ export function makeInput() {
 
 /**
  * @callback Builder
- * @param {Entity} root
- * TODO pass an at(Point) => ...Entity
+ * @param {ShardCtl} ctl
  * @returns void
  */
 
@@ -515,7 +514,7 @@ export function makeShard({
     glyphs[0] = 0x20; // ascii <space>
 
     // build all entities at time=0
-    build(fullEntity(0));
+    build(makeCtl());
 
     return freeze({
         update(deadline=now() + defaultTimeout) {

@@ -570,7 +570,9 @@ test('boops', t => {
 
     const shard = boopworld.makeShard({
         seed: 0xdeadbeef,
-        build(root) {
+        build(ctl) {
+            const {root} = ctl;
+
             const floor = root.create({
                 glyph: '·', // ·⦁⦂⦙⦚ etc other fences in misc math syms
                 zIndex: 1,
