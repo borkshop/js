@@ -1,0 +1,21 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  background-color: #111;
+  color: #999;
+}
+
+#view {
+  white-space: pre;
+  width: 80%;
+  margin: 1em;
+  font-size: 18pt;
+  font-family: monospace;
+}
+
+#spinner {
+  color: #333;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
