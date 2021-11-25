@@ -18,6 +18,7 @@
  * @prop {(p: Point) => boolean} contains
  * @prop {(p: Point) => ViewportDatum<Datum>|undefined} at
  * @prop {() => IterableIterator<[Point, ViewportDatum<Datum>]>} entries
+ * @prop {() => IterableIterator<string>} lines
  * @prop {() => string} toString
  */
 
@@ -217,6 +218,7 @@ export function makeViewMemory() {
         contains(p) { return view.contains(p) },
         at(p) { return view.at(p) },
         *entries() { yield* view.entries() },
+        *lines() { yield* view.lines() },
         toString() { return view.toString() },
     };
 
@@ -288,12 +290,59 @@ export function makeViewport(deps) {
                 glyphAt[i] = 0x0a;
     }
 
+    /** @returns {Generator<[number, number, number]>} */
+    function *ranges() {
+        let start = 0, end = 0, inContent = false;
+
+        let minPre = NaN, maxPost = NaN;
+        for (let i = 0; i < glyphAt.length;) {
+            const k = i + w;
+
+            let pre = i;
+            for (; pre < k; pre++) if (glyphAt[pre] != 0x20) break;
+            let post = pre;
+            for (; post < k; post++) if (glyphAt[post] == 0x20) break;
+            const blank = pre == k;
+
+            if (!blank) {
+                pre -= i, post -= i;
+                if (isNaN(minPre) || minPre > pre) minPre = pre;
+                if (isNaN(maxPost) || maxPost < post) maxPost = post;
+            }
+
+            i += stride;
+
+            if (blank) {
+                if (!inContent) start = i;
+            } else {
+                if (!inContent) inContent = true;
+                end = i;
+            }
+        }
+
+        for (let i = start; i < end;) {
+            yield [i, i + minPre, i + maxPost];
+            i += stride;
+        }
+    }
+
+    /** @returns {Generator<string>} */
+    function *lines() {
+        for (const [i, j, k] of ranges()) {
+            let s = String.fromCodePoint(...glyphAt.subarray(j, k));
+            if (stride > w)
+                s += String.fromCodePoint(...glyphAt.subarray(i + w, i + stride));
+            yield s;
+        }
+    }
+
     return {
 
         // read facet
         view: Object.freeze({
             bounds() { return Object.freeze({x, y, w, h}) },
-            toString() { return String.fromCodePoint(...glyphAt) },
+            lines,
+            toString() { return Array.from(lines()).join('') },
             contains(pos) { return !isNaN(loc(pos)) },
             *entries() {
                 const x2 = x + w, y2 = y + h;

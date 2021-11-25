@@ -269,7 +269,7 @@ test('boops', t => {
 
         {time: 1, expect: {
             saw: {
-                protagonist: [
+                protagonist: lines(
                     '########',
                     '#@·····#',
                     '#······#',
@@ -278,15 +278,15 @@ test('boops', t => {
                     '#······#',
                     '#······#',
                     '########',
-                ].join('\n'),
+                ),
 
-                antagonist: [
+                antagonist: lines(
                     '###+########',
                     '#··········#',
                     '#··········#',
                     '#·········D#',
                     '############',
-                ].join('\n'),
+                ),
             },
         }},
 
@@ -298,7 +298,7 @@ test('boops', t => {
         {time: 1, do: {input: 's'}},
         {time: 2, expect: {
             saw: {
-                protagonist: [
+                protagonist: lines(
                     '########',
                     '#······#',
                     '#@·····#',
@@ -307,15 +307,15 @@ test('boops', t => {
                     '#······#',
                     '#······#',
                     '########',
-                ].join('\n'),
+                ),
 
-                antagonist: [
+                antagonist: lines(
                     '###+########',
                     '#··········#',
                     '#··········#',
                     '#········D·#',
                     '############',
-                ].join('\n'),
+                ),
             }
         }},
 
@@ -327,7 +327,7 @@ test('boops', t => {
         {time: 2, do: {input: 'd'}},
         {time: 3, expect: {
             saw: {
-                protagonist: [
+                protagonist: lines(
                     '########',
                     '#······#',
                     '#·@····#',
@@ -336,15 +336,15 @@ test('boops', t => {
                     '#······#',
                     '#······#',
                     '########',
-                ].join('\n'),
+                ),
 
-                antagonist: [
+                antagonist: lines(
                     '###+########',
                     '#··········#',
                     '#········D·#',
                     '#··········#',
                     '############',
-                ].join('\n'),
+                ),
             },
         }},
 
@@ -373,7 +373,7 @@ test('boops', t => {
 
         {time: 10, expect: {
             saw: {
-                protagonist: [
+                protagonist: lines(
                     '########         ',
                     '#······#         ',
                     '#······#         ',
@@ -382,22 +382,22 @@ test('boops', t => {
                     '#······######## #',
                     '#······#         ',
                     '########         ',
-                ].join('\n'),
+                ),
 
-                antagonist: [
+                antagonist: lines(
                     '###+########',
                     '#··········#',
                     '#·········D#',
                     '#··········#',
                     '############',
-                ].join('\n'),
+                ),
             },
         }},
 
         {time: 10, do: {input: 'd'}},
 
         {time: 11, expect: {saw: {
-            protagonist: [
+            protagonist: lines(
                 '######           ',
                 '#·····           ',
                 '#······          ',
@@ -406,19 +406,19 @@ test('boops', t => {
                 '#······######## #',
                 '#······          ',
                 '######           ',
-            ].join('\n'),
+            ),
 
-            antagonist: [
+            antagonist: lines(
                 '###+########',
                 '#··········#',
                 '#··········#',
                 '#·········D#',
                 '############',
-            ].join('\n'),
+            ),
         }}},
 
         {time: 11, tick: 2, expect: {view: {
-            protagonist: [
+            protagonist: lines(
                 '########         ',
                 '#······#         ',
                 '#······#         ',
@@ -427,7 +427,7 @@ test('boops', t => {
                 '#······######## #',
                 '#······#         ',
                 '########         ',
-            ].join('\n'),
+            ),
         }}},
 
         {time: 11, do: {inputs: [
@@ -459,7 +459,7 @@ test('boops', t => {
         }}},
 
         {time: 19, expect: {saw: {
-            protagonist: [
+            protagonist: lines(
                 '#      ##########',
                 '#······-·······@#',
                 '#      ########·#',
@@ -468,19 +468,19 @@ test('boops', t => {
                 '              #·#',
                 '              #·#',
                 '              #+#',
-            ].join('\n'),
+            ),
 
-            antagonist: [
+            antagonist: lines(
                 '###+########',
                 '#··········#',
                 '#····D·····#',
                 '#··········#',
                 '############',
-            ].join('\n'),
+            ),
         }}},
 
         {time: 19, tick: 2, expect: {view: {
-            protagonist: [
+            protagonist: lines(
                 '########         ',
                 '#······#         ',
                 '#······#         ',
@@ -492,11 +492,11 @@ test('boops', t => {
                 '              #·#',
                 '              #·#',
                 '              #+#',
-            ].join('\n'),
+            ),
         }}},
 
         {time: 25, expect: {saw: {
-            protagonist: [
+            protagonist: lines(
                 '### ',
                 ' ·# ',
                 '#·# ',
@@ -509,20 +509,20 @@ test('boops', t => {
                 ' ·· ',
                 '····',
                 '####',
-            ].join('\n'),
+            ),
 
-            antagonist: [
+            antagonist: lines(
                 '   @#       ',
                 '###-########',
                 '#·D········#',
                 '#··········#',
                 '#··········#',
                 '############',
-            ].join('\n'),
+            ),
         }}},
 
         {time: 25, tick: 2, expect: {view: {
-            protagonist: [
+            protagonist: lines(
                 '########          ',
                 '#······#          ',
                 '#······#          ',
@@ -538,7 +538,7 @@ test('boops', t => {
                 '               ·· ',
                 '              ····',
                 '              ####',
-            ].join('\n'),
+            ),
         }}},
 
     ], {
@@ -839,7 +839,7 @@ test('boops', t => {
                     } else {
                         const {ctx: {memory: {view}}} = mind;
                         t.deepEqual(
-                            trimLines(view ? view.toString() : ''),
+                            view ? view.toString() : '',
                             s, `${testSteps.stamp} view.${name}`);
                         viewExpected = true;
                     }
@@ -848,7 +848,7 @@ test('boops', t => {
                 else if ('saw' in step) for (const [name, s] of Object.entries(step.saw)) {
                     const view = getSaw(name);
                     t.deepEqual(
-                        trimLines(view ? view.toString() : ''),
+                        view ? view.toString() : '',
                         s, `${testSteps.stamp} view.${name}`);
                     viewExpected = true;
                 }
@@ -886,43 +886,6 @@ test('boops', t => {
                     else expecting.movements.delete(name);
                 }
 
-            /** @param {string} s */
-            function trimLines(s) {
-                let lines = s.split(/\n/);
-
-                // trim header
-                for (let i=0; i < lines.length; i++)
-                    if (!/^ *$/.test(lines[i])) {
-                        lines.splice(0, i);
-                        break;
-                    }
-
-                // trim footer
-                for (let i=lines.length-1; i >= 0; i--)
-                    if (!/^ *$/.test(lines[i])) {
-                        lines.splice(i+1);
-                        break;
-                    }
-
-                // trim left margin
-                const pre = lines.map(line => {
-                    const a = /^ +/.exec(line);
-                    const pre = a ? a[0].length : 0;
-                    return pre;
-                }).reduce((a, b) => Math.min(a, b));
-                if (pre > 0) lines = lines.map(line => line.slice(pre));
-
-                // trim right margin
-                const post = lines.map(line => {
-                    const b = / +$/.exec(line);
-                    const post = b ? b[0].length : 0;
-                    return post;
-                }).reduce((a, b) => Math.min(a, b));
-                if (post > 0) lines = lines.map(line => line.slice(0, -post));
-
-                return lines.join('\n');
-            }
-
             /** @param {string} name */
             function getSaw(name) {
                 for (const [entity, event] of ctl.events())
@@ -950,7 +913,7 @@ test('boops', t => {
                         const {view} = event;
                         t.log(`== ${testSteps.stamp} view.${entity.name}`);
                         t.log('```');
-                        t.log(trimLines(view ? view.toString() : ''));
+                        t.log(view ? view.toString() : '');
                         t.log('```');
                     }
                     if (mvRecords.length) {
@@ -1024,6 +987,9 @@ test('boops', t => {
 
     // TODO obsolete prior guard test by testing its effect within shard
 });
+
+/** @param {string[]} content */
+function lines(...content) { return content.join('\n') + '\n' }
 
 /** @template T @typedef {T | [number, ...T[]]} MaybeCounted */
 
