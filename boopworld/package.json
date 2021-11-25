@@ -17,7 +17,8 @@
     "test": "ava",
     "cover": "c8 npm test",
     "view-cover": "c8 report -r html && open coverage/index.html",
-    "ci": "npm run lint && npm run cover && c8 check-coverage"
+    "ci": "npm run lint && npm run cover && c8 check-coverage",
+    "prodts": "rm -fv *.d.ts && tsc --project tsconfig.production.json"
   },
   "c8": {
     "lines": 80,
