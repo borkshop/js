@@ -967,7 +967,7 @@ export function makeShard({
             toString() { return  entityString(id) },
             get ref() { return scope.ref(id) },
             get name() { return names.get(id) || '' },
-            get glyph() { return glyphs[id] },
+            get glyph() { return String.fromCodePoint(glyphs[id]) },
             get zIndex() { return getZ(id) },
             get location() { return getLoc(id) },
             get isSolid() { return hasType(id, typeSolid) },
