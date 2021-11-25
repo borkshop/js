@@ -548,8 +548,10 @@ test('boops', t => {
 
             const {
                 behavior,
-                build: {rect, first, where, hallCreator, underlay},
+                build: {rect, first, where, hallCreator, makeLexicon},
             } = boopworld;
+
+            const lexicon = makeLexicon();
 
             const parseInput = behavior.inputParser();
 
@@ -558,19 +560,19 @@ test('boops', t => {
             // TODO boop(target) behavior
             // TODO flee(...targets) behavior
 
-            const floor = root.create({
+            const buildFloor = lexicon.define(root.create({
                 glyph: '·', // ·⦁⦂⦙⦚ etc other fences in misc math syms
                 zIndex: 1,
                 isVisible: true,
                 isSolid: false,
-            });
+            }));
 
-            const wall = root.create({
+            const buildWall = lexicon.define(root.create({
                 glyph: '#',
                 zIndex: 8,
                 isVisible: true,
                 isSolid: true,
-            });
+            }), '·');
 
             const door = root.create({
                 glyph: '+',
@@ -585,6 +587,7 @@ test('boops', t => {
                     // TODO open/close events
                 },
             });
+            const buildDoor = lexicon.define(door, '·');
 
             const char = root.create({
                 glyph: 'X',
@@ -592,13 +595,12 @@ test('boops', t => {
                 isVisible: true,
                 isSolid: true,
             });
+            lexicon.define(char, '·');
 
-            const buildWall = underlay(wall.create, floor.create);
-            const buildDoor = underlay(door.create, floor.create);
             /** @param {number} walls */
             const buildRoom = walls => first(
                 hallCreator(walls, buildWall),
-                floor.create,
+                buildFloor,
             );
 
             rect({x: 0, y: 0, w: 8, h: 8}, first(
@@ -656,10 +658,7 @@ test('boops', t => {
                     if (ent.mind) ent.mind = spyThunk(ent.mind);
             }
 
-            floor.destroy();
-            wall.destroy();
-            door.destroy();
-            char.destroy();
+            lexicon.destroy();
 
             // TODO test that destroyed entity cannot be accessed
             // TODO retain a live entity, test that it cannot be used after build

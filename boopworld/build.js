@@ -208,3 +208,107 @@ hallCreator.WallsESW = hallCreator.WallEast  | hallCreator.WallSouth | hallCreat
 hallCreator.WallsNES = hallCreator.WallNorth | hallCreator.WallEast  | hallCreator.WallSouth;
 
 hallCreator.AllWalls = hallCreator.WallsNS | hallCreator.WallsEW;
+
+export function makeLexicon() {
+    /** @type {Map<number, Creator<any>>} */
+    const defines = new Map();
+
+    /** @type {Set<{destroy: () => void}>} */
+    const destroyables = new Set();
+
+    /** @param {number|string} glyph */
+    function lookup(glyph) {
+        const code = typeof glyph == 'string' ? glyph.codePointAt(0) : glyph;
+        return code == undefined ? undefined : defines.get(code);
+    }
+
+    /** @param {number|string} glyph */
+    function mustLookup(glyph) {
+        const def = lookup(glyph);
+        if (!def) throw new Error(`Undefined term ${JSON.stringify(glyph)}`);
+        return def;
+    }
+
+    /**
+     * @template Ctx
+     * @typedef {Creator<Ctx>|{create: Creator<Ctx>, destroy: () => void}} Term
+     */
+
+    /**
+     * @template Ctx
+     * @param {number|string|{glyph: number|string, create: Creator<Ctx>, destroy: () => void}} glyphOrTerm
+     * @param {Array<number|string|Term<Ctx>>} terms
+     * @returns {Creator<Ctx>}
+     */
+    function define(glyphOrTerm, ...terms) {
+        /** @type {number|string} */
+        let glyph;
+        /** @type {Creator<Ctx>} */
+        let create;
+        /** @type {Array<{destroy: () => void}>} */
+        const subDestroyables = [];
+
+        if (typeof glyphOrTerm == 'number' ||
+            typeof glyphOrTerm == 'string') {
+            glyph = glyphOrTerm;
+            if (!terms.length) throw new TypeError('Must provide at least one term');
+            const [term, ...rest] = terms;
+            if (typeof term == 'function') {
+                create = term;
+            } else if (typeof term == 'number' || typeof term == 'string') {
+                create = mustLookup(term);
+            } else {
+                ({create} = term);
+                subDestroyables.push(term);
+            }
+            terms = rest;
+        } else {
+            ({glyph, create} = glyphOrTerm);
+            subDestroyables.push(glyphOrTerm);
+        }
+
+        const code = typeof glyph == 'string' ? glyph.codePointAt(0) : glyph;
+        if (code == undefined) throw new Error('Invalid lexicon entry, cannot decode glyph');
+        if (defines.has(code)) throw new Error(`Duplicate lexicon entry, glyph:${JSON.stringify(glyph)}`);
+
+        if (terms.length) create = underlay(create, ...terms.map(r => {
+            if (typeof r == 'number' || typeof r == 'string')
+                return mustLookup(r);
+            if (typeof r == 'function')
+                return r;
+            subDestroyables.push(r);
+            return r.create;
+        }));
+
+        for (const da of subDestroyables) destroyables.add(da);
+        defines.set(code, create);
+        return create;
+    }
+
+    return Object.freeze({
+        define,
+        lookup,
+        mustLookup,
+
+        /**
+         * @param {EntitySpec} spec
+         * @param {any} ctx
+         */
+        create(spec, ctx) {
+            const {glyph} = spec;
+            if (glyph) {
+                const code = typeof glyph == 'string' ? glyph.codePointAt(0) : glyph;
+                const create = code != undefined ? defines.get(code) : undefined;
+                if (create) return create(spec, ctx);
+            }
+            return null;
+        },
+
+        destroy() {
+            defines.clear();
+            for (const da of destroyables)
+                da.destroy();
+            destroyables.clear();
+        },
+    });
+}
