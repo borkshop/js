@@ -204,6 +204,8 @@ function resultContinues(res) {
  * @param {((input: string) => void)|null} consumer
  */
 
+/** @typedef {ReturnType<makeInput>} Input */
+
 export function makeInput() {
     /** @type {((s: string) => void)|null} */
     let consume = null;
@@ -426,9 +428,9 @@ export function makeShard({
     const events = new Map();
 
     //// input component init
-    /** @typedef {{has: () => boolean} & IterableIterator<number>} Input */
+    /** @typedef {{has: () => boolean} & IterableIterator<number>} InputStream */
 
-    /** @type {Map<number, Input>} */
+    /** @type {Map<number, InputStream>} */
     const inputs = new Map();
 
     /** @type {Map<number, () => void>} */
