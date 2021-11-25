@@ -549,6 +549,7 @@ test('boops', t => {
             const {
                 behavior,
                 build: {rect, first, where, hallCreator, makeLexicon},
+                // TODO test build.fromString
             } = boopworld;
 
             const lexicon = makeLexicon();

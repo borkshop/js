@@ -209,6 +209,26 @@ hallCreator.WallsNES = hallCreator.WallNorth | hallCreator.WallEast  | hallCreat
 
 hallCreator.AllWalls = hallCreator.WallsNS | hallCreator.WallsEW;
 
+/**
+ * @param {Creator<{content: string}>} create
+ * @param {Point} at
+ * @param {string} content
+ */
+export function fromString(create, {x, y}, content) {
+    const x1 = x;
+    for (const unit of content) switch (unit) {
+        case ' ':
+            x++;
+            continue;
+        case '\n':
+            x = x1, y++;
+            continue;
+        default:
+            create({location: {x, y}, glyph: unit}, {content});
+            x++;
+    }
+}
+
 export function makeLexicon() {
     /** @type {Map<number, Creator<any>>} */
     const defines = new Map();

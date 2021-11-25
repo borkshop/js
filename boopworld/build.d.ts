@@ -80,6 +80,14 @@ export namespace hallCreator {
     const WallsNES: number;
     const AllWalls: number;
 }
+/**
+ * @param {Creator<{content: string}>} create
+ * @param {Point} at
+ * @param {string} content
+ */
+export function fromString(create: Creator<{
+    content: string;
+}>, { x, y }: Point, content: string): void;
 export function makeLexicon(): Readonly<{
     define: <Ctx>(glyphOrTerm: string | number | {
         glyph: number | string;
