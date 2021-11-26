@@ -1,3 +1,5 @@
+export * as build from './build.js';
+
 import {
     makeMortonMap,
     shadowField,

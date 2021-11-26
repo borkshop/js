@@ -85,33 +85,6 @@ test('guard', t => {
 
 import * as boopworld from './index.js';
 
-/**
- * @callback Shader
- * @param {boopworld.Point} p
-*/
-
-/**
- * @param {boopworld.Rect} rect
- * @param {Shader} fill
- * @param {Shader} [stroke]
- * @param {Shader} [corner]
- */
-export function buildRect(rect, fill, stroke, corner) {
-    const {x: minx, y: miny, w, h} = rect
-    const maxx = minx + w - 1;
-    const maxy = miny + h - 1;
-    for (let y=miny; y <= maxy; y++) {
-        const edgey = y == miny || y  == maxy;
-        for (let x=minx; x <= maxx; x++) {
-            const edgex = (x == minx || x == maxx);
-            if (stroke && (edgex || edgey)) {
-                if (corner && (edgex || edgey)) corner({x, y});
-                else stroke({x, y});
-            } else fill({x, y});
-        }
-    }
-}
-
 /** @typedef {{time: number, tick?: number} & (
  *   | {expect: ctlExpect}
  *   | {do: ctlDo}
@@ -573,7 +546,10 @@ test('boops', t => {
         build(ctl) {
             const {root} = ctl;
 
-            const {behavior} = boopworld;
+            const {
+                behavior,
+                build: {rect, rectCreator},
+            } = boopworld;
 
             const parseInput = behavior.inputParser();
 
@@ -622,22 +598,20 @@ test('boops', t => {
              * @param {boopworld.Point[]} doors
              */
             function buildRoom(bounds, ...doors) {
-                // NOTE: this is intentionally written "wastefully" to exercise
-                // entity reallocation (e.g. by destroying walls and creating
-                // doors)
-                buildRect(
-                    bounds,
-                    ({x, y}) => floor.create({location: {x, y}}),
-                    ({x, y}) => {
-                        floor.create({location: {x, y}});
-                        let w = wall.create({location: {x, y}});
-                        for (const {x: dx, y: dy} of doors)
-                        if (dx == x && dy == y) {
-                            w.destroy();
-                            w = door.create({location: {x, y}})
+                rect(bounds, rectCreator(
+                    floor.create,
+                    spec => {
+                        const {location} = spec;
+                        if (location) {
+                            const {x, y} = location;
+                            floor.create({location});
+                            for (const {x: dx, y: dy} of doors)
+                                if (dx == x && dy == y) return door.create(spec)
+                            return wall.create(spec);
                         }
+                        return floor.create(spec);
                     },
-                );
+                ));
             }
 
             const
@@ -657,15 +631,15 @@ test('boops', t => {
                 const {x: minx, y: miny, w, h} = bounds;
                 const maxx = minx + w - 1;
                 const maxy = miny + h - 1;
-                buildRect(
-                    bounds,
-                    ({x, y}) => floor.create({location: {x, y}}),
-                    ({x, y}) => {
-                        floor.create({location: {x, y}});
-                        if (shouldWall({x, y}))
-                            wall.create({location: {x, y}});
+                rect(bounds, rectCreator(
+                    floor.create,
+                    spec => {
+                        const fl = floor.create(spec);
+                        if (spec?.location && shouldWall(spec.location))
+                            return wall.create(spec);
+                        return fl;
                     },
-                );
+                ));
 
                 /** @param {boopworld.Point} p */
                 function shouldWall({x, y}) {
