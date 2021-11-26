@@ -577,6 +577,11 @@ test('boops', t => {
 
             const parseInput = behavior.inputParser();
 
+            // TODO explore behavior
+            // TODO follow(target) behavior
+            // TODO boop(target) behavior
+            // TODO flee(...targets) behavior
+
             const floor = root.create({
                 glyph: '·', // ·⦁⦂⦙⦚ etc other fences in misc math syms
                 zIndex: 1,
