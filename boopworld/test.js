@@ -548,7 +548,7 @@ test('boops', t => {
 
             const {
                 behavior,
-                build: {rect, rectCreator},
+                build: {rect, rectCreator, underlay},
             } = boopworld;
 
             const parseInput = behavior.inputParser();
@@ -593,6 +593,9 @@ test('boops', t => {
                 isSolid: true,
             });
 
+            const buildWall = underlay(wall.create, floor.create);
+            const buildDoor = underlay(door.create, floor.create);
+
             /**
              * @param {boopworld.Rect} bounds
              * @param {boopworld.Point[]} doors
@@ -600,14 +603,13 @@ test('boops', t => {
             function buildRoom(bounds, ...doors) {
                 rect(bounds, rectCreator(
                     floor.create,
-                    spec => {
+                    (spec, r) => {
                         const {location} = spec;
                         if (location) {
                             const {x, y} = location;
-                            floor.create({location});
                             for (const {x: dx, y: dy} of doors)
-                                if (dx == x && dy == y) return door.create(spec)
-                            return wall.create(spec);
+                                if (dx == x && dy == y) return buildDoor(spec, r);
+                            return buildWall(spec, r);
                         }
                         return floor.create(spec);
                     },

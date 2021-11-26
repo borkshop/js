@@ -11,6 +11,21 @@
  */
 
 /**
+ * @template Ctx
+ * @param {Creator<Ctx>} prime
+ * @param {Array<Creator<Ctx>>} under
+ * @returns {Creator<Ctx>}
+ */
+export function underlay(prime, ...under) {
+    return (spec, ctx) => {
+        const ent = prime(spec, ctx);
+        const {location} = spec;
+        for (const creat of under) creat({location}, ctx);
+        return ent;
+    };
+}
+
+/**
  * @param {Rect} rect
  * @param {Creator<Rect>} create
  */
