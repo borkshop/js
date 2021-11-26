@@ -707,12 +707,7 @@ test('boops', t => {
                 glyph: '@',
                 input: player.bind,
                 mind: ctx => {
-                    const {
-                        time,
-                        events, deref,
-                        memory: {view},
-                    } = ctx;
-                    view.integrateEvents(events(), Object.freeze({time, deref}));
+                    behavior.updateView(ctx);
                     return parseInput(ctx);
                 }
             });

@@ -6,6 +6,17 @@ import {
     thunkWait,
 } from './index.js';
 
+/** @type {Thunk} */
+export function updateView(ctx) {
+    const {
+        time,
+        events, deref,
+        memory: {view},
+    } = ctx;
+    view.integrateEvents(events(), Object.freeze({time, deref}));
+    return thunkWait({time: time+1});
+}
+
 /**
  * @param {(input: number) => Move|null} [parse]
  * @returns {Thunk}
