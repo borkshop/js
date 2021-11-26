@@ -1,3 +1,4 @@
+/** @typedef {import('./index.js').Point} Point */
 /** @typedef {import('./index.js').Rect} Rect */
 /** @typedef {import('./index.js').Entity} Entity */
 /** @typedef {import('./index.js').EntitySpec} EntitySpec */
@@ -9,6 +10,39 @@
  * @param {Ctx} ctx
  * @returns {Entity|null}
  */
+
+/**
+ * @template Ctx
+ * @param {Array<[Point, Creator<Ctx>]>} features
+ * @returns {Creator<Ctx>}
+ */
+export function where(...features) {
+    return (spec, ctx) => {
+        const {location} = spec;
+        if (location) {
+            const {x, y} = location;
+            for (const [{x: fx, y: fy}, feat] of features)
+                if (fx == x && fy == y)
+                    return feat(spec, ctx);
+        }
+        return null;
+    };
+}
+
+/**
+ * @template Ctx
+ * @param {Array<Creator<Ctx>>} creators
+ * @returns {Creator<Ctx>}
+ */
+export function first(...creators) {
+    return (spec, ctx) => {
+        for (const creat of creators) {
+            const ent = creat(spec, ctx);
+            if (ent) return ent;
+        }
+        return null;
+    };
+}
 
 /**
  * @template Ctx

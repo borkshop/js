@@ -548,7 +548,7 @@ test('boops', t => {
 
             const {
                 behavior,
-                build: {rect, rectCreator, underlay},
+                build: {rect, first, where, rectCreator, underlay},
             } = boopworld;
 
             const parseInput = behavior.inputParser();
@@ -603,16 +603,10 @@ test('boops', t => {
             function buildRoom(bounds, ...doors) {
                 rect(bounds, rectCreator(
                     floor.create,
-                    (spec, r) => {
-                        const {location} = spec;
-                        if (location) {
-                            const {x, y} = location;
-                            for (const {x: dx, y: dy} of doors)
-                                if (dx == x && dy == y) return buildDoor(spec, r);
-                            return buildWall(spec, r);
-                        }
-                        return floor.create(spec);
-                    },
+                    first(
+                        where(...doors.map(p => /** @type {[boopworld.Point, boopworld.build.Creator<boopworld.Rect>]} */([p, buildDoor]))),
+                        buildWall,
+                    ),
                 ));
             }
 
@@ -633,24 +627,22 @@ test('boops', t => {
                 const {x: minx, y: miny, w, h} = bounds;
                 const maxx = minx + w - 1;
                 const maxy = miny + h - 1;
-                rect(bounds, rectCreator(
+                rect(bounds, first(
+                    (spec, r) => shouldWall(spec?.location) ? buildWall(spec, r) : null,
                     floor.create,
-                    spec => {
-                        const fl = floor.create(spec);
-                        if (spec?.location && shouldWall(spec.location))
-                            return wall.create(spec);
-                        return fl;
-                    },
                 ));
 
-                /** @param {boopworld.Point} p */
-                function shouldWall({x, y}) {
-                    if (walls & WallNorth && y == miny) return true;
-                    if (walls & WallEast && x == maxx) return true;
-                    if (walls & WallSouth && y == maxy) return true;
-                    if (walls & WallWest && x == minx) return true;
-                    if ((y == miny || y == maxy) &&
-                        (x == maxx || x == minx)) return true;
+                /** @param {boopworld.Point} [location] */
+                function shouldWall(location) {
+                    if (location) {
+                        const {x, y} = location;
+                        if (walls & WallNorth && y == miny) return true;
+                        if (walls & WallEast && x == maxx) return true;
+                        if (walls & WallSouth && y == maxy) return true;
+                        if (walls & WallWest && x == minx) return true;
+                        if ((y == miny || y == maxy) &&
+                            (x == maxx || x == minx)) return true;
+                    }
                     return false;
                 }
             }
