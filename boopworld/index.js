@@ -863,6 +863,10 @@ export function makeShard({
             const {view, update} = makeBasicViewport();
             update.resize(clampedViewBox(loc, maxGlyphDepth));
             for (const entry of shadowField(loc, {
+                bounds: {
+                    x: -0x7fff, y: -0x7fff,
+                    w: 0xffff, h: 0xffff,
+                },
                 maxDepth: maxGlyphDepth,
                 query(pos, depth) {
                     if (!view.contains(pos)) return null;
