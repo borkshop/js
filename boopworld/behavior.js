@@ -1,10 +1,32 @@
 /** @typedef {import('./index.js').Point} Point */
 /** @typedef {import('./index.js').Move} Move */
 /** @typedef {import('./index.js').Thunk} Thunk */
+/** @typedef {import('./index.js').ThunkCtx} ThunkCtx */
+/** @typedef {import('./index.js').ThunkRes} ThunkRes */
+/** @typedef {import('./index.js').ThunkWaitFor} ThunkWaitFor */
 
 import {
+    thunkDone,
+    thunkFail,
     thunkWait,
+    thunkContinue,
 } from './index.js';
+
+/**
+ * @param {(Thunk|SubThunkState)[]} subs
+ * @returns {Thunk}
+ */
+export function all(...subs) {
+    return degenerateSubThunk(subs) || (ctx => {
+        const term = Array.from(runSubThunks(subs, ctx));
+        if (term.some(res => res?.ok === false))
+            return thunkFail('some sub-thunk failed');
+        subs = subs.filter((_, i) => term[i] === null);
+        if (!subs.length)
+            return thunkDone('all sub thunks done');
+        return subThunkRes(subs, all(...subs));
+    });
+}
 
 /** @type {Thunk} */
 export function updateView(ctx) {
@@ -99,4 +121,63 @@ export function wander(ctx) {
     }
 
     return thunkWait({time: time+1}); // wait for the next turn
+}
+
+/**
+ * @typedef {object} SubThunkState
+ * @prop {Thunk} thunk
+ * @prop {ThunkWaitFor} [waitFor]
+ */
+
+/**
+ * @param {(Thunk|SubThunkState)[]} subs
+ * @returns {Thunk|null}
+ */
+function degenerateSubThunk(subs) {
+    if (subs.length == 0)
+        return () => thunkDone('no sub-tasks left');
+    if (subs.length == 1) {
+        const only = subs[0];
+        if (typeof only == 'function') return only;
+        const {thunk, waitFor} = only;
+        return waitFor ? ctx => {
+            if (ctx.isReady(waitFor)) return thunk(ctx);
+            return thunkWait(waitFor, thunk);
+        } : thunk;
+    }
+    return null;
+}
+
+/**
+ * @param {(Thunk|SubThunkState)[]} subs
+ * @param {ThunkCtx} ctx
+ * @returns {Generator<ThunkRes|null>}
+ */
+function *runSubThunks(subs, ctx) {
+    for (let i = 0; i < subs.length; ++i) {
+        const sub = subs[i];
+        const waitingFor = typeof sub == 'function' ? undefined : sub.waitFor;
+        if (waitingFor && !ctx.isReady(waitingFor)) { yield null; continue }
+        const thunk = typeof sub == 'function' ? sub : sub.thunk;
+        const res = thunk(ctx);
+        const {next, waitFor} = res;
+        if (next)         { subs[i] = {thunk: next, waitFor}; yield null }
+        else if (waitFor) { subs[i] = {thunk, waitFor}; yield null }
+        else              { yield res }
+    }
+}
+
+/**
+ * @param {(Thunk|SubThunkState)[]} subs
+ * @param {Thunk} next
+ */
+function subThunkRes(subs, next) {
+    const waitForAny = /** @type {ThunkWaitFor[]} */ (subs
+        .map(sub => typeof sub == 'function' ? undefined : sub.waitFor)
+        .filter(waitFor => waitFor != undefined));
+    switch (waitForAny.length) {
+        case 0: return thunkContinue(next);
+        case 1: return thunkWait(waitForAny[0], next);
+        default: return thunkWait({any: waitForAny}, next);
+    }
 }

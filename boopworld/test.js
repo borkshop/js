@@ -706,10 +706,10 @@ test('boops', t => {
                 name: "protagonist",
                 glyph: '@',
                 input: player.bind,
-                mind: ctx => {
-                    behavior.updateView(ctx);
-                    return parseInput(ctx);
-                }
+                mind: behavior.all(
+                    behavior.updateView,
+                    parseInput,
+                ),
             });
 
             char.create({

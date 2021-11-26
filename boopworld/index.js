@@ -100,6 +100,7 @@ export function thunkWait(waitFor, next, reason='wait') { return {ok: true, wait
  * @prop {number} time
  * @prop {(ref: EntityRef) => ROEntity|null} deref
  * @prop {Entity} self
+ * @prop {(waitFor: ThunkWaitFor) => boolean} isReady
  * @prop {ThunkMemory} memory
  * @prop {() => number} random
  * @prop {() => IterableIterator<Readonly<Event>>} events
@@ -1532,6 +1533,8 @@ export function makeShard({
                 },
 
                 get self() { return fullEntity(id, refs) },
+
+                isReady(waitFor) { return execRunnable(id, waitFor) },
 
                 memory,
 
