@@ -18,6 +18,9 @@ import {
  * @typedef {import('./view.js').ViewportRead<Datum>} ViewportRead */
 /** @typedef {import('./view.js').ViewMemory} ViewMemory */
 
+
+export * as behavior from './behavior.js';
+
 /**
  * @callback Interaction
  * @param {InteractCtx} ctx

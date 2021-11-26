@@ -573,6 +573,10 @@ test('boops', t => {
         build(ctl) {
             const {root} = ctl;
 
+            const {behavior} = boopworld;
+
+            const parseInput = behavior.inputParser();
+
             const floor = root.create({
                 glyph: '·', // ·⦁⦂⦙⦚ etc other fences in misc math syms
                 zIndex: 1,
@@ -703,28 +707,13 @@ test('boops', t => {
                 glyph: '@',
                 input: player.bind,
                 mind: ctx => {
-                    ctx.memory.view.integrateEvents(ctx.events(), Object.freeze({
-                        time: ctx.time,
-                        deref: ctx.deref,
-                    }));
-
-                    // parse moves from input, taking the last parsed move
-                    if (ctx.input) for (const codePoint of ctx.input) {
-                        const move = ( c => { switch (c) {
-                            case 'w': return 'up';
-                            case 'a': return 'left';
-                            case 's': return 'down';
-                            case 'd': return 'right';
-                            case '.': return 'stay';
-                            default: return undefined;
-                        } } )(String.fromCodePoint(codePoint))
-                        if (move != undefined) ctx.move = move;
-                    }
-
-                    return boopworld.thunkWait(ctx.move != undefined
-                        ? {time: ctx.time+1} // wait for the next turn
-                        : "input"            // after input has determined a move
-                    );
+                    const {
+                        time,
+                        events, deref,
+                        memory: {view},
+                    } = ctx;
+                    view.integrateEvents(events(), Object.freeze({time, deref}));
+                    return parseInput(ctx);
                 }
             });
 
