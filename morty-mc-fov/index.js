@@ -257,7 +257,7 @@ function mortonCompact1(x) {
  * @param {(pos: Point, depth: number) => FOVDatum<At>|null} params.query --
  * spatial query callback, may return null if space is not defined at the
  * given point, or may return whether field is blocked, and any passthru At
- * data
+ * data.
  *
  * @param {number} [params.maxDepth] -- maximum cardinal distance from origin: no
  * point yielded will have its x or y component differ from origin's by more
@@ -267,27 +267,30 @@ function mortonCompact1(x) {
  * @returns {Generator<{pos: Point, at: At}>} -- depth is the row
  * number within the first quadrant to encounter each location.
  */
-export function* shadowField(origin, {query, maxDepth=100}) {
+export function* shadowField(origin, {
+  query,
+  maxDepth=100,
+}) {
   // TODO support casting from walls:
   // > So here are the modifications for casting field of view from a wall tile:
   // > - Make slopes originate from the edges of the tile instead of the center.
   // > - Change the comparisons in isSymmetric to strict inequalities.
 
-  // query origin
+  // Used to dedupe calls to update so that the caller only sees any position
+  // at most once. Ideally we'd get the quadrant boundary maths below fixed to
+  // not produce duplicates, but for now a visited set prevents visual
+  // artifacts (e.g. so what addGridLight doesn't add to the same cell twice).
+  const visited = new Set();
+
+  // visit origin
   {
-    const res = query(origin, 0);
+    const res = visit(origin) && query(origin, 0);
     if (!res) return;
 
     const {blocked, at} = res;
     yield {pos: origin, at};
     if (blocked) return;
   }
-
-  // Used to dedupe calls to update so that the caller only sees any position
-  // at most once. Ideally we'd get the quadrant boundary maths below fixed to
-  // not produce duplicates, but for now a visited set prevents visual
-  // artifacts (e.g. so what addGridLight doesn't add to the same cell twice).
-  const visited = new Set([mortonKey(origin)]);
 
   // work in cardinally aligned quadrants around origin; each quadrant is
   // essentially a π/2 section centered around each +/- x/y axis
