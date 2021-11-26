@@ -60,9 +60,6 @@ function defaultInteraction(ctx) {
  *   | {ok: false, reason: string, waitFor?: ThunkWaitFor, next?: Thunk}
  * )} ThunkRes */
 
-/** @param {Thunk} next @returns {ThunkRes} */
-export function thunkExec(next, reason='exec') { return {ok: true, next, reason} }
-
 /** @param {string} [reason] @returns {ThunkRes} */
 export function thunkDone(reason='done') { return {ok: true, reason} }
 
@@ -72,9 +69,6 @@ export function thunkDone(reason='done') { return {ok: true, reason} }
  * @returns {ThunkRes}
  */
 export function thunkFail(reason, next) { return {ok: false, reason, next} }
-
-/** @returns {ThunkRes} */
-export function thunkYield(reason='yield') { return {ok: true, reason} }
 
 /**
  * @param {Thunk} next
