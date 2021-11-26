@@ -264,12 +264,18 @@ function mortonCompact1(x) {
  * than maxDepth; defaults to 100, may be set to NaN to disable any explicit
  * limit.
  *
+ * @param {Rect} [params.bounds] -- bounding rectangle to not exceed, default
+ * to positive 32-bit space due to internal use of morton keying; spaces that
+ * use unnatural numbers will need to set this, even if they have no real
+ * notional bounds to enforce.
+ *
  * @returns {Generator<{pos: Point, at: At}>} -- depth is the row
  * number within the first quadrant to encounter each location.
  */
 export function* shadowField(origin, {
   query,
   maxDepth=100,
+  bounds={x: 0, y: 0, w: 0xffffffff, h: 0xffffffff},
 }) {
   // TODO support casting from walls:
   // > So here are the modifications for casting field of view from a wall tile:
@@ -284,7 +290,8 @@ export function* shadowField(origin, {
 
   // visit origin
   {
-    const res = visit(origin) && query(origin, 0);
+    const vorigin = xlate(origin);
+    const res = vorigin && visit(vorigin) && query(origin, 0);
     if (!res) return;
 
     const {blocked, at} = res;
@@ -310,7 +317,9 @@ export function* shadowField(origin, {
 
       for (let col = minCol; col <= maxCol; col++) {
         const pos = quadrant(depth, col);
-        const res = query(pos, depth);
+        const vpos = xlate(pos);
+
+        const res = vpos && query(pos, depth);
         if (!res) continue;
 
         const {blocked, at} = res;
@@ -318,7 +327,7 @@ export function* shadowField(origin, {
         if (blocked) {
 
           // visit terminal cell if supported
-          if (visit(pos))
+          if (visit(vpos))
             yield {pos, at};
 
           // continue to scan sub-arc in next row
@@ -333,7 +342,7 @@ export function* shadowField(origin, {
             // TODO this symmetric check seems awfully redundant... either I
             // messed something up in translation, or just don't understand the
             // edge case semantics yet...
-            if (isSymmetric(col, depth, restartSlope, endSlope) && visit(pos))
+            if (isSymmetric(col, depth, restartSlope, endSlope) && visit(vpos))
               yield {pos, at};
 
           // sub-arc starts here in the next row
@@ -370,6 +379,15 @@ export function* shadowField(origin, {
     if (visited.has(key)) return false;
     visited.add(key);
     return true;
+  }
+
+  /** @param {Point} pos */
+  function xlate({x, y}) {
+    const {x: x1, y: y1, w, h} = bounds;
+    x -= x1, y -= y1;
+    if (x < 0 || x > w) return null;
+    if (y < 0 || y > h) return null;
+    return {x, y};
   }
 }
 

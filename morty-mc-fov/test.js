@@ -204,9 +204,14 @@ test('shadowField', t => {
     ['X', {kind: 'npc', solid: true}],
   ]);
 
-  const world = makeTestWorld();
+  const world = makeTestWorld({
+    x: -0x7fff,
+    y: -0x7fff,
+    w: 0xffff,
+    h: 0xffff,
+  });
 
-  build({x: 0, y: 0}, [
+  build({x: -10, y: -3}, [
     '##########',
     '#········#     #####',
     '#········#######X··#',
@@ -218,12 +223,10 @@ test('shadowField', t => {
 
   t.deepEqual(
     world.scene.get('player1'),
-    {x: 3, y: 3},
+    {x: -7, y: 0},
     'player start');
 
-  // TODO render with shadow field
-
-  const view = makeViewport({x: 0, y: 0, w: 20, h: 7});
+  const view = makeViewport({x: -10, y: -3, w: 20, h: 7});
 
   /**
    * @param {Point} p
@@ -249,6 +252,7 @@ test('shadowField', t => {
     view.clear();
     const origin = typeof pov == 'string' ? world.scene.get(pov) : pov;
     if (origin) for (const {pos, at} of shadowField(origin, {
+      bounds: world.bounds,
       query(p, depth) {
         if (!view.has(p)) return null;
         const res = shader(p, depth, pov);
@@ -299,7 +303,7 @@ test('shadowField', t => {
     '                     ',
   ].join('\n'), '#npc4 view');
 
-  t.is(render({x: 6, y: 0}), [
+  t.is(render({x: -4, y: -3}), [
     '      #              ',
     '                     ',
     '                     ',
@@ -309,7 +313,22 @@ test('shadowField', t => {
     '                     ',
   ].join('\n'), 'stuck in a wall view (origin blocked)');
 
-  t.is(render({x: 42, y: 42}), [
+  for (
+    const {p, desc} of [
+      { p: 'god',
+        desc: 'godview (no neighbor support)'},
+      { p: {x: 43, y: 43 /* god-off-by-one */},
+        desc: 'view from outside (origin not supported)'},
+      { p: {x: 0x8000, y: 0},
+        desc: `view out of bounds (+x)`},
+      { p: {x: -0x8000, y: 0},
+        desc: `view out of bounds (-x)`},
+      { p: {x: 0, y: 0x8000},
+        desc: `view out of bounds (+y)`},
+      { p: {x: 0, y: -0x8000},
+        desc: `view out of bounds (-y)`},
+    ]
+  ) t.is(render(p), [
     '                     ',
     '                     ',
     '                     ',
@@ -317,7 +336,7 @@ test('shadowField', t => {
     '                     ',
     '                     ',
     '                     ',
-  ].join('\n'), 'view from outside (origin not supported)');
+  ].join('\n'), desc);
 
   /**
    * @param {Point} at
@@ -364,7 +383,10 @@ test('shadowField', t => {
 
 });
 
-function makeTestWorld() {
+/** @param {Rect} bounds */
+function makeTestWorld(
+  bounds={x: 0, y: 0, w: 0xffffffff, h: 0xffffffff},
+) {
   /** @type {Map<string, Point>} */
   const scene = new Map();
 
@@ -388,19 +410,52 @@ function makeTestWorld() {
         sm.clear();
       } else for (const id of mmInvalid) {
         const p = scene.get(id);
-        if (p == undefined)
+        if (p == undefined) {
           sm.delete(id);
-        else
-          sm.set(id, p);
+        } else {
+          let {x, y} = p;
+          x -= bounds.x, y -= bounds.y;
+          sm.set(id, {x, y});
+        }
       }
       mmInvalid.clear();
     });
 
   return Object.freeze({
     // data exposure for test access, normally this shouldn't be here
+    bounds: Object.freeze(bounds),
     scene,
-    spatial,
     glyphs,
+
+    /** @type {ROMortonMap<string>} */
+    spatial: {
+      get size() { return spatial.size },
+      has(id) { return spatial.has(id) },
+      get(id) {
+        const p = spatial.get(id);
+        if (!p) return undefined;
+        let {x, y} = p;
+        x += bounds.x, y += bounds.y;
+        return {x, y};
+      },
+      *entries() {
+        for (let [id, {x, y}] of spatial.entries()) {
+          x -= bounds.x, y -= bounds.y;
+          yield [id, {x, y}];
+        }
+      },
+      *at({x, y}) {
+        x -= bounds.x, y -= bounds.y;
+        yield* spatial.at({x, y});
+      },
+      *within({x, y, w, h}) {
+        x -= bounds.x, y -= bounds.y;
+        for (let [{x: px, y: py}, it] of spatial.within({x, y, w, h})) {
+          px += bounds.x, py += bounds.y;
+          yield [{x: px, y: py}, it];
+        }
+      },
+    },
 
     /**
      * @param {string} id

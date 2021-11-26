@@ -81,19 +81,25 @@ export function mortonPoint(key: bigint): {
  * @param {(pos: Point, depth: number) => FOVDatum<At>|null} params.query --
  * spatial query callback, may return null if space is not defined at the
  * given point, or may return whether field is blocked, and any passthru At
- * data
+ * data.
  *
  * @param {number} [params.maxDepth] -- maximum cardinal distance from origin: no
  * point yielded will have its x or y component differ from origin's by more
  * than maxDepth; defaults to 100, may be set to NaN to disable any explicit
  * limit.
  *
+ * @param {Rect} [params.bounds] -- bounding rectangle to not exceed, default
+ * to positive 32-bit space due to internal use of morton keying; spaces that
+ * use unnatural numbers will need to set this, even if they have no real
+ * notional bounds to enforce.
+ *
  * @returns {Generator<{pos: Point, at: At}>} -- depth is the row
  * number within the first quadrant to encounter each location.
  */
-export function shadowField<At>(origin: Point, { query, maxDepth }: {
+export function shadowField<At>(origin: Point, { query, maxDepth, bounds, }: {
     query: (pos: Point, depth: number) => FOVDatum<At> | null;
     maxDepth?: number | undefined;
+    bounds?: Rect | undefined;
 }): Generator<{
     pos: Point;
     at: At;
