@@ -717,70 +717,11 @@ test('boops', t => {
                 }
             });
 
-            /** @type {boopworld.Move[]} */
-            const moves = ['up', 'right', 'down', 'left'];
-
-            /** @type {Partial<boopworld.Point>[]} */
-            const moveDeltas = [
-                {y: -1},
-                {x: 1},
-                {y: 1},
-                {x: -1}
-            ];
-
-            /**
-             * @param {number} id
-             * @param {Partial<boopworld.Point>} movement
-             */
-            function moveReverses(id, {x: dx=0, y: dy=0}) {
-                const {x: mx=0, y: my=0} = moveDeltas[id];
-                return mx == -dx && my == -dy;
-            }
-
             char.create({
                 location: {x: 22, y: 13},
                 name: "antagonist",
                 glyph: 'D',
-                mind: ctx => {
-                    // TODO protagonist hunter instead of random walker
-
-                    const {x, y} = ctx.self.location;
-
-                    let ats = moveDeltas.map(() => 0);
-
-                    /** @type {Partial<boopworld.Point>} */
-                        let lastMoved = {};
-                    for (const event of ctx.events()) switch (event.type) {
-                        case 'move':
-                            const {from, to} = event;
-                            lastMoved = movement(from, to);
-                            break;
-
-                        case 'view':
-                            const {view: {at}} = event;
-                            ats = moveDeltas.map(({x: dx=0, y: dy=0}) => at({
-                                x: x + dx,
-                                y: y + dy,
-                            })?.ref || 0);
-                            break;
-                    }
-
-                    const can = ats.map(at => at != 0);
-                    const blocked = ats.map(at => ctx.deref(at)?.isSolid);
-
-                    const moveIds = ats
-                        .map((_, id) => id)
-                        .filter(id => !moveReverses(id, lastMoved))
-                        .filter(id => can[id] && !blocked[id]);
-                    if (moveIds.length) {
-                        const moveId = moveIds[Math.floor(ctx.random() * moveIds.length)];
-                        ctx.move = moves[moveId];
-                    } else {
-                        t.log(`- no moves`);
-                    }
-
-                    return boopworld.thunkWait({time: ctx.time+1}); // wait for the next turn
-                }
+                mind: behavior.wander,
             });
 
             const spyThunks = false;
