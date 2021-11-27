@@ -97,19 +97,27 @@ export function hallCreator(walls, wall) {
             const west = x == minx, east = x == maxx;
 
             if (north && west) {
-                return wall(spec, r);
+                if (!(walls & hallCreator.SansCorners)) {
+                    return wall(spec, r);
+                }
             }
 
             else if (north && east) {
-                return wall(spec, r);
+                if (!(walls & hallCreator.SansCorners)) {
+                    return wall(spec, r);
+                }
             }
 
             else if (south && west) {
-                return wall(spec, r);
+                if (!(walls & hallCreator.SansCorners)) {
+                    return wall(spec, r);
+                }
             }
 
             else if (south && east) {
-                return wall(spec, r);
+                if (!(walls & hallCreator.SansCorners)) {
+                    return wall(spec, r);
+                }
             }
 
             else if (north) {
@@ -141,10 +149,11 @@ export function hallCreator(walls, wall) {
     }
 }
 
-hallCreator.WallNorth = 0x01;
-hallCreator.WallEast  = 0x02;
-hallCreator.WallSouth = 0x04;
-hallCreator.WallWest  = 0x08;
+hallCreator.WallNorth   = 0x01;
+hallCreator.WallEast    = 0x02;
+hallCreator.WallSouth   = 0x04;
+hallCreator.WallWest    = 0x08;
+hallCreator.SansCorners = 0x10;
 
 hallCreator.WallsNE = hallCreator.WallNorth | hallCreator.WallEast;
 hallCreator.WallsNW = hallCreator.WallNorth | hallCreator.WallWest;
