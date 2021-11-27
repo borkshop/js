@@ -46,6 +46,7 @@
     "mount": {
       "../cdom": "/cdom",
       "../cdom-template": "/cdom-template",
+      "../boopworld/demo": "/boops",
       ".": "/"
     },
     "alias": {
