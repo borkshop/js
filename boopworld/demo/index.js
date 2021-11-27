@@ -118,11 +118,6 @@ function buildWorld(ctl) {
   lexicon.destroy();
 }
 
-/** @return {Promise<number>} */
-function nextFrame() {
-  return new Promise(resolve => requestAnimationFrame(resolve));
-}
-
 const shard = makeShard({
   seed: 0xdeadbeef,
   build(ctl) { buildWorld(ctl) },
@@ -135,39 +130,11 @@ const shard = makeShard({
 });
 
 async function main() {
-  const spins = [
-    "⠂       ",
-    "⠈       ",
-    " ⠂      ",
-    " ⠠      ",
-    "  ⡀     ",
-    "  ⠠     ",
-    "   ⠂    ",
-    "   ⠈    ",
-    "    ⠂   ",
-    "    ⠠   ",
-    "     ⡀  ",
-    "     ⠠  ",
-    "      ⠂ ",
-    "      ⠈ ",
-    "       ⠂",
-    "       ⠠",
-    "       ⡀",
-    "      ⠠ ",
-    "      ⠂ ",
-    "     ⠈  ",
-    "     ⠂  ",
-    "    ⠠   ",
-    "    ⡀   ",
-    "   ⠠    ",
-    "   ⠂    ",
-    "  ⠈     ",
-    "  ⠂     ",
-    " ⠠      ",
-    " ⡀      ",
-    "⠠       "
-  ];
-  let spini = 0;
+  const spin = spinner(
+    ...bounce(['⟢', '⟡', '⟣'], 7, {rate: 4}),
+    // ...bounce(['⬖', '⬗', '⬘', '⬙'], 7, {rate: 3}),
+    // ...bounce(['⠂', '⠈', '⠂', '⠠', '⠠'], 7, {rate: 3}),
+  );
 
   const frameTimeout = 10;
   while (await nextFrame()) {
@@ -176,12 +143,19 @@ async function main() {
     const view = document.getElementById('view');
     if (!view) return;
 
-    const spinner = document.getElementById('spinner');
-    if (spinner) spinner.innerText = spins[spini = (spini + 1) % spins.length];
+    const spinel = document.getElementById('spinner');
+    if (spinel) spinel.innerText = spin.next().value;
   }
 }
 
 main();
+
+/** @return {Promise<number>} */
+function nextFrame() {
+  return new Promise(resolve => requestAnimationFrame(resolve));
+}
+
+// TODO maybe start a textrix module?
 
 /** @param {string} s */
 function trimLines(s) {
@@ -219,3 +193,50 @@ function trimLines(s) {
 
     return lines.join('\n');
 }
+
+/** @param {string[]} parts */
+function spinner(...parts) {
+  let i = 0;
+  const self = Object.freeze({
+    /** @returns {IteratorYieldResult<string>} */
+    next() {
+      i = (i + 1) % parts.length;
+      const value = parts[i];
+      return {value};
+    },
+    [Symbol.iterator]() { return self },
+  });
+  return self;
+}
+
+/**
+ * @param {string|Iterable<string>} bit
+ * @param {number} width
+ * @param {object} [params]
+ * @param {string} [params.pad]
+ * @param {number} [params.rate]
+ */
+function *bounce(bit, width, {
+  pad=' ',
+  rate=1,
+}={}) {
+  if (typeof bit == 'string') bit = forever(bit);
+  let it = bit[Symbol.iterator]();
+  function nextBit() {
+    for (let sanity = 2; sanity-->0;) {
+      const res = it.next();
+      if (!res.done) return res.value;
+      it = bit[Symbol.iterator]();
+    }
+    return '';
+  }
+  for (let loc = 0; loc < width; loc++)
+    for (let i=0; i<rate; i++)
+      yield `${pad.repeat(loc)}${nextBit()}${pad.repeat(width-loc)}`
+  for (let loc = width-1; loc >= 0; loc--)
+    for (let i=0; i<rate; i++)
+      yield `${pad.repeat(loc)}${nextBit()}${pad.repeat(width-loc)}`
+}
+
+/** @template T @param {T} value @returns {Generator<T>} */
+function *forever(value) { for (;;) yield value }
