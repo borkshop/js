@@ -75,14 +75,26 @@ export function rect(rect, create) {
 /**
  * @param {number} walls
  * @param {Creator<Rect>} wall
+ * @param {object} [params]
+ *
+ * @param {Creator<Rect>} [params.wallNorth]
+ * @param {Creator<Rect>} [params.wallEast]
+ * @param {Creator<Rect>} [params.wallSouth]
+ * @param {Creator<Rect>} [params.wallWest]
  *
  * @returns {Creator<Rect>}
  */
-export function hallCreator(walls, wall) {
+export function hallCreator(walls, wall, {
+    wallNorth,
+    wallEast,
+    wallSouth,
+    wallWest,
+}={}) {
     return (spec, r) => {
         // NOTE: branch structure below:
         //   if (is) {
         //     if (should) {
+        //       if (specific) return specific(...);
         //       return wall(...);
         //     }
         //   }
@@ -98,48 +110,56 @@ export function hallCreator(walls, wall) {
 
             if (north && west) {
                 if (!(walls & hallCreator.SansCorners)) {
+                    if (wallNorth) return wallNorth(spec, r);
                     return wall(spec, r);
                 }
             }
 
             else if (north && east) {
                 if (!(walls & hallCreator.SansCorners)) {
+                    if (wallNorth) return wallNorth(spec, r);
                     return wall(spec, r);
                 }
             }
 
             else if (south && west) {
                 if (!(walls & hallCreator.SansCorners)) {
+                    if (wallSouth) return wallSouth(spec, r);
                     return wall(spec, r);
                 }
             }
 
             else if (south && east) {
                 if (!(walls & hallCreator.SansCorners)) {
+                    if (wallSouth) return wallSouth(spec, r);
                     return wall(spec, r);
                 }
             }
 
             else if (north) {
                 if (walls & hallCreator.WallNorth) {
+                    if (wallNorth) return wallNorth(spec, r);
                     return wall(spec, r);
                 }
             }
 
             else if (east) {
                 if (walls & hallCreator.WallEast) {
+                    if (wallEast) return wallEast(spec, r);
                     return wall(spec, r);
                 }
             }
 
             else if (south) {
                 if (walls & hallCreator.WallSouth) {
+                    if (wallSouth) return wallSouth(spec, r);
                     return wall(spec, r);
                 }
             }
 
             else if (west) {
                 if (walls & hallCreator.WallWest) {
+                    if (wallWest) return wallWest(spec, r);
                     return wall(spec, r);
                 }
             }
