@@ -14,8 +14,16 @@ html, body {
 }
 
 #spinner {
-  color: #333;
+  color: #666;
   position: absolute;
   bottom: 0;
   right: 0;
+}
+
+#blabla {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 1em;
+  width: 33%;
 }
