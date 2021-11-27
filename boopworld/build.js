@@ -82,6 +82,12 @@ export function rect(rect, create) {
  * @param {Creator<Rect>} [params.wallSouth]
  * @param {Creator<Rect>} [params.wallWest]
  *
+ * @param {Creator<Rect>} [params.corner]
+ * @param {Creator<Rect>} [params.cornerNW]
+ * @param {Creator<Rect>} [params.cornerNE]
+ * @param {Creator<Rect>} [params.cornerSW]
+ * @param {Creator<Rect>} [params.cornerSE]
+ *
  * @returns {Creator<Rect>}
  */
 export function hallCreator(walls, wall, {
@@ -89,6 +95,12 @@ export function hallCreator(walls, wall, {
     wallEast,
     wallSouth,
     wallWest,
+
+    corner,
+    cornerNW,
+    cornerNE,
+    cornerSW,
+    cornerSE,
 }={}) {
     return (spec, r) => {
         // NOTE: branch structure below:
@@ -110,6 +122,8 @@ export function hallCreator(walls, wall, {
 
             if (north && west) {
                 if (!(walls & hallCreator.SansCorners)) {
+                    if (cornerNW) return cornerNW(spec, r);
+                    if (corner) return corner(spec, r);
                     if (wallNorth) return wallNorth(spec, r);
                     return wall(spec, r);
                 }
@@ -117,6 +131,8 @@ export function hallCreator(walls, wall, {
 
             else if (north && east) {
                 if (!(walls & hallCreator.SansCorners)) {
+                    if (cornerNE) return cornerNE(spec, r);
+                    if (corner) return corner(spec, r);
                     if (wallNorth) return wallNorth(spec, r);
                     return wall(spec, r);
                 }
@@ -124,6 +140,8 @@ export function hallCreator(walls, wall, {
 
             else if (south && west) {
                 if (!(walls & hallCreator.SansCorners)) {
+                    if (cornerSW) return cornerSW(spec, r);
+                    if (corner) return corner(spec, r);
                     if (wallSouth) return wallSouth(spec, r);
                     return wall(spec, r);
                 }
@@ -131,6 +149,8 @@ export function hallCreator(walls, wall, {
 
             else if (south && east) {
                 if (!(walls & hallCreator.SansCorners)) {
+                    if (cornerSE) return cornerSE(spec, r);
+                    if (corner) return corner(spec, r);
                     if (wallSouth) return wallSouth(spec, r);
                     return wall(spec, r);
                 }
