@@ -271,7 +271,7 @@
     execa "^5.0.0"
     npm-run-path "^4.0.1"
 
-"@snowpack/plugin-optimize@^0.2.4":
+"@snowpack/plugin-optimize@^0.2.13", "@snowpack/plugin-optimize@^0.2.4":
   version "0.2.13"
   resolved "https://registry.yarnpkg.com/@snowpack/plugin-optimize/-/plugin-optimize-0.2.13.tgz#29cac194f0b5479afc3908a45fca01ad263bab4e"
   integrity sha512-DW0+iaSc80vWZKDIKbdR5pqDkNDsv3ZbH8eVB8yppK/JlBmOqmsUGdKlZ2eq8XDxE23/V5+gmA9RXLWcTMJ1eQ==
@@ -296,7 +296,7 @@
     execa "^5.0.0"
     npm-run-path "^4.0.1"
 
-"@snowpack/plugin-typescript@^1.0.1":
+"@snowpack/plugin-typescript@^1.0.1", "@snowpack/plugin-typescript@^1.2.1":
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/@snowpack/plugin-typescript/-/plugin-typescript-1.2.1.tgz#7170b039d16d41963cc61a714fe7c37f3fdd9d51"
   integrity sha512-wU+JNaMVkqGsqTaUY7TnEMhGt/3URTgA9dpMCtZX6wn/ceA7Gwlmue/sOLynf0OTNLygHPvjiQECQYkEi3LTtg==
@@ -370,7 +370,7 @@
   resolved "https://registry.yarnpkg.com/@types/parse-json/-/parse-json-4.0.0.tgz#2f8bb441434d163b35fb8ffdccd7138927ffb8c0"
   integrity sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==
 
-"@types/resize-observer-browser@^0.1.4":
+"@types/resize-observer-browser@^0.1.4", "@types/resize-observer-browser@^0.1.6":
   version "0.1.6"
   resolved "https://registry.yarnpkg.com/@types/resize-observer-browser/-/resize-observer-browser-0.1.6.tgz#d8e6c2f830e2650dc06fe74464472ff64b54a302"
   integrity sha512-61IfTac0s9jvNtBCpyo86QeaN8qqpMGHdK0uGKCCIy2dt5/Yk84VduHIdWAcmkC5QvdkPL0p5eWYgUZtHKKUVg==
@@ -389,7 +389,7 @@
   dependencies:
     "@types/node" "*"
 
-"@types/snowpack-env@^2.3.0":
+"@types/snowpack-env@^2.3.0", "@types/snowpack-env@^2.3.4":
   version "2.3.4"
   resolved "https://registry.yarnpkg.com/@types/snowpack-env/-/snowpack-env-2.3.4.tgz#79073fd98a47a5f1ba83326b75cb433dc31a7c36"
   integrity sha512-zYzMb2aMyzXW5VgOQHy+FgI8N5tLFb+tIsUqk35CIgSr9pT4pji2GR8BCOTMdniusVuRHIp/DaYQNQGYGLVZHQ==
@@ -4174,6 +4174,11 @@ typescript@^4.0.3:
   version "4.4.4"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.4.4.tgz#2cd01a1a1f160704d3101fd5a58ff0f9fcb8030c"
   integrity sha512-DqGhF5IKoBl8WNf8C1gu8q0xZSInh9j1kJJMqT3a94w1JzVaBU4EXOSMrz9yDqMT0xt3selp83fuFMQ0uzv6qA==
+
+typescript@^4.5.2:
+  version "4.5.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.5.2.tgz#8ac1fba9f52256fdb06fb89e4122fa6a346c2998"
+  integrity sha512-5BlMof9H1yGt0P8/WF+wPNw6GfctgGjXp5hkblpyT+8rkASSmkUKMXrxR0Xg8ThVCi/JnHQiKXeBaEwCeQwMFw==
 
 uglify-js@^3.5.1:
   version "3.14.3"
