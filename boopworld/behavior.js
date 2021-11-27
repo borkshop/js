@@ -136,16 +136,22 @@ export function wander(ctx) {
 function degenerateSubThunk(subs) {
     if (subs.length == 0)
         return () => thunkDone('no sub-tasks left');
-    if (subs.length == 1) {
-        const only = subs[0];
-        if (typeof only == 'function') return only;
-        const {thunk, waitFor} = only;
-        return waitFor ? ctx => {
-            if (ctx.isReady(waitFor)) return thunk(ctx);
-            return thunkWait(waitFor, thunk);
-        } : thunk;
-    }
+    if (subs.length == 1)
+        return subThunk(subs[0]);
     return null;
+}
+
+/**
+ * @param {(Thunk|SubThunkState)} sub
+ * @returns {Thunk}
+ */
+function subThunk(sub) {
+    if (typeof sub == 'function') return sub;
+    const {thunk, waitFor} = sub;
+    if (!waitFor) return thunk;
+    return ctx => ctx.isReady(waitFor)
+        ? thunk(ctx)
+        : thunkWait(waitFor, thunk);
 }
 
 /**
