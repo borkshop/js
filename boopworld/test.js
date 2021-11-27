@@ -685,6 +685,24 @@ test('boops', t => {
             buildHall({x: 14, y: 6, w: 3, h: 4}, VWalls);
             buildRoom({x: 12, y: 10, w: 12, h: 5}, {x: 15, y: 10});
 
+            char.create({
+                location: {x: 1, y: 1},
+                name: "protagonist",
+                glyph: '@',
+                input: player.bind,
+                mind: behavior.all(
+                    behavior.updateView,
+                    parseInput,
+                ),
+            });
+
+            char.create({
+                location: {x: 22, y: 13},
+                name: "antagonist",
+                glyph: 'D',
+                mind: behavior.wander,
+            });
+
             /**
              * @param {boopworld.Thunk} thunk
              * @returns {boopworld.Thunk}
@@ -705,24 +723,6 @@ test('boops', t => {
                     return res;
                 };
             }
-
-            char.create({
-                location: {x: 1, y: 1},
-                name: "protagonist",
-                glyph: '@',
-                input: player.bind,
-                mind: behavior.all(
-                    behavior.updateView,
-                    parseInput,
-                ),
-            });
-
-            char.create({
-                location: {x: 22, y: 13},
-                name: "antagonist",
-                glyph: 'D',
-                mind: behavior.wander,
-            });
 
             const spyThunks = false;
             if (spyThunks) {
