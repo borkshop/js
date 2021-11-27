@@ -22,7 +22,7 @@ const playerMind = behavior.all(
   // updating thunk, or some such...
   ({time, memory: {view}}) => {
     const viewTo = document.getElementById('view');
-    if (viewTo) viewTo.innerText = trimLines(view.toString());
+    if (viewTo) viewTo.innerText = view.toString();
     return thunkWait({time: time+1});
   },
 
@@ -156,45 +156,6 @@ main();
 /** @return {Promise<number>} */
 function nextFrame() {
   return new Promise(resolve => requestAnimationFrame(resolve));
-}
-
-// TODO maybe start a textrix module?
-
-/** @param {string} s */
-function trimLines(s) {
-    let lines = s.split(/\n/);
-
-    // trim header
-    for (let i=0; i < lines.length; i++)
-        if (!/^ *$/.test(lines[i])) {
-            lines.splice(0, i);
-            break;
-        }
-
-    // trim footer
-    for (let i=lines.length-1; i >= 0; i--)
-        if (!/^ *$/.test(lines[i])) {
-            lines.splice(i+1);
-            break;
-        }
-
-    // trim left margin
-    const pre = lines.map(line => {
-        const a = /^ +/.exec(line);
-        const pre = a ? a[0].length : 0;
-        return pre;
-    }).reduce((a, b) => Math.min(a, b));
-    if (pre > 0) lines = lines.map(line => line.slice(pre));
-
-    // trim right margin
-    const post = lines.map(line => {
-        const b = / +$/.exec(line);
-        const post = b ? b[0].length : 0;
-        return post;
-    }).reduce((a, b) => Math.min(a, b));
-    if (post > 0) lines = lines.map(line => line.slice(0, -post));
-
-    return lines.join('\n');
 }
 
 /** @param {string[]} parts */
