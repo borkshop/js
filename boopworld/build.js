@@ -202,4 +202,9 @@ hallCreator.WallsSW = hallCreator.WallSouth | hallCreator.WallWest;
 hallCreator.WallsNS = hallCreator.WallNorth | hallCreator.WallSouth;
 hallCreator.WallsEW = hallCreator.WallWest  | hallCreator.WallEast;
 
+hallCreator.WallsNEW = hallCreator.WallNorth | hallCreator.WallEast  | hallCreator.WallWest;
+hallCreator.WallsNSW = hallCreator.WallNorth | hallCreator.WallSouth | hallCreator.WallWest;
+hallCreator.WallsESW = hallCreator.WallEast  | hallCreator.WallSouth | hallCreator.WallWest;
+hallCreator.WallsNES = hallCreator.WallNorth | hallCreator.WallEast  | hallCreator.WallSouth;
+
 hallCreator.AllWalls = hallCreator.WallsNS | hallCreator.WallsEW;
