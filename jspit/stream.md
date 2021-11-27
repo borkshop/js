@@ -1,6 +1,34 @@
-# 2021-01-14
+# 2021-11-27
+
+Well... so that's been nearly a year then has it...
+Picked back up a few weeks ago on a new sub-project called Boopworld. Focus is
+primarily on a behavioral AI system, and secondarily on yet another take on a
+component-entity system.
 
 ## TODO
+
+- shift view rendering to use cdom, or an echo of it
+  - read cube before iterating an echo out of cdom
+- goal oriented behaviors like explore and follow
+- generalize out a CE framework from boopworld, at least around the
+  typed-entity dispatch model, even if not (yet) around homogenouse/dense model
+  used by viewports
+
+## WIP
+
+Demo recording support to capture the nasty bug discovered.
+
+## Done
+
+Published boopworld demo within jspit:
+- spruced up the nifty spinner on the way
+- found some kind of nasty view culling bug
+
+# 2021-01
+
+## 2021-01-14
+
+### TODO
 
 - basic abilitites
   - build door
@@ -36,12 +64,12 @@
   - how about default classes keyed by text; would simplify much building code
   - save/loading of tile state
 
-## WIP
+### WIP
 
 Wrote a basic handy proc with a digging pickaxe in the BSP demo, need to at
 least afford UI before "done".
 
-## Done
+### Done
 
 Have been slowly easing back into development this week, piecing out BSP body
 demo progress, starting with supporting cdom refactor work.
