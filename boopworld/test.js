@@ -548,7 +548,7 @@ test('boops', t => {
 
             const {
                 behavior,
-                build: {rect, first, where, rectCreator, underlay},
+                build: {rect, first, where, hallCreator, underlay},
             } = boopworld;
 
             const parseInput = behavior.inputParser();
@@ -595,63 +595,21 @@ test('boops', t => {
 
             const buildWall = underlay(wall.create, floor.create);
             const buildDoor = underlay(door.create, floor.create);
+            /** @param {number} walls */
+            const buildRoom = walls => first(
+                hallCreator(walls, buildWall),
+                floor.create,
+            );
 
-            /**
-             * @param {boopworld.Rect} bounds
-             * @param {boopworld.Point[]} doors
-             */
-            function buildRoom(bounds, ...doors) {
-                rect(bounds, rectCreator(
-                    floor.create,
-                    first(
-                        where(...doors.map(p => /** @type {[boopworld.Point, boopworld.build.Creator<boopworld.Rect>]} */([p, buildDoor]))),
-                        buildWall,
-                    ),
-                ));
-            }
-
-            const
-                WallNorth = 0x01
-              , WallEast = 0x02
-              , WallSouth = 0x04
-              , WallWest = 0x08
-              , HWalls = WallNorth|WallSouth
-              , VWalls = WallWest|WallEast
-              ;
-
-            /**
-             * @param {boopworld.Rect} bounds
-             * @param {number} walls
-             */
-            function buildHall(bounds, walls) {
-                const {x: minx, y: miny, w, h} = bounds;
-                const maxx = minx + w - 1;
-                const maxy = miny + h - 1;
-                rect(bounds, first(
-                    (spec, r) => shouldWall(spec?.location) ? buildWall(spec, r) : null,
-                    floor.create,
-                ));
-
-                /** @param {boopworld.Point} [location] */
-                function shouldWall(location) {
-                    if (location) {
-                        const {x, y} = location;
-                        if (walls & WallNorth && y == miny) return true;
-                        if (walls & WallEast && x == maxx) return true;
-                        if (walls & WallSouth && y == maxy) return true;
-                        if (walls & WallWest && x == minx) return true;
-                        if ((y == miny || y == maxy) &&
-                            (x == maxx || x == minx)) return true;
-                    }
-                    return false;
-                }
-            }
-
-            buildRoom({x: 0, y: 0, w: 8, h: 8}, {x: 7, y: 4});
-            buildHall({x: 8, y: 3, w: 6, h: 3}, HWalls);
-            buildHall({x: 14, y: 3, w: 3, h: 3}, WallNorth|WallEast);
-            buildHall({x: 14, y: 6, w: 3, h: 4}, VWalls);
-            buildRoom({x: 12, y: 10, w: 12, h: 5}, {x: 15, y: 10});
+            rect({x: 0, y: 0, w: 8, h: 8}, first(
+                where([{x: 7, y: 4}, buildDoor]),
+                buildRoom(hallCreator.AllWalls)));
+            rect({x: 8, y: 3, w: 6, h: 3}, buildRoom(hallCreator.WallsNS));
+            rect({x: 14, y: 3, w: 3, h: 3}, buildRoom(hallCreator.WallsNE));
+            rect({x: 14, y: 6, w: 3, h: 4}, buildRoom(hallCreator.WallsEW));
+            rect({x: 12, y: 10, w: 12, h: 5}, first(
+                where([{x: 15, y: 10}, buildDoor]),
+                buildRoom(hallCreator.AllWalls)));
 
             char.create({
                 location: {x: 1, y: 1},

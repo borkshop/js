@@ -73,31 +73,84 @@ export function rect(rect, create) {
 }
 
 /**
- * @param {Creator<Rect>} fill
- * @param {Creator<Rect>} [stroke]
- * @param {Creator<Rect>} [corner]
+ * @param {number} walls
+ * @param {Creator<Rect>} wall
+ *
  * @returns {Creator<Rect>}
  */
-export function rectCreator(fill, stroke, corner) {
+export function hallCreator(walls, wall) {
     return (spec, r) => {
+        // NOTE: branch structure below:
+        //   if (is) {
+        //     if (should) {
+        //       return wall(...);
+        //     }
+        //   }
+
         const {location} = spec;
         if (location) {
             const {x, y} = location;
             const {x: minx, y: miny, w, h} = r;
             const maxx = minx + w - 1;
             const maxy = miny + h - 1;
-            const edgey = y == miny || y  == maxy;
-            const edgex = (x == minx || x == maxx);
+            const north = y == miny, south = y == maxy;
+            const west = x == minx, east = x == maxx;
 
-            if (edgex && edgey) {
-                if (corner) return corner(spec, r);
-                if (stroke) return stroke(spec, r);
+            if (north && west) {
+                return wall(spec, r);
             }
 
-            else if (edgex || edgey) {
-                if (stroke) return stroke(spec, r);
+            else if (north && east) {
+                return wall(spec, r);
             }
+
+            else if (south && west) {
+                return wall(spec, r);
+            }
+
+            else if (south && east) {
+                return wall(spec, r);
+            }
+
+            else if (north) {
+                if (walls & hallCreator.WallNorth) {
+                    return wall(spec, r);
+                }
+            }
+
+            else if (east) {
+                if (walls & hallCreator.WallEast) {
+                    return wall(spec, r);
+                }
+            }
+
+            else if (south) {
+                if (walls & hallCreator.WallSouth) {
+                    return wall(spec, r);
+                }
+            }
+
+            else if (west) {
+                if (walls & hallCreator.WallWest) {
+                    return wall(spec, r);
+                }
+            }
+
         }
-        return fill(spec, r);
+        return null;
     }
 }
+
+hallCreator.WallNorth = 0x01;
+hallCreator.WallEast  = 0x02;
+hallCreator.WallSouth = 0x04;
+hallCreator.WallWest  = 0x08;
+
+hallCreator.WallsNE = hallCreator.WallNorth | hallCreator.WallEast;
+hallCreator.WallsNW = hallCreator.WallNorth | hallCreator.WallWest;
+hallCreator.WallsSE = hallCreator.WallSouth | hallCreator.WallEast;
+hallCreator.WallsSW = hallCreator.WallSouth | hallCreator.WallWest;
+hallCreator.WallsNS = hallCreator.WallNorth | hallCreator.WallSouth;
+hallCreator.WallsEW = hallCreator.WallWest  | hallCreator.WallEast;
+
+hallCreator.AllWalls = hallCreator.WallsNS | hallCreator.WallsEW;
