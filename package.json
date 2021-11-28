@@ -19,6 +19,7 @@
     "cdom",
     "cdom-template",
     "cube",
+    "domkit",
     "forest",
     "jspit",
     "mine",
