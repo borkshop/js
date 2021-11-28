@@ -18,7 +18,7 @@
  * @prop {(p: Point) => boolean} contains
  * @prop {(p: Point) => ViewportDatum<Datum>|undefined} at
  * @prop {() => IterableIterator<[Point, ViewportDatum<Datum>]>} entries
- * @prop {() => IterableIterator<string>} lines
+ * @prop {(withVirtual?: boolean) => IterableIterator<string>} lines
  * @prop {() => string} toString
  */
 
@@ -218,7 +218,7 @@ export function makeViewMemory() {
         contains(p) { return view.contains(p) },
         at(p) { return view.at(p) },
         *entries() { yield* view.entries() },
-        *lines() { yield* view.lines() },
+        *lines(withVirtual) { yield* view.lines(withVirtual) },
         toString() { return view.toString() },
     };
 
@@ -327,10 +327,10 @@ export function makeViewport(deps) {
     }
 
     /** @returns {Generator<string>} */
-    function *lines() {
+    function *lines(withVirtual=true) {
         for (const [i, j, k] of ranges()) {
             let s = String.fromCodePoint(...glyphAt.subarray(j, k));
-            if (stride > w)
+            if (withVirtual && stride > w)
                 s += String.fromCodePoint(...glyphAt.subarray(i + w, i + stride));
             yield s;
         }

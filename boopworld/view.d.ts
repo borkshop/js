@@ -16,7 +16,7 @@
  * @prop {(p: Point) => boolean} contains
  * @prop {(p: Point) => ViewportDatum<Datum>|undefined} at
  * @prop {() => IterableIterator<[Point, ViewportDatum<Datum>]>} entries
- * @prop {() => IterableIterator<string>} lines
+ * @prop {(withVirtual?: boolean) => IterableIterator<string>} lines
  * @prop {() => string} toString
  */
 /**
@@ -63,7 +63,7 @@ export function makeViewMemory(): Readonly<{
         blocked: boolean;
         canInteract: boolean;
     }>]>;
-    lines: () => IterableIterator<string>;
+    lines: (withVirtual?: boolean | undefined) => IterableIterator<string>;
     toString: () => string;
 }>;
 /**
@@ -100,7 +100,7 @@ export type ViewportRead<Datum extends {
     contains: (p: Point) => boolean;
     at: (p: Point) => ViewportDatum<Datum> | undefined;
     entries: () => IterableIterator<[Point, ViewportDatum<Datum>]>;
-    lines: () => IterableIterator<string>;
+    lines: (withVirtual?: boolean | undefined) => IterableIterator<string>;
     toString: () => string;
 };
 export type ViewportDatum<Datum extends {
