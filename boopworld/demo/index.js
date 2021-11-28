@@ -1,3 +1,5 @@
+import {frameDeltas} from 'domkit/anim';
+
 import * as boopworld from 'boopworld';
 
 const {
@@ -237,7 +239,7 @@ async function main() {
   );
 
   const frameTimeout = 10;
-  while (await nextFrame()) {
+  for await (const _dt of frameDeltas()) {
     shard.update(performance.now() + frameTimeout);
 
     const view = document.getElementById('view');
@@ -264,11 +266,6 @@ function *hashTokens() {
   if (!hash.startsWith('#')) return;
   for (const match of hash.slice(1).matchAll(/[;&]?([^;&]*)/g))
     if (match[1].length) yield unescape(match[1]);
-}
-
-/** @return {Promise<number>} */
-function nextFrame() {
-  return new Promise(resolve => requestAnimationFrame(resolve));
 }
 
 /**
