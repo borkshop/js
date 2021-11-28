@@ -48,10 +48,10 @@ export function inputParser(
     parse=dat => {
         if ('key' in dat) switch (dat.key) {
 
-            case 'w': return 'up';
-            case 'a': return 'left';
-            case 's': return 'down';
-            case 'd': return 'right';
+            case 'ArrowUp':    case 'W': case 'w': return 'up';
+            case 'ArrowLeft':  case 'A': case 'a': return 'left';
+            case 'ArrowDown':  case 'S': case 's': return 'down';
+            case 'ArrowRight': case 'D': case 'd': return 'right';
 
             case '.': return 'stay';
         }
