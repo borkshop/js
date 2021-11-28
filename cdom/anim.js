@@ -1,12 +1,8 @@
 // @ts-check
 
-/**
- * @return {Promise<number>} - resolves to the current high-res time at the
- * start of the next browser animation frame
- */
-export function nextFrame() {
-  return new Promise(resolve => requestAnimationFrame(resolve));
-}
+export {nextFrame} from 'domkit/anim';
+
+import {frameDeltas} from 'domkit/anim';
 
 /**
  * @callback Part - an animation part: a function of elapsed time
@@ -19,12 +15,8 @@ export function nextFrame() {
  * @param {Part} update - an animation function
  */
 export async function everyFrame(update) {
-  let last = await nextFrame();
-  let dt = 0;
-  while (update(dt)) {
-    const next = await nextFrame();
-    dt = next - last, last = next;
-  }
+  for await (const dt of frameDeltas())
+    if (!update(dt)) break;
 }
 
 /**
