@@ -222,90 +222,27 @@ export class KeySynthesizer {
   }
 }
 
-/**
- * Coalesces "chords" of held keys from any received keydown and keyup events.
- *
- * Dispatches a "keychord" event on itself, passing a KeyChordEvent to
- * listeners, after the last held key is released.
- *
- * @implements {EventListenerObject}
- */
-export class KeyChorder extends EventTarget {
-  held = new Set()
-  chord = new Set()
+import {KeyChorder as KeyChorderBase} from 'domkit/input';
 
-  ignoredModifiers = new Set([
-    'Alt',
-    'AltGraph',
-    'CapsLock',
-    'Control',
-    'Fn',
-    'FnLock',
-    'Hyper',
-    'Meta',
-    'OS', // since meta isn't consistent on windows
-    'NumLock',
-    'ScrollLock',
-    'Shift',
-    'Super',
-    'Symbol',
-    'SymbolLock',
-    'Win', // IE9 compat; can drop?
-  ])
+export {KeyChordEvent} from 'domkit/input';
 
-  /** @param {KeyboardEvent} event */
-  hasIgnoredModifier(event) {
-    if (this.ignoredModifiers.has(event.key)) return true;
-    for (const key of this.ignoredModifiers)
-      if (event.getModifierState(key)) return true;
-    return false;
+export class KeyChorder extends KeyChorderBase {
+  constructor() {
+    super([]);
   }
 
-  clear() {
-    this.held.clear();
-    this.chord.clear();
-  }
-
-  /** @param {Event} event */
-  handleEvent(event) {
-    if (!(event instanceof KeyboardEvent)) return;
-    const {type, key, code, view} = event;
-
-    if (this.hasIgnoredModifier(event) && !this.held.has(key)) return;
-
-    const root = view?.document;
-    if (!root) return;
+  /**
+   * @param {KeyboardEvent} event
+   * @returns {boolean}
+   */
+  filter(event) {
+    if (!super.filter(event)) return false;
+    const {key, code, view} = event;
     /** @type {null|HTMLButtonElement} */
-    const button = root.querySelector(`button[data-keycode="${code}"]`)
-                || root.querySelector(`button[data-key="${key}"]`);
-    if (button?.disabled) return;
-
-    if (type === 'keyup') {
-      if (this.held.delete(key)) {
-        this.chord.add(key);
-        if (!this.held.size) {
-          this.dispatchEvent(new KeyChordEvent(this.chord));
-          this.chord.clear();
-        }
-      }
-    } else if (type === 'keydown') {
-      this.chord.clear();
-      this.held.add(key);
-    } else {
-      return;
-    }
-    event.stopImmediatePropagation();
-    event.preventDefault();
-  }
-}
-
-export class KeyChordEvent extends Event {
-  /** @type {Iterable<string>} */
-  keys
-
-  /** @param {Iterable<string>} keys */
-  constructor(keys) {
-    super('keychord');
-    this.keys = keys;
+    const button = view?.document?.querySelector(`button[data-keycode="${code}"]`)
+                || view?.document?.querySelector(`button[data-key="${key}"]`)
+                || null;
+    if (button?.disabled) return false;
+    return true;
   }
 }

@@ -96,27 +96,8 @@ export class KeySynthesizer implements EventListenerObject {
     /** @param {Event} event */
     handleEvent(event: Event): void;
 }
-/**
- * Coalesces "chords" of held keys from any received keydown and keyup events.
- *
- * Dispatches a "keychord" event on itself, passing a KeyChordEvent to
- * listeners, after the last held key is released.
- *
- * @implements {EventListenerObject}
- */
-export class KeyChorder extends EventTarget implements EventListenerObject {
-    held: Set<any>;
-    chord: Set<any>;
-    ignoredModifiers: Set<string>;
-    /** @param {KeyboardEvent} event */
-    hasIgnoredModifier(event: KeyboardEvent): boolean;
-    clear(): void;
-    /** @param {Event} event */
-    handleEvent(event: Event): void;
+export { KeyChordEvent } from "domkit/input";
+export class KeyChorder extends KeyChorderBase {
+    constructor();
 }
-export class KeyChordEvent extends Event {
-    /** @param {Iterable<string>} keys */
-    constructor(keys: Iterable<string>);
-    /** @type {Iterable<string>} */
-    keys: Iterable<string>;
-}
+import { KeyChorder as KeyChorderBase } from "domkit/input";
