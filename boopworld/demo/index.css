@@ -20,6 +20,12 @@ html, body {
   right: 0;
 }
 
+#spinner.record {
+  color: #f96;
+  background-color: #321;
+  cursor: pointer;
+}
+
 #blabla {
   position: absolute;
   top: 0;

@@ -30,7 +30,7 @@ const playerMind = behavior.all(
 );
 
 /** @param {boopworld.ShardCtl} ctl */
-function buildWorld(ctl) {
+function build(ctl) {
   const {root} = ctl;
 
   const lexicon = makeLexicon();
@@ -49,8 +49,7 @@ function buildWorld(ctl) {
   }), '·');
 
   /** @type {boopworld.Interaction} */
-  const doorBoop = ctx => {
-    const {subject} = ctx;
+  function doorBoop({subject}) {
     const closed = subject.isSolid;
     subject.isSolid = !closed;
     subject.glyph = closed ? '-' : '+';
@@ -121,18 +120,116 @@ function buildWorld(ctl) {
   lexicon.destroy();
 }
 
-const shard = makeShard({
-  seed: 0xdeadbeef,
-  build(ctl) { buildWorld(ctl) },
+/** @typedef {{[name: string]: boopworld.ViewportRead<any>}} logViews */
+/** @typedef {{[name: string]: boopworld.Event[]}} logEvents */
 
-  // TODO control(ctl) can do things like:
-  // - debug hooks / inspection / hacking
-  // - dump reaps
-  // - introspect mind state
+/**
+ * @typedef {(
+ *   | {events: logEvents}
+ *   | {views: logViews}
+ * )} logEntry
+ * // TODO entry to capture view state
+ */
 
-});
+/** @type {null|{time: number, json: string}[]} */
+let log = null;
+
+/**
+ * @param {number} time
+ * @param {logEntry[]} ents
+ */
+function appendLogEntries(time, ...ents) {
+  if (log)
+    for (const ent of ents)
+      log.push({time, json: JSON.stringify(ent)});
+}
+
+function startRecording() {
+  if (log) return;
+
+  const spinel = document.getElementById('spinner');
+  if (!spinel) {
+    console.error('unable to start recording, no spinner element found for control');
+    return;
+  }
+
+  const bla = document.getElementById('blabla');
+  if (bla) bla.removeAttribute('open');
+
+  spinel.classList.add('record');
+  spinel.addEventListener('click', stopRecording);
+
+  log = [
+    // TODO capture starting state in an initial entry; requires shard serialization
+  ];
+}
+
+function stopRecording() {
+  if (!log) return;
+
+  const spinel = document.getElementById('spinner');
+  if (spinel) {
+    spinel.removeEventListener('click', stopRecording);
+    spinel.classList.remove('record');
+  }
+
+  const logged = new File(Array.from(starmap(
+    ({time, json}) => [`{"time":${time},`, json.slice(1, -1), '}\n'],
+    log,
+  )), 'shard_log.ndjson', {
+    type: 'application/x-ndjson',
+  });
+  log = null;
+
+  window.location.href = URL.createObjectURL(logged);
+}
+
+/** @param {boopworld.ShardCtl} ctl */
+function collectLogEntries(ctl) {
+  if (!log) return;
+
+  const {time} = ctl;
+  const lastTime = log[log.length-1]?.time;
+  if (lastTime >= time) return;
+
+  /** @type {logEvents} */
+  const events = {};
+  for (const [ent, ev] of ctl.events()) {
+    const {name} = ent;
+    if (!name) continue;
+    const evs = name in events ? events[name] : events[name] = [];
+    evs.push(ev);
+  }
+
+  /** @type {logViews} */
+  const views = {};
+  for (const ent of ctl.entities({hasMind: true})) {
+    const {name} = ent;
+    if (!name) continue;
+    const mind = ent.mindState;
+    if (!mind) continue;
+    views[name] = mind.ctx.memory.view;
+  }
+
+  appendLogEntries(time, {events}, {views});
+}
 
 async function main() {
+  const hash = new Map(hashEntries());
+  if (hash.has('record')) startRecording();
+
+  const shard = makeShard({
+    seed: 0xdeadbeef,
+    build,
+
+    control: log ? collectLogEntries : undefined,
+    // TODO other control things like:
+    // - live edit / hacking
+    // - dump reaps
+    // - introspect mind state
+
+  });
+
   const spin = spinner(
     ...bounce(['⟢', '⟡', '⟣'], 7, {rate: 4}),
     // ...bounce(['⬖', '⬗', '⬘', '⬙'], 7, {rate: 3}),
@@ -153,9 +250,36 @@ async function main() {
 
 main();
 
+/** @returns {Generator<[string, string]>} */
+function *hashEntries() {
+  for (const token of hashTokens()) {
+    const match = /^([^=]+)=(.*)$/.exec(unescape(token));
+    const [key, val] = match || [token, ''];
+    yield [key, val];
+  }
+}
+
+function *hashTokens() {
+  const {location: {hash}} = window;
+  if (!hash.startsWith('#')) return;
+  for (const match of hash.slice(1).matchAll(/[;&]?([^;&]*)/g))
+    if (match[1].length) yield unescape(match[1]);
+}
+
 /** @return {Promise<number>} */
 function nextFrame() {
   return new Promise(resolve => requestAnimationFrame(resolve));
+}
+
+/**
+ * @template T, V
+ * @param {(t: T) => Iterable<V>} f
+ * @param {Iterable<T>} items
+ * @returns {Generator<V>}
+ */
+function *starmap(f, items) {
+  for (const item of items)
+    yield* f(item);
 }
 
 /** @param {string[]} parts */
