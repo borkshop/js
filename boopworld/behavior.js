@@ -1,5 +1,6 @@
-/** @typedef {import('./index.js').Point} Point */
+/** @typedef {import('./index.js').InputDatum} InputDatum */
 /** @typedef {import('./index.js').Move} Move */
+/** @typedef {import('./index.js').Point} Point */
 /** @typedef {import('./index.js').Thunk} Thunk */
 /** @typedef {import('./index.js').ThunkCtx} ThunkCtx */
 /** @typedef {import('./index.js').ThunkRes} ThunkRes */
@@ -40,18 +41,23 @@ export function updateView(ctx) {
 }
 
 /**
- * @param {(input: number) => Move|null} [parse]
+ * @param {(dat: InputDatum) => Move|null} [parse]
  * @returns {Thunk}
  */
 export function inputParser(
-    parse=input => { switch (String.fromCodePoint(input)) {
-        case 'w': return 'up';
-        case 'a': return 'left';
-        case 's': return 'down';
-        case 'd': return 'right';
-        case '.': return 'stay';
-        default: return null;
-    } },
+    parse=dat => {
+        if ('key' in dat) switch (dat.key) {
+
+            case 'w': return 'up';
+            case 'a': return 'left';
+            case 's': return 'down';
+            case 'd': return 'right';
+
+            case '.': return 'stay';
+        }
+
+        return null;
+    },
 ) {
     return ctx => {
         if (ctx.input) {

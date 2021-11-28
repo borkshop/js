@@ -103,14 +103,14 @@ export function thunkWait(waitFor: ThunkWaitFor, next?: Thunk | undefined, reaso
  */
 /**
  * @callback InputBinder
- * @param {((input: string) => void)|null} consumer
+ * @param {((dat: InputDatum) => void)|null} consumer
  */
 /** @typedef {ReturnType<makeInput>} Input */
 export function makeInput(): Readonly<{
     /** @type {InputBinder} */
-    bind(consumer: ((input: string) => void) | null): any;
-    /** @param {string} input */
-    provide(input: string): boolean;
+    bind(consumer: ((dat: InputDatum) => void) | null): any;
+    /** @param {InputDatum} dat */
+    provide(dat: InputDatum): boolean;
 }>;
 /**
  * @param {object} options
@@ -202,7 +202,9 @@ export type ThunkCtx = {
     memory: ThunkMemory;
     random: () => number;
     events: () => IterableIterator<Readonly<Event>>;
-    input?: IterableIterator<number> | undefined;
+    input?: IterableIterator<{
+        key: string;
+    }> | undefined;
     move: Move | undefined;
 };
 export type ThunkMemory = {
@@ -269,7 +271,7 @@ export type TypeSpec = {
     hasMind?: boolean | undefined;
     hasInput?: boolean | undefined;
 };
-export type InputBinder = (consumer: ((input: string) => void) | null) => any;
+export type InputBinder = (consumer: ((dat: InputDatum) => void) | null) => any;
 export type Input = ReturnType<typeof makeInput>;
 export type EntityRef = number;
 export type Entity = {
@@ -300,6 +302,9 @@ export type ROEntity = {
     canInteract: boolean;
 };
 export type EntitySpec = Partial<Omit<Entity, "ref" | "toString">>;
+export type InputDatum = ({
+    key: string;
+});
 export type Event = ({
     type: "hit";
     target: EntityRef;

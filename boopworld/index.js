@@ -106,7 +106,7 @@ export function thunkWait(waitFor, next, reason='wait') { return {ok: true, wait
  * @prop {ThunkMemory} memory
  * @prop {() => number} random
  * @prop {() => IterableIterator<Readonly<Event>>} events
- * @prop {IterableIterator<number>} [input]
+ * @prop {IterableIterator<InputDatum>} [input]
  * @prop {Move|undefined} move
  */
 
@@ -201,23 +201,23 @@ function resultContinues(res) {
 
 /**
  * @callback InputBinder
- * @param {((input: string) => void)|null} consumer
+ * @param {((dat: InputDatum) => void)|null} consumer
  */
 
 /** @typedef {ReturnType<makeInput>} Input */
 
 export function makeInput() {
-    /** @type {((s: string) => void)|null} */
+    /** @type {((dat: InputDatum) => void)|null} */
     let consume = null;
 
     return Object.freeze({
         /** @type {InputBinder} */
         bind(consumer) { consume = consumer },
 
-        /** @param {string} input */
-        provide(input) {
+        /** @param {InputDatum} dat */
+        provide(dat) {
             if (!consume) return false;
-            consume(input);
+            consume(dat);
             return true;
         },
     });
@@ -258,6 +258,11 @@ export function makeInput() {
  */
 
 /** @typedef {Partial<Omit<Entity, "ref" | "toString">>} EntitySpec */
+
+/** @typedef {(
+ *   | {key: string}
+ * )} InputDatum
+ */
 
 /** @typedef {(
  *   | {type: "hit", target: EntityRef}
@@ -429,7 +434,7 @@ export function makeShard({
     const events = new Map();
 
     //// input component init
-    /** @typedef {{has: () => boolean} & IterableIterator<number>} InputStream */
+    /** @typedef {{has: () => boolean} & IterableIterator<InputDatum>} InputStream */
 
     /** @type {Map<number, InputStream>} */
     const inputs = new Map();
@@ -1254,28 +1259,26 @@ export function makeShard({
     function makeInputQueue() {
         let revoked = false;
 
-        /** @type {number[]} */
+        /** @type {InputDatum[]} */
         const buffer = [];
 
-        /** @type {IterableIterator<number>} */
+        /** @type {IterableIterator<InputDatum>} */
         const it = Object.freeze({
             [Symbol.iterator]() { return it },
             next() {
                 const value = buffer.shift();
-                return value == undefined ? {done: true, value} : {value};
+                if (!value) return {done: true, value};
+                return {value};
             },
         });
 
         return {
             revoke() { revoked = true },
 
-            /** @param {string} s */
-            give(s) {
+            /** @param {InputDatum} dat */
+            give(dat) {
                 if (revoked) throw new Error('Cannot provide to revoked input');
-                for (const glyph of s) {
-                    const codePoint = glyph.codePointAt(0);
-                    if (codePoint != undefined) buffer.push(codePoint);
-                }
+                buffer.push(dat);
             },
 
             has() { return buffer.length > 0 },

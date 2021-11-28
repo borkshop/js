@@ -21,7 +21,7 @@ const
   blabel = mustFind('#blabla');
 
 const player = makeInput();
-document.body.addEventListener('keypress', ({key}) => player.provide(key));
+document.body.addEventListener('keypress', ({key}) => player.provide({key}));
 
 const playerMind = behavior.all(
   behavior.updateView,

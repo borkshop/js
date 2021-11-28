@@ -104,8 +104,8 @@ import * as boopworld from './index.js';
 
 /** @typedef {(
  *   | "update"
- *   | {input: string}
- *   | {inputs: MaybeCounted<string>[]}
+ *   | {input: boopworld.InputDatum}
+ *   | {inputs: MaybeCounted<boopworld.InputDatum>[]}
  * )} ctlDo */
 
 /**
@@ -268,7 +268,7 @@ test('boops', t => {
             ["antagonist", "left"],
         ]}},
 
-        {time: 1, do: {input: 's'}},
+        {time: 1, do: {input: {key: 's'}}},
         {time: 2, expect: {
             saw: {
                 protagonist: lines(
@@ -297,7 +297,7 @@ test('boops', t => {
             ["antagonist", "up"],
         ]}},
 
-        {time: 2, do: {input: 'd'}},
+        {time: 2, do: {input: {key: 'd'}}},
         {time: 3, expect: {
             saw: {
                 protagonist: lines(
@@ -322,9 +322,9 @@ test('boops', t => {
         }},
 
         {time: 3, do: {inputs: [
-            [2, 'd'], 's',
-            [2, 'd'], 's',
-            'd',
+            [2, {key: 'd'}], {key: 's'},
+            [2, {key: 'd'}], {key: 's'},
+            {key: 'd'},
         ]}},
 
         {time: 4, expect: {movements: {
@@ -367,7 +367,7 @@ test('boops', t => {
             },
         }},
 
-        {time: 10, do: {input: 'd'}},
+        {time: 10, do: {input: {key: 'd'}}},
 
         {time: 11, expect: {saw: {
             protagonist: lines(
@@ -404,8 +404,8 @@ test('boops', t => {
         }}},
 
         {time: 11, do: {inputs: [
-            [8, 'd'],
-            [6, 's'],
+            [8, {key: 'd'}],
+            [6, {key: 's'}],
         ]}},
         {time: 12, expect: {movements: {
             protagonist: [
