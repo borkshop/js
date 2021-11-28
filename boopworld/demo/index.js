@@ -1,5 +1,6 @@
 import {frameDeltas} from 'domkit/anim';
 import {mustFind} from 'domkit/wiring';
+import {KeyChorder, KeyChordEvent} from 'domkit/input';
 
 import * as boopworld from 'boopworld';
 
@@ -21,7 +22,20 @@ const
   blabel = mustFind('#blabla');
 
 const player = makeInput();
-document.body.addEventListener('keypress', ({key}) => player.provide({key}));
+const keyChord = new KeyChorder();
+document.addEventListener('keydown', keyChord);
+document.addEventListener('keyup', keyChord);
+keyChord.addEventListener('keychord', ev => {
+  if (!(ev instanceof KeyChordEvent)) return;
+  const keys = ev.keys.filter(k => k != 'Shift');
+  if (keys.length == 1) {
+    const [key] = keys;
+    const shifted = ev.keys.includes('Shift');
+    if      (!shifted)       player.provide({key});
+    else if (key.length > 1) player.provide({key: `Shift-${key}`});
+    else                     player.provide({key: `Shift-${key.toLowerCase()}`});
+  }
+});
 
 const playerMind = behavior.all(
   behavior.updateView,
