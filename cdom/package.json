@@ -1,0 +1,26 @@
+{
+  "name": "cdom",
+  "version": "0.1.0",
+  "description": "Cascading DOMgeon Framework",
+  "author": "Joshua T Corbin <jcorbin@wunjo.org>",
+  "license": "BSD-3-Clause",
+  "main": "index.js",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/borkshop/js.git",
+    "directory": "cdom"
+  },
+  "private": true,
+  "scripts": {
+    "lint": "tsc",
+    "ci": "npm run lint",
+    "prodts": "rm -fv *.d.ts && tsc --project tsconfig.production.json"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "typescript": "^4.0.3"
+  }
+}
+

@@ -683,7 +683,7 @@ export class DOMgeon extends EventTarget {
     };
 
     this.onKey.byID['playPause'] = ({type}) => {
-      if (type === 'keyup') dmg.playing = !dmg.playing;
+      if (type === 'keyup') this.playing = !this.playing;
     };
 
     if (playing === false) {
