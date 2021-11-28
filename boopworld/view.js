@@ -20,6 +20,7 @@
  * @prop {() => IterableIterator<[Point, ViewportDatum<Datum>]>} entries
  * @prop {(withVirtual?: boolean) => IterableIterator<string>} lines
  * @prop {() => string} toString
+ * @prop {() => any} toJSON
  */
 
 /**
@@ -220,6 +221,7 @@ export function makeViewMemory() {
         *entries() { yield* view.entries() },
         *lines(withVirtual) { yield* view.lines(withVirtual) },
         toString() { return view.toString() },
+        toJSON() { return view.toJSON() },
     };
 
     return Object.freeze({
@@ -343,6 +345,10 @@ export function makeViewport(deps) {
             bounds() { return Object.freeze({x, y, w, h}) },
             lines,
             toString() { return Array.from(lines()).join('') },
+            toJSON() { return {
+                bounds: {x, y, w, h},
+                lines: Array.from(lines(false)),
+            } },
             contains(pos) { return !isNaN(loc(pos)) },
             *entries() {
                 const x2 = x + w, y2 = y + h;

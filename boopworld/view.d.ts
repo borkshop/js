@@ -18,6 +18,7 @@
  * @prop {() => IterableIterator<[Point, ViewportDatum<Datum>]>} entries
  * @prop {(withVirtual?: boolean) => IterableIterator<string>} lines
  * @prop {() => string} toString
+ * @prop {() => any} toJSON
  */
 /**
  * @template {{[name: string]: unknown}} Datum
@@ -65,6 +66,7 @@ export function makeViewMemory(): Readonly<{
     }>]>;
     lines: (withVirtual?: boolean | undefined) => IterableIterator<string>;
     toString: () => string;
+    toJSON: () => any;
 }>;
 /**
  * @template {{[name: string]: unknown}} Datum
@@ -102,6 +104,7 @@ export type ViewportRead<Datum extends {
     entries: () => IterableIterator<[Point, ViewportDatum<Datum>]>;
     lines: (withVirtual?: boolean | undefined) => IterableIterator<string>;
     toString: () => string;
+    toJSON: () => any;
 };
 export type ViewportDatum<Datum extends {
     [name: string]: unknown;
