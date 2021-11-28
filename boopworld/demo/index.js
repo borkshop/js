@@ -238,7 +238,7 @@ async function main() {
 
   const frameTimeout = 10;
   while (await nextFrame()) {
-    shard.update(Date.now() + frameTimeout);
+    shard.update(performance.now() + frameTimeout);
 
     const view = document.getElementById('view');
     if (!view) return;

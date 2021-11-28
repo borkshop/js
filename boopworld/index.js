@@ -301,7 +301,7 @@ export function makeShard({
     build,
     control,
     moveRate=1,
-    now=Date.now,
+    now=() => performance.now(),
     defaultTimeout=100,
     size=64,
     seed=0,
