@@ -10,55 +10,60 @@
     <pre id="spinner">Loading...</pre>
     <pre id="view"></pre>
 
-    <details id="blabla" open><summary>Boopworld is...</summary>
+    <div id="blabla">
 
+      <details open><summary>Boopworld is...</summary>
+        <p>
+        Originally an experiment to explore a cooperative thunk system to
+        implement simple behavioral AI...
+        </p>
 
-      <p>
-      Originally an experiment to explore a cooperative thunk system to
-      implement simple behavioral AI...
-      </p>
+        <p>
+        But to exercise such an AI system, we need a world to set it within...
+        </p>
 
-      <p>
-      But to exercise such an AI system, we need a world to set it within...
-      </p>
+        <p>
+        And I'd been wanting to build a world where AI only sees as much a state
+        as the human does...
+        </p>
+      </details>
 
-      <p>
-      And I'd been wanting to build a world where AI only sees as much a state
-      as the human does...
-      </p>
-
-      <p>The road so far:</p>
-      <ul>
-
-        <li>this demo is currently little more than a redeployed copy of the
-          offline test suite</li>
-
-        <li>currently the only two thunk behaviors developed are the player
-          proxy and a random wanderer...</li>
-
-        <li>...read that again: an interesting property that fell out of this
-          approach is that "the player is just another minded entity, whose
-          mind thinks about key input events, and processes view data into an
-          output element"; this means that transference of play control should
-          be as simple as rebinding input and swapping behavior</li>
-
-        <li>a component-entity system that has a degree of ocap-inspired
-          hardening so that no entity has access to all/raw data</li>
-        <li>in fact each entity never even knows its own id, let alone can it
-          truly identify other entities; instead it only observes the world
-          through incoming event data, including view-field sensing</li>
-
-        <li>side modules generated:</li>
+      <details><summary>The road so far:</summary>
         <ul>
-          <li>a shadow-casting and spatial index package reprised out of <tt>cdom</tt></li>
-          <li>a bigint port of xorshiro256+ to provide each entity with an independent RNG</li>
-          <li>this demo itself has a cute spinner/text-bouncer that could be
-            liberated... maybe you already noticed?</li>
+
+          <li>this demo is currently little more than a redeployed copy of the
+            offline test suite</li>
+
+          <li>currently the only two thunk behaviors developed are the player
+            proxy and a random wanderer...</li>
+
+          <li>...read that again: an interesting property that fell out of this
+            approach is that "the player is just another minded entity, whose
+            mind thinks about key input events, and processes view data into an
+            output element"; this means that transference of play control should
+            be as simple as rebinding input and swapping behavior</li>
+
+          <li>a component-entity system that has a degree of ocap-inspired
+            hardening so that no entity has access to all/raw data</li>
+          <li>in fact each entity never even knows its own id, let alone can it
+            truly identify other entities; instead it only observes the world
+            through incoming event data, including view-field sensing</li>
+
+          <li>side modules generated:
+            <ul>
+              <li>a more spartan <tt>domkit</tt> of general browser quality of
+                life factored out of <tt>cdom</tt></li>
+              <li>a shadow-casting and spatial index package reprised out of <tt>cdom</tt></li>
+              <li>a bigint port of xorshiro256+ to provide each entity with an independent RNG</li>
+              <li>this demo itself has a cute spinner/text-bouncer that could be
+                liberated... maybe you already noticed?</li>
+            </ul>
+          </li>
+
         </ul>
+      </details>
 
-      </ul>
-
-    </detail>
+    </div>
 
     <script type="module" src="./index.js"></script>
   </body>

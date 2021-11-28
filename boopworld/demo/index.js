@@ -1,4 +1,5 @@
 import {frameDeltas} from 'domkit/anim';
+import {mustFind} from 'domkit/wiring';
 
 import * as boopworld from 'boopworld';
 
@@ -14,6 +15,11 @@ const {
   },
 } = boopworld;
 
+const
+  viewel = mustFind('#view'),
+  spinel = mustFind('#spinner'),
+  blabel = mustFind('#blabla');
+
 const player = makeInput();
 document.body.addEventListener('keypress', ({key}) => player.provide(key));
 
@@ -23,8 +29,7 @@ const playerMind = behavior.all(
   // TODO would be nice to have this integrated into that standard view
   // updating thunk, or some such...
   ({time, memory: {view}}) => {
-    const viewTo = document.getElementById('view');
-    if (viewTo) viewTo.innerText = view.toString();
+    viewel.innerText = view.toString();
     return thunkWait({time: time+1});
   },
 
@@ -149,15 +154,7 @@ function appendLogEntries(time, ...ents) {
 function startRecording() {
   if (log) return;
 
-  const spinel = document.getElementById('spinner');
-  if (!spinel) {
-    console.error('unable to start recording, no spinner element found for control');
-    return;
-  }
-
-  const bla = document.getElementById('blabla');
-  if (bla) bla.removeAttribute('open');
-
+  blabel.querySelectorAll('details').forEach(el => { el.open = false });
   spinel.classList.add('record');
   spinel.addEventListener('click', stopRecording);
 
@@ -169,11 +166,8 @@ function startRecording() {
 function stopRecording() {
   if (!log) return;
 
-  const spinel = document.getElementById('spinner');
-  if (spinel) {
-    spinel.removeEventListener('click', stopRecording);
-    spinel.classList.remove('record');
-  }
+  spinel.removeEventListener('click', stopRecording);
+  spinel.classList.remove('record');
 
   const logged = new File(Array.from(starmap(
     ({time, json}) => [`{"time":${time},`, json.slice(1, -1), '}\n'],
@@ -241,12 +235,7 @@ async function main() {
   const frameTimeout = 10;
   for await (const _dt of frameDeltas()) {
     shard.update(performance.now() + frameTimeout);
-
-    const view = document.getElementById('view');
-    if (!view) return;
-
-    const spinel = document.getElementById('spinner');
-    if (spinel) spinel.innerText = spin.next().value;
+    spinel.innerText = spin.next().value;
   }
 }
 
