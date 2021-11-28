@@ -294,6 +294,7 @@ function untitledNameGen(choose) {
  * @param {number} [options.size]
  * @param {number|bigint|string} [options.seed]
  * @param {(choose: (s: string) => boolean, ent: ROEntity) => void} [options.chooseName]
+ * @param {TypeSpec} [options.updateWaitsFor]
  * @returns {Shard}
  */
 export function makeShard({
@@ -305,6 +306,7 @@ export function makeShard({
     size=64,
     seed=0,
     chooseName=untitledNameGen,
+    updateWaitsFor={hasInput: true},
 }) {
 
     //// random number generator generator
@@ -554,6 +556,23 @@ export function makeShard({
         },
     });
 
+    /** @param {TypeSpec} spec */
+    function typeSpecFilter(spec) {
+        const {
+            isSolid = false,
+            isVisible = false,
+            canInteract = false,
+            hasMind = false,
+            hasInput = false,
+        } = spec;
+        return 0
+            | (isSolid ? typeSolid : 0)
+            | (isVisible ? typeVisible : 0)
+            | (canInteract ? typeInteract : 0)
+            | (hasMind ? typeMind : 0)
+            | (hasInput ? typeInput : 0);
+    }
+
     /** @returns {ShardCtl} */
     function makeCtl() {
         return freeze(guard({
@@ -562,20 +581,7 @@ export function makeShard({
             get root() { return fullEntity(0) },
 
             *entities(spec={}) {
-                const {
-                    isSolid = false,
-                    isVisible = false,
-                    canInteract = false,
-                    hasMind = false,
-                    hasInput = false,
-                } = spec;
-                const typeFilter = 0
-                    | (isSolid ? typeSolid : 0)
-                    | (isVisible ? typeVisible : 0)
-                    | (canInteract ? typeInteract : 0)
-                    | (hasMind ? typeMind : 0)
-                    | (hasInput ? typeInput : 0);
-                for (const id of ids(typeFilter))
+                for (const id of ids(typeSpecFilter(spec)))
                     yield fullEntity(id);
             },
 
@@ -745,9 +751,8 @@ export function makeShard({
         for (const tick of execTick.values())
             if (tick < 1) return false;
 
-        // wait for all input-able entities to choose a move
-        // TODO wait for all minds? some minds more than just the player?
-        for (const id of ids(typeInput))
+        // wait for all specified entities to choose a move
+        for (const id of ids(typeSpecFilter(updateWaitsFor)))
             if (!moves.has(id)) return false;
 
         return true;

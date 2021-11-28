@@ -122,9 +122,10 @@ export function makeInput(): Readonly<{
  * @param {number} [options.size]
  * @param {number|bigint|string} [options.seed]
  * @param {(choose: (s: string) => boolean, ent: ROEntity) => void} [options.chooseName]
+ * @param {TypeSpec} [options.updateWaitsFor]
  * @returns {Shard}
  */
-export function makeShard({ build, control, moveRate, now, defaultTimeout, size, seed, chooseName, }: {
+export function makeShard({ build, control, moveRate, now, defaultTimeout, size, seed, chooseName, updateWaitsFor, }: {
     build: Builder;
     control?: ((ctl: ShardCtl) => void) | undefined;
     moveRate?: number | undefined;
@@ -133,6 +134,7 @@ export function makeShard({ build, control, moveRate, now, defaultTimeout, size,
     size?: number | undefined;
     seed?: string | number | bigint | undefined;
     chooseName?: ((choose: (s: string) => boolean, ent: ROEntity) => void) | undefined;
+    updateWaitsFor?: TypeSpec | undefined;
 }): Shard;
 /**
  * deep object freeze that avoids the Readonly<{set foo()}> trap, and avoids
