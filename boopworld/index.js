@@ -270,6 +270,7 @@ export function makeInput() {
  *   | {type: "move", from: Point, to: Point, here: EntityRef[]}
  *   | {type: "inspect", here: EntityRef[]}
  *   | {type: "view", view: ViewportRead<{ref?: EntityRef}>}
+ *   | {type: "input", input: InputDatum}
  * )} Event
  */
 
@@ -1245,7 +1246,7 @@ export function makeShard({
                     const oldRevoke = inputRevokes.get(id);
                     if (oldBind) oldBind(null);
                     if (oldRevoke) oldRevoke();
-                    const {revoke, give, ...input} = makeInputQueue();
+                    const {revoke, give, ...input} = makeInputQueue(id);
                     inputs.set(id, Object.freeze(input));
                     inputRevokes.set(id, revoke);
                     inputBinds.set(id, bind);
@@ -1256,7 +1257,8 @@ export function makeShard({
         });
     }
 
-    function makeInputQueue() {
+    /** @param {number} id */
+    function makeInputQueue(id) {
         let revoked = false;
 
         /** @type {InputDatum[]} */
@@ -1268,6 +1270,7 @@ export function makeShard({
             next() {
                 const value = buffer.shift();
                 if (!value) return {done: true, value};
+                queueEvent(id, {type: 'input', input: value});
                 return {value};
             },
         });

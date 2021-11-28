@@ -324,6 +324,9 @@ export type Event = ({
     view: ViewportRead<{
         ref?: EntityRef;
     }>;
+} | {
+    type: "input";
+    input: InputDatum;
 });
 export type EventType = Event["type"];
 export type Builder = (ctl: ShardCtl) => any;
