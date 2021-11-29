@@ -36,7 +36,10 @@
 last=${1:-main}
 shift
 
+# NOTE: use of 'nohop ... >foo' is necessary to squash any test output pagers
+# (e.g. as used by ava) from trying to be "helpful".
+
 exec git rebase \
-  --exec "yarn test" \
+  --exec "nohup yarn ci >ci.out" \
   --exec "git branch -f '$last'" \
   "$last" "$@"
