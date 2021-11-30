@@ -23,7 +23,8 @@
     "mine",
     "morty-mc-fov",
     "scan",
-    "xorbig"
+    "xorbig",
+    "zop"
   ],
   "dependencies": {}
 }
