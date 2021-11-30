@@ -18,8 +18,7 @@ const {
 
 const
   viewel = mustFind('#view'),
-  spinel = mustFind('#spinner'),
-  blabel = mustFind('#blabla');
+  spinel = mustFind('#spinner');
 
 const player = makeInput();
 const keyChord = new KeyChorder();
@@ -141,103 +140,109 @@ function build(ctl) {
   lexicon.destroy();
 }
 
-/** @typedef {{[name: string]: boopworld.ViewportRead<any>}} logViews */
-/** @typedef {{[name: string]: boopworld.Event[]}} logEvents */
+import * as zop from 'zop';
 
 /**
- * @typedef {(
- *   | {events: logEvents}
- *   | {views: logViews}
- * )} logEntry
- * // TODO entry to capture view state
+ * @param {string} mark
+ * @returns {Promise<void>}
  */
-
-/** @type {null|{time: number, json: string}[]} */
-let log = null;
-
-/**
- * @param {number} time
- * @param {logEntry[]} ents
- */
-function appendLogEntries(time, ...ents) {
-  if (log)
-    for (const ent of ents)
-      log.push({time, json: JSON.stringify(ent)});
-}
-
-function startRecording() {
-  if (log) return;
-
-  blabel.querySelectorAll('details').forEach(el => { el.open = false });
-  spinel.classList.add('record');
-  spinel.addEventListener('click', stopRecording);
-
-  log = [
-    // TODO capture starting state in an initial entry; requires shard serialization
-  ];
-}
-
-function stopRecording() {
-  if (!log) return;
-
-  spinel.removeEventListener('click', stopRecording);
-  spinel.classList.remove('record');
-
-  const logged = new File(Array.from(starmap(
-    ({time, json}) => [`{"time":${time},`, json.slice(1, -1), '}\n'],
-    log,
-  )), 'shard_log.ndjson', {
-    type: 'application/x-ndjson',
+function spinMark(mark) {
+  return new Promise(resolve => {
+    spinel.classList.add(mark);
+    spinel.addEventListener('click', done);
+    function done() {
+      spinel.removeEventListener('click', done);
+      spinel.classList.remove(mark);
+      resolve();
+    }
   });
-  log = null;
-
-  window.location.href = URL.createObjectURL(logged);
 }
 
-/** @param {boopworld.ShardCtl} ctl */
-function collectLogEntries(ctl) {
-  if (!log) return;
+/** @type {null|ReturnType<zop.makeLogger>} */
+let logger = null;
 
-  const {time} = ctl;
-  const lastTime = log[log.length-1]?.time;
-  if (lastTime >= time) return;
+/** @type {null|(() => void)} */
+let flushLogs = null;
 
-  /** @type {logEvents} */
-  const events = {};
-  for (const [ent, ev] of ctl.events()) {
-    const {name} = ent;
-    if (!name) continue;
-    const evs = name in events ? events[name] : events[name] = [];
-    evs.push(ev);
+async function recordLog({toConsole=false}) {
+  logger = null, flushLogs = null;
+
+  let {flush, sink} = zop.makeBuffer();
+  flushLogs = () => {
+    const blob = new Blob(flush(), {type: 'application/x-ndjson'});
+    return blob;
+  };
+
+  if (toConsole)
+    sink = zop.teeSink(sink, zop.intoLog(console.log));
+
+  logger = zop.makeLogger(sink);
+  // TODO capture starting state in an initial entry; requires shard serialization
+
+  await spinMark('record');
+  if (flushLogs) {
+    window.location.href = URL.createObjectURL(flushLogs());
+    // TODO if we capture init state when starting, and if we ever make this
+    // non-terminal, re-record current state checkpoint here after flush to
+    // start off a new recording session
+    logger = null, flushLogs = null;
   }
+}
 
-  /** @type {logViews} */
-  const views = {};
-  for (const ent of ctl.entities({hasMind: true})) {
-    const {name} = ent;
-    if (!name) continue;
-    const mind = ent.mindState;
+/** @type {Set<string>} */
+const loggingNames = new Set();
+
+/**
+ * @param {boopworld.ShardCtl} ctl
+ * @param {zop.Logger} logger
+ */
+function logThemAll(ctl, logger) {
+  for (const name of loggingNames) {
+    const ent = ctl.byName(name);
+    if (!ent) continue;
+    const {mindState: mind} = ent;
     if (!mind) continue;
-    views[name] = mind.ctx.memory.view;
+    const {ctx: {events, memory: {view}}} = mind;
+    const theirLog = logger.with({name});
+    for (const event of events())
+      theirLog.log({event});
+    theirLog.log({view});
   }
-
-  appendLogEntries(time, {events}, {views});
 }
+
+let lastCtlLogTime = NaN;
 
 async function main() {
   const hash = new Map(hashEntries());
-  if (hash.has('record')) startRecording();
+
+  if (hash.has('record')) {
+    loggingNames.add(hash.get('record') || 'player');
+    recordLog({toConsole: hash.has('log')});
+  } else if (hash.has('log')) {
+    loggingNames.add(hash.get('log') || 'player');
+    logger = zop.makeLogger(zop.intoLog(console.log));
+  }
 
   const shard = makeShard({
     seed: 0xdeadbeef,
     build,
 
-    control: log ? collectLogEntries : undefined,
-    // TODO other control things like:
-    // - live edit / hacking
-    // - dump reaps
-    // - introspect mind state
+    control(ctl) {
+      if (logger) {
+        const {time} = ctl;
+        if (!(time <= lastCtlLogTime)) {
+          const logNow = logger.with({time});
+          logThemAll(ctl, logNow);
+          lastCtlLogTime = time;
+        }
+      }
 
+      // TODO other control things like:
+      // - live edit / hacking
+      // - dump reaps
+      // - introspect mind state
+
+    },
   });
 
   const spin = spinner(
@@ -269,17 +274,6 @@ function *hashTokens() {
   if (!hash.startsWith('#')) return;
   for (const match of hash.slice(1).matchAll(/[;&]?([^;&]*)/g))
     if (match[1].length) yield unescape(match[1]);
-}
-
-/**
- * @template T, V
- * @param {(t: T) => Iterable<V>} f
- * @param {Iterable<T>} items
- * @returns {Generator<V>}
- */
-function *starmap(f, items) {
-  for (const item of items)
-    yield* f(item);
 }
 
 /** @param {string[]} parts */
