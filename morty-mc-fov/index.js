@@ -116,7 +116,7 @@ export function makeMortonMap(init) {
  * @returns {MortonMap<ID>}
  */
 function makeBasicMortonMap() {
-  // foreward map from spatial keys to sets of IDs; used for point queries
+  // forward map from spatial keys to sets of IDs; used for point queries
   /** @type {Map<bigint, Set<ID>>} */
   const fore = new Map();
 
@@ -172,16 +172,16 @@ function makeBasicMortonMap() {
       const got = fore.get(mortonKey(p));
       if (got) yield* got;
     },
-    *within({x: x1, y: y1, w, h}) {
+    *within({ x: x1, y: y1, w, h }) {
       const x2 = x1 + w, y2 = y1 + h;
       // TODO precompute key prefix matcher, rather than needing to always
       // convert back to points inside the loop
       for (const [key, ids] of fore.entries()) {
-        const {x, y} = mortonPoint(key);
+        const { x, y } = mortonPoint(key);
         if (x < x1 || x > x2) continue;
         if (y < y1 || y > y2) continue;
         // TODO force iteration of ids, don't expose set
-        yield [{x, y}, iter(ids)];
+        yield [{ x, y }, iter(ids)];
       }
     },
 
@@ -189,12 +189,12 @@ function makeBasicMortonMap() {
 }
 
 /** @template T @param {Iterable<T>} it */
-function *iter(it) { yield* it }
+function* iter(it) { yield* it }
 
 // TODO a linear index that can do better on range queries
 
 /** @param {{x: number, y: number}} p */
-export function mortonKey({x, y}) {
+export function mortonKey({ x, y }) {
   const bx = BigInt(Math.floor(x));
   const by = BigInt(Math.floor(y));
   return mortonSpread1(bx) | mortonSpread1(by) << 1n;
@@ -204,7 +204,7 @@ export function mortonKey({x, y}) {
 export function mortonPoint(key) {
   const bx = mortonCompact1(key);
   const by = mortonCompact1(key >> 1n);
-  return {x: Number(bx), y: Number(by)};
+  return { x: Number(bx), y: Number(by) };
 }
 
 /** @param {bigint} x */
@@ -213,22 +213,22 @@ function mortonSpread1(x) {
   if (x < min || x > max)
     throw RangeError('Number not within acceptable 32-bit range');
   x = BigInt.asUintN(32, x);
-  x =  x               & 0x0000_0000_FFFF_FFFFn; // mask lower 32-bit syllable (double word)
+  x = x & 0x0000_0000_FFFF_FFFFn; // mask lower 32-bit syllable (double word)
   x = (x | (x << 16n)) & 0x0000_FFFF_0000_FFFFn; // spread 16-bit syllables (words)
-  x = (x | (x <<  8n)) & 0x00FF_00FF_00FF_00FFn; // spread 8-bit syllables (bytes)
-  x = (x | (x <<  4n)) & 0x0F0F_0F0F_0F0F_0F0Fn; // spread 4-bit syllables (nibbles)
-  x = (x | (x <<  2n)) & 0x3333_3333_3333_3333n; // spread 2-bit syllables
-  x = (x | (x <<  1n)) & 0x5555_5555_5555_5555n; // spread bits, even parity
+  x = (x | (x << 8n)) & 0x00FF_00FF_00FF_00FFn; // spread 8-bit syllables (bytes)
+  x = (x | (x << 4n)) & 0x0F0F_0F0F_0F0F_0F0Fn; // spread 4-bit syllables (nibbles)
+  x = (x | (x << 2n)) & 0x3333_3333_3333_3333n; // spread 2-bit syllables
+  x = (x | (x << 1n)) & 0x5555_5555_5555_5555n; // spread bits, even parity
   return x;
 }
 
 /** @param {bigint} x */
 function mortonCompact1(x) {
-  x =  x               & 0x5555_5555_5555_5555n; // mask even parity bits
-  x = (x | (x >>  1n)) & 0x3333_3333_3333_3333n; // compact bits
-  x = (x | (x >>  2n)) & 0x0F0F_0F0F_0F0F_0F0Fn; // compact 2-bit syllables
-  x = (x | (x >>  4n)) & 0x00FF_00FF_00FF_00FFn; // compact 4-bit syllables (nibbles)
-  x = (x | (x >>  8n)) & 0x0000_FFFF_0000_FFFFn; // compact 8-bit syllables (bytes)
+  x = x & 0x5555_5555_5555_5555n; // mask even parity bits
+  x = (x | (x >> 1n)) & 0x3333_3333_3333_3333n; // compact bits
+  x = (x | (x >> 2n)) & 0x0F0F_0F0F_0F0F_0F0Fn; // compact 2-bit syllables
+  x = (x | (x >> 4n)) & 0x00FF_00FF_00FF_00FFn; // compact 4-bit syllables (nibbles)
+  x = (x | (x >> 8n)) & 0x0000_FFFF_0000_FFFFn; // compact 8-bit syllables (bytes)
   x = (x | (x >> 16n)) & 0x0000_0000_FFFF_FFFFn; // compact 16-bit syllables (words)
   x = BigInt.asUintN(32, x);
   return x;
@@ -274,8 +274,8 @@ function mortonCompact1(x) {
  */
 export function* shadowField(origin, {
   query,
-  maxDepth=100,
-  bounds={x: 0, y: 0, w: 0xffffffff, h: 0xffffffff},
+  maxDepth = 100,
+  bounds = { x: 0, y: 0, w: 0xffffffff, h: 0xffffffff },
 }) {
   // TODO support casting from walls:
   // > So here are the modifications for casting field of view from a wall tile:
@@ -294,8 +294,8 @@ export function* shadowField(origin, {
     const res = vorigin && visit(vorigin) && query(origin, 0);
     if (!res) return;
 
-    const {blocked, at} = res;
-    yield {pos: origin, at};
+    const { blocked, at } = res;
+    yield { pos: origin, at };
     if (blocked) return;
   }
 
@@ -304,16 +304,16 @@ export function* shadowField(origin, {
   for (const quadrant of quadrantsAround(origin)) {
     // iterate row (sub-)arcs within each quadrant
     const rows = makeStack(
-      {depth: 1, startSlope: -1, endSlope: 1},
+      { depth: 1, startSlope: -1, endSlope: 1 },
     );
-    for (const {depth, startSlope, endSlope} of rows) {
+    for (const { depth, startSlope, endSlope } of rows) {
       // scan columns within each row (sub-)arc
 
       /** @type {null|boolean} */
       let wasBlocked = null;                               // tri-value "was last row-cell blocked?"
       let restartSlope = startSlope;                       // next row.startSlope
       const minCol = Math.floor(depth * startSlope + 0.5); // round ties up
-      const maxCol = Math.ceil(depth * endSlope    - 0.5); // round ties down
+      const maxCol = Math.ceil(depth * endSlope - 0.5); // round ties down
 
       for (let col = minCol; col <= maxCol; col++) {
         const pos = quadrant(depth, col);
@@ -322,31 +322,31 @@ export function* shadowField(origin, {
         const res = vpos && query(pos, depth);
         if (!res) continue;
 
-        const {blocked, at} = res;
+        const { blocked, at } = res;
 
         if (blocked) {
 
           // visit terminal cell if supported
           if (visit(vpos))
-            yield {pos, at};
+            yield { pos, at };
 
           // continue to scan sub-arc in next row
           if (wasBlocked === false && depth < maxDepth) rows.enqueue({
             depth: depth + 1,
             startSlope: restartSlope,
-            endSlope: (2*col - 1) / (2*depth), // tileSlope
+            endSlope: (2 * col - 1) / (2 * depth), // tileSlope
           });
 
         } else {
 
-            // TODO this symmetric check seems awfully redundant... either I
-            // messed something up in translation, or just don't understand the
-            // edge case semantics yet...
-            if (isSymmetric(col, depth, restartSlope, endSlope) && visit(vpos))
-              yield {pos, at};
+          // TODO this symmetric check seems awfully redundant... either I
+          // messed something up in translation, or just don't understand the
+          // edge case semantics yet...
+          if (isSymmetric(col, depth, restartSlope, endSlope) && visit(vpos))
+            yield { pos, at };
 
           // sub-arc starts here in the next row
-          if (wasBlocked) restartSlope = (2*col - 1) / (2*depth); // tileSlope
+          if (wasBlocked) restartSlope = (2 * col - 1) / (2 * depth); // tileSlope
 
         }
 
@@ -382,12 +382,12 @@ export function* shadowField(origin, {
   }
 
   /** @param {Point} pos */
-  function xlate({x, y}) {
-    const {x: x1, y: y1, w, h} = bounds;
+  function xlate({ x, y }) {
+    const { x: x1, y: y1, w, h } = bounds;
     x -= x1, y -= y1;
     if (x < 0 || x > w) return null;
     if (y < 0 || y > h) return null;
-    return {x, y};
+    return { x, y };
   }
 }
 
@@ -395,11 +395,11 @@ export function* shadowField(origin, {
  * @param {Point} origin
  * @returns {Generator<(row: number, col:number) => Point>}
  */
-function *quadrantsAround({x, y}) {
-  yield (row, col) => ({x: x + col, y: y - row}) // north quadrant
-  yield (row, col) => ({x: x + col, y: y + row}) // east  quadrant
-  yield (row, col) => ({x: x + row, y: y + col}) // south quadrant
-  yield (row, col) => ({x: x - row, y: y + col}) // west  quadrant
+function* quadrantsAround({ x, y }) {
+  yield (row, col) => ({ x: x + col, y: y - row }) // north quadrant
+  yield (row, col) => ({ x: x + col, y: y + row }) // east  quadrant
+  yield (row, col) => ({ x: x + row, y: y + col }) // south quadrant
+  yield (row, col) => ({ x: x - row, y: y + col }) // west  quadrant
 }
 
 /** @template T
@@ -413,7 +413,7 @@ function makeStack(...init) {
     [Symbol.iterator]() { return it },
     next() {
       const value = stack.pop();
-      return value !== undefined ? {value} : {done: true, value};
+      return value !== undefined ? { value } : { done: true, value };
     }
   });
   return Object.freeze({

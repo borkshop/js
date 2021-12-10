@@ -1,50 +1,52 @@
 import test from 'ava';
 
-import {mortonKey, mortonPoint} from './index.js';
+import { mortonKey, mortonPoint } from './index.js';
 
 [
-  {x: 0, y: 0, k: 0x0000_0000_0000_0000n},
-  {x: 1, y: 0, k: 0x0000_0000_0000_0001n},
-  {x: 0, y: 1, k: 0x0000_0000_0000_0002n},
-  {x: 1, y: 1, k: 0x0000_0000_0000_0003n},
-  {x: 2, y: 0, k: 0x0000_0000_0000_0004n},
-  {x: 0, y: 2, k: 0x0000_0000_0000_0008n},
-  {x: 2, y: 2, k: 0x0000_0000_0000_000cn},
-  {x: 0xffff_ffff, y: 0, k: 0x5555_5555_5555_5555n},
-  {x: 0, y: 0xffff_ffff, k: 0xaaaa_aaaa_aaaa_aaaan},
-  {x: 0xffff_ffff, y: 0xffff_ffff, k: 0xffff_ffff_ffff_ffffn},
-].forEach(({x, y, k}) => test(test.macro({
+  { x: 0, y: 0, k: 0x0000_0000_0000_0000n },
+  { x: 1, y: 0, k: 0x0000_0000_0000_0001n },
+  { x: 0, y: 1, k: 0x0000_0000_0000_0002n },
+  { x: 1, y: 1, k: 0x0000_0000_0000_0003n },
+  { x: 2, y: 0, k: 0x0000_0000_0000_0004n },
+  { x: 0, y: 2, k: 0x0000_0000_0000_0008n },
+  { x: 2, y: 2, k: 0x0000_0000_0000_000cn },
+  { x: 0xffff_ffff, y: 0, k: 0x5555_5555_5555_5555n },
+  { x: 0, y: 0xffff_ffff, k: 0xaaaa_aaaa_aaaa_aaaan },
+  { x: 0xffff_ffff, y: 0xffff_ffff, k: 0xffff_ffff_ffff_ffffn },
+].forEach(({ x, y, k }) => test(test.macro({
   /** @param {number} x @param {number} y @param {bigint} key */
   exec(t, x, y, key) {
-    t.is(mortonKey({x, y}), key, 'there');
-    t.deepEqual(mortonPoint(key), {x, y}, 'back again');
+    t.is(mortonKey({ x, y }), key, 'there');
+    t.deepEqual(mortonPoint(key), { x, y }, 'back again');
   },
-  title(providedTitle='', x, y) {
+  title(providedTitle = '', x, y) {
     return `${providedTitle} mortonKey(${x},${y})`;
   }
 }), x, y, k));
 
 [
-  {x: -1, y:  0},
-  {x:  0, y: -1},
-  {x: -1, y: -1},
-  {x: -2, y:  0},
-  {x:  0, y: -2},
-  {x: -2, y: -2},
-  {x: 0x1_ffff_ffff, y: 0},
-  {x: 0, y: 0x1_ffff_ffff},
-].forEach(({x, y}) => test(test.macro({
+  { x: -1, y: 0 },
+  { x: 0, y: -1 },
+  { x: -1, y: -1 },
+  { x: -2, y: 0 },
+  { x: 0, y: -2 },
+  { x: -2, y: -2 },
+  { x: 0x1_ffff_ffff, y: 0 },
+  { x: 0, y: 0x1_ffff_ffff },
+].forEach(({ x, y }) => test(test.macro({
   /** @param {number} x @param {number} y */
-  exec(t, x, y) { t.throws(
-    () => mortonKey({x, y}),
-    {message: 'Number not within acceptable 32-bit range'},
-  ) },
-  title(providedTitle='', x, y) {
+  exec(t, x, y) {
+    t.throws(
+      () => mortonKey({ x, y }),
+      { message: 'Number not within acceptable 32-bit range' },
+    );
+  },
+  title(providedTitle = '', x, y) {
     return `${providedTitle} !mortonKey(${x},${y})`;
   }
 }), x, y));
 
-import {makeMortonMap} from './index.js';
+import { makeMortonMap } from './index.js';
 
 /** @typedef {import('./index.js').Point} Point */
 /** @typedef {import('./index.js').Rect} Rect */
@@ -61,16 +63,16 @@ test('morton map', t => {
   const world = makeTestWorld();
   t.is(world.spatial.size, 0, 'should start out empty');
 
-  world.create('alice', {x: 2, y: 1, glyph: 0x41});
-  world.create('bob', {x: 8, y: 1, glyph: 0x42});
-  world.create('candice', {x: 8, y: 5, glyph: 0x43});
-  world.create('doug', {x: 2, y: 5, glyph: 0x44});
+  world.create('alice', { x: 2, y: 1, glyph: 0x41 });
+  world.create('bob', { x: 8, y: 1, glyph: 0x42 });
+  world.create('candice', { x: 8, y: 5, glyph: 0x43 });
+  world.create('doug', { x: 2, y: 5, glyph: 0x44 });
 
   // god exists to be unseen (outside of render viewport bounds) to increase
   // test branch coverage
-  world.create('god', {x: 42, y: 42, glyph: 0x47});
+  world.create('god', { x: 42, y: 42, glyph: 0x47 });
 
-  const view = makeViewport({x: 0, y: 0, w: 10, h: 7});
+  const view = makeViewport({ x: 0, y: 0, w: 10, h: 7 });
   const render = () => {
     view.clear();
     for (const [p, ids] of world.spatial.within(view.bounds))
@@ -89,11 +91,11 @@ test('morton map', t => {
   // load and inspect
   t.is(world.spatial.size, world.scene.size, 'should have scene things');
   for (const id of world.scene.keys())
-      t.true(world.spatial.has(id), `has ${id}`);
+    t.true(world.spatial.has(id), `has ${id}`);
 
   t.deepEqual(
-      Object.fromEntries(world.spatial.entries()),
-      Object.fromEntries(world.scene), 'get initial scene back');
+    Object.fromEntries(world.spatial.entries()),
+    Object.fromEntries(world.scene), 'get initial scene back');
   t.is(render(), [
     '           ',
     '  A     B  ',
@@ -105,15 +107,15 @@ test('morton map', t => {
   ].join('\n'), 'initial scene');
 
   // bob challenges
-  t.deepEqual(world.spatial.get('bob'), {x: 8, y: 1});
+  t.deepEqual(world.spatial.get('bob'), { x: 8, y: 1 });
   t.deepEqual(
-    [...world.spatial.at({x: 5, y: 3})],
+    [...world.spatial.at({ x: 5, y: 3 })],
     [],
     'nothing in mid');
-  world.move('bob', {x: 5, y: 3})
-  t.deepEqual(world.spatial.get('bob'), {x: 5, y: 3});
+  world.move('bob', { x: 5, y: 3 })
+  t.deepEqual(world.spatial.get('bob'), { x: 5, y: 3 });
   t.deepEqual(
-    [...world.spatial.at({x: 5, y: 3})],
+    [...world.spatial.at({ x: 5, y: 3 })],
     ['bob'],
     'bob in mid');
   t.is(render(), [
@@ -127,10 +129,10 @@ test('morton map', t => {
   ].join('\n'), 'bob move');
 
   // unseen god move for more coverage
-  world.move('god', {x: 5});
+  world.move('god', { x: 5 });
 
   // doug accepts
-  world.move('doug', {x: 4, y: 3})
+  world.move('doug', { x: 4, y: 3 })
   t.is(render(), [
     '           ',
     '  A        ',
@@ -142,12 +144,12 @@ test('morton map', t => {
   ].join('\n'), 'doug move');
 
   // unseen god move for more coverage
-  world.move('god', {x: 42, y: 3});
+  world.move('god', { x: 42, y: 3 });
 
   // doug wins
-  world.move('doug', {x: 5, y: 3})
+  world.move('doug', { x: 5, y: 3 })
   t.deepEqual(
-    [...world.spatial.at({x: 5, y: 3})],
+    [...world.spatial.at({ x: 5, y: 3 })],
     ['bob', 'doug'],
     'bob and doug collide in mid');
 
@@ -155,7 +157,7 @@ test('morton map', t => {
   // resolve the conflict, this is an expected unrenderable state
   t.throws(
     () => render(),
-    {message: 'glyph collision @5,3 U+0042 <=> U+0044'},
+    { message: 'glyph collision @5,3 U+0042 <=> U+0044' },
     'collision cannot be rendered');
 
   world.delete('bob');
@@ -172,7 +174,7 @@ test('morton map', t => {
 
   // kill god for yet more branch coverage
   t.is(world.spatial.size, 4, 'with god');
-  t.deepEqual(world.spatial.get('god'), {x: 42, y: 3});
+  t.deepEqual(world.spatial.get('god'), { x: 42, y: 3 });
   world.delete('god');
   t.is(world.spatial.size, 3, 'sans god');
   t.is(world.spatial.get('god'), undefined);
@@ -185,7 +187,7 @@ test('morton map', t => {
     t.false(world.spatial.has(id), `has ${id}`);
 });
 
-import {shadowField} from './index.js';
+import { shadowField } from './index.js';
 
 test('shadowField', t => {
   /**
@@ -196,12 +198,12 @@ test('shadowField', t => {
 
   /** @type {Map<string, EntDef>} */
   const lexicon = new Map([
-    ['#', {kind: 'wall', solid: true}],
-    ['·', {kind: 'floor', solid: false}],
-    ['+', {kind: 'door', solid: true}],
-    ['-', {kind: 'door', solid: false}],
-    ['@', {kind: 'player', solid: true}],
-    ['X', {kind: 'npc', solid: true}],
+    ['#', { kind: 'wall', solid: true }],
+    ['·', { kind: 'floor', solid: false }],
+    ['+', { kind: 'door', solid: true }],
+    ['-', { kind: 'door', solid: false }],
+    ['@', { kind: 'player', solid: true }],
+    ['X', { kind: 'npc', solid: true }],
   ]);
 
   const world = makeTestWorld({
@@ -211,7 +213,7 @@ test('shadowField', t => {
     h: 0xffff,
   });
 
-  build({x: -10, y: -3}, [
+  build({ x: -10, y: -3 }, [
     '##########',
     '#········#     #####',
     '#········#######X··#',
@@ -223,10 +225,10 @@ test('shadowField', t => {
 
   t.deepEqual(
     world.scene.get('player1'),
-    {x: -7, y: 0},
+    { x: -7, y: 0 },
     'player start');
 
-  const view = makeViewport({x: -10, y: -3, w: 20, h: 7});
+  const view = makeViewport({ x: -10, y: -3, w: 20, h: 7 });
 
   /**
    * @param {Point} p
@@ -235,29 +237,29 @@ test('shadowField', t => {
    */
   function shadeWorldGlyphs(p, _depth, pov) {
     const ids = [...world.spatial.at(p)];
-    const show = ids.length > 0 ? ids[ids.length-1] : undefined;
+    const show = ids.length > 0 ? ids[ids.length - 1] : undefined;
     const at = show ? world.glyphs.get(show) || 0xfffd : 0x20;
     const defs = ids
       .map(id => world.glyphs.get(id))
       .map(glyph => glyph ? lexicon.get(String.fromCodePoint(glyph)) : undefined);
     const blocked = defs.some((def, i) => def?.solid && ids[i] != pov);
-    return {blocked, at};
+    return { blocked, at };
   }
 
   /**
    * @param {string|Point} pov
    * @param {(p: Point, depth: number, pov: string|Point) => number|{blocked?: boolean, at: number}} shader
    */
-  const render = (pov, shader=shadeWorldGlyphs) => {
+  const render = (pov, shader = shadeWorldGlyphs) => {
     view.clear();
     const origin = typeof pov == 'string' ? world.scene.get(pov) : pov;
-    if (origin) for (const {pos, at} of shadowField(origin, {
+    if (origin) for (const { pos, at } of shadowField(origin, {
       bounds: world.bounds,
       query(p, depth) {
         if (!view.has(p)) return null;
         const res = shader(p, depth, pov);
-        const {blocked=false, at} = typeof res == 'number' ? {at: res} : res;
-        return {blocked, at};
+        const { blocked = false, at } = typeof res == 'number' ? { at: res } : res;
+        return { blocked, at };
       },
     })) view.set(pos, at);
     return view.toString();
@@ -303,7 +305,7 @@ test('shadowField', t => {
     '                     ',
   ].join('\n'), '#npc4 view');
 
-  t.is(render({x: -4, y: -3}), [
+  t.is(render({ x: -4, y: -3 }), [
     '      #              ',
     '                     ',
     '                     ',
@@ -314,19 +316,31 @@ test('shadowField', t => {
   ].join('\n'), 'stuck in a wall view (origin blocked)');
 
   for (
-    const {p, desc} of [
-      { p: 'god',
-        desc: 'godview (no neighbor support)'},
-      { p: {x: 43, y: 43 /* god-off-by-one */},
-        desc: 'view from outside (origin not supported)'},
-      { p: {x: 0x8000, y: 0},
-        desc: `view out of bounds (+x)`},
-      { p: {x: -0x8000, y: 0},
-        desc: `view out of bounds (-x)`},
-      { p: {x: 0, y: 0x8000},
-        desc: `view out of bounds (+y)`},
-      { p: {x: 0, y: -0x8000},
-        desc: `view out of bounds (-y)`},
+    const { p, desc } of [
+      {
+        p: 'god',
+        desc: 'godview (no neighbor support)',
+      },
+      {
+        p: { x: 43, y: 43 /* god-off-by-one */ },
+        desc: 'view from outside (origin not supported)',
+      },
+      {
+        p: { x: 0x8000, y: 0 },
+        desc: `view out of bounds (+x)`,
+      },
+      {
+        p: { x: -0x8000, y: 0 },
+        desc: `view out of bounds (-x)`,
+      },
+      {
+        p: { x: 0, y: 0x8000 },
+        desc: `view out of bounds (+y)`,
+      },
+      {
+        p: { x: 0, y: -0x8000 },
+        desc: `view out of bounds (-y)`,
+      },
     ]
   ) t.is(render(p), [
     '                     ',
@@ -342,7 +356,7 @@ test('shadowField', t => {
    * @param {Point} at
    * @param {string} content
    */
-  function build({x, y}, content) {
+  function build({ x, y }, content) {
     /** @type {Map<string, number>} */
     const kindCounts = new Map();
 
@@ -363,7 +377,7 @@ test('shadowField', t => {
         if (!def) throw new Error(`undefined content unit ${JSON.stringify(unit)}`);
         const id = nextID(def.kind);
         const glyph = unit.codePointAt(0) || 0xfffd;
-        world.create(id, {glyph, x, y});
+        world.create(id, { glyph, x, y });
         x++;
         continue;
 
@@ -385,7 +399,7 @@ test('shadowField', t => {
 
 /** @param {Rect} bounds */
 function makeTestWorld(
-  bounds={x: 0, y: 0, w: 0xffffffff, h: 0xffffffff},
+  bounds = { x: 0, y: 0, w: 0xffffffff, h: 0xffffffff },
 ) {
   /** @type {Map<string, Point>} */
   const scene = new Map();
@@ -413,9 +427,9 @@ function makeTestWorld(
         if (p == undefined) {
           sm.delete(id);
         } else {
-          let {x, y} = p;
+          let { x, y } = p;
           x -= bounds.x, y -= bounds.y;
-          sm.set(id, {x, y});
+          sm.set(id, { x, y });
         }
       }
       mmInvalid.clear();
@@ -434,25 +448,25 @@ function makeTestWorld(
       get(id) {
         const p = spatial.get(id);
         if (!p) return undefined;
-        let {x, y} = p;
+        let { x, y } = p;
         x += bounds.x, y += bounds.y;
-        return {x, y};
+        return { x, y };
       },
       *entries() {
-        for (let [id, {x, y}] of spatial.entries()) {
+        for (let [id, { x, y }] of spatial.entries()) {
           x -= bounds.x, y -= bounds.y;
-          yield [id, {x, y}];
+          yield [id, { x, y }];
         }
       },
-      *at({x, y}) {
+      *at({ x, y }) {
         x -= bounds.x, y -= bounds.y;
-        yield* spatial.at({x, y});
+        yield* spatial.at({ x, y });
       },
-      *within({x, y, w, h}) {
+      *within({ x, y, w, h }) {
         x -= bounds.x, y -= bounds.y;
-        for (let [{x: px, y: py}, it] of spatial.within({x, y, w, h})) {
+        for (let [{ x: px, y: py }, it] of spatial.within({ x, y, w, h })) {
           px += bounds.x, py += bounds.y;
-          yield [{x: px, y: py}, it];
+          yield [{ x: px, y: py }, it];
         }
       },
     },
@@ -464,8 +478,8 @@ function makeTestWorld(
      * @param {number} spec.x
      * @param {number} spec.y
      */
-    create(id, {glyph, x, y}) {
-      scene.set(id, {x, y});
+    create(id, { glyph, x, y }) {
+      scene.set(id, { x, y });
       glyphs.set(id, glyph);
       mmInvalid.add(id);
     },
@@ -487,9 +501,9 @@ function makeTestWorld(
      * @param {Partial<Point>} to
      */
     move(id, to) {
-      const {x: px=0, y: py=0} = scene.get(id) || {};
-      const {x=px, y=py} = to;
-      scene.set(id, {x, y});
+      const { x: px = 0, y: py = 0 } = scene.get(id) || {};
+      const { x = px, y = py } = to;
+      scene.set(id, { x, y });
       mmInvalid.add(id);
     },
 
@@ -499,19 +513,19 @@ function makeTestWorld(
 /// TODO utilities to move into an import able module
 
 /** @param {Rect} r */
-function makeViewport({x: atx, y: aty, w, h}) {
+function makeViewport({ x: atx, y: aty, w, h }) {
   let stride = w + 2;
   let codes = new Uint32Array(h * stride - 1);
   clear();
 
   function clear() {
     codes.fill(0x20);
-    for (let i = stride-1; i < codes.length; i += stride)
+    for (let i = stride - 1; i < codes.length; i += stride)
       codes[i] = 0x0a;
   }
 
   /** @param {Point} p */
-  function loc({x, y}) {
+  function loc({ x, y }) {
     x -= atx, y -= aty;
     if (x < 0 || x > w) return NaN;
     if (y < 0 || y > h) return NaN;
@@ -519,10 +533,10 @@ function makeViewport({x: atx, y: aty, w, h}) {
   }
 
   return Object.freeze({
-    get bounds() { return {x: atx, y: aty, w, h} },
+    get bounds() { return { x: atx, y: aty, w, h } },
     set bounds(r) {
       const oldSize = w * h;
-      ({x: atx, y: aty, w, h} = r);
+      ({ x: atx, y: aty, w, h } = r);
       const newSize = w * h;
       if (newSize != oldSize) {
         stride = w + 2;
@@ -560,5 +574,5 @@ function makeViewport({x: atx, y: aty, w, h}) {
 
 /** @param {number} code */
 function ucode(code) {
-    return `U+${code.toString(16).padStart(4, '0')}`;
+  return `U+${code.toString(16).padStart(4, '0')}`;
 }
