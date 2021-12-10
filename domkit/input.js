@@ -15,7 +15,7 @@
  */
 export class KeyChorder extends EventTarget {
   constructor(
-      allowedModifiers=['Shift'],
+    allowedModifiers = ['Shift'],
   ) {
     super();
     for (const key of allowedModifiers)
@@ -35,7 +35,7 @@ export class KeyChorder extends EventTarget {
    * @returns {boolean}
    */
   filter(event) {
-    const {key, view} = event;
+    const { key, view } = event;
     if (!view?.document) return false;
     if (this.hasIgnoredModifier(event)) {
       if (this.held.has(key)) return true;
@@ -75,7 +75,7 @@ export class KeyChorder extends EventTarget {
   handleEvent(event) {
     if (!(event instanceof KeyboardEvent)) return;
     if (!this.filter(event)) return;
-    const {type, key} = event;
+    const { type, key } = event;
     switch (type) {
 
       case 'keyup':

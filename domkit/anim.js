@@ -6,7 +6,7 @@ export function nextFrame() {
 
 /** @returns {AsyncGenerator<number>} - a stream of elapsed time deltas between
   * animation frames, starting with 0 on the first frame */
-export async function *frameDeltas() {
+export async function* frameDeltas() {
   for (
     let t1 = await nextFrame(), t2 = t1;
     /* 🐙 🦑 👾 */;
