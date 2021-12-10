@@ -19,11 +19,11 @@
  */
 export function makeLogger(sink) {
   /** @param {Iterable<string>} [withParts] */
-  function makeWith(withParts=[]) {
+  function makeWith(withParts = []) {
     const base = [...withParts];
 
     /** @param {Iterable<[name: string, value: any]>} fields */
-    function *addFields(fields) {
+    function* addFields(fields) {
       const parts = iter(entryParts(fields));
       if (base.length) {
         yield* base;
@@ -58,7 +58,7 @@ export function makeLogger(sink) {
 
 /** @typedef {(parts: Iterable<string>) => void} ZopSink */
 
-/** Creats a ZopSink that passes data into one or more sinks.
+/** Creates a ZopSink that passes data into one or more sinks.
  *
  * @param {ZopSink[]} sinks
  * @returns {ZopSink}
@@ -75,7 +75,7 @@ export function teeSink(...sinks) {
 }
 
 /** @type {ZopSink} */
-export const discardSink = () => {};
+export const discardSink = () => { };
 
 /**
  * @param {(...data: any[]) => void} log
@@ -92,7 +92,7 @@ export function intoLog(log) {
   * @param {(parts: Iterable<string>) => Iterable<string>} framer
  * @returns {{sink: ZopSink, flush: () => string[]}}
  */
-  export function makeBuffer(framer=ndjsonFramer) {
+export function makeBuffer(framer = ndjsonFramer) {
   /** @type {string[]} */
   let buffer = [];
   return {
@@ -109,7 +109,7 @@ export function intoLog(log) {
 }
 
 /** @param {Iterable<string>} parts */
-function *ndjsonFramer(parts) {
+function* ndjsonFramer(parts) {
   yield '{'
   yield* parts;
   yield '}\n';
@@ -129,7 +129,7 @@ function *ndjsonFramer(parts) {
  * @param {any[]} args
  * @returns {Generator<[name: string, value: any]>}
  */
-function *logFields(...args) {
+function* logFields(...args) {
   // any objects in data's header become direct fields
   let i = 0;
   for (; i < args.length; i++) {
@@ -148,7 +148,7 @@ function *logFields(...args) {
 }
 
 /** @param {Iterable<[name: string, value: any]>} fields */
-function *entryParts(fields) {
+function* entryParts(fields) {
   let i = 0;
   for (const field of fields) {
     if (i++ > 0) yield ',';

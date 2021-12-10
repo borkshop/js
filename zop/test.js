@@ -3,7 +3,7 @@ import test from 'ava';
 import * as zop from './index.js';
 
 test('buffered', t => {
-  const {sink, flush} = zop.makeBuffer();
+  const { sink, flush } = zop.makeBuffer();
   const logger = zop.makeLogger(sink);
 
   t.deepEqual(
@@ -13,7 +13,7 @@ test('buffered', t => {
 
   logger.log('hello');
   logger.log('hello', 'world');
-  logger.log({some: 99}, {more: {things: 'are possible'}}, 'hello', 'world');
+  logger.log({ some: 99 }, { more: { things: 'are possible' } }, 'hello', 'world');
 
   t.deepEqual(flush().join(''), [
     `{"message":"hello"}\n`,
@@ -22,12 +22,12 @@ test('buffered', t => {
   ].join(''), 'expected a few root logs');
 
   let tlog = logger.with([['time', 42]]);
-  tlog.log({place: 'a new'}, 'a new time', 3, 1, 4);
-  tlog.log({place: 'an other'}, 'same time', 6, 2, 8);
+  tlog.log({ place: 'a new' }, 'a new time', 3, 1, 4);
+  tlog.log({ place: 'an other' }, 'same time', 6, 2, 8);
 
-  let clog = tlog.with({context: 'for you'});
+  let clog = tlog.with({ context: 'for you' });
   clog.log('bla bla');
-  clog.log({such: 'things'}, 'bla bla', 'much');
+  clog.log({ such: 'things' }, 'bla bla', 'much');
 
   t.deepEqual(flush().join(''), [
     `{"time":42,"place":"a new","message":"a new time","extra":[3,1,4]}\n`,
@@ -37,8 +37,8 @@ test('buffered', t => {
   ].join(''), 'expected flush after T42');
 
   tlog = logger.with([['time', 43]]);
-  clog = tlog.with({context: 'for you'});
-  clog.log({such: 'things'}, 'bla bla', 'much...');
+  clog = tlog.with({ context: 'for you' });
+  clog.log({ such: 'things' }, 'bla bla', 'much...');
 
   t.deepEqual(flush().join(''), [
     `{"time":43,"context":"for you","such":"things","message":"bla bla","extra":["much..."]}\n`,
@@ -51,8 +51,8 @@ test('teeSink', t => {
   const voidLogger = zop.makeLogger(zop.teeSink());
   voidLogger.log('😱');
 
-  const {sink: aSink, flush: aFlush} = zop.makeBuffer();
-  const {sink: bSink, flush: bFlush} = zop.makeBuffer();
+  const { sink: aSink, flush: aFlush } = zop.makeBuffer();
+  const { sink: bSink, flush: bFlush } = zop.makeBuffer();
 
   /** @type {any[][]} */
   const logEntries = [];
@@ -80,7 +80,7 @@ test('teeSink', t => {
 
   logSink('not valid json');
   t.deepEqual(logEntries, [
-    [{message: 'four'}],
+    [{ message: 'four' }],
     [new SyntaxError('Unexpected token n in JSON at position 1')],
   ], 'expected log logs');
 
