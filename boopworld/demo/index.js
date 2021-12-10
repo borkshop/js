@@ -1,6 +1,6 @@
-import {frameDeltas} from 'domkit/anim';
-import {mustFind} from 'domkit/wiring';
-import {KeyChorder, KeyChordEvent} from 'domkit/input';
+import { frameDeltas } from 'domkit/anim';
+import { mustFind } from 'domkit/wiring';
+import { KeyChorder, KeyChordEvent } from 'domkit/input';
 
 import * as boopworld from 'boopworld';
 
@@ -30,9 +30,9 @@ keyChord.addEventListener('keychord', ev => {
   if (keys.length == 1) {
     const [key] = keys;
     const shifted = ev.keys.includes('Shift');
-    if      (!shifted)       player.provide({key});
-    else if (key.length > 1) player.provide({key: `Shift-${key}`});
-    else                     player.provide({key: `Shift-${key.toLowerCase()}`});
+    if (!shifted) player.provide({ key });
+    else if (key.length > 1) player.provide({ key: `Shift-${key}` });
+    else player.provide({ key: `Shift-${key.toLowerCase()}` });
   }
 });
 
@@ -41,9 +41,9 @@ const playerMind = behavior.all(
 
   // TODO would be nice to have this integrated into that standard view
   // updating thunk, or some such...
-  ({time, memory: {view}}) => {
+  ({ time, memory: { view } }) => {
     viewel.innerText = view.toString();
-    return thunkWait({time: time+1});
+    return thunkWait({ time: time + 1 });
   },
 
   behavior.inputParser(/* NOTE: may pass a custom mapper here, default is WASD */),
@@ -51,7 +51,7 @@ const playerMind = behavior.all(
 
 /** @param {boopworld.ShardCtl} ctl */
 function build(ctl) {
-  const {root} = ctl;
+  const { root } = ctl;
 
   const lexicon = makeLexicon();
 
@@ -69,7 +69,7 @@ function build(ctl) {
   }), '·');
 
   /** @type {boopworld.Interaction} */
-  function doorBoop({subject}) {
+  function doorBoop({ subject }) {
     const closed = subject.isSolid;
     subject.isSolid = !closed;
     subject.glyph = closed ? '-' : '+';
@@ -83,7 +83,7 @@ function build(ctl) {
     interact: doorBoop,
   });
   lexicon.define(door, '·');
-  lexicon.define(door.create({glyph: '-', isSolid: false}), '·');
+  lexicon.define(door.create({ glyph: '-', isSolid: false }), '·');
 
   const char = root.create({
     glyph: 'X',
@@ -94,7 +94,7 @@ function build(ctl) {
   lexicon.define(char, '·');
 
   // build world from string literal
-  fromString(lexicon.create, {x: 0, y: 0}, [
+  fromString(lexicon.create, { x: 0, y: 0 }, [
 
     //   '0123456789abcdef0123456789
     /*0*/'########',
@@ -117,13 +117,13 @@ function build(ctl) {
 
   // modify a couple walls to be hidden doors
   for (const p of [
-    {x: 7, y: 6},
-    {x: 13, y: 10},
+    { x: 7, y: 6 },
+    { x: 13, y: 10 },
   ]) for (const ent of ctl.at(p))
-    if (ent.glyph == '#') ent.interact = doorBoop;
+      if (ent.glyph == '#') ent.interact = doorBoop;
 
   char.create({
-    location: {x: 1, y: 1},
+    location: { x: 1, y: 1 },
     name: "player",
     glyph: '@',
     input: player.bind,
@@ -131,7 +131,7 @@ function build(ctl) {
   });
 
   char.create({
-    location: {x: 22, y: 13},
+    location: { x: 22, y: 13 },
     name: "antagonist",
     glyph: 'D',
     mind: behavior.wander,
@@ -164,12 +164,12 @@ let logger = null;
 /** @type {null|(() => void)} */
 let flushLogs = null;
 
-async function recordLog({toConsole=false}) {
+async function recordLog({ toConsole = false }) {
   logger = null, flushLogs = null;
 
-  let {flush, sink} = zop.makeBuffer();
+  let { flush, sink } = zop.makeBuffer();
   flushLogs = () => {
-    const blob = new Blob(flush(), {type: 'application/x-ndjson'});
+    const blob = new Blob(flush(), { type: 'application/x-ndjson' });
     return blob;
   };
 
@@ -200,13 +200,13 @@ function logThemAll(ctl, logger) {
   for (const name of loggingNames) {
     const ent = ctl.byName(name);
     if (!ent) continue;
-    const {mindState: mind} = ent;
+    const { mindState: mind } = ent;
     if (!mind) continue;
-    const {ctx: {events, memory: {view}}} = mind;
-    const theirLog = logger.with({name});
+    const { ctx: { events, memory: { view } } } = mind;
+    const theirLog = logger.with({ name });
     for (const event of events())
-      theirLog.log({event});
-    theirLog.log({view});
+      theirLog.log({ event });
+    theirLog.log({ view });
   }
 }
 
@@ -217,7 +217,7 @@ async function main() {
 
   if (hash.has('record')) {
     loggingNames.add(hash.get('record') || 'player');
-    recordLog({toConsole: hash.has('log')});
+    recordLog({ toConsole: hash.has('log') });
   } else if (hash.has('log')) {
     loggingNames.add(hash.get('log') || 'player');
     logger = zop.makeLogger(zop.intoLog(console.log));
@@ -229,9 +229,9 @@ async function main() {
 
     control(ctl) {
       if (logger) {
-        const {time} = ctl;
+        const { time } = ctl;
         if (!(time <= lastCtlLogTime)) {
-          const logNow = logger.with({time});
+          const logNow = logger.with({ time });
           logThemAll(ctl, logNow);
           lastCtlLogTime = time;
         }
@@ -246,7 +246,7 @@ async function main() {
   });
 
   const spin = spinner(
-    ...bounce(['⟢', '⟡', '⟣'], 7, {rate: 4}),
+    ...bounce(['⟢', '⟡', '⟣'], 7, { rate: 4 }),
     // ...bounce(['⬖', '⬗', '⬘', '⬙'], 7, {rate: 3}),
     // ...bounce(['⠂', '⠈', '⠂', '⠠', '⠠'], 7, {rate: 3}),
   );
@@ -261,7 +261,7 @@ async function main() {
 main();
 
 /** @returns {Generator<[string, string]>} */
-function *hashEntries() {
+function* hashEntries() {
   for (const token of hashTokens()) {
     const match = /^([^=]+)=(.*)$/.exec(unescape(token));
     const [key, val] = match || [token, ''];
@@ -269,8 +269,8 @@ function *hashEntries() {
   }
 }
 
-function *hashTokens() {
-  const {location: {hash}} = window;
+function* hashTokens() {
+  const { location: { hash } } = window;
   if (!hash.startsWith('#')) return;
   for (const match of hash.slice(1).matchAll(/[;&]?([^;&]*)/g))
     if (match[1].length) yield unescape(match[1]);
@@ -284,7 +284,7 @@ function spinner(...parts) {
     next() {
       i = (i + 1) % parts.length;
       const value = parts[i];
-      return {value};
+      return { value };
     },
     [Symbol.iterator]() { return self },
   });
@@ -298,14 +298,14 @@ function spinner(...parts) {
  * @param {string} [params.pad]
  * @param {number} [params.rate]
  */
-function *bounce(bit, width, {
-  pad=' ',
-  rate=1,
-}={}) {
+function* bounce(bit, width, {
+  pad = ' ',
+  rate = 1,
+} = {}) {
   if (typeof bit == 'string') bit = forever(bit);
   let it = bit[Symbol.iterator]();
   function nextBit() {
-    for (let sanity = 2; sanity-->0;) {
+    for (let sanity = 2; sanity-- > 0;) {
       const res = it.next();
       if (!res.done) return res.value;
       it = bit[Symbol.iterator]();
@@ -313,12 +313,12 @@ function *bounce(bit, width, {
     return '';
   }
   for (let loc = 0; loc < width; loc++)
-    for (let i=0; i<rate; i++)
-      yield `${pad.repeat(loc)}${nextBit()}${pad.repeat(width-loc)}`
-  for (let loc = width-1; loc >= 0; loc--)
-    for (let i=0; i<rate; i++)
-      yield `${pad.repeat(loc)}${nextBit()}${pad.repeat(width-loc)}`
+    for (let i = 0; i < rate; i++)
+      yield `${pad.repeat(loc)}${nextBit()}${pad.repeat(width - loc)}`
+  for (let loc = width - 1; loc >= 0; loc--)
+    for (let i = 0; i < rate; i++)
+      yield `${pad.repeat(loc)}${nextBit()}${pad.repeat(width - loc)}`
 }
 
 /** @template T @param {T} value @returns {Generator<T>} */
-function *forever(value) { for (;;) yield value }
+function* forever(value) { for (; ;) yield value }
