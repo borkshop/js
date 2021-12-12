@@ -723,7 +723,7 @@ test('boops', t => {
       // TODO retain a live entity, test that it cannot be used after build
     },
 
-    control(ctl) {
+    trace(ctl) {
       testSteps.advance(ctl.time, ctl.tick);
 
       // TODO tron/troff rather than expected-or-log

@@ -116,7 +116,8 @@ export function makeInput(): Readonly<{
 /**
  * @param {object} options
  * @param {Builder} options.build
- * @param {(ctl: ShardCtl) => void} [options.control]
+ * @param {(ctl: ShardCtl) => void} [options.update]
+ * @param {(ctl: ShardCtl) => void} [options.trace]
  * @param {number} [options.moveRate]
  * @param {() => number} [options.now]
  * @param {number} [options.defaultTimeout]
@@ -126,9 +127,10 @@ export function makeInput(): Readonly<{
  * @param {TypeSpec} [options.updateWaitsFor]
  * @returns {Shard}
  */
-export function makeShard({ build, control, moveRate, now, defaultTimeout, size, seed, chooseName, updateWaitsFor, }: {
+export function makeShard({ build, update, trace, moveRate, now, defaultTimeout, size, seed, chooseName, updateWaitsFor, }: {
     build: Builder;
-    control?: ((ctl: ShardCtl) => void) | undefined;
+    update?: ((ctl: ShardCtl) => void) | undefined;
+    trace?: ((ctl: ShardCtl) => void) | undefined;
     moveRate?: number | undefined;
     now?: (() => number) | undefined;
     defaultTimeout?: number | undefined;

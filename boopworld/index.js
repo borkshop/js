@@ -295,7 +295,8 @@ function untitledNameGen(choose) {
 /**
  * @param {object} options
  * @param {Builder} options.build
- * @param {(ctl: ShardCtl) => void} [options.control]
+ * @param {(ctl: ShardCtl) => void} [options.update]
+ * @param {(ctl: ShardCtl) => void} [options.trace]
  * @param {number} [options.moveRate]
  * @param {() => number} [options.now]
  * @param {number} [options.defaultTimeout]
@@ -307,7 +308,8 @@ function untitledNameGen(choose) {
  */
 export function makeShard({
   build,
-  control,
+  update,
+  trace,
   moveRate = 1,
   now = () => performance.now(),
   defaultTimeout = 100,
@@ -431,6 +433,7 @@ export function makeShard({
   const moves = new Map();
   let nextMove = 1;
   let nextSense = 1;
+  let lastUpdate = 0;
   typeIndex.set(typeSolid, new Set()); // TODO replace this with a location index
 
   //// events component init
@@ -549,7 +552,6 @@ export function makeShard({
         turnRefs.clear();
         for (const refs of execRefs.values())
           refs.clear();
-
       }
 
       if (
@@ -568,15 +570,14 @@ export function makeShard({
         nextSense = nextMove;
       }
 
-      // call user control between moves
-      if (control) {
-        // will happen at the start of each new turn
-        // and after each round of interstitial thought
-
-        // NOTE: deadline oblivious, always call user control
-        if (nextMove > time) control(makeCtl());
+      if (lastUpdate < time) {
+        lastUpdate = time;
+        if (update || trace) {
+          const ctl = makeCtl();
+          if (update) update(ctl);
+          if (trace) trace(ctl);
+        }
       }
-
     },
   });
 
@@ -683,6 +684,7 @@ export function makeShard({
     wakeMinds();
     while (stepMinds(deadline)) {
       tick++;
+      if (trace) trace(makeCtl());
       if (ready()) return true;
     }
     return ready();

@@ -227,7 +227,7 @@ async function main() {
     seed: 0xdeadbeef,
     build,
 
-    control(ctl) {
+    trace(ctl) {
       if (logger) {
         const { time } = ctl;
         if (!(time <= lastCtlLogTime)) {
