@@ -109,6 +109,7 @@ export function thunkWait(waitFor, next, reason = 'wait') { return { ok: true, w
  * @prop {() => IterableIterator<Readonly<Event>>} events
  * @prop {IterableIterator<InputDatum>} [input]
  * @prop {Move|undefined} move
+ * @prop {(...args: any[]) => void} [log]
  */
 
 /**
