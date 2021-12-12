@@ -529,7 +529,7 @@ export function makeShard({
       // run minds between and to generate moves
       if (nextMove > time && nextSense > time) {
         const isReady = runMinds(deadline);
-        if (time <= 0 || isReady) {
+        if (isReady) {
           // start next time slice (immediately at time=0 and once ready after that)
           time++;
           events.clear();   // clear mind event sources
@@ -755,6 +755,9 @@ export function makeShard({
   }
 
   function ready() {
+    // vacuously ready in pre-history
+    if (time <= 0) return true;
+
     // wait for all runnable minds to have executed at least one tick
     for (const tick of execTick.values())
       if (tick < 1) return false;
