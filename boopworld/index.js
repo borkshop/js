@@ -526,8 +526,11 @@ export function makeShard({
 
   return freeze({
     update(deadline = now() + defaultTimeout) {
-      // run minds between and to generate moves
-      if (nextMove > time && nextSense > time) {
+      if (
+        nextMove > time && // after movement has been processed
+        nextSense > time   // after sensory input has been processed
+      ) {
+        // run minds until ready for next turn
         const isReady = runMinds(deadline);
         if (isReady) {
           // start next time slice (immediately at time=0 and once ready after that)
@@ -541,13 +544,19 @@ export function makeShard({
         }
       }
 
-      // process moves when it's time
-      if (time >= nextMove && processMoves(deadline)) {
+      if (
+        time >= nextMove &&    // once time has advanced far enough
+        processMoves(deadline) // process moves
+      ) {
         nextMove = time + moveRate;
         moves.clear();
       }
 
-      if (nextMove > time && time >= nextSense && processSenses(deadline)) {
+      if (
+        nextMove > time &&      // after movement has been processed
+        time >= nextSense &&    // and if we haven't done so yet this turn
+        processSenses(deadline) // process sensory input
+      ) {
         nextSense = nextMove;
       }
 
@@ -559,6 +568,7 @@ export function makeShard({
         // NOTE: deadline oblivious, always call user control
         if (nextMove > time) control(makeCtl());
       }
+
     },
   });
 
