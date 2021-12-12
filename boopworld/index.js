@@ -527,21 +527,21 @@ export function makeShard({
   return freeze({
     update(deadline = now() + defaultTimeout) {
       if (
-        nextMove > time && // after movement has been processed
-        nextSense > time   // after sensory input has been processed
+        nextMove > time &&  // after movement has been processed
+        nextSense > time && // after sensory input has been processed
+        runMinds(deadline)  // run minds until ready for next turn
       ) {
-        // run minds until ready for next turn
-        const isReady = runMinds(deadline);
-        if (isReady) {
-          // start next time slice (immediately at time=0 and once ready after that)
-          time++;
-          events.clear();   // clear mind event sources
-          execTick.clear(); // reset ticking minds, all may now have another turn
-          // revoke all issued EntityRefs
-          turnRefs.clear();
-          for (const refs of execRefs.values())
-            refs.clear();
-        }
+
+        // start next time slice
+        time++;
+        events.clear(); // clear mind event sources
+        execTick.clear(); // reset ticking minds, all may now have another turn
+
+        // revoke all issued EntityRefs
+        turnRefs.clear();
+        for (const refs of execRefs.values())
+          refs.clear();
+
       }
 
       if (
