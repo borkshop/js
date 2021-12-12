@@ -159,6 +159,7 @@ function resultContinues(res) {
  * @prop {ThunkCtx} ctx
  * @prop {ThunkWaitFor|undefined} waitFor
  * @prop {number|undefined} tick
+ * @prop {number|undefined} woke
  */
 
 /**
@@ -488,6 +489,9 @@ export function makeShard({
   /** @type {Map<number, number>} */
   const execTick = new Map();
 
+  /** @type {Map<number, number>} */
+  const execWoke = new Map();
+
   /** @type {Map<number, ThunkWaitFor>} */
   const execWait = new Map();
 
@@ -499,6 +503,7 @@ export function makeShard({
     memories.delete(id);
     execCtx.delete(id);
     execTick.delete(id);
+    execWoke.delete(id);
     execWait.delete(id);
   });
 
@@ -519,6 +524,7 @@ export function makeShard({
    * @prop {string} [reason]
    * @prop {number} time
    * @prop {number} tick
+   * @prop {number} woke
    * @prop {Thunk} thunk
    * @prop {ThunkWaitFor} [waitFor]
    * @prop {Event[]} events
@@ -720,6 +726,7 @@ export function makeShard({
    * @param {string} [params.reason]
    * @param {Thunk} [params.thunk]
    * @param {number} [params.tick]
+   * @param {number} [params.woke]
    * @param {ThunkCtx} [params.ctx]
    * @param {Map<string, string>} [params.memory]
    */
@@ -727,6 +734,7 @@ export function makeShard({
     done, ok, reason,
     thunk = execThunk.get(id),
     tick = execTick.get(id) || 0,
+    woke = execWoke.get(id) || 0,
     ctx = execCtx.get(id),
     memory = memories.get(id),
   }) {
@@ -742,6 +750,7 @@ export function makeShard({
       // thunk state
       thunk,
       tick,
+      woke,
       waitFor: execWait.get(id),
 
       // ctx state
@@ -783,8 +792,10 @@ export function makeShard({
     if (time <= 0) return true;
 
     // wait for all runnable minds to have executed at least one tick
-    for (const tick of execTick.values())
-      if (tick < 1) return false;
+    for (const [id, t] of execTick) {
+      const woke = execWoke.get(id);
+      if (woke != undefined && t < woke) return false;
+    }
 
     // wait for all specified entities to choose a move
     for (const id of ids(updateWaitsForType))
@@ -1255,6 +1266,7 @@ export function makeShard({
           execRevoke.delete(id);
           execCtx.delete(id);
           execTick.delete(id);
+          execWoke.delete(id);
           execWait.set(id, time < 1 ? { time: 1 } : { time });
           execThunk.set(id, mind);
           assignName(id, scope)
@@ -1268,6 +1280,7 @@ export function makeShard({
           thunk,
           ctx: getExecCtx(id),
           tick: execTick.get(id),
+          woke: execWoke.get(id),
           waitFor: execWait.get(id),
         });
       },
@@ -1491,6 +1504,7 @@ export function makeShard({
       if (typeof waitFor == 'object') freeze(waitFor);
       execWait.set(id, waitFor);
       execTick.delete(id);
+      execWoke.delete(id);
       return false;
     }
     if (!resultContinues(res)) {
@@ -1510,6 +1524,7 @@ export function makeShard({
   function wakeMind(id) {
     execWait.delete(id);
     execTick.set(id, tick);
+    execWoke.set(id, tick);
   }
 
   /** @param {number} id */
@@ -1517,6 +1532,7 @@ export function makeShard({
     const thunk = execThunk.get(id);
     if (!thunk) {
       execTick.delete(id);
+      execWoke.delete(id);
       return thunkFail('no thunk defined');
     }
     const ctx = getExecCtx(id);
