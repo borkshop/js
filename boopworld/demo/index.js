@@ -193,24 +193,30 @@ async function recordLog({ toConsole = false }) {
 const loggingNames = new Set();
 
 /**
- * @param {boopworld.ShardCtl} ctl
  * @param {zop.Logger} logger
+ * @returns {(ctl: boopworld.ShardCtl) => void}
  */
-function logThemAll(ctl, logger) {
-  for (const name of loggingNames) {
-    const ent = ctl.byName(name);
-    if (!ent) continue;
-    const { mindState: mind } = ent;
-    if (!mind) continue;
-    const { ctx: { events, memory: { view } } } = mind;
-    const theirLog = logger.with({ name });
-    for (const event of events())
-      theirLog.log({ event });
-    theirLog.log({ view });
-  }
-}
+function logTracer(logger) {
+  return ctl => {
+    const { time, tick } = ctl;
+    const logNow = logger.with({ time, tick });
 
-let lastCtlLogTime = NaN;
+    for (const name of loggingNames) {
+      const ent = ctl.byName(name);
+      if (!ent) continue;
+
+      const { mindState: mind } = ent;
+      if (!mind) continue;
+      const { ctx: { events, memory: { view } } } = mind;
+
+      const theirLog = logNow.with({ name });
+      for (const event of events())
+        theirLog.log({ event });
+      theirLog.log({ view });
+
+    }
+  };
+}
 
 async function main() {
   const hash = new Map(hashEntries());
@@ -227,22 +233,12 @@ async function main() {
     seed: 0xdeadbeef,
     build,
 
-    trace(ctl) {
-      if (logger) {
-        const { time } = ctl;
-        if (!(time <= lastCtlLogTime)) {
-          const logNow = logger.with({ time });
-          logThemAll(ctl, logNow);
-          lastCtlLogTime = time;
-        }
-      }
+    trace: logger ? logTracer(logger) : undefined,
 
-      // TODO other control things like:
-      // - live edit / hacking
-      // - dump reaps
-      // - introspect mind state
+    // TODO control things like:
+    // - live edit / hacking
+    // - dump reaps
 
-    },
   });
 
   const spin = spinner(
