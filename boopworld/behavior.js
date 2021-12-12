@@ -35,8 +35,12 @@ export function updateView(ctx) {
     time,
     events, deref,
     memory: { view },
+    log,
   } = ctx;
-  view.integrateEvents(events(), Object.freeze({ time, deref }));
+  view.integrateEvents(
+    events(),
+    Object.freeze({ time, deref, log }),
+  );
   return thunkWait({ time: time + 1 });
 }
 

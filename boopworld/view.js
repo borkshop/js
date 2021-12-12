@@ -178,6 +178,7 @@ export function makeViewMemory() {
    * @typedef {object} EventCtx
    * @prop {number} time
    * @prop {(ref: EntityRef) => ROEntity|null} deref
+   * @prop {(...args: any[]) => void} [log]
    */
 
   /**
