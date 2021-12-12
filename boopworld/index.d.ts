@@ -48,6 +48,7 @@ export function thunkWait(waitFor: ThunkWaitFor, next?: Thunk | undefined, reaso
 /**
  * @typedef {object} ShardCtl
  * @prop {number} time
+ * @prop {number} tick
  * @prop {Entity} root
  * @prop {(spec?: TypeSpec) => IterableIterator<Entity>} entities
  * @prop {(p: Point) => IterableIterator<Entity>} at
@@ -196,6 +197,7 @@ export type ThunkWaitFor = (EventType | "input" | {
 });
 export type ThunkCtx = {
     time: number;
+    tick: number;
     deref: (ref: EntityRef) => ROEntity | null;
     self: Entity;
     isReady: (waitFor: ThunkWaitFor) => boolean;
@@ -218,6 +220,7 @@ export type Shard = {
 };
 export type ShardCtl = {
     time: number;
+    tick: number;
     root: Entity;
     entities: (spec?: TypeSpec | undefined) => IterableIterator<Entity>;
     at: (p: Point) => IterableIterator<Entity>;

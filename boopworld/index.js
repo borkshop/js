@@ -100,6 +100,7 @@ export function thunkWait(waitFor, next, reason = 'wait') { return { ok: true, w
 /**
  * @typedef {object} ThunkCtx
  * @prop {number} time
+ * @prop {number} tick
  * @prop {(ref: EntityRef) => ROEntity|null} deref
  * @prop {Entity} self
  * @prop {(waitFor: ThunkWaitFor) => boolean} isReady
@@ -140,6 +141,7 @@ function resultContinues(res) {
 /**
  * @typedef {object} ShardCtl
  * @prop {number} time
+ * @prop {number} tick
  * @prop {Entity} root
  * @prop {(spec?: TypeSpec) => IterableIterator<Entity>} entities
  * @prop {(p: Point) => IterableIterator<Entity>} at
@@ -344,6 +346,7 @@ export function makeShard({
 
   //// shard init
   let time = 0;
+  let tick = 0;
   const turnRefs = makeEntityRefScope();
 
   /** @type {Map<number, Set<number>>} */
@@ -537,9 +540,10 @@ export function makeShard({
       ) {
 
         // start next time slice
-        time++;
+        time++, tick = 0;
         events.clear(); // clear mind event sources
-        execTick.clear(); // reset ticking minds, all may now have another turn
+        for (const id of execTick.keys()) // reset running tick counts
+          execTick.set(id, tick);
 
         // revoke all issued EntityRefs
         turnRefs.clear();
@@ -597,6 +601,7 @@ export function makeShard({
   function makeCtl() {
     return freeze(guard({
       get time() { return time },
+      get tick() { return tick },
 
       get root() { return fullEntity(0) },
 
@@ -677,6 +682,7 @@ export function makeShard({
   function runMinds(deadline) {
     wakeMinds();
     while (stepMinds(deadline)) {
+      tick++;
       if (ready()) return true;
     }
     return ready();
@@ -685,10 +691,11 @@ export function makeShard({
   /** @param {number} deadline */
   function stepMinds(deadline) {
     if (!execTick.size) return false;
-    for (const id of execTick.keys()) {
-      stepMind(id);
-      if (now() > deadline) return false;
-    }
+    for (const [id, t] of execTick)
+      if (t <= tick) {
+        stepMind(id);
+        if (now() > deadline) return false;
+      }
     return true;
   }
 
@@ -974,9 +981,10 @@ export function makeShard({
    * @returns {() => void}
    */
   function makeTimeGuard(desc) {
-    const asof = time;
+    const asof = time, asofTick = tick;
     return () => {
-      if (time > asof) throw new Error(`Cannot access obsolete ${desc}`);
+      if (time > asof || tick > asofTick)
+        throw new Error(`Cannot access obsolete ${desc}`);
     };
   }
 
@@ -1488,7 +1496,7 @@ export function makeShard({
   /** @param {number} id */
   function wakeMind(id) {
     execWait.delete(id);
-    execTick.set(id, 0);
+    execTick.set(id, tick);
   }
 
   /** @param {number} id */
@@ -1571,6 +1579,7 @@ export function makeShard({
     const { proxy: ctx, revoke: revokeCtx } = Proxy.revocable(
       freeze(guard(/** @type {ThunkCtx} */({
         get time() { return time },
+        get tick() { return tick },
 
         deref(ref) {
           const id = refs.deref(ref);
