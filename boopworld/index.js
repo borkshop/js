@@ -672,18 +672,20 @@ export function makeShard({
         execTick.set(id, 0);
       }
     }
-
-    while (execTick.size) {
-      // keep ticking all runnable minds until deadline is exceeded
-      for (const id of execTick.keys()) {
-        if (now() > deadline) return;
-        stepMind(id);
-      }
-      // stop ticking once minds are ready for next move
+    while (stepMinds(deadline)) {
       if (ready()) return true;
     }
+    return ready();
+  }
 
-    return false;
+  /** @param {number} deadline */
+  function stepMinds(deadline) {
+    if (!execTick.size) return false;
+    for (const id of execTick.keys()) {
+      stepMind(id);
+      if (now() > deadline) return false;
+    }
+    return true;
   }
 
   /**
