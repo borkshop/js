@@ -138,9 +138,26 @@ function build(ctl) {
   });
 
   lexicon.destroy();
+
+  if (logger)
+    for (const ent of ctl.entities({ hasMind: true }))
+      if (ent.mind) ent.mind = withLog(ent.mind, logger);
 }
 
 import * as zop from 'zop';
+
+/**
+ * @param {boopworld.Thunk} thunk
+ * @param {zop.Logger} logger
+ * @returns {boopworld.Thunk}
+ */
+function withLog(thunk, logger) {
+  return ctx => {
+    const { time, tick, self: { name } } = ctx;
+    const { log } = logger.with({ time, tick, name });
+    return thunk({ ...ctx, log });
+  };
+}
 
 /**
  * @param {string} mark
