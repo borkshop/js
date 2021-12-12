@@ -197,6 +197,10 @@ const loggingNames = new Set();
  * @returns {(ctl: boopworld.ShardCtl) => void}
  */
 function logTracer(logger) {
+
+  /** @type {Map<string, {time: number, eventTypes: string[]}>} */
+  const last = new Map();
+
   return ctl => {
     const { time, tick } = ctl;
     const logNow = logger.with({ time, tick });
@@ -207,10 +211,21 @@ function logTracer(logger) {
 
       const { mindState: mind } = ent;
       if (!mind) continue;
-      const { ctx: { events, memory: { view } } } = mind;
+      const { ctx: { events: mindEvents, memory: { view } } } = mind;
+
+      const events = Array.from(mindEvents());
+      const eventTypes = events.map(({ type }) => type);
+      const {
+        time: lastTime = NaN,
+        eventTypes: lastEventTypes = /** @type {string[]} */([]),
+      } = last.get(name) || {};
+      const skipEvents = time == lastTime
+        ? sharedPrefixSize(eventTypes, lastEventTypes)
+        : 0;
+      last.set(name, { time, eventTypes });
 
       const theirLog = logNow.with({ name });
-      for (const event of events())
+      for (const event of events.slice(skipEvents))
         theirLog.log({ event });
       theirLog.log({ view });
 
@@ -318,3 +333,15 @@ function* bounce(bit, width, {
 
 /** @template T @param {T} value @returns {Generator<T>} */
 function* forever(value) { for (; ;) yield value }
+
+/**
+ * @template T
+ * @param {T[]} as
+ * @param {T[]} bs
+ */
+function sharedPrefixSize(as, bs) {
+  let i = 0;
+  for (; i < as.length && i < bs.length; i++)
+    if (as[i] !== bs[i]) break;
+  return i;
+}
