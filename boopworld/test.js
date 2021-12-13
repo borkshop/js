@@ -128,8 +128,7 @@ function makeTestStepper(steps, {
     advance,
     run,
     take,
-    next,
-    shouldTick,
+    tocks,
   });
 
   /** @param {number} newTime */
@@ -143,10 +142,12 @@ function makeTestStepper(steps, {
 
   /** @param {() => void} body */
   function run(body) {
-    for (
-      let sanity = 2 * ticksNeeded();
-      stepi < steps.length && sanity-- > 0;
-    ) {
+    let sanity = 2 * ticksNeeded();
+    while (stepi < steps.length) {
+      if (sanity-- <= 0) {
+        if (debug) log(`- sanity exhausted T${time}.${tick}`);
+        throw new Error('sanity exhausted');
+      }
       if (debug > 1) log(`- sanity: ${sanity} i: ${stepi} / ${steps.length}`);
       body();
     }
@@ -176,48 +177,52 @@ function makeTestStepper(steps, {
    * @returns {Generator<T>}
    */
   function* take(what, match) {
-    for (; ;) {
-      const { step } = next(what, match);
+    let sanity = 100;
+    for (; stepi < steps.length;) {
+      if (sanity-- <= 0) throw new Error(`${what} take sanity exhausted`);
+
+      const ctl = steps[stepi];
+
+      if (ctl.time < time)
+        throw new Error(`obsolete control[${stepi}]: T${ctl.time} < T${time}.${tick}`);
+      if (ctl.time > time) {
+        if (debug) log(`- ${what} waiting for T${time}.${tick} -> T${ctl.time}`);
+        break;
+      }
+
+      if (ctl.tick != undefined) {
+        if (ctl.tick < tick)
+          throw new Error(`obsolete control[${stepi}]: T${ctl.time}.${ctl.tick} < T${time}.${tick}`);
+        if (ctl.tick > tick) {
+          if (debug) log(`- ${what} waiting for T${time}.${tick} -> T${ctl.time}.${ctl.tick}`);
+          break;
+        }
+      }
+
+      const step = match(ctl);
       if (!step) break;
+
+      stepi++;
       yield step;
     }
   }
 
-  function shouldTick() {
-    if (stepi >= steps.length) return false;
-    const ctl = steps[stepi];
-    if (ctl.time != time) return false;
-    if (ctl.tick == undefined) return true;
-    return ctl.tick > tick
-  }
-
-  /**
-   * @template T
-   * @param {string} what
-   * @param {(step: ctlStep) => T|null} match
-   * @returns {{step: T|null, done: boolean}}
-   */
-  function next(what, match) {
-    if (stepi >= steps.length) return { step: null, done: true };
-    const ctl = steps[stepi];
-    if (ctl.time < time)
-      throw new Error(`obsolete control[${stepi}]: T${ctl.time} < T${time}.${tick}`);
-    if (ctl.time > time) {
-      if (debug) log(`- ${what} waiting for T${time}.${tick} -> T${ctl.time}`);
-      return { step: null, done: false };
+  /** @param {string} what */
+  function* tocks(what) {
+    let sanity = 100;
+    let lastTime = time, lastTick = tick;
+    yield;
+    for (; stepi < steps.length;) {
+      if (sanity-- <= 0)
+        throw new Error(`${what} tocks sanity exhausted`);
+      const { time: ct, tick: ck } = steps[stepi];
+      if (ct != time) break;
+      if (ck != undefined && ck <= tick) break;
+      if (lastTime === time && lastTick === tick)
+        throw new Error(`${what} tocks made no progress`);
+      lastTime = time, lastTick = tick;
+      yield;
     }
-    if (ctl.tick != undefined) {
-      if (ctl.tick < tick)
-        throw new Error(`obsolete control[${stepi}]: T${ctl.time}.${ctl.tick} < T${time}.${tick}`);
-      if (ctl.tick > tick) {
-        if (debug) log(`- ${what} waiting for T${time}.${tick} -> T${ctl.time}.${ctl.tick}`);
-        return { step: null, done: false };
-      }
-    }
-    const ext = match(ctl);
-    if (!ext) return { step: null, done: false };
-    stepi++;
-    return { step: ext, done: false };
   }
 }
 
@@ -880,10 +885,9 @@ test('boops', t => {
         let first = true;
         for (const input of expandCounts(step.inputs)) {
           if (first) first = false;
-          else {
-            do update('inter-input');
-            while (testSteps.shouldTick());
-          }
+          else
+            for (const _ of testSteps.tocks('inter-input'))
+              update('inter-input');
           t.true(player.provide(input), 'must provide input');
         }
       });
