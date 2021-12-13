@@ -131,13 +131,30 @@ function makeTestStepper(steps, {
     tocks,
   });
 
-  /** @param {number} newTime */
-  function advance(newTime) {
+  /**
+   * @param {number} newTime
+   * @param {number} newTick
+   */
+  function advance(newTime, newTick) {
     if (newTime < time)
       throw new Error(`time must only go forward (${time} -> ${newTime})`);
-    if (newTime == time) tick++;
-    else time = newTime, tick = 0;
-    if (debug) log(`- advanced to T${time}.${tick}`);
+
+    if (isNaN(time) || time < newTime) {
+      time = newTime, tick = newTick;
+      if (debug) log(`- advanced to T${time}.${tick}`);
+      return;
+    }
+
+    if (newTick < tick)
+      throw new Error(`time must only go forward (${time}.${tick} -> ${newTime}.${newTick})`);
+
+    if (tick < newTick) {
+      tick = newTick;
+      if (debug) log(`- advanced to T${time}.${tick}`);
+      return;
+    }
+
+    if (debug) log(`- dejavu T${time}.${tick}`);
   }
 
   /** @param {() => void} body */
@@ -404,7 +421,7 @@ test('boops', t => {
     },
 
     {
-      time: 11, tick: 2, expect: {
+      time: 11, tick: 1, expect: {
         view: {
           protagonist: lines(
             '########         ',
@@ -482,7 +499,7 @@ test('boops', t => {
     },
 
     {
-      time: 19, tick: 2, expect: {
+      time: 19, tick: 1, expect: {
         view: {
           protagonist: lines(
             '########         ',
@@ -532,7 +549,7 @@ test('boops', t => {
     },
 
     {
-      time: 25, tick: 2, expect: {
+      time: 25, tick: 1, expect: {
         view: {
           protagonist: lines(
             '########          ',
@@ -707,7 +724,7 @@ test('boops', t => {
     },
 
     control(ctl) {
-      testSteps.advance(ctl.time);
+      testSteps.advance(ctl.time, ctl.tick);
 
       // TODO tron/troff rather than expected-or-log
 
