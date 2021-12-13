@@ -1238,15 +1238,15 @@ export function makeShard({
           ? t | typeMind
           : t & ~typeMind);
         if (mind) {
+          // NOTE: any prior memories remain
+          // TODO add optional memory init param
           const revoke = execRevoke.get(id);
           if (revoke) revoke();
           execRevoke.delete(id);
-          execThunk.set(id, mind);
-          // NOTE: any prior memories remain
-          // TODO add optional memory init param
           execCtx.delete(id);
           execTick.delete(id);
-          execWait.delete(id);
+          execWait.set(id, time < 1 ? { time: 1 } : { time });
+          execThunk.set(id, mind);
           assignName(id, scope)
         }
       },
