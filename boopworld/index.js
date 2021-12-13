@@ -500,6 +500,11 @@ export function makeShard({
   });
   typeIndex.set(typeMind, new Set());
 
+  // turn ready() is gated by this filter so make sure it's indexed
+  const updateWaitsForType = typeSpecFilter(updateWaitsFor);
+  if (!typeIndex.has(updateWaitsForType))
+    typeIndex.set(updateWaitsForType, new Set());
+
   /**
    * @typedef {object} Remnant
    * @prop {boolean} done
@@ -773,7 +778,7 @@ export function makeShard({
       if (tick < 1) return false;
 
     // wait for all specified entities to choose a move
-    for (const id of ids(typeSpecFilter(updateWaitsFor)))
+    for (const id of ids(updateWaitsForType))
       if (!moves.has(id)) return false;
 
     return true;
