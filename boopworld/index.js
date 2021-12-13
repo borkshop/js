@@ -498,7 +498,6 @@ export function makeShard({
     execTick.delete(id);
     execWait.delete(id);
   });
-  typeIndex.set(typeMind, new Set());
 
   // turn ready() is gated by this filter so make sure it's indexed
   const updateWaitsForType = typeSpecFilter(updateWaitsFor);
@@ -676,17 +675,7 @@ export function makeShard({
 
   /** @param {number} deadline */
   function runMinds(deadline) {
-    // minds run from time=1 and on
-    if (time > 0 && !execTick.size) {
-      for (const id of ids(typeMind)) {
-        const waitFor = execWait.get(id);
-        if (waitFor) {
-          if (!execRunnable(id, waitFor)) continue;
-          execWait.delete(id);
-        }
-        execTick.set(id, 0);
-      }
-    }
+    wakeMinds();
     while (stepMinds(deadline)) {
       if (ready()) return true;
     }
@@ -1488,6 +1477,18 @@ export function makeShard({
       return false;
     }
     return true;
+  }
+
+  function wakeMinds() {
+    for (const [id, waitFor] of execWait)
+      if (execRunnable(id, waitFor))
+        wakeMind(id);
+  }
+
+  /** @param {number} id */
+  function wakeMind(id) {
+    execWait.delete(id);
+    execTick.set(id, 0);
   }
 
   /** @param {number} id */
