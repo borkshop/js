@@ -541,17 +541,9 @@ export function makeShard({
         nextSense > time && // after sensory input has been processed
         runMinds(deadline)  // run minds until ready for next turn
       ) {
-
-        // start next time slice
+        closeMindsTurn();
         time++, tick = 0;
-        events.clear(); // clear mind event sources
-        for (const id of execTick.keys()) // reset running tick counts
-          execTick.set(id, tick);
-
-        // revoke all issued EntityRefs
-        turnRefs.clear();
-        for (const refs of execRefs.values())
-          refs.clear();
+        initMindsTurn();
       }
 
       if (
@@ -688,6 +680,18 @@ export function makeShard({
       if (ready()) return true;
     }
     return ready();
+  }
+
+  function closeMindsTurn() {
+    turnRefs.clear();
+    for (const refs of execRefs.values())
+      refs.clear();
+  }
+
+  function initMindsTurn() {
+    events.clear();
+    for (const id of execTick.keys())
+      execTick.set(id, tick);
   }
 
   /** @param {number} deadline */
