@@ -763,7 +763,7 @@ test('boops', t => {
           const view = getSaw(name);
           t.deepEqual(
             view ? view.toString() : '',
-            s, `${testSteps.stamp} view.${name}`);
+            s, `${testSteps.stamp} saw.${name}`);
           viewExpected = true;
         }
 
