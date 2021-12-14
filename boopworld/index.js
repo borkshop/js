@@ -564,14 +564,20 @@ export function makeShard({
         nextSense = nextMove;
       }
 
-      if (lastUpdate < time) {
-        lastUpdate = time;
-        if (update || trace) {
-          const ctl = makeCtl();
-          if (update) update(ctl);
-          if (trace) trace(ctl);
+      if (
+        nextMove > time && // after movement has been processed
+        nextSense > time   // after sensory input has been processed
+      ) {
+        if (lastUpdate < time) {
+          lastUpdate = time;
+          if (update || trace) {
+            const ctl = makeCtl();
+            if (update) update(ctl);
+            if (trace) trace(ctl);
+          }
         }
       }
+
     },
   });
 
