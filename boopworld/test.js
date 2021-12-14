@@ -142,32 +142,15 @@ function makeTestStepper(steps, {
 
   /** @param {() => void} body */
   function run(body) {
-    let sanity = 2 * ticksNeeded();
     while (stepi < steps.length) {
-      if (sanity-- <= 0) {
-        if (debug) log(`- sanity exhausted T${time}.${tick}`);
-        throw new Error('sanity exhausted');
-      }
-      if (debug > 1) log(`- sanity: ${sanity} i: ${stepi} / ${steps.length}`);
+      const lastTime = time, lastTick = tick;
+      if (debug > 1) log(`- test step[${stepi}] / ${steps.length}`);
       body();
+      if (time === lastTime && tick === lastTick) {
+        const { time: ct, tick: ck = NaN } = steps[stepi];
+        throw new Error(`run body made no progress @T${time}.${tick} towards T${ct}.${ck} for test step[${stepi}]`);
+      }
     }
-    if (stepi < steps.length)
-      throw new Error('must execute all controls');
-  }
-
-  function ticksNeeded() {
-    let t1 = 0, k1 = 0, n = 0;
-    /** @param {{time: number, tick?: number}} stamp */
-    function count({ time: t2, tick: k2 = 0 }) {
-      if (t2 > t1) n += t2 - t1 + k2;
-      else if (t1 == t2 && k2 > k1) n += k2 - k1;
-      t1 = t2, k1 = k2;
-    }
-    if (stepi < steps.length)
-      count(steps[stepi]);
-    for (let i = stepi + 1; i < steps.length; i++)
-      count(steps[i]);
-    return n;
   }
 
   /**
@@ -209,17 +192,14 @@ function makeTestStepper(steps, {
 
   /** @param {string} what */
   function* tocks(what) {
-    let sanity = 100;
     let lastTime = time, lastTick = tick;
     yield;
     for (; stepi < steps.length;) {
-      if (sanity-- <= 0)
-        throw new Error(`${what} tocks sanity exhausted`);
-      const { time: ct, tick: ck } = steps[stepi];
+      const { time: ct, tick: ck = NaN } = steps[stepi];
       if (ct != time) break;
-      if (ck != undefined && ck <= tick) break;
+      if (ck <= tick) break;
       if (lastTime === time && lastTick === tick)
-        throw new Error(`${what} tocks made no progress`);
+        throw new Error(`${what} tocks made no progress @T${time}.${tick} towards T${ct}.${ck} for test step[${stepi}]`);
       lastTime = time, lastTick = tick;
       yield;
     }
