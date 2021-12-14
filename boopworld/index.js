@@ -431,9 +431,6 @@ export function makeShard({
   //// movement component init 
   /** @type {Map<number, Move>} */
   const moves = new Map();
-  let nextMove = 1;
-  let nextSense = 1;
-  let lastUpdate = 0;
   typeIndex.set(typeSolid, new Set()); // TODO replace this with a location index
 
   //// events component init
@@ -504,6 +501,11 @@ export function makeShard({
     execTick.delete(id);
     execWait.delete(id);
   });
+
+  //// update stage timing
+  let nextMove = 1;
+  let nextSense = 1;
+  let lastUpdate = 0;
 
   // turn ready() is gated by this filter so make sure it's indexed
   const updateWaitsForType = typeSpecFilter(updateWaitsFor);
