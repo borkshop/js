@@ -121,10 +121,24 @@ function makeTestStepper(steps, {
   freeze(steps);
   let time = NaN, tick = 0;
   let stepi = 0;
+
+  /**
+   * @param {number|{time: number, tick?: number}} [t]
+   * @param {number} [k]
+   * @returns {string}
+   */
+  function tm(t, k) {
+    if (t == undefined) return tm(time, tick);
+    if (typeof t == 'object') return tm(t.time, t.tick);
+    if (isNaN(t)) return 'T∄';
+    if (k == undefined || isNaN(k)) return `T${t}`;
+    return `T${t}.${k}`;
+  }
+
   return Object.freeze({
     get time() { return time },
     get tick() { return tick },
-    get stamp() { return isNaN(time) ? 'T∄' : `T${time}.${tick}` },
+    get stamp() { return tm() },
     advance,
     run,
     take,
@@ -137,24 +151,24 @@ function makeTestStepper(steps, {
    */
   function advance(newTime, newTick) {
     if (newTime < time)
-      throw new Error(`time must only go forward (${time} -> ${newTime})`);
+      throw new Error(`time must only go forward (${tm()} -> ${tm(newTime, newTick)})`);
 
     if (isNaN(time) || time < newTime) {
       time = newTime, tick = newTick;
-      if (debug) log(`- advanced to T${time}.${tick}`);
+      if (debug) log(`- advanced to ${tm()}`);
       return;
     }
 
     if (newTick < tick)
-      throw new Error(`time must only go forward (${time}.${tick} -> ${newTime}.${newTick})`);
+      throw new Error(`time must only go forward (${tm()} -> ${tm(newTime, newTick)})`);
 
     if (tick < newTick) {
       tick = newTick;
-      if (debug) log(`- advanced to T${time}.${tick}`);
+      if (debug) log(`- advanced to ${tm()}`);
       return;
     }
 
-    if (debug) log(`- dejavu T${time}.${tick}`);
+    if (debug) log(`- dejavu ${tm()}`);
   }
 
   /** @param {() => void} body */
@@ -164,8 +178,7 @@ function makeTestStepper(steps, {
       if (debug > 1) log(`- test step[${stepi}] / ${steps.length}`);
       body();
       if (time === lastTime && tick === lastTick) {
-        const { time: ct, tick: ck = NaN } = steps[stepi];
-        throw new Error(`run body made no progress @T${time}.${tick} towards T${ct}.${ck} for test step[${stepi}]`);
+        throw new Error(`run body made no progress @${tm()} towards ${tm(steps[stepi])} for test step[${stepi}]`);
       }
     }
   }
@@ -184,17 +197,17 @@ function makeTestStepper(steps, {
       const ctl = steps[stepi];
 
       if (ctl.time < time)
-        throw new Error(`obsolete control[${stepi}]: T${ctl.time} < T${time}.${tick}`);
+        throw new Error(`obsolete control[${stepi}]: T${tm(ctl)} < ${tm()}`);
       if (ctl.time > time) {
-        if (debug) log(`- ${what} waiting for T${time}.${tick} -> T${ctl.time}`);
+        if (debug) log(`- ${what} waiting for ${tm()} -> T${tm(ctl)}`);
         break;
       }
 
       if (ctl.tick != undefined) {
         if (ctl.tick < tick)
-          throw new Error(`obsolete control[${stepi}]: T${ctl.time}.${ctl.tick} < T${time}.${tick}`);
+          throw new Error(`obsolete control[${stepi}]: ${tm(ctl)} < ${tm()}`);
         if (ctl.tick > tick) {
-          if (debug) log(`- ${what} waiting for T${time}.${tick} -> T${ctl.time}.${ctl.tick}`);
+          if (debug) log(`- ${what} waiting for ${tm()} -> ${tm(ctl)}`);
           break;
         }
       }
@@ -212,11 +225,12 @@ function makeTestStepper(steps, {
     let lastTime = time, lastTick = tick;
     yield;
     for (; stepi < steps.length;) {
-      const { time: ct, tick: ck = NaN } = steps[stepi];
+      const ctl = steps[stepi];
+      const { time: ct, tick: ck = NaN } = ctl;
       if (ct != time) break;
       if (ck <= tick) break;
       if (lastTime === time && lastTick === tick)
-        throw new Error(`${what} tocks made no progress @T${time}.${tick} towards T${ct}.${ck} for test step[${stepi}]`);
+        throw new Error(`${what} tocks made no progress @${tm()} towards ${tm(ctl)} for test step[${stepi}]`);
       lastTime = time, lastTick = tick;
       yield;
     }
