@@ -539,16 +539,6 @@ export function makeShard({
   return freeze({
     update(deadline = now() + defaultTimeout) {
       if (
-        nextMove > time &&  // after movement has been processed
-        nextSense > time && // after sensory input has been processed
-        runMinds(deadline)  // run minds until ready for next turn
-      ) {
-        closeMindsTurn();
-        time++, tick = 0;
-        initMindsTurn();
-      }
-
-      if (
         time >= nextMove &&    // once time has advanced far enough
         processMoves(deadline) // process moves
       ) {
@@ -568,6 +558,7 @@ export function makeShard({
         nextMove > time && // after movement has been processed
         nextSense > time   // after sensory input has been processed
       ) {
+        // call any user update() and trace()
         if (lastUpdate < time) {
           lastUpdate = time;
           if (update || trace) {
@@ -576,6 +567,14 @@ export function makeShard({
             if (trace) trace(ctl);
           }
         }
+
+        // run minds until ready for next turn
+        if (runMinds(deadline)) {
+          closeMindsTurn();
+          time++, tick = 0;
+          initMindsTurn();
+        }
+
       }
 
     },
