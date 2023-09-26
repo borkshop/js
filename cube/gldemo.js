@@ -2,16 +2,7 @@
 
 import { mat4 } from 'gl-matrix';
 
-const shaderSources = [
-  './gldemo.vert.glsl',
-  './gldemo.frag.glsl',
-].map(sourceName => ({
-  sourceName,
-  source: fetch(sourceName)
-    .then(res => res.text())
-    .catch(error => ({ error }))
-    .then(text => typeof text == 'string' ? { text } : text),
-}));
+import { compileProgram } from './glkit.js';
 
 /** @typedef {object} tileSpec
  * @prop {string} [glyph]
@@ -59,42 +50,10 @@ export default async function demo({
   cellSize = 64,
   build,
 }) {
+  const gl = $world.getContext('webgl2');
+  if (!gl) throw new Error('No GL For You!');
+
   sizeToParent($world);
-
-  const gl = (() => {
-    const gl = $world.getContext('webgl2');
-    if (!gl) throw new Error('No GL For You!');
-    return gl;
-  })();
-
-  // start all of our shaders to compiling ; it's purportedly best practice to
-  // not check them for failure until link time as we do here
-  //   -- inspired by note in example on
-  //      https://developer.mozilla.org/en-US/docs/Web/API/KHR_parallel_shader_compile
-  const shaders = shaderSources.map(async ({ sourceName, source }) => {
-    const res = await source;
-    if ('error' in res)
-      throw new Error(
-        `unable to load shader source ${sourceName}: ${res.error}`,
-        // TODO how to typescript { cause: res.error }
-      );
-    const { text } = res;
-
-    const type =
-      sourceName.endsWith('.vert.glsl') ? gl.VERTEX_SHADER
-        : sourceName.endsWith('.frag.glsl') ? gl.FRAGMENT_SHADER
-          : null
-    if (type == null)
-      throw new Error(`unknown shader type for ${sourceName}`);
-
-    const shader = gl.createShader(type);
-    if (!shader)
-      throw new Error(`unable to create type:${type} gl shader for ${sourceName}`);
-
-    gl.shaderSource(shader, text);
-    gl.compileShader(shader);
-    return shader;
-  });
 
   // link our singular demo program ; as things progress, we could potentially
   // have multiple programs to do things like:
@@ -106,33 +65,14 @@ export default async function demo({
   // - or even more broadly, if we end up with other modes of drawing for
   //   things that aren't tiles, like to grid lines, line art, or other
   //   geometric shapes
-  const prog = await (async () => {
-    const shadersNow = await Promise.all(shaders);
+  const prog = await compileProgram(gl, ...[
+    './gldemo.vert.glsl',
+    './gldemo.frag.glsl',
+  ].map(name => ({
+    name,
+    source: fetch(name).then(res => res.text())
+  })));
 
-    const prog = gl.createProgram();
-    if (!prog) throw new Error('unable to create gl program');
-
-    for (const shader of shadersNow)
-      gl.attachShader(prog, shader);
-    gl.linkProgram(prog);
-
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error([
-      `GL program link error: ${gl.getProgramInfoLog(prog)}`,
-      ...shadersNow
-        .filter(shader => !gl.getShaderParameter(shader, gl.COMPILE_STATUS))
-        .map((shader, i) => {
-          const log = gl.getShaderInfoLog(shader) || '';
-          const source = gl.getShaderSource(shader)
-          if (source) {
-            const { sourceName } = shaderSources[i];
-            const mess = annotateCompileError(source, log);
-            return `compile error in ${sourceName}:\n${mess}`;
-          } else return log;
-        })
-    ].join('\n'));
-
-    return prog;
-  })();
   gl.useProgram(prog);
 
   // NOTE: somewhere around here is where most frameworks reify something
@@ -769,57 +709,3 @@ export function makeElementIndex(elements) {
 }
 
 /** @typedef {ReturnType<makeLayer>} Layer */
-
-/**
- * @param {string} src
- * @param {string} mess
- */
-function annotateCompileError(src, mess) {
-  var match = /^ERROR: \d+:(\d+):/.exec(mess);
-  if (!match) {
-    return mess;
-  }
-  const lineNo = parseInt(match[1] || '');
-  const contextCount = 3;
-
-  const lines = src.split(/\n/);
-  const numLines = lines.length;
-  const w = numLines.toString().length;
-
-  return [...annotateLine(
-    numberLines(w, lines),
-    lineNo, contextCount,
-    `${' '.repeat(w)} ^ --${mess} `
-  )].join('\n');
-}
-
-/**
- * @param {number} w
- * @param {Iterable<string>} lines
- */
-function* numberLines(w, lines) {
-  let n = 0;
-  for (const line of lines) {
-    n++;
-    yield `${n.toString().padStart(w)}: ${line} `;
-  }
-}
-
-/**
- * @param {Iterable<string>} lines
- * @param {number} lineNo
- * @param {number} contextCount
- * @param {string} mess
- */
-function* annotateLine(lines, lineNo, contextCount, mess) {
-  let n = 0;
-  for (const line of lines) {
-    n++;
-    if (Math.abs(lineNo - n) <= contextCount) {
-      yield line;
-    }
-    if (n === lineNo) {
-      yield mess;
-    }
-  }
-}
