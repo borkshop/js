@@ -92,19 +92,15 @@ export default async function demo({
     return loc;
   };
 
-  const uni = {
-    sheet: mustGetUniform('sheet'), // sampler2D
-    transform: mustGetUniform('transform'), // mat4
-    perspective: mustGetUniform('perspective'), // mat4
-    nowhere: mustGetUniform('nowhere'), // vec4
-    stride: mustGetUniform('stride'), // uint
-  };
+  const uni_sheet = mustGetUniform('sheet'); // sampler2D
+  const uni_transform = mustGetUniform('transform'); // mat4
+  const uni_perspective = mustGetUniform('perspective'); // mat4
+  const uni_nowhere = mustGetUniform('nowhere'); // vec4
+  const uni_stride = mustGetUniform('stride'); // uint
 
-  const attr = {
-    spin: mustGetAttr('spin'), // float
-    size: mustGetAttr('size'), // float
-    layerID: mustGetAttr('layerID'), // int
-  };
+  const attr_spin = mustGetAttr('spin'); // float
+  const attr_size = mustGetAttr('size'); // float
+  const attr_layerID = mustGetAttr('layerID'); // int
 
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
@@ -180,18 +176,18 @@ export default async function demo({
       perspTop,
       0, Number.EPSILON);
 
-    gl.uniformMatrix4fv(uni.perspective, false, perspective);
+    gl.uniformMatrix4fv(uni_perspective, false, perspective);
 
     // NOTE: this just needs to be set to any point outside of camera view, so
     // that the vertex shader can use it to cull points
-    gl.uniform4f(uni.nowhere, -1, -1, -1, 0);
+    gl.uniform4f(uni_nowhere, -1, -1, -1, 0);
 
     gl.viewport(0, 0, width, height);
 
     /// per frame drawing pass
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.vertexAttrib1f(attr.size, cellSize);
+    gl.vertexAttrib1f(attr_size, cellSize);
 
     // TODO at some point, it'll be worth it to cull layers that don't
     // intersect perspective, but for now we just use leave GL's vertex culling
@@ -205,12 +201,12 @@ export default async function demo({
         const tex = textureUnitFor(layer);
 
         mat4.fromTranslation(transform, [cellSize * left, cellSize * top, 0]);
-        gl.uniformMatrix4fv(uni.transform, false, transform);
+        gl.uniformMatrix4fv(uni_transform, false, transform);
 
-        gl.uniform1i(uni.sheet, tex);
-        gl.uniform1i(uni.stride, width);
+        gl.uniform1i(uni_sheet, tex);
+        gl.uniform1i(uni_stride, width);
 
-        layer.bindVertexAttribs(attr);
+        layer.bindVertexAttribs(attr_spin, attr_layerID);
         gl.drawElements(gl.POINTS, length, indexType, 0);
       }
     }
@@ -630,18 +626,18 @@ function makeLayer(gl, {
       gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, index.buffer, gl.STATIC_DRAW);
     },
 
-    /** @param {object} attr
-     * @param {number} attr.spin
-     * @param {number} attr.layerID
+    /**
+     * @param {number} attr_spin
+     * @param {number} attr_layerID
      */
-    bindVertexAttribs(attr) {
-      gl.enableVertexAttribArray(attr.spin);
+    bindVertexAttribs(attr_spin, attr_layerID) {
+      gl.enableVertexAttribArray(attr_spin);
       gl.bindBuffer(gl.ARRAY_BUFFER, spinBuffer);
-      gl.vertexAttribPointer(attr.spin, 1, gl.FLOAT, false, 0, 0);
+      gl.vertexAttribPointer(attr_spin, 1, gl.FLOAT, false, 0, 0);
 
-      gl.enableVertexAttribArray(attr.layerID);
+      gl.enableVertexAttribArray(attr_layerID);
       gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
-      gl.vertexAttribIPointer(attr.layerID, 1, gl.UNSIGNED_SHORT, 0, 0);
+      gl.vertexAttribIPointer(attr_layerID, 1, gl.UNSIGNED_SHORT, 0, 0);
 
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     },
