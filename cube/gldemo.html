@@ -12,9 +12,12 @@
   <canvas id="world"></canvas>
   <script type="module">
     import {
-      default as demo,
       generateCurvedTiles,
       generateSimpleTiles,
+    } from './tilegen.js';
+
+    import {
+      default as demo,
     } from './gldemo.js';
 
     function makeRandom(seed = 0xdead_beefn) {
