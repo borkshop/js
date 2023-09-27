@@ -142,20 +142,7 @@ export default async function demo({
     // @ts-ignore
     const dt = lastT - t; // TODO animate things and un-ignore
 
-    /** @type {WeakMap<object, number>} */
-    let textureUnits = new WeakMap();
-    let nextTextureUnit = 0;
-
-    /** @param {Layer} layer */
-    const textureUnitFor = layer => {
-      let unit = textureUnits.get(layer.texture);
-      if (unit === undefined) {
-        unit = nextTextureUnit++;
-        gl.activeTexture(gl.TEXTURE0 + unit);
-        gl.bindTexture(gl.TEXTURE_2D_ARRAY, layer.texture);
-      }
-      return unit;
-    };
+    const texCache = makeTextureUnitCache(gl, gl.TEXTURE_2D_ARRAY);
 
     /// update global uniforms
     const { width, height } = $world;
@@ -189,7 +176,7 @@ export default async function demo({
         if (!layer.visible) continue;
 
         const { top, left, width, length, indexType } = layer;
-        const tex = textureUnitFor(layer);
+        const tex = texCache.get(layer.texture);
 
         mat4.fromTranslation(transform, [cellSize * left, cellSize * top, 0]);
         gl.uniformMatrix4fv(uni_transform, false, transform);
@@ -494,3 +481,29 @@ export function makeElementIndex(elements) {
 }
 
 /** @typedef {ReturnType<makeLayer>} Layer */
+
+/**
+ * @param {WebGL2RenderingContext} gl
+ * @param {number} kind
+ */
+export function makeTextureUnitCache(gl, kind) {
+  /** @type {WeakMap<WebGLTexture, number>} */
+  let cache = new WeakMap();
+  let next = 0;
+
+  return {
+    /** @param {WebGLTexture} texture */
+    get(texture) {
+      let unit = cache.get(texture);
+      if (unit === undefined) {
+        // TODO reuse lower numbers from prior cache holes
+        unit = next++;
+        gl.activeTexture(gl.TEXTURE0 + unit);
+        gl.bindTexture(kind, texture);
+      }
+      return unit;
+    }
+  };
+}
+
+/** @typedef {ReturnType<makeTextureUnitCache>} TextureUnitCache */
