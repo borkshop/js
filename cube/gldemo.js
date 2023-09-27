@@ -175,7 +175,7 @@ export default async function demo({
       for (const layer of layers) {
         if (!layer.visible) continue;
 
-        const { top, left, width, length, indexType } = layer;
+        const { top, left, width, length } = layer;
         const tex = texCache.get(layer.texture);
 
         mat4.fromTranslation(transform, [cellSize * left, cellSize * top, 0]);
@@ -184,8 +184,7 @@ export default async function demo({
         gl.uniform1i(uni_sheet, tex);
         gl.uniform1i(uni_stride, width);
 
-        layer.bindVertexAttribs(attr_spin, attr_layerID);
-        gl.drawElements(gl.POINTS, length, indexType, 0);
+        layer.draw(attr_spin, attr_layerID);
       }
     }
   }
@@ -338,14 +337,13 @@ function makeLayer(gl, {
   // - sub-region invalidation to avoid recopying old data / only copy new data
 
   // NOTE: we can also choose to interleave/pack data into a single buffer if desired
-  const indexBuffer = gl.createBuffer();
   const spinBuffer = gl.createBuffer();
   const tileBuffer = gl.createBuffer();
 
   const cap = width * height;
   const spinData = new Float32Array(cap);
   const tileData = new Uint16Array(cap);
-  const index = makeElementIndex(cap <= 256 ? new Uint8Array(cap) : new Uint16Array(cap));
+  const index = makeElementIndex(gl, cap);
 
   return {
     visible: true,
@@ -356,19 +354,6 @@ function makeLayer(gl, {
     get top() { return top },
     get width() { return width },
     get height() { return height },
-
-    get length() { return index.length },
-
-    get indexType() {
-      const bytes = index.elementByteSize;
-      if (bytes == 1)
-        return gl.UNSIGNED_BYTE;
-      if (bytes == 2)
-        return gl.UNSIGNED_SHORT;
-      if (bytes == 4 && gl.getExtension('OES_element_index_uint'))
-        return gl.UNSIGNED_INT;
-      throw new Error(`unsupported index.elementByteSize: ${bytes}`);
-    },
 
     clear() {
       spinData.fill(0);
@@ -398,15 +383,17 @@ function makeLayer(gl, {
       gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, tileData, gl.STATIC_DRAW);
 
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, index.buffer, gl.STATIC_DRAW);
+      index.send();
     },
 
     /**
      * @param {number} attr_spin
      * @param {number} attr_layerID
      */
-    bindVertexAttribs(attr_spin, attr_layerID) {
+    draw(
+      attr_spin,
+      attr_layerID,
+    ) {
       gl.enableVertexAttribArray(attr_spin);
       gl.bindBuffer(gl.ARRAY_BUFFER, spinBuffer);
       gl.vertexAttribPointer(attr_spin, 1, gl.FLOAT, false, 0, 0);
@@ -415,18 +402,46 @@ function makeLayer(gl, {
       gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
       gl.vertexAttribIPointer(attr_layerID, 1, gl.UNSIGNED_SHORT, 0, 0);
 
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+      index.draw();
     },
 
   };
 }
 
-/** @param {Uint8Array | Uint16Array | Uint32Array} elements */
-export function makeElementIndex(elements) {
+/** @typedef {ReturnType<makeLayer>} Layer */
+
+/**
+ * @param {WebGL2RenderingContext} gl
+ * @param {number} cap
+ */
+export function makeElementIndex(gl, cap) {
+  const elements =
+    cap <= 256
+      ? new Uint8Array(cap)
+      : cap <= 256 * 256
+        ? new Uint16Array(cap)
+        : cap <= 256 * 256 * 256 * 256
+          ? new Uint32Array(cap)
+          : null;
+  if (elements == null)
+    throw new Error(`unsupported element index capacity: ${cap}`);
+
+  const glType =
+    elements.BYTES_PER_ELEMENT == 1
+      ? gl.UNSIGNED_BYTE
+      : elements.BYTES_PER_ELEMENT == 2
+        ? gl.UNSIGNED_SHORT
+        : (elements.BYTES_PER_ELEMENT == 4 && gl.getExtension('OES_element_index_uint'))
+          ? gl.UNSIGNED_INT
+          : null;
+  if (glType == null)
+    throw new Error(`unsupported index element byte size: ${elements.BYTES_PER_ELEMENT}`);
+
   let length = 0;
+  const buffer = gl.createBuffer();
 
   /** @param {number} id */
-  function find(id) {
+  const find = id => {
     let lo = 0, hi = length;
     let sanity = elements.length;
     while (lo < hi) {
@@ -445,9 +460,17 @@ export function makeElementIndex(elements) {
       for (let i = 0; i < length; i++) yield elements[i];
     },
 
-    get elementByteSize() { return elements.BYTES_PER_ELEMENT },
-    get buffer() { return elements.buffer },
     get length() { return length },
+
+    send() {
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, elements.buffer, gl.STATIC_DRAW);
+    },
+
+    draw() {
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
+      gl.drawElements(gl.POINTS, length, glType, 0);
+    },
 
     clear() {
       elements.fill(0);
@@ -480,7 +503,7 @@ export function makeElementIndex(elements) {
   };
 }
 
-/** @typedef {ReturnType<makeLayer>} Layer */
+/** @typedef {ReturnType<makeElementIndex>} ElementIndex */
 
 /**
  * @param {WebGL2RenderingContext} gl
