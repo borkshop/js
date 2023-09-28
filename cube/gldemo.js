@@ -10,7 +10,11 @@ import { compileProgram } from './glkit.js';
  * @returns {void}
  */
 
-/** @template [T = any] @callback tileMaker @param {tileable<T>} tiles @return TileSheet<T> */
+/** @template [T = any]
+ * @callback tileMaker
+ * @param {tileable<T>} tiles
+ * @return TileSheet<T>
+ */
 
 /** @typedef {object} TileWorld
  * @prop {tileMaker} makeTileSheet
@@ -46,16 +50,9 @@ export default async function demo({
 
   sizeToParent($world);
 
-  // link our singular demo program ; as things progress, we could potentially
-  // have multiple programs to do things like:
-  // - change out the fragment shader for one that adds more/different effects
-  //   (lighting, distortion, scan lines, whatever)
-  // - change out the vertex shader if there's drastically different data
-  //   shaping needs (e.g. implicit location based on array index, rather than
-  //   x/y data explicitly encoded)
-  // - or even more broadly, if we end up with other modes of drawing for
-  //   things that aren't tiles, like to grid lines, line art, or other
-  //   geometric shapes
+  // TODO how to afford fragment shader customization for effects?
+  // TODO per-tile scale support
+  // TODO animation support (probably at least per-tile displacement driven externally)
   const prog = await compileProgram(gl, ...[
     './gldemo.vert.glsl',
     './gldemo.frag.glsl',
@@ -64,11 +61,87 @@ export default async function demo({
     source: fetch(name).then(res => res.text())
   })));
 
-  gl.useProgram(prog);
+  const tileRend = makeTileRenderer(gl, prog);
 
-  // NOTE: somewhere around here is where most frameworks reify something
-  // around a program and its uniform/attribute location
+  /** @type {TileSheet<unknown>[]} */
+  const sheets = [];
 
+  /** @type {{dims: FacetDims, layers: Layer[]}[]} */
+  const facets = [];
+
+  build({
+    makeTileSheet(tiles) {
+      const tileSheet = makeTileSheet(gl, tiles, { tileSize });
+      sheets.push(tileSheet);
+      return tileSheet;
+    },
+
+    makeFacet(dims) {
+      /** @type {Layer[]} */
+      const layers = [];
+      facets.push({ dims, layers });
+      return {
+        makeLayer({ texture }, offset = { x: 0, y: 0 }) {
+          const { x, y, width, height } = dims;
+          const layer = makeLayer(gl, {
+            texture,
+            cellSize,
+            left: x + offset.x,
+            top: y + offset.y,
+            width, height
+          });
+          layers.push(layer);
+          return layer;
+        },
+      };
+    },
+  });
+
+  /** @returns {Promise<number>} */
+  const nextFrame = () => new Promise(resolve => requestAnimationFrame(t => resolve(t)))
+  for (
+    let t = await nextFrame(), lastT = t; ;
+    lastT = t, t = await nextFrame()
+  ) {
+    // TODO animate things via const dt = lastT - t;
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    tileRend.draw(function*() {
+      for (const { layers } of facets) {
+        for (const layer of layers) {
+          if (layer.visible) yield layer;
+        }
+      }
+    }());
+  }
+
+}
+
+/** @param {HTMLCanvasElement} $canvas */
+function sizeToParent($canvas, update = () => { }) {
+  const $cont = $canvas.parentElement;
+  if ($cont) {
+    const resize = () => {
+      const { clientWidth, clientHeight, } = $cont;
+      $canvas.width = clientWidth;
+      $canvas.height = clientHeight;
+      update();
+    };
+    $cont.ownerDocument.defaultView?.addEventListener('resize', () => resize());
+    resize();
+  }
+}
+
+/**
+ * @param {WebGL2RenderingContext} gl
+ * @param {WebGLProgram} prog
+ */
+function makeTileRenderer(gl, prog) {
   /** @param {string} name */
   const mustGetUniform = name => {
     const loc = gl.getUniformLocation(prog, name);
@@ -93,117 +166,51 @@ export default async function demo({
   const attr_size = mustGetAttr('size'); // float
   const attr_layerID = mustGetAttr('layerID'); // int
 
-  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-
-  /** @type {TileSheet<unknown>[]} */
-  const sheets = [];
-
-  /** @type {{dims: FacetDims, layers: Layer[]}[]} */
-  const facets = [];
-
-  build({
-    makeTileSheet(tiles) {
-      const tileSheet = makeTileSheet(gl, tiles, { tileSize });
-      sheets.push(tileSheet);
-      return tileSheet;
-    },
-
-    makeFacet(dims) {
-      /** @type {Layer[]} */
-      const layers = [];
-      facets.push({ dims, layers });
-      return {
-        makeLayer({ texture }, offset = { x: 0, y: 0 }) {
-          const { x, y, width, height } = dims;
-          const layer = makeLayer(gl, {
-            texture,
-            left: x + offset.x,
-            top: y + offset.y,
-            width, height
-          });
-          layers.push(layer);
-          return layer;
-        },
-      };
-    },
-  });
-
   const perspective = mat4.identity(new Float32Array(16));
+  const texCache = makeTextureUnitCache(gl, gl.TEXTURE_2D_ARRAY);
 
-  /** @returns {Promise<number>} */
-  const nextFrame = () => new Promise(resolve => requestAnimationFrame(t => resolve(t)))
-  for (
-    let t = await nextFrame(), lastT = t; ;
-    lastT = t, t = await nextFrame()
-  ) {
-    // @ts-ignore
-    const dt = lastT - t; // TODO animate things and un-ignore
+  return {
+    /**
+     * @param {IterableIterator<Layer>} layers
+     * @param {object} [viewport]
+     * @param {number} [viewport.left]
+     * @param {number} [viewport.top]
+     * @param {number} [viewport.width]
+     * @param {number} [viewport.height]
+     */
+    draw(layers, {
+      left = 0,
+      top = 0,
+      width = gl.canvas.width,
+      height = gl.canvas.height,
+    } = {}) {
+      // TODO: why can't this persist across frames?
+      texCache.clear();
 
-    const texCache = makeTextureUnitCache(gl, gl.TEXTURE_2D_ARRAY);
+      gl.useProgram(prog);
 
-    /// update global uniforms
-    const { width, height } = $world;
-    const perspLeft = 0, perspTop = 0, perspRight = width, perspBottom = height;
-    mat4.ortho(perspective,
-      perspLeft,
-      perspRight,
-      perspBottom,
-      perspTop,
-      0, Number.EPSILON);
+      // NOTE: this just needs to be set to any point outside of camera view, so
+      // that the vertex shader can use it to cull points
+      gl.uniform4f(uni_nowhere, -1, -1, -1, 0);
 
-    gl.uniformMatrix4fv(uni_perspective, false, perspective);
+      mat4.ortho(perspective, left, width, height, top, 0, Number.EPSILON);
+      gl.uniformMatrix4fv(uni_perspective, false, perspective);
 
-    // NOTE: this just needs to be set to any point outside of camera view, so
-    // that the vertex shader can use it to cull points
-    gl.uniform4f(uni_nowhere, -1, -1, -1, 0);
+      // TODO at some point, it'll be worth it to cull layers that don't
+      // intersect perspective, but for now we just use leave GL's vertex culling
+      for (const layer of layers)
+        layer.draw({
+          texCache,
+          transform: uni_transform,
+          sheet: uni_sheet,
+          stride: uni_stride,
+          size: attr_size,
+          spin: attr_spin,
+          layerID: attr_layerID,
+        });
 
-    gl.viewport(0, 0, width, height);
-
-    /// per frame drawing pass
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    gl.vertexAttrib1f(attr_size, cellSize);
-
-    // TODO at some point, it'll be worth it to cull layers that don't
-    // intersect perspective, but for now we just use leave GL's vertex culling
-
-    const transform = new Float32Array(16);
-    for (const { layers } of facets) {
-      for (const layer of layers) {
-        if (!layer.visible) continue;
-
-        const { top, left, width, length } = layer;
-        const tex = texCache.get(layer.texture);
-
-        mat4.fromTranslation(transform, [cellSize * left, cellSize * top, 0]);
-        gl.uniformMatrix4fv(uni_transform, false, transform);
-
-        gl.uniform1i(uni_sheet, tex);
-        gl.uniform1i(uni_stride, width);
-
-        layer.draw(attr_spin, attr_layerID);
-      }
-    }
-  }
-
-}
-
-/** @param {HTMLCanvasElement} $canvas */
-function sizeToParent($canvas, update = () => { }) {
-  const $cont = $canvas.parentElement;
-  if ($cont) {
-    const resize = () => {
-      const { clientWidth, clientHeight, } = $cont;
-      $canvas.width = clientWidth;
-      $canvas.height = clientHeight;
-      update();
-    };
-    $cont.ownerDocument.defaultView?.addEventListener('resize', () => resize());
-    resize();
-  }
+    },
+  };
 }
 
 /** @callback drawback
@@ -269,6 +276,8 @@ function makeTileSheet(gl, tiles, {
     draws.push(draw);
   }
 
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+
   const texture = gl.createTexture();
   if (!texture) throw new Error('unable to create gl texture');
 
@@ -314,6 +323,7 @@ function makeTileSheet(gl, tiles, {
  * @param {WebGL2RenderingContext} gl
  * @param {object} params
  * @param {WebGLTexture} params.texture
+ * @param {number} params.cellSize
  * @param {number} [params.left]
  * @param {number} [params.top]
  * @param {number} params.width
@@ -321,6 +331,7 @@ function makeTileSheet(gl, tiles, {
  */
 function makeLayer(gl, {
   texture,
+  cellSize,
   left = 0, top = 0,
   width, height,
 }) {
@@ -347,8 +358,6 @@ function makeLayer(gl, {
 
   return {
     visible: true,
-
-    get texture() { return texture },
 
     get left() { return left },
     get top() { return top },
@@ -387,20 +396,44 @@ function makeLayer(gl, {
     },
 
     /**
-     * @param {number} attr_spin
-     * @param {number} attr_layerID
+     * @param {object} params
+     * @param {TextureUnitCache} params.texCache
+     * @param {WebGLUniformLocation} params.transform
+     * @param {WebGLUniformLocation} params.sheet
+     * @param {WebGLUniformLocation} params.stride
+     * @param {number} params.size
+     * @param {number} params.spin
+     * @param {number} params.layerID
      */
-    draw(
-      attr_spin,
-      attr_layerID,
-    ) {
-      gl.enableVertexAttribArray(attr_spin);
-      gl.bindBuffer(gl.ARRAY_BUFFER, spinBuffer);
-      gl.vertexAttribPointer(attr_spin, 1, gl.FLOAT, false, 0, 0);
+    draw({
+      texCache,
+      transform,
+      sheet,
+      stride,
+      size,
+      spin,
+      layerID,
+    }) {
+      const texUnit = texCache.get(texture);
+      gl.uniform1i(sheet, texUnit);
 
-      gl.enableVertexAttribArray(attr_layerID);
+      gl.uniform1i(stride, width);
+
+      const xform = new Float32Array(16);
+      mat4.fromTranslation(xform, [cellSize * left, cellSize * top, 0]);
+      gl.uniformMatrix4fv(transform, false, xform);
+
+      // TODO optional size buffer
+      gl.vertexAttrib1f(size, cellSize);
+
+      // TODO spin optional
+      gl.enableVertexAttribArray(spin);
+      gl.bindBuffer(gl.ARRAY_BUFFER, spinBuffer);
+      gl.vertexAttribPointer(spin, 1, gl.FLOAT, false, 0, 0);
+
+      gl.enableVertexAttribArray(layerID);
       gl.bindBuffer(gl.ARRAY_BUFFER, tileBuffer);
-      gl.vertexAttribIPointer(attr_layerID, 1, gl.UNSIGNED_SHORT, 0, 0);
+      gl.vertexAttribIPointer(layerID, 1, gl.UNSIGNED_SHORT, 0, 0);
 
       index.draw();
     },
@@ -515,6 +548,12 @@ export function makeTextureUnitCache(gl, kind) {
   let next = 0;
 
   return {
+    clear() {
+      for (let i = 0; i < next; ++i)
+        cache.delete(i);
+      next = 0;
+    },
+
     /** @param {WebGLTexture} texture */
     get(texture) {
       let unit = cache.get(texture);
