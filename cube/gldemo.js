@@ -22,78 +22,128 @@ import {
  * @return TileSheet<T>
  */
 
-/** @typedef {object} TileWorld
- * @prop {tileMaker} makeTileSheet
- * @prop {(dims: FacetDims) => Facet} makeFacet
- */
-
-/** @typedef {object} FacetDims
- * @prop {number} x
- * @prop {number} y
- * @prop {number} width
- * @prop {number} height
- */
-
-/** @typedef {object} Facet
- * @prop {(sheet: TileSheet<unknown>, offset?: {x: number, y: number}) => Layer} makeLayer
- */
+import {
+  generateCurvedTiles,
+  generateSimpleTiles,
+} from './tilegen.js';
 
 /**
- * @param {object} param
- * @param {HTMLCanvasElement} param.$world
- * @param {number} [param.tileSize]
- * @param {number} [param.cellSize]
- * @param {(world: TileWorld) => void} param.build
+ * @param {object} opts
+ * @param {HTMLCanvasElement} opts.$world
+ * @param {number} [opts.tileSize]
+ * @param {number} [opts.cellSize]
+ * @param {number} [opts.worldWidth]
+ * @param {number} [opts.worldHeight]
+ * @param {boolean} [opts.showCurvyTiles]
  */
-export default async function demo({
-  $world,
-  tileSize = 256,
-  cellSize = 64,
-  build,
-}) {
+export default async function demo(opts) {
+  const {
+    $world,
+    tileSize = 256,
+    cellSize = 64,
+
+    // TODO fix curvy tile layer, needs to have dims N+1 but be scissored to cut outer ring in half
+    worldWidth = 5,
+    worldHeight = 5,
+    showCurvyTiles = true,
+  } = opts;
+
   const gl = $world.getContext('webgl2');
   if (!gl) throw new Error('No GL For You!');
 
   sizeToParent($world);
 
+  /** @type {Layer[]} */
+  const layers = [];
+
   const tileRend = makeTileRenderer(gl, await compileTileProgram(gl));
 
-  /** @type {TileSheet<unknown>[]} */
-  const sheets = [];
+  const landCurveTiles = makeTileSheet(gl, generateCurvedTiles({
+    aFill: '#5c9e31', // land
+    bFill: '#61b2e4', // water
+    // gridLineStyle: 'red',
+  }), { tileSize });
 
-  /** @type {{dims: FacetDims, layers: Layer[]}[]} */
-  const facets = [];
+  const foreTiles = makeTileSheet(gl, generateSimpleTiles(
+    { glyph: '🧚' },
+    { glyph: '🍵' },
+    { glyph: '🫖' },
+    { glyph: '⛵' }
+  ), { tileSize });
 
-  build({
-    makeTileSheet(tiles) {
-      const tileSheet = makeTileSheet(gl, tiles, { tileSize });
-      sheets.push(tileSheet);
-      return tileSheet;
-    },
+  /**
+   * @param {TileSheet<number>} sheet
+   * @param {{x: number, y: number}} [offset]
+   * @returns {Layer}
+   */
+  const makeWorldLayer = ({ texture }, offset = { x: 0, y: 0 }) => {
+    const layer = makeLayer(gl, {
+      texture,
+      cellSize,
+      left: offset.x,
+      top: offset.y,
+      width: worldWidth,
+      height: worldHeight,
+    });
+    layers.push(layer);
+    return layer;
+  };
 
-    makeFacet(dims) {
-      /** @type {Layer[]} */
-      const layers = [];
-      facets.push({ dims, layers });
-      return {
-        makeLayer({ texture }, offset = { x: 0, y: 0 }) {
-          const { x, y, width, height } = dims;
-          const layer = makeLayer(gl, {
-            texture,
-            cellSize,
-            left: x + offset.x,
-            top: y + offset.y,
-            width, height
-          });
-          layers.push(layer);
-          return layer;
-        },
-      };
-    },
-  });
+  const bgSQ = makeWorldLayer(landCurveTiles);
+  const bg = makeWorldLayer(landCurveTiles, { x: -0.5, y: -0.5 });
+  const fg = makeWorldLayer(foreTiles);
 
-  /** @returns {Promise<number>} */
-  const nextFrame = () => new Promise(resolve => requestAnimationFrame(t => resolve(t)))
+  // generate terrain
+  {
+    const isWater = new Uint8Array(bg.width * bg.height);
+    const { random } = makeRandom();
+    for (let i = 0; i < isWater.length; i++)
+      isWater[i] = random() > 0.5 ? 1 : 0;
+
+    const land = landCurveTiles.getLayerID(0b0000);
+    const water = landCurveTiles.getLayerID(0b1111);
+    for (let y = 0; y < bg.height; y++)
+      for (let x = 0; x < bg.width; x++)
+        bgSQ.set(x, y, {
+          layerID: isWater[y * bg.width + x] ? water : land
+        });
+
+    const stride = bg.width;
+    for (let y = 0; y < bg.height; y++) {
+      for (let x = 0; x < bg.width; x++) {
+        const nw = isWater[(y + 0) * stride + x + 0];
+        const ne = isWater[(y + 0) * stride + x + 1];
+        const sw = isWater[(y + 1) * stride + x + 0];
+        const se = isWater[(y + 1) * stride + x + 1];
+        const tileID = ((nw << 1 | ne) << 1 | se) << 1 | sw;
+        const layerID = landCurveTiles.getLayerID(tileID);
+        bg.set(x, y, { layerID });
+      }
+    }
+  }
+
+  // place fore objects
+  {
+    const { randn, random } = makeRandom();
+    for (let y = 0; y < fg.height; y++) {
+      for (let x = 0; x < fg.width; x++) {
+        const tileID = Number(randn(2n * BigInt(foreTiles.size)));
+        const layerID = foreTiles.getLayerID(tileID);
+        const spin = random();
+        fg.set(x, y, { layerID, spin });
+      }
+    }
+  }
+
+  // send layer data to gpu; NOTE this needs to be called going forward after any update
+  bg.send();
+  bgSQ.send();
+  fg.send();
+
+  bgSQ.visible = !showCurvyTiles; // boring non-curvy layer
+  bg.visible = showCurvyTiles; // curvy new hotness
+
+  // forever draw loop
   for (
     let t = await nextFrame(), lastT = t; ;
     lastT = t, t = await nextFrame()
@@ -107,15 +157,24 @@ export default async function demo({
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     tileRend.draw(function*() {
-      for (const { layers } of facets) {
-        for (const layer of layers) {
-          if (layer.visible) yield layer;
-        }
-      }
+      for (const layer of layers)
+        if (layer.visible) yield layer;
     }());
   }
 
 }
+
+function makeRandom(seed = 0xdead_beefn) {
+  let randState = seed;
+  const rand = () => (randState = randState * 6364136223846793005n + 1442695040888963407n) >> 17n & 0xffff_ffffn;
+  /** @param {bigint} n */
+  const randn = n => rand() % n;
+  const random = () => Number(rand()) / 0x1_0000_0000;
+  return { rand, randn, random };
+}
+
+/** @returns {Promise<number>} */
+const nextFrame = () => new Promise(resolve => requestAnimationFrame(t => resolve(t)))
 
 /** @param {HTMLCanvasElement} $canvas */
 function sizeToParent($canvas, update = () => { }) {
