@@ -1,6 +1,6 @@
 /**
  * @param {WebGL2RenderingContext} gl
- * @param {Array<{name: string, source: Promise<string>}>} sources
+ * @param {Array<string|{name: string, source: Promise<string>}>} sources
  */
 export async function compileProgram(gl, ...sources) {
   const prog = gl.createProgram();
@@ -12,6 +12,10 @@ export async function compileProgram(gl, ...sources) {
   //      See <https://developer.mozilla.org/en-US/docs/Web/API/KHR_parallel_shader_compile>
 
   const shaders = await Promise.all(sources
+    .map(ent => (typeof ent == 'string' ? {
+      name: ent,
+      source: fetch(ent).then(res => res.text())
+    } : ent))
     .map(async ({ name, source }) => {
       const shader = createShader(gl, name);
       gl.shaderSource(shader, await source);
@@ -42,6 +46,8 @@ export async function compileProgram(gl, ...sources) {
 
 /** @param {string} name */
 function guessShaderType(name) {
+  if (name.endsWith('.vert')) return 'vert';
+  if (name.endsWith('.frag')) return 'frag';
   if (name.endsWith('.vert.glsl')) return 'vert';
   if (name.endsWith('.frag.glsl')) return 'frag';
   throw new Error(`unable to guess shader type for ${name}`);
