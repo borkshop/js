@@ -9,27 +9,50 @@
 </head>
 
 <body>
-  <canvas id="world"></canvas>
+
+  <div style="position: absolute; right: 0">
+
+    <div
+      title="Key[C] Whether to draw using a derived 'curved tile' layer whose cells are computed at the 4-corners of the base land-vs-water layer">
+      <input type="checkbox" id="show_curves" />
+      <label for="show_curves">Use Curved Tiles</label>
+    </div>
+
+    <div
+      title="Key[X] Whether tile curves should extend past edge of world, or clip as if surrounded by land on all sides">
+      <input type="checkbox" id="extend_curves" />
+      <label for="extend_curves">Extend Tile Curves</label>
+    </div>
+
+  </div>
+
+  <div style="width: 100%; height: 100%">
+    <canvas id="world"></canvas>
+  </div>
+
   <script type="module">
     import demo from './gldemo.js';
 
     const $world = document.querySelector('canvas#world');
     if (!$world) throw new Error('unable to find world canvas');
 
-    let showCurvyTiles = true;
-    let clipCurvyTiles = false;
+    const $showCurves = document.querySelector('#show_curves');
+    if (!$showCurves) throw new Error('unable to find #show_curves');
+
+    const $extendCurves = document.querySelector('#extend_curves');
+    if (!$extendCurves) throw new Error('unable to find #extend_curves');
 
     window.addEventListener('keypress', e => {
       switch (e.key) {
 
         case 'c':
         case 'C':
-          showCurvyTiles = !showCurvyTiles;
+          $showCurves.checked = !$showCurves.checked;
           break;
 
         case 'x':
         case 'X':
-          clipCurvyTiles = !clipCurvyTiles;
+          $extendCurves.checked = !$extendCurves.checked;
           break;
 
       }
@@ -43,8 +66,8 @@
       worldWidth: 8,
       worldHeight: 8,
 
-      showCurvyTiles: () => showCurvyTiles,
-      clipCurvyTiles: () => clipCurvyTiles,
+      showCurvyTiles: () => $showCurves.checked,
+      clipCurvyTiles: () => !$extendCurves.checked,
 
     });
     throw new Error('unexpected demo loop exit');
