@@ -258,6 +258,19 @@ export function makeLayer(gl, {
       else index.add(id);
     },
 
+    /**
+     * @param {number} x
+     * @param {number} y
+     */
+    get(x, y) {
+      if (x < 0 || y < 0 || x >= width || y >= height)
+        throw new Error(`point: ${JSON.stringify({ x, y })} outside of layer bounds: ${JSON.stringify({ width, height })}`);
+      const id = Math.floor(y - top) * width + Math.floor(x - left);
+      const layerID = tileData[id];
+      const spin = spinData[id];
+      return { layerID, spin };
+    },
+
     send() {
       gl.bindBuffer(gl.ARRAY_BUFFER, spinBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, spinData, gl.STATIC_DRAW);

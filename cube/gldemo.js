@@ -42,7 +42,6 @@ export default async function demo(opts) {
     tileSize = 256,
     cellSize = 64,
 
-    // TODO fix curvy tile layer, needs to have dims N+1 but be scissored to cut outer ring in half
     worldWidth = 5,
     worldHeight = 5,
     showCurvyTiles = true,
@@ -69,26 +68,19 @@ export default async function demo(opts) {
     { glyph: '⛵' }
   ), { tileSize });
 
-  /**
-   * @param {TileSheet<number>} sheet
-   * @param {{x: number, y: number}} [offset]
-   * @returns {Layer}
-   */
-  const makeWorldLayer = ({ texture }, offset = { x: 0, y: 0 }) => {
-    const layer = makeLayer(gl, {
-      texture,
-      cellSize,
-      left: offset.x,
-      top: offset.y,
-      width: worldWidth,
-      height: worldHeight,
-    });
-    return layer;
-  };
+  const bg = makeLayer(gl, {
+    texture: landCurveTiles.texture,
+    cellSize,
+    width: worldWidth,
+    height: worldHeight,
+  });
 
-  const bg = makeWorldLayer(landCurveTiles);
-  const fg = makeWorldLayer(foreTiles);
-  const bgCurved = makeWorldLayer(landCurveTiles, { x: -0.5, y: -0.5 });
+  const fg = makeLayer(gl, {
+    texture: foreTiles.texture,
+    cellSize,
+    width: worldWidth,
+    height: worldHeight,
+  });
 
   {
     const { randn, random } = makeRandom();
@@ -114,15 +106,31 @@ export default async function demo(opts) {
         fg.set(x, y, { layerID, spin });
       }
     }
+  }
 
+  const bgCurved = makeLayer(gl, {
+    texture: landCurveTiles.texture,
+    cellSize,
+    left: -0.5,
+    top: -0.5,
+    width: worldWidth + 1,
+    height: worldHeight + 1,
+  });
+
+  {
     // generate curved terrain layer
-    const stride = bgCurved.width;
+    const filled = landCurveTiles.getLayerID(0b1111);
+    /** @param {number} x @param {number} y */
+    const isFilled = (x, y) => bg.get(
+      Math.max(0, Math.min(bg.width - 1, x)),
+      Math.max(0, Math.min(bg.height - 1, y)),
+    ).layerID == filled ? 1 : 0;
     for (let y = 0; y < bgCurved.height; y++) {
       for (let x = 0; x < bgCurved.width; x++) {
-        const nw = isWater[(y + 0) * stride + x + 0];
-        const ne = isWater[(y + 0) * stride + x + 1];
-        const sw = isWater[(y + 1) * stride + x + 0];
-        const se = isWater[(y + 1) * stride + x + 1];
+        const nw = isFilled(x - 1, y - 1);
+        const ne = isFilled(x + 0, y - 1);
+        const sw = isFilled(x - 1, y + 0);
+        const se = isFilled(x + 0, y + 0);
         const tileID = ((nw << 1 | ne) << 1 | se) << 1 | sw;
         const layerID = landCurveTiles.getLayerID(tileID);
         bgCurved.set(x, y, { layerID });
@@ -149,7 +157,20 @@ export default async function demo(opts) {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     tileRend.draw(function*() {
-      yield shouldShowCurvyTiles() ? bgCurved : bg;
+      if (shouldShowCurvyTiles()) {
+        gl.enable(gl.SCISSOR_TEST);
+        gl.scissor(
+          // NOTE: lower left corner, with 0 counting up from bottom edge of viewport
+          bg.left * cellSize,
+          gl.canvas.height - (bg.top + bg.height) * cellSize,
+          bg.width * cellSize,
+          bg.height * cellSize
+        );
+        yield bgCurved;
+        gl.disable(gl.SCISSOR_TEST);
+      } else {
+        yield bg;
+      }
       yield fg;
     }());
   }
