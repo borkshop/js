@@ -232,6 +232,8 @@ export function makeLayer(gl, {
   const index = makeElementIndex(gl, cap);
 
   return {
+    get texture() { return texture },
+    get cellSize() { return cellSize },
     get left() { return left },
     get top() { return top },
     get width() { return width },

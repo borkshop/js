@@ -17,12 +17,21 @@
     if (!$world) throw new Error('unable to find world canvas');
 
     let showCurvyTiles = true;
+    let clipCurvyTiles = false;
+
     window.addEventListener('keypress', e => {
       switch (e.key) {
+
         case 'c':
         case 'C':
           showCurvyTiles = !showCurvyTiles;
           break;
+
+        case 'x':
+        case 'X':
+          clipCurvyTiles = !clipCurvyTiles;
+          break;
+
       }
     });
 
@@ -33,7 +42,9 @@
 
       worldWidth: 8,
       worldHeight: 8,
+
       showCurvyTiles: () => showCurvyTiles,
+      clipCurvyTiles: () => clipCurvyTiles,
 
     });
     throw new Error('unexpected demo loop exit');

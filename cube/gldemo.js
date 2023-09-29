@@ -23,8 +23,13 @@ import {
  */
 
 import {
-  generateCurvedTiles,
   generateSimpleTiles,
+
+  generateCurvedTiles,
+  makeCurvedLayer,
+  updateCurvedLayer,
+  clippedBaseCellQuery,
+  extendedBaseCellQuery,
 } from './tilegen.js';
 
 /**
@@ -35,6 +40,7 @@ import {
  * @param {number} [opts.worldWidth]
  * @param {number} [opts.worldHeight]
  * @param {boolean|(() => boolean)} [opts.showCurvyTiles]
+ * @param {boolean|(() => boolean)} [opts.clipCurvyTiles]
  */
 export default async function demo(opts) {
   const {
@@ -45,8 +51,10 @@ export default async function demo(opts) {
     worldWidth = 5,
     worldHeight = 5,
     showCurvyTiles = true,
+    clipCurvyTiles = false,
   } = opts;
   const shouldShowCurvyTiles = typeof showCurvyTiles == 'boolean' ? () => showCurvyTiles : showCurvyTiles;
+  const shouldClipCurvyTiles = typeof clipCurvyTiles == 'boolean' ? () => clipCurvyTiles : clipCurvyTiles;
 
   const gl = $world.getContext('webgl2');
   if (!gl) throw new Error('No GL For You!');
@@ -108,39 +116,16 @@ export default async function demo(opts) {
     }
   }
 
-  const bgCurved = makeLayer(gl, {
-    texture: landCurveTiles.texture,
-    cellSize,
-    left: -0.5,
-    top: -0.5,
-    width: worldWidth + 1,
-    height: worldHeight + 1,
-  });
-
-  {
-    // generate curved terrain layer
-    const filled = landCurveTiles.getLayerID(0b1111);
-    /** @param {number} x @param {number} y */
-    const isFilled = (x, y) => bg.get(
-      Math.max(0, Math.min(bg.width - 1, x)),
-      Math.max(0, Math.min(bg.height - 1, y)),
-    ).layerID == filled ? 1 : 0;
-    for (let y = 0; y < bgCurved.height; y++) {
-      for (let x = 0; x < bgCurved.width; x++) {
-        const nw = isFilled(x - 1, y - 1);
-        const ne = isFilled(x + 0, y - 1);
-        const sw = isFilled(x - 1, y + 0);
-        const se = isFilled(x + 0, y + 0);
-        const tileID = ((nw << 1 | ne) << 1 | se) << 1 | sw;
-        const layerID = landCurveTiles.getLayerID(tileID);
-        bgCurved.set(x, y, { layerID });
-      }
-    }
-  }
-
   // send layer data to gpu; NOTE this needs to be called going forward after any update
   bg.send();
   fg.send();
+
+  let lastCurveClip = shouldClipCurvyTiles();
+  const bgCurved = makeCurvedLayer(gl, bg);
+  updateCurvedLayer(bgCurved, landCurveTiles,
+    lastCurveClip
+      ? clippedBaseCellQuery(bg, landCurveTiles)
+      : extendedBaseCellQuery(bg, landCurveTiles));
   bgCurved.send();
 
   // forever draw loop
@@ -149,6 +134,16 @@ export default async function demo(opts) {
     lastT = t, t = await nextFrame()
   ) {
     // TODO animate things via const dt = lastT - t;
+
+    const nowCurveClip = shouldClipCurvyTiles();
+    if (lastCurveClip != nowCurveClip) {
+      lastCurveClip = nowCurveClip;
+      updateCurvedLayer(bgCurved, landCurveTiles,
+        shouldClipCurvyTiles()
+          ? clippedBaseCellQuery(bg, landCurveTiles)
+          : extendedBaseCellQuery(bg, landCurveTiles));
+      bgCurved.send();
+    }
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
