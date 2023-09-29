@@ -39,6 +39,7 @@ import {
  * @param {number} [opts.cellSize]
  * @param {number} [opts.worldWidth]
  * @param {number} [opts.worldHeight]
+ * @param {(() => boolean)} [opts.shouldRun]
  * @param {boolean|(() => boolean)} [opts.showCurvyTiles]
  * @param {boolean|(() => boolean)} [opts.clipCurvyTiles]
  */
@@ -50,6 +51,8 @@ export default async function demo(opts) {
 
     worldWidth = 5,
     worldHeight = 5,
+
+    shouldRun = () => true,
     showCurvyTiles = true,
     clipCurvyTiles = false,
   } = opts;
@@ -129,10 +132,9 @@ export default async function demo(opts) {
   bgCurved.send();
 
   // forever draw loop
-  for (
-    let t = await nextFrame(), lastT = t; ;
-    lastT = t, t = await nextFrame()
-  ) {
+  for await (const _ of frameTimes()) {
+    if (!shouldRun()) return;
+
     // TODO animate things via const dt = lastT - t;
 
     const nowCurveClip = shouldClipCurvyTiles();
@@ -181,8 +183,10 @@ function makeRandom(seed = 0xdead_beefn) {
   return { rand, randn, random };
 }
 
-/** @returns {Promise<number>} */
-const nextFrame = () => new Promise(resolve => requestAnimationFrame(t => resolve(t)))
+async function* frameTimes() {
+  for (; ;)
+    yield new Promise(resolve => requestAnimationFrame(resolve));
+}
 
 /** @param {HTMLCanvasElement} $canvas */
 function sizeToParent($canvas, update = () => { }) {
