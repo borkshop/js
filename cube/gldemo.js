@@ -86,9 +86,9 @@ export default async function demo(opts) {
     return layer;
   };
 
-  const bgSQ = makeWorldLayer(landCurveTiles);
-  const bg = makeWorldLayer(landCurveTiles, { x: -0.5, y: -0.5 });
+  const bg = makeWorldLayer(landCurveTiles);
   const fg = makeWorldLayer(foreTiles);
+  const bgCurved = makeWorldLayer(landCurveTiles, { x: -0.5, y: -0.5 });
 
   {
     const { randn, random } = makeRandom();
@@ -101,7 +101,7 @@ export default async function demo(opts) {
       isWater[i] = random() > 0.5 ? 1 : 0;
     for (let y = 0; y < bg.height; y++)
       for (let x = 0; x < bg.width; x++)
-        bgSQ.set(x, y, {
+        bg.set(x, y, {
           layerID: isWater[y * bg.width + x] ? water : land
         });
 
@@ -116,24 +116,24 @@ export default async function demo(opts) {
     }
 
     // generate curved terrain layer
-    const stride = bg.width;
-    for (let y = 0; y < bg.height; y++) {
-      for (let x = 0; x < bg.width; x++) {
+    const stride = bgCurved.width;
+    for (let y = 0; y < bgCurved.height; y++) {
+      for (let x = 0; x < bgCurved.width; x++) {
         const nw = isWater[(y + 0) * stride + x + 0];
         const ne = isWater[(y + 0) * stride + x + 1];
         const sw = isWater[(y + 1) * stride + x + 0];
         const se = isWater[(y + 1) * stride + x + 1];
         const tileID = ((nw << 1 | ne) << 1 | se) << 1 | sw;
         const layerID = landCurveTiles.getLayerID(tileID);
-        bg.set(x, y, { layerID });
+        bgCurved.set(x, y, { layerID });
       }
     }
   }
 
   // send layer data to gpu; NOTE this needs to be called going forward after any update
   bg.send();
-  bgSQ.send();
   fg.send();
+  bgCurved.send();
 
   // forever draw loop
   for (
@@ -149,7 +149,7 @@ export default async function demo(opts) {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     tileRend.draw(function*() {
-      yield shouldShowCurvyTiles() ? bg : bgSQ;
+      yield shouldShowCurvyTiles() ? bgCurved : bg;
       yield fg;
     }());
   }
