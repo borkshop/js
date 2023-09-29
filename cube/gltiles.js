@@ -232,8 +232,6 @@ export function makeLayer(gl, {
   const index = makeElementIndex(gl, cap);
 
   return {
-    visible: true,
-
     get left() { return left },
     get top() { return top },
     get width() { return width },

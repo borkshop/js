@@ -34,7 +34,7 @@ import {
  * @param {number} [opts.cellSize]
  * @param {number} [opts.worldWidth]
  * @param {number} [opts.worldHeight]
- * @param {boolean} [opts.showCurvyTiles]
+ * @param {boolean|(() => boolean)} [opts.showCurvyTiles]
  */
 export default async function demo(opts) {
   const {
@@ -47,14 +47,12 @@ export default async function demo(opts) {
     worldHeight = 5,
     showCurvyTiles = true,
   } = opts;
+  const shouldShowCurvyTiles = typeof showCurvyTiles == 'boolean' ? () => showCurvyTiles : showCurvyTiles;
 
   const gl = $world.getContext('webgl2');
   if (!gl) throw new Error('No GL For You!');
 
   sizeToParent($world);
-
-  /** @type {Layer[]} */
-  const layers = [];
 
   const tileRend = makeTileRenderer(gl, await compileTileProgram(gl));
 
@@ -85,7 +83,6 @@ export default async function demo(opts) {
       width: worldWidth,
       height: worldHeight,
     });
-    layers.push(layer);
     return layer;
   };
 
@@ -138,9 +135,6 @@ export default async function demo(opts) {
   bgSQ.send();
   fg.send();
 
-  bgSQ.visible = !showCurvyTiles; // boring non-curvy layer
-  bg.visible = showCurvyTiles; // curvy new hotness
-
   // forever draw loop
   for (
     let t = await nextFrame(), lastT = t; ;
@@ -155,8 +149,8 @@ export default async function demo(opts) {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     tileRend.draw(function*() {
-      for (const layer of layers)
-        if (layer.visible) yield layer;
+      yield shouldShowCurvyTiles() ? bg : bgSQ;
+      yield fg;
     }());
   }
 
