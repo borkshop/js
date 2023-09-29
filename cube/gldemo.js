@@ -93,21 +93,32 @@ export default async function demo(opts) {
   const bg = makeWorldLayer(landCurveTiles, { x: -0.5, y: -0.5 });
   const fg = makeWorldLayer(foreTiles);
 
-  // generate terrain
   {
-    const isWater = new Uint8Array(bg.width * bg.height);
-    const { random } = makeRandom();
-    for (let i = 0; i < isWater.length; i++)
-      isWater[i] = random() > 0.5 ? 1 : 0;
+    const { randn, random } = makeRandom();
 
+    // generate terrain
     const land = landCurveTiles.getLayerID(0b0000);
     const water = landCurveTiles.getLayerID(0b1111);
+    const isWater = new Uint8Array(bg.width * bg.height);
+    for (let i = 0; i < isWater.length; i++)
+      isWater[i] = random() > 0.5 ? 1 : 0;
     for (let y = 0; y < bg.height; y++)
       for (let x = 0; x < bg.width; x++)
         bgSQ.set(x, y, {
           layerID: isWater[y * bg.width + x] ? water : land
         });
 
+    // place fore objects
+    for (let y = 0; y < fg.height; y++) {
+      for (let x = 0; x < fg.width; x++) {
+        const tileID = Number(randn(2n * BigInt(foreTiles.size)));
+        const layerID = foreTiles.getLayerID(tileID);
+        const spin = random();
+        fg.set(x, y, { layerID, spin });
+      }
+    }
+
+    // generate curved terrain layer
     const stride = bg.width;
     for (let y = 0; y < bg.height; y++) {
       for (let x = 0; x < bg.width; x++) {
@@ -118,19 +129,6 @@ export default async function demo(opts) {
         const tileID = ((nw << 1 | ne) << 1 | se) << 1 | sw;
         const layerID = landCurveTiles.getLayerID(tileID);
         bg.set(x, y, { layerID });
-      }
-    }
-  }
-
-  // place fore objects
-  {
-    const { randn, random } = makeRandom();
-    for (let y = 0; y < fg.height; y++) {
-      for (let x = 0; x < fg.width; x++) {
-        const tileID = Number(randn(2n * BigInt(foreTiles.size)));
-        const layerID = foreTiles.getLayerID(tileID);
-        const spin = random();
-        fg.set(x, y, { layerID, spin });
       }
     }
   }
