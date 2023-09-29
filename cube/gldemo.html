@@ -16,6 +16,16 @@
     const $world = document.querySelector('canvas#world');
     if (!$world) throw new Error('unable to find world canvas');
 
+    let showCurvyTiles = true;
+    window.addEventListener('keypress', e => {
+      switch (e.key) {
+        case 'c':
+        case 'C':
+          showCurvyTiles = !showCurvyTiles;
+          break;
+      }
+    });
+
     await demo({
       $world,
       cellSize: 100,
@@ -23,7 +33,7 @@
 
       worldWidth: 8,
       worldHeight: 8,
-      showCurvyTiles: true,
+      showCurvyTiles: () => showCurvyTiles,
 
     });
     throw new Error('unexpected demo loop exit');
